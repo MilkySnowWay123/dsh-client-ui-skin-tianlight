@@ -14,10 +14,13 @@ diag.log
 # local Wallpaper Engine roots (per-machine paths)
 we-roots.json
 
-# wallpaper / companion media is supplied by the user, not committed.
-# Keep this file so the directory and its README still ship.
+# wallpaper / companion media: ship the three defaults in the full repo, ignore
+# uploads and any other user-supplied media.
 assets/*
 !assets/README.md
+!assets/bg-main.mp4
+!assets/bg-4k.mp4
+!assets/cat.png
 
 # editor / OS noise
 .DS_Store
