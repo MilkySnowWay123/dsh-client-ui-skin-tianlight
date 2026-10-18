@@ -1,0 +1,63 @@
+{
+  "name": "@dsh-external/dsh-client-ui-skin-tianlight",
+  "description": "Tianlight skin for the dsh web GUI: Makoto Shinkai daylight skies, a looping video wallpaper, a wallpaper library with upload/rotation, optional WebWallGL scene support, and a draggable Mint chibi-cat desktop companion",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./skin.json": "./skin.json",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-api-remotes",
+        "@deepseek-ai/dsh-api-session-controller"
+      ],
+      "platform": "web"
+    }
+  },
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "skin",
+    "theme",
+    "wallpaper",
+    "anime",
+    "shinkai"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "build:check": "node tools/build.mjs --check",
+    "check": "node tools/build.mjs --check && node tools/test.mjs && node tools/structure.mjs --strict && node tools/audit.mjs && node tools/check-css.mjs && node tools/verify.mjs",
+    "upgrade": "node tools/upgrade-check.mjs && node tools/resolve-selectors.mjs",
+    "pack": "node tools/pack.mjs",
+    "snapshot": "node tools/snapshot.mjs",
+    "restore": "node tools/restore.mjs"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "lib/media-types.js",
+    "lib/http-media.js",
+    "lib/upload.js",
+    "lib/scene-project.js",
+    "lib/scene-frame.html",
+    "vendor/webwallgl",
+    "cordis.patch.yml",
+    "skin.json",
+    "assets/README.md",
+    "assets",
+    "presets"
+  ]
+}

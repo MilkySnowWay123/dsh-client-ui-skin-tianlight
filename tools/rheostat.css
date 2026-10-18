@@ -1,0 +1,142 @@
+/* ---- reasoning rheostat: a chrome-less luminous fader ----
+   No capsule shell on purpose. The control is a hairline of light with a glowing
+   bead, so it reads as part of the wallpaper instead of one more pill in the tool
+   row. Position is driven by a real spring in JS, so `left` and `width` must stay
+   transition-free here or the rAF integration and CSS easing would fight. */
+body[data-dsh-tianlight] [data-tl-rheo] {
+	position: relative;
+	box-sizing: border-box;
+	width: 152px;
+	height: 34px;
+	flex: none;
+	background: transparent;
+	border: 0;
+	touch-action: none;
+	cursor: pointer;
+	user-select: none;
+	-webkit-user-select: none;
+	transition: opacity 160ms ease;
+}
+body[data-dsh-tianlight] [data-tl-rheo]:focus-visible {
+	outline: none;
+}
+body[data-dsh-tianlight] [data-tl-rheo][data-tl-busy] {
+	opacity: 0.55;
+}
+body[data-dsh-tianlight] [data-tl-rheo-track] {
+	position: absolute;
+	left: 12px;
+	right: 40px;
+	top: 50%;
+	height: 1.5px;
+	margin-top: -0.75px;
+	border-radius: 999px;
+	background: linear-gradient(90deg, transparent 0%, var(--tl-line) 22%, var(--tl-line-strong) 100%);
+}
+body[data-dsh-tianlight] [data-tl-rheo-fill] {
+	position: absolute;
+	left: 12px;
+	top: 50%;
+	height: 1.5px;
+	margin-top: -0.75px;
+	border-radius: 999px;
+	background: linear-gradient(90deg, color-mix(in srgb, var(--tl-accent) 25%, white), var(--tl-accent));
+	box-shadow: 0 0 10px color-mix(in srgb, var(--tl-accent) 70%, transparent);
+	width: calc((100% - 52px) * var(--tl-rheo-pos, 0));
+}
+body[data-dsh-tianlight] [data-tl-rheo-halo] {
+	position: absolute;
+	top: 50%;
+	left: calc(12px + (100% - 52px) * var(--tl-rheo-pos, 0));
+	width: 34px;
+	height: 34px;
+	margin: -17px 0 0 -17px;
+	border-radius: 50%;
+	background: radial-gradient(circle, color-mix(in srgb, var(--tl-accent) 40%, transparent) 0%, transparent 66%);
+	pointer-events: none;
+}
+body[data-dsh-tianlight] [data-tl-rheo-bead] {
+	position: absolute;
+	top: 50%;
+	left: calc(12px + (100% - 52px) * var(--tl-rheo-pos, 0));
+	width: 11px;
+	height: 11px;
+	margin: -5.5px 0 0 -5.5px;
+	border-radius: 50%;
+	background: #ffffff;
+	box-shadow:
+		0 0 0 1.5px color-mix(in srgb, var(--tl-accent) 85%, white),
+		0 0 14px 2px color-mix(in srgb, var(--tl-accent) 60%, transparent),
+		0 1px 3px rgba(10, 30, 60, 0.30);
+	pointer-events: none;
+	transition:
+		transform 240ms cubic-bezier(0.34, 1.7, 0.5, 1),
+		box-shadow 200ms ease;
+}
+body[data-dsh-tianlight] [data-tl-rheo]:hover [data-tl-rheo-bead] {
+	transform: scale(1.25);
+}
+body[data-dsh-tianlight] [data-tl-rheo][data-tl-drag] [data-tl-rheo-bead] {
+	transform: scale(1.45);
+}
+/* a detent change emits one expanding ring; the element is keyed so it restarts */
+body[data-dsh-tianlight] [data-tl-rheo-pulse] {
+	position: absolute;
+	top: 50%;
+	left: calc(12px + (100% - 52px) * var(--tl-rheo-pos, 0));
+	width: 12px;
+	height: 12px;
+	margin: -6px 0 0 -6px;
+	border-radius: 50%;
+	border: 1.5px solid color-mix(in srgb, var(--tl-accent) 75%, white);
+	pointer-events: none;
+	animation: tl-rheo-ring 620ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+@keyframes tl-rheo-ring {
+	0% {
+		transform: scale(0.6);
+		opacity: 0.85;
+	}
+	70% {
+		opacity: 0.25;
+	}
+	100% {
+		transform: scale(3.1);
+		opacity: 0;
+	}
+}
+body[data-dsh-tianlight] [data-tl-rheo-label] {
+	position: absolute;
+	right: 10px;
+	top: 50%;
+	transform: translateY(-50%);
+	font-size: 10px;
+	line-height: 1;
+	letter-spacing: 0.05em;
+	color: var(--tl-ink-faint);
+	pointer-events: none;
+	animation: tl-rheo-pop 420ms cubic-bezier(0.34, 1.6, 0.5, 1);
+}
+@keyframes tl-rheo-pop {
+	0% {
+		transform: translateY(-50%) translateY(3px) scale(0.86);
+		opacity: 0.3;
+	}
+	60% {
+		transform: translateY(-50%) translateY(-1px) scale(1.06);
+		opacity: 1;
+	}
+	100% {
+		transform: translateY(-50%) scale(1);
+		opacity: 1;
+	}
+}
+body[data-dsh-tianlight] [data-tl-rheo][data-tl-drag] [data-tl-rheo-label] {
+	color: var(--tl-accent);
+}
+@media (prefers-reduced-motion: reduce) {
+	body[data-dsh-tianlight] [data-tl-rheo-pulse],
+	body[data-dsh-tianlight] [data-tl-rheo-label] {
+		animation: none;
+	}
+}

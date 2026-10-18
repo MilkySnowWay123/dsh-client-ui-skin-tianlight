@@ -1,0 +1,20 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # No install step: the skin has zero runtime dependencies.
+      # The `check` chain needs no DSH install — upgrade-check does, and runs locally.
+      - name: static checks
+        run: npm run check

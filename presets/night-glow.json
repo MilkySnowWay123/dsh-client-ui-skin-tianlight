@@ -1,0 +1,11 @@
+{
+  "format": "tianlight-preset",
+  "version": 1,
+  "layers": {
+    "version": 2,
+    "slots": [
+      { "kind": "preset", "preset": "glow", "url": "", "fit": "cover", "opacity": 0.35, "blend": "screen" },
+      { "kind": "preset", "preset": "scan", "url": "", "fit": "cover", "opacity": 0.18, "blend": "normal" }
+    ]
+  }
+}

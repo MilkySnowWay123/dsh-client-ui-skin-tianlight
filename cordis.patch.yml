@@ -1,0 +1,4 @@
+# tianlight skin bundle patch: inserts its public dsh.client entry into the web plugin roster.
+- insert:
+    - id: ui-skin-tianlight
+      name: '@dsh-external/dsh-client-ui-skin-tianlight'

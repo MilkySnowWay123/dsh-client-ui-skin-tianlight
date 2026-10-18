@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# local snapshots produced by tools/restore.mjs
+backup/
+
+# build output
+dist/
+*.zip
+
+# runtime diagnostics
+diag.log
+
+# local Wallpaper Engine roots (per-machine paths)
+we-roots.json
+
+# wallpaper / companion media is supplied by the user, not committed.
+# Keep this file so the directory and its README still ship.
+assets/*
+!assets/README.md
+
+# editor / OS noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

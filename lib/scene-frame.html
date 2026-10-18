@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tianlight scene frame</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
+  #stage { position: fixed; inset: 0; }
+  #stage canvas { display: block; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script src="/skin-tianlight/_engine/webwallgl.js"></script>
+<script>
+(() => {
+  "use strict";
+  // This page runs inside a sandboxed (opaque-origin) iframe. It only talks to the
+  // parent through postMessage, and the parent must verify event.source. The
+  // engine itself never touches the host page.
+  const params = new URLSearchParams(location.search);
+  const project = params.get("project") || "";
+  const fps = Math.max(1, Math.min(60, Number(params.get("fps")) || 30));
+  const startPaused = params.get("paused") === "1";
+  const stage = document.getElementById("stage");
+  const post = (payload) => {
+    try {
+      parent.postMessage(Object.assign({ __tlScene: true }, payload), "*");
+    } catch {
+      // parent may be gone; nothing useful to do
+    }
+  };
+  if (!project) {
+    post({ type: "error", reason: "no-project" });
+    return;
+  }
+  if (!globalThis.WebWallGL) {
+    post({ type: "error", reason: "engine-missing" });
+    return;
+  }
+  const engine = globalThis.WebWallGL;
+  let instance = null;
+  let statsTimer = 0;
+  let errorPosted = false;
+  const reportError = (error) => {
+    if (errorPosted) return;
+    errorPosted = true;
+    post({ type: "error", reason: String(error && error.message ? error.message : error || "scene-failed").slice(0, 240) });
+  };
+  addEventListener("error", (event) => reportError(event.error || event.message));
+  addEventListener("unhandledrejection", (event) => reportError(event.reason));
+  addEventListener("message", (event) => {
+    const data = event.data;
+    if (!data || data.__tlCommand !== true || instance === null) return;
+    try {
+      if (data.type === "pause") instance.pause();
+      else if (data.type === "resume") instance.resume();
+      else if (data.type === "fps") instance.setFps(Math.max(1, Math.min(60, Number(data.fps) || fps)));
+    } catch {
+      // a command on a dying instance must not throw into the engine loop
+    }
+  });
+  void (async () => {
+    try {
+      instance = await engine.mount(stage, {
+        source: engine.httpSource(project),
+        fit: "cover",
+        fps,
+        autoplay: true,
+        renderDpr: Math.min(1.5, Math.max(1, globalThis.devicePixelRatio || 1)),
+        mountTimeoutMs: 20000,
+        onError: reportError,
+      });
+      if (startPaused) instance.pause();
+      post({ type: "ready" });
+      statsTimer = setInterval(() => {
+        if (instance === null) return;
+        try {
+          const stats = instance.stats;
+          if (stats && Number.isFinite(stats.fps)) {
+            post({ type: "stats", fps: Math.max(0, Math.round(stats.fps)), running: stats.running !== false });
+          }
+        } catch {
+          // stats is advisory only
+        }
+      }, 1000);
+    } catch (error) {
+      reportError(error);
+    }
+  })();
+  addEventListener("pagehide", () => {
+    if (statsTimer !== 0) clearInterval(statsTimer);
+    statsTimer = 0;
+  });
+})();
+</script>
+</body>
+</html>

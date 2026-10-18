@@ -1,0 +1,18 @@
+{
+  "id": "tianlight",
+  "name": "遐蝶 · 天光",
+  "nameEn": "TIANLIGHT",
+  "author": "local",
+  "tagline": "新海诚式天光 ・ 动态壁纸与可上传壁纸库 ・ 可选 WebWallGL 场景 ・ 薄荷小猫桌宠",
+  "description": "以新海诚天光为基调的沉浸式皮肤：全屏循环视频壁纸置于内容之下，半透明天光玻璃面板；壁纸库支持上传、隐藏、轮播与画面滤镜；可选的 WebWallGL 通道实时渲染 Wallpaper Engine 场景；可拖拽的薄荷 Q 版小猫桌宠会靠近回应、陪你互动。",
+  "tags": ["shinkai", "sky", "video", "wallpaper-engine", "webwallgl", "anime", "mint", "pet"],
+  "accent": "#3f8fe0",
+  "bodyAttr": "data-dsh-tianlight",
+  "dshCompatibility": "0.2.0rc2",
+  "package": "@dsh-external/dsh-client-ui-skin-tianlight",
+  "wiring": {
+    "id": "ui-skin-tianlight",
+    "bundleWired": true
+  },
+  "order": 30
+}
