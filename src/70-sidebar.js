@@ -2436,7 +2436,8 @@
 			const handle = document.createElement("button");
 			handle.type = "button";
 			handle.setAttribute("data-tl-wall-handle", "");
-			handle.title = "壁纸";
+			handle.setAttribute("aria-keyshortcuts", "Alt+W");
+			handle.title = "壁纸（Alt+W）";
 			handle.textContent = "壁纸";
 			const body = document.body;
 			if (body !== null) {
@@ -2732,6 +2733,14 @@
 			};
 			const onScrim = () => setOpen(false);
 			const onHandle = () => setOpen(!open);
+			// The edge tab can be covered by the DSH sidebar / Windows taskbar.
+			// A keyboard route must exist independently of that tab's position.
+			const onKey = (event) => {
+				if (event.altKey && event.ctrlKey === false && event.metaKey === false && (event.key === "w" || event.key === "W")) {
+					event.preventDefault();
+					setOpen(!open);
+				}
+			};
 			// A cached offset goes stale when the viewport shrinks: a panel pinned to the
 			// right edge would sit outside the window until the next drag.
 			const onResize = () => {
@@ -2741,12 +2750,14 @@
 			};
 			scrim.addEventListener("click", onScrim);
 			handle.addEventListener("click", onHandle);
+			window.addEventListener("keydown", onKey, true);
 			window.addEventListener("resize", onResize);
 			applyX(0);
 
 			return () => {
 				scrim.removeEventListener("click", onScrim);
 				handle.removeEventListener("click", onHandle);
+				window.removeEventListener("keydown", onKey, true);
 				window.removeEventListener("resize", onResize);
 				document.removeEventListener("pointerdown", onDragStart, true);
 				document.removeEventListener("pointermove", onDragMove, true);
