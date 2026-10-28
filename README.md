@@ -2,7 +2,7 @@
 
 新海诚式的天光配色，全屏循环动态壁纸置于界面之下，玻璃质感面板、可拖拽的薄荷小猫桌宠，以及一套自建的排版与壁纸控制面板。
 
-> 这是一个 **DSH（DeepSeek Harness）Web GUI 皮肤插件**，不是独立应用。它通过 `dsh.bundle.patch` + `dsh.client` 挂载进 Web 端。
+> 这是一个 **DSH（DeepSeek Harness）Web GUI 皮肤插件**，不是独立应用。它是一个标准 DSH bundle：`dsh.bundle.patch` 负责插入 `ui-skin-tianlight` 行，`dsh.client` 提供浏览器半；Web GUI 与 DSH Desktop 共用同一前端。
 >
 > 包名 `@dsh-external/dsh-client-ui-skin-tianlight` · 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
 
@@ -36,19 +36,45 @@
 
 ## 安装
 
-```text
-1. 把本目录放到任意位置，链接进 profile：
-   mklink /J "%USERPROFILE%\.dsh\profiles\web\node_modules\@dsh-external\dsh-client-ui-skin-tianlight" "D:\path\to\skin-tianlight"
-2. profile 的 package.json 登记：
-   "dsh": { "profile": { "bundles": ["@dsh-external/dsh-client-ui-skin-tianlight"] } }
-3. profile 的 cordis.patch.yml 插入：
-   - id: ui-skin-tianlight
-     name: '@dsh-external/dsh-client-ui-skin-tianlight'
-     disabled: false
-4. 重启 DSH 后 Ctrl+F5
+本皮肤是**标准 DSH bundle**：`package.json` 的 `dsh.bundle.patch` 指向包内自带的 `cordis.patch.yml`，由它插入 `ui-skin-tianlight` 这一行；浏览器半由 `dsh.client` 提供。**只安装这一个包即可**，旧教程里的第二个 enable bundle（`@local/dsh-enable-tianlight`）已废弃，不要再装。
+
+### DSH Desktop（0.2.1 及以上，单包安装）
+
+1. 把本仓库目录（或解包后的 `dsh-client-ui-skin-tianlight-0.1.0/` 目录）放到任意位置，建议用纯 ASCII 路径。
+2. 在 DSH Desktop 的**插件管理器**里选择「安装本地目录 / Install from local folder」，指向该目录。Desktop 的 profile（本版为 `desktop`）由 Electron 管理，**不要**手动编辑 profile 目录下的 `package.json` / `cordis.patch.yml`；安装器会以 `link:` 依赖引用本包，并且只登记 `@dsh-external/dsh-client-ui-skin-tianlight` 这一条 bundle。
+3. 确认 `ui-skin-tianlight` 这一行处于 **enabled** 状态。该行由本包的 `cordis.patch.yml` 自带，profile 的 `cordis.patch.yml` 不需要、也不应该再手写同 id 的行（重复插入会重复挂载插件）。
+4. 重启 DSH Desktop。之后只改浏览器半（`src/` → `lib/client.js`）时 Ctrl+F5 刷新即可，不用重启。
+
+> **关键前提**：机器级 `$DSH_HOME/cordis.patch.yml`（Windows 默认 `%USERPROFILE%\.dsh\cordis.patch.yml`）的优先级**高于** bundle 自带的 patch。如果里面残留旧 skin-manager 生成的 `ui-skin-tianlight` + `disabled: true`，行的 enabled 会被覆盖、皮肤静默不出现——删掉该行再重启。处理见下方「故障排查」第 1 条。
+
+### 命令行 `dsh web`（可选）
+
+不用 Desktop 时，Web profile 也是同一种单包安装：把本包以目录链接或 `link:` 依赖放进 profile 的 `node_modules`，在 profile 的 `package.json` 里依赖本包，并在 `dsh.profile.bundles` 中登记 `@dsh-external/dsh-client-ui-skin-tianlight`。行仍由 bundle 自带的 patch 插入，不需要手写。
+
+> **本版新增宿主路由**（上传 / 场景 / 引擎适配页），所以安装或更新后需要**重启一次 DSH**；之后只改 `src/` 的浏览器半仍只需 Ctrl+F5。场景目录来自壁纸面板里配置的 WE roots。
+
+> `assets/uploads/` 是**用户数据**（面板「上传壁纸」落盘的图片/视频），不属于发布包，也不随仓库提交；发布或迁移时请自行保留/备份。发布包（`node tools/pack.mjs`）默认只含代码、清单（`package.json` / `skin.json` / `cordis.patch.yml`）、`lib/`、`vendor/`、`presets/` 与 `assets/README.md`，不含 `assets/uploads/`；默认演示素材需要 `--with-assets` 才会带上。
+
+## 故障排查
+
+### 1. 皮肤不出现，`ui-skin-tianlight` 被禁用（home patch 覆盖）
+
+机器级 `$DSH_HOME/cordis.patch.yml`（Windows 默认 `%USERPROFILE%\.dsh\cordis.patch.yml`）的优先级高于 bundle 自带的 patch。检查其中是否有一条旧 skin-manager 生成的：
+
+```yaml
+- id: ui-skin-tianlight
+  disabled: true
 ```
 
-> **本版新增宿主路由**（上传 / 场景 / 引擎适配页），所以安装或更新后需要**重启一次 `dsh web`**；之后只改 `src/` 的浏览器半仍只需 Ctrl+F5。上传目录是 `assets/uploads/`，场景目录来自壁纸面板里配置的 WE roots。
+有的话整段删掉（或把 `disabled` 改为 `false`）后重启 DSH。这个旧行通常是以前用 Web 皮肤管理器安装时留下的；一个 profile 里只应有一条 `ui-skin-tianlight` 行，不要靠 home patch 再写一遍，避免管理器以后重写 home patch 又把 Desktop 禁用。
+
+### 2. 端口 / origin 变化后设置“像丢了”
+
+皮肤状态（壁纸选择、玻璃透明度、排版、省电、收藏等）存在浏览器 `localStorage` 里，按 **origin**（协议 + 主机 + 端口）隔离。DSH 换了端口、从 Web profile 换到 Desktop profile、或用另一个地址打开，都会读到新 origin 的默认值。回到原来的地址/端口即可恢复；确实换了 origin 就在新 origin 里重新设置一次——这不是皮肤丢配置。
+
+### 3. Windows 上视频壁纸自动暂停，面板显示「省电暂停」
+
+Windows 开启「减少动态效果 / Reduce motion」后，皮肤省电模式（auto）会跟随 `prefers-reduced-motion` 自动暂停动态壁纸。面板点「关闭省电并播放」，或把省电模式设为关；也可以到 Windows 设置 → 辅助功能 → 视觉效果 → 动画效果 关闭「减少动态效果」。这不是加载失败。
 
 ## 壁纸
 
@@ -73,9 +99,9 @@ assets/
 
 | 项 | 说明 |
 |---|---|
-| 测试版本 | DSH `0.2.0-rc.2`（Web） |
+| 测试版本 | DSH Desktop `0.2.1-rc.3`（单包安装）；Web profile 走同一套安装 |
 | 最低要求 | 支持 `dsh.client` 的版本（`0.1.5` 起） |
-| 非 Web profile | 宿主半对 `webServer` 等注入，缺失时挂起而非报错 |
+| 宿主注入缺失 | 宿主半对 `webServer` 等注入按可选处理，缺失时挂起而非报错 |
 | 服务缺失 | `theme` / `layout` / `slots` / `remote` 全部按可选处理 |
 | 类名变更 | 选择器使用构建哈希类名，失效即静默降级为半透明，不破坏布局 |
 | 换版本 | 改 `skin.json` 的 `dshCompatibility` 即可 |

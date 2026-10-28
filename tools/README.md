@@ -20,7 +20,7 @@
 
 | 文件 | 当时的用途 |
 |---|---|
-| `install.mjs` / `preflight.mjs` | 首次把皮肤接进 profile |
+| `install.mjs` / `preflight.mjs` | 早期 Web profile 一次性接线脚本（硬编码了作者机器上的 web profile 与 home patch 路径，不要用于 Desktop；Desktop 单包安装见根目录 README） |
 | `inspect-manager.cjs` / `inspect-switch.cjs` | 排查皮肤管理器的协议 |
 | `probe-video.cjs` | 探测视频编码与可播放性 |
 | `CatKeyer.cs` | 把白底桌宠图抠成透明 PNG（System.Drawing 泛洪） |

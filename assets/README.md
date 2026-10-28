@@ -27,7 +27,7 @@
 
 ## 上传与场景
 
-- `assets/uploads/`：面板「上传壁纸」写入的图片/视频，自动创建；同名自动加 `-1`，不会覆盖；单文件默认 ≤512MB（`TIANLIGHT_UPLOAD_MAX` 可调）。
+- `assets/uploads/`：面板「上传壁纸」写入的图片/视频，**属于用户数据，不属于发布包，也不提交到仓库**；自动创建，同名自动加 `-1`，不会覆盖；单文件默认 ≤512MB（`TIANLIGHT_UPLOAD_MAX` 可调）。
 - WE 场景**不放在这里**：壁纸面板 → Wallpaper Engine 里配置 roots，宿主会扫描含 `project.json` 的子目录；场景由 `vendor/webwallgl/` 的引擎在沙箱 iframe 里渲染。
 
 ## 注意
