@@ -1,7 +1,7 @@
 {
   "name": "@dsh-external/dsh-client-ui-skin-tianlight",
   "description": "Tianlight skin for the dsh web GUI: Makoto Shinkai daylight skies, a looping video wallpaper, a wallpaper library with upload/rotation, optional WebWallGL scene support, and a draggable Mint chibi-cat desktop companion",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "main": "lib/index.js",
@@ -40,7 +40,8 @@
     "build": "node tools/build.mjs",
     "build:check": "node tools/build.mjs --check",
     "check": "node tools/build.mjs --check && node tools/test.mjs && node tools/structure.mjs --strict && node tools/audit.mjs && node tools/check-css.mjs && node tools/verify.mjs",
-    "upgrade": "node tools/upgrade-check.mjs && node tools/resolve-selectors.mjs",
+    "upgrade": "node tools/upgrade-check.mjs && node tools/hook-scan.mjs --self-check",
+    "hook-scan": "node tools/hook-scan.mjs",
     "pack": "node tools/pack.mjs",
     "snapshot": "node tools/snapshot.mjs",
     "restore": "node tools/restore.mjs"

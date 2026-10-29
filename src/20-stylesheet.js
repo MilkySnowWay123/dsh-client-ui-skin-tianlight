@@ -234,8 +234,9 @@ body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-scene] > [data-tl-crest] {
 	opacity: 0.30;
 }
 
-/* ---- model picker: same glass pill as the composer ---- */
-body[data-dsh-tianlight] ._9r0rkG_trigger {
+/* ---- model picker: same glass pill as the composer ----
+   Targets are runtime-stamped attributes (selector bridge), never build hashes. */
+body[data-dsh-tianlight] [data-tl-model] {
 	background: var(--tl-glass-fill) !important;
 	-webkit-backdrop-filter: blur(var(--tl-glass-blur)) saturate(1.2);
 	backdrop-filter: blur(var(--tl-glass-blur)) saturate(1.2);
@@ -245,14 +246,14 @@ body[data-dsh-tianlight] ._9r0rkG_trigger {
 	padding-inline: 11px !important;
 	transition: background 140ms ease, border-color 140ms ease;
 }
-body[data-dsh-tianlight] ._9r0rkG_trigger:hover {
+body[data-dsh-tianlight] [data-tl-model]:hover {
 	border-color: var(--tl-accent) !important;
 }
-body[data-dsh-tianlight] ._9r0rkG_triggerLabel {
+body[data-dsh-tianlight] [data-tl-model-label] {
 	font-weight: 500;
 	letter-spacing: 0.01em;
 }
-body[data-dsh-tianlight] ._9r0rkG_triggerEffort {
+body[data-dsh-tianlight] [data-tl-model-effort] {
 	opacity: 0.85;
 }
 
@@ -440,12 +441,11 @@ body[data-dsh-tianlight][data-ds-dark-theme] [id='root'] {
 }
 
 /* ---- left column: forced transparent, whichever variant painted it ----
-   Every sidebar surface traces back to tokens the skin zeroed, yet a dark block
-   persisted, so these rules skip the token indirection and zero the column and
-   its list chrome outright. Build-hashed classes degrade silently if renamed. */
-body[data-dsh-tianlight] .mP3x-q_sidebarCol,
-body[data-dsh-tianlight] .wtg9ga_root,
-body[data-dsh-tianlight] .GAkraW_root {
+   Targets are runtime-stamped by the selector bridge from STABLE DSH hooks
+   (data-sidebar-collapsed, the _sidebarCol class suffix), so a DSH build
+   hash change no longer silently drops the rule. */
+body[data-dsh-tianlight] [data-tl-sidebar],
+body[data-dsh-tianlight] [data-tl-sidebar-col] {
 	background: transparent !important;
 	background-image: none !important;
 	background-color: transparent !important;
@@ -455,7 +455,7 @@ body[data-dsh-tianlight] .GAkraW_root {
    The column's own rule was already transparent, so a pure-black area had to come
    from a descendant. Hover/selection tints inside the sidebar are sacrificed here
    on purpose — no black block is worth keeping them. */
-body[data-dsh-tianlight][data-ds-dark-theme] .mP3x-q_sidebarCol :where(div, aside, nav, section, ul, ol, li) {
+body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-sidebar-col] :where(div, aside, nav, section, ul, ol, li) {
 	background-color: transparent !important;
 	background-image: none !important;
 }
@@ -464,10 +464,9 @@ body[data-dsh-tianlight][data-ds-dark-theme] .mP3x-q_sidebarCol :where(div, asid
    The rest of the interface stays fully transparent (100% wallpaper); this is the
    single surface that gets a blurred backdrop, because it is where typing happens
    and it sits over the moving picture.
-   The class suffix is build-specific. If a DSH update renames it the selector stops
-   matching and the composer returns to the transparent default, so this degrades
-   quietly instead of breaking the layout. */
-body[data-dsh-tianlight] .GRgSLq_card {
+   Bridge source: the stable data-composer-card attribute, or a _card suffix
+   element that owns a contenteditable/textarea. */
+body[data-dsh-tianlight] [data-tl-composer] {
 	/* The blur is painted by ::before, never here. backdrop-filter makes an element the
 	   containing block for its position:fixed descendants; the composer's tooltips are
 	   not portaled, so a blur on the card would re-anchor their bubbles to the card
@@ -484,7 +483,6 @@ body[data-dsh-tianlight] .GRgSLq_card {
 	position: relative;
 	isolation: isolate;
 }
-body[data-dsh-tianlight] .GRgSLq_card::before,
 body[data-dsh-tianlight] [data-tl-composer]::before {
 	content: "";
 	position: absolute;
@@ -495,7 +493,7 @@ body[data-dsh-tianlight] [data-tl-composer]::before {
 	pointer-events: none;
 	z-index: -1;
 }
-body[data-dsh-tianlight][data-ds-dark-theme] .GRgSLq_card {
+body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-composer] {
 	box-shadow:
 		0 10px 34px rgba(0, 0, 0, 0.45),
 		inset 0 1px 0 var(--tl-glass-line) !important;
@@ -505,18 +503,20 @@ body[data-dsh-tianlight][data-ds-dark-theme] .GRgSLq_card {
    The panel painted --dsw-alias-bg-layer-2, which the skin zeroes to reach 100%
    wallpaper, so the chat behind it showed through and the two text layers collided.
    It therefore needs its own fill.
-   Deliberately no backdrop-filter here: the panel is ~800x800 over a playing video,
+   Deliberately no backdrop-filter here: the panel is large over a playing video,
    and the product's mask already blurs the full viewport (--dsw-mask-blur). Two
    stacked live blurs re-composite on every video frame and made scrolling janky.
-   Opacity plus a hairline border carries the glass look at zero per-frame cost. */
-body[data-dsh-tianlight] ._pane_6nhg2_209 {
+   Opacity plus a hairline border carries the glass look at zero per-frame cost.
+   Bridge source: _surface/_pane inside [data-sidebar-right-panel], or the
+   legacy _panel-inside-_mask shape. */
+body[data-dsh-tianlight] [data-tl-settings] {
 	background: var(--tl-panel-fill) !important;
 	border: 0.5px solid var(--tl-glass-line);
 	box-shadow:
 		0 18px 60px rgba(8, 26, 48, 0.28),
 		inset 0 1px 0 var(--tl-glass-line);
 }
-body[data-dsh-tianlight][data-ds-dark-theme] ._pane_6nhg2_209 {
+body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-settings] {
 	box-shadow:
 		0 18px 60px rgba(0, 0, 0, 0.55),
 		inset 0 1px 0 var(--tl-glass-line);
@@ -1652,15 +1652,10 @@ body[data-dsh-tianlight] [data-tl-menu] {
 
 /* ---- the remaining surfaces, frosted ----
    Same glass treatment for the components whose background used to be an opaque
-   token: message bubbles, popovers, code/tool output cards, choice selectors.
-   Selectors are build-hashed: a DSH rename costs the blur (the translucency from
-   the token overrides above still applies), it never breaks layout.
-   Mapped for DSH 0.2.1-rc.3 (2026-10-29): the settings/right-sidebar surfaces use
-   the new underscore-name-hash-line naming, the rest keep the older hash_name form. */
-body[data-dsh-tianlight] :is(
-	.LOmM4q_bubble, .rhSLKq_bubble, .BfLV8a_bubble,
-	._9r0rkG_menu, .A6Bq1a_panel
-) {
+   token: message bubbles, popovers/menus. The selector bridge stamps
+   [data-tl-bubble] / [data-tl-menu] from the stable class suffixes
+   (_bubble, _menu, data-trigger-menu), so no build hash appears here. */
+body[data-dsh-tianlight] :is([data-tl-bubble], [data-tl-menu]) {
 	-webkit-backdrop-filter: blur(var(--tl-glass-blur)) saturate(1.2);
 	backdrop-filter: blur(var(--tl-glass-blur)) saturate(1.2);
 }

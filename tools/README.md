@@ -10,8 +10,10 @@
 | `audit.mjs` | 静态审计：变量、监听器、定时器、Hook 顺序 | 否 |
 | `check-css.mjs` | 样式结构检查 | 否 |
 | `verify.mjs` | 路由/封装/清单契约断言（含上传、场景、引擎拒绝路径） | 否 |
-| `upgrade-check.mjs` | DSH 升级后 15 项假设自检 | 是 |
-| `resolve-selectors.mjs` | 哈希选择器体检（还在/失效/候选） | 是 |
+| `upgrade-check.mjs` | DSH 升级兼容性自检：模块加载器/启动载荷/remote 契约/服务包 + **结构桥接钩子**（v0.2.0 起不再依赖构建哈希） | 是 |
+| `hook-scan.mjs` | 对**任意 DSH 版本目录**扫描桥接钩子（`data-*` 属性 + CSS 类名后缀）；升级 Desktop 前先跑；`--self-check` 同时校验 `src/65-bridge.js` 与钩子清单同步 | 是 |
+| `hooks.mjs` | 桥接钩子清单（data-* 与类名后缀），被 `upgrade-check` / `hook-scan` / 测试共用 | 否 |
+| `resolve-selectors.mjs` | 历史工具：构建哈希选择器体检（v0.2.0 起 CSS 已无哈希依赖，仅排查旧版/外部版本时用） | 是 |
 | `pack.mjs` | 生成可分发目录 | 否 |
 | `snapshot.mjs` | 存快照（产物 + 宿主模块 + `src/`）到 `backup/` | 否 |
 | `restore.mjs` | 从 `backup/` 回滚（含宿主模块与 `src/`） | 否 |
@@ -28,6 +30,9 @@
 | `restore-disabled-rows.mjs` | 恢复被清空的插件行 |
 | `rheostat.css` | 推理滑杆早期样式的暂存副本 |
 
-`npm run check` 先跑 `build --check`，再跑第一张表里的静态工具；`npm run upgrade` 跑两个需要 DSH 的检查。
+`npm run check` 先跑 `build --check`，再跑第一张表里的静态工具；`npm run upgrade` 跑 `upgrade-check` + `hook-scan --self-check`（都需要 DSH）。
+
+**DSH 升级流程**：拿到新版本 DSH 的 `@deepseek-ai` 目录后（app.asar 需用 Electron-as-Node 读，或 npm 解包），先跑
+`node tools/hook-scan.mjs --dsh <该目录>`；所有钩子 OK 再升级 Desktop；有 MISS 就先改 `src/65-bridge.js` 的探测查询，再发布皮肤新版本。
 
 `src/` 是浏览器半的源码：按 region 切分的普通脚本片段（无 import/export），由 `build.mjs` 按显式顺序拼成单文件产物 `lib/client.js`。改代码的流程是：改 `src/` → `npm run build` → `npm run check`。快照用 `npm run snapshot`（产物和 `src/` 一次存齐），`npm run restore` 会一起恢复。

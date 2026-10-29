@@ -9,6 +9,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { ADVISORY_HOOKS, DATA_HOOKS, SUFFIX_HOOKS, findSuffixToken } from './hooks.mjs'
 
 const args = process.argv.slice(2)
 const explicit = args[args.indexOf('--dsh') + 1]
@@ -84,28 +85,38 @@ check('static module seed: react', true, () => {
 })
 check('boot payload (window.__DSH_BOOT__)', true, () => shell.includes('__DSH_BOOT__'))
 
-// Hashed selectors are cosmetic: losing one degrades, it never breaks the layout.
-// Names below are the DSH 0.2.1-rc.3 build (2026-10-29). Re-run
-// `node tools/resolve-selectors.mjs` after every DSH upgrade and update these.
-const selectors = {
-  'composer card .GRgSLq_card': 'GRgSLq_card',
-  'settings panel ._pane_6nhg2_209': '_pane_6nhg2_209',
-  'sidebar column .mP3x-q_sidebarCol': 'mP3x-q_sidebarCol',
-  'model trigger ._9r0rkG_trigger': '_9r0rkG_trigger',
-  'message bubble .LOmM4q_bubble': 'LOmM4q_bubble',
-  'sidebar root .wtg9ga_root': 'wtg9ga_root',
-  'workspace root .GAkraW_root': 'GAkraW_root',
+// The stylesheet no longer names DSH build hashes: the runtime selector bridge
+// (src/65-bridge.js) finds each surface through STABLE hooks (product data-*
+// attributes + CSS-module class-name suffixes) and stamps data-tl-* attributes.
+// If one of these hooks disappears, the matching surface silently loses its glass
+// treatment — so treat a missing hook as a broken assumption. `tools/hook-scan.mjs`
+// runs the same check against ANOTHER DSH build before upgrading the desktop app.
+let allClientText = null
+const clientText = () => {
+  if (allClientText !== null) return allClientText
+  const parts = [frontendBundle()]
+  for (const pkg of readdirSync(ROOT)) parts.push(readBundle(pkg))
+  allClientText = parts.join('\n')
+  return allClientText
 }
-for (const [label, token] of Object.entries(selectors)) {
-  check('selector ' + label, false, () => {
-    // Settings-shell surfaces live in the frontend app bundle, the rest in the
-    // client plugin bundles, so a selector may be in either.
-    if (frontendBundle().includes(token)) return true
-    const pkgs = readdirSync(ROOT)
-    for (const pkg of pkgs) {
-      if (readBundle(pkg).includes(token)) return true
-    }
-    return 'not found in any bundle'
+
+for (const hook of DATA_HOOKS) {
+  check('bridge data hook ' + hook, false, () => (clientText().includes(hook) ? true : 'not found in any bundle'))
+}
+for (const suffix of SUFFIX_HOOKS) {
+  check('bridge class suffix ' + suffix, false, () => {
+    const token = findSuffixToken(clientText(), suffix)
+    return token === null ? 'no class like *' + suffix + ' in any bundle' : true
+  })
+}
+// Advisory hooks only exist on newer alpha builds; their absence is not a defect.
+for (const hook of ADVISORY_HOOKS) {
+  const present = clientText().includes(hook)
+  results.push({
+    name: 'bridge advisory hook ' + hook,
+    fatal: false,
+    ok: true,
+    detail: present ? 'present (forward-compat hook active)' : 'absent on this DSH (0.2.1.x fallback in use)',
   })
 }
 

@@ -99,25 +99,28 @@ assets/
 
 | 项 | 说明 |
 |---|---|
-| 测试版本 | DSH Desktop `0.2.1-rc.3`（单包安装）；Web profile 走同一套安装 |
+| 测试版本 | 本机 DSH Desktop `0.2.1-rc.3`（实机）；npm `0.2.1-rc.4` / `0.2.1-rc.5` / `0.2.2-alpha.2` 已用 `hook-scan` 预检：结构钩子全部 PASS |
 | 最低要求 | 支持 `dsh.client` 的版本（`0.1.5` 起） |
 | 宿主注入缺失 | 宿主半对 `webServer` 等注入按可选处理，缺失时挂起而非报错 |
 | 服务缺失 | `theme` / `layout` / `slots` / `remote` 全部按可选处理 |
-| 类名变更 | 选择器使用构建哈希类名，失效即静默降级为半透明，不破坏布局 |
+| 类名/结构变更 | **v0.2.0 起不再依赖构建哈希**：运行时 selector bridge 用 DSH 稳定的 `data-*` 属性 + CSS 类名后缀探测表面，再打 `data-tl-*` 供样式使用；DSH 升级前跑 `hook-scan` 即可预知是否需要改桥接 |
 | 换版本 | 改 `skin.json` 的 `dshCompatibility` 即可 |
 | 场景壁纸 | 需要浏览器 WebGL2；`project.json` 的 `type` 为 `scene`，目录名需为 ASCII；引擎或首帧失败会自动降级，不影响视频/图片 |
 | 上传 | 单文件 ≤512MB（可调），只收图片/视频；文件名会清洗，同名自动加序号 |
 
-### 升级 DSH 后必做
+### 升级 DSH 后（或升级 Desktop 前）必做
 
 ```bash
-node tools/upgrade-check.mjs    # 逐项校验皮肤对当前 DSH 的全部假设
+node tools/upgrade-check.mjs        # 当前已装 DSH：模块加载器/启动载荷/remote 契约/桥接钩子
+node tools/hook-scan.mjs --self-check   # 同一套钩子 + 校验 src/65-bridge.js 与 hooks.mjs 同步
+node tools/hook-scan.mjs --dsh <新版本@deepseek-ai 目录>  # 升级 Desktop 前：对新版本做预检
 ```
 
-它会检查：客户端模块加载器与静态种子（`react` / `react-dom/client`）、启动载荷、5 个构建哈希选择器、`modelCatalog` / `selectModel` 契约、两个注入包、`slots` 与 `theme` 服务包。
+> DSH Desktop 的包在 `app.asar` 里，普通 node 读不到；本机用 Electron-as-Node 跑：
+> `set ELECTRON_RUN_AS_NODE=1` + `"D:\dsh\DeepSeek Harness.exe" tools\upgrade-check.mjs`（`DSH_PKGS_ROOT` 指向 asar 内的 `@deepseek-ai`，见 `HANDOFF-DESKTOP-INSTALL.md`）。npm 解包出来的目录可以直接 `node tools/hook-scan.mjs --dsh <目录>`。
 
-- `FAIL` = 致命：皮肤可能完全加载不出来，必须改代码适配
-- `WARN` = 降级：只丢某个视觉细节，页面仍正常
+- `FAIL` / `[MISS]` = 必须处理：皮肤可能加载失败，或某个表面失去玻璃样式。改 `src/65-bridge.js` 的探测查询（或 `hooks.mjs` 清单），**不要**把新哈希写进 CSS。
+- `WARN` = 降级：某个视觉细节失效，页面仍正常。
 
 **安全性设计**：`apply()` 整体被 `try/catch` 包住。即使某个假设在未来版本上崩了，最坏结果是"皮肤不出现"，**绝不会让 DSH 进不去**——异常被吞掉并写进 `console.warn`，不会把插件标记为致命失败。
 
@@ -160,8 +163,9 @@ tools/                构建、审计、打包、回滚脚本
 node tools/build.mjs        # 从 src/ 生成 lib/client.js（改完源码先跑）
 node tools/build.mjs --check # 校验产物没落后（npm run check 已包含）
 node tools/test.mjs         # 纯逻辑回归测试（Range 解析、文件名安全、壁纸发现）
-node tools/upgrade-check.mjs # DSH 升级后的兼容性自检（见上一节）
-node tools/resolve-selectors.mjs # 哈希选择器体检：哪个还在、哪个失效、候选是谁
+node tools/upgrade-check.mjs # DSH 兼容性自检：模块/契约/桥接钩子（见上一节）
+node tools/hook-scan.mjs     # 桥接钩子扫描（--dsh 指定任意版本；--self-check 校验桥接同步）
+node tools/resolve-selectors.mjs # 历史工具：旧版哈希选择器体检（v0.2.0 起 CSS 已无哈希依赖）
 node tools/audit.mjs        # 静态审计：变量/监听器/定时器/Hook 顺序
 node tools/check-css.mjs    # 样式结构检查
 node tools/verify.mjs       # 路由、封装、清单契约断言

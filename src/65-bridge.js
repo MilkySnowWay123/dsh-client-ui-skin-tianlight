@@ -2,16 +2,33 @@
 		/**
 		 * Upgrade-proof selector bridge.
 		 *
-		 * CSS-module hashes change on every DSH build, so a stylesheet that hardcodes
-		 * them rots silently. This bridge finds the surfaces by STRUCTURE instead
-		 * (`_card` containing a contenteditable, `_panel` inside a `_mask`, ...) and
-		 * stamps them with attributes the skin owns. The stylesheet then has a stable
-		 * target that survives any hash change.
+		 * The stylesheet never names a DSH build hash. This bridge finds the host
+		 * surfaces through STABLE hooks instead:
+		 *   - `data-*` attributes the product ships for its own layout
+		 *     (`data-composer-card`, `data-sidebar-collapsed`, `data-sidebar-right-panel`,
+		 *     `data-trigger-menu`), which do not change between builds; and
+		 *   - CSS-module class-name SUFFIXES (`_sidebarCol`, `_card`, `_trigger`,
+		 *     `_triggerLabel`, `_triggerEffort`, `_bubble`, `_menu`, `_panel`, `_mask`),
+		 *     which stay stable while the hash prefix changes on every build.
 		 *
-		 * Stamper attributes are removed on dispose, so switching skins leaves no
+		 * The stamping attributes are removed on dispose, so switching skins leaves no
 		 * residue on the host application's DOM.
+		 *
+		 * Upgrade contract: `tools/hook-scan.mjs` reports a missing hook BEFORE a DSH
+		 * upgrade ships; extend this bridge there instead of hardcoding a new hash.
 		 */
 		function installSelectorBridge() {
+			const STAMPED_ATTRS = [
+				"data-tl-sidebar",
+				"data-tl-sidebar-col",
+				"data-tl-settings",
+				"data-tl-composer",
+				"data-tl-model",
+				"data-tl-model-label",
+				"data-tl-model-effort",
+				"data-tl-bubble",
+				"data-tl-menu",
+			];
 			const stamped = new Set();
 			const mark = (node, attr) => {
 				if (node === null || node === undefined) return;
@@ -21,28 +38,69 @@
 			};
 
 			const stampAll = () => {
-				// Left column and session list: unique class suffixes.
-				for (const node of document.querySelectorAll("[class*='_sidebarCol']")) mark(node, "data-tl-sidebar");
+				// ---- left column + sidebar root: product-owned stable data attribute,
+				//      with the `_sidebarCol` / `_sidebar` suffixes as fallback. ----
+				for (const node of document.querySelectorAll("[data-sidebar-collapsed]")) {
+					mark(node, "data-tl-sidebar");
+				}
+				for (const node of document.querySelectorAll("[class*='_sidebarCol']")) {
+					mark(node, "data-tl-sidebar-col");
+				}
 				for (const node of document.querySelectorAll("[class*='_sidebar']")) {
-					if (node.getAttribute("data-tl-sidebar") === null && node.childElementCount > 0) mark(node, "data-tl-sidebar");
+					if (node.childElementCount > 0 && node.getAttribute("data-tl-sidebar") === null) {
+						mark(node, "data-tl-sidebar");
+					}
 				}
-				// Settings panel: a `_panel` whose parent is the `_mask` overlay.
-				for (const node of document.querySelectorAll("[class*='_panel']")) {
-					const parent = node.parentElement;
-					if (parent !== null && parent.className.includes("_mask")) mark(node, "data-tl-settings");
+				// ---- composer card: stable `data-composer-card`, or a `_card` that owns
+				//      the rich-text input. ----
+				for (const node of document.querySelectorAll("[data-composer-card]")) {
+					mark(node, "data-tl-composer");
 				}
-				// Composer: the `_card` that owns the rich-text input.
 				for (const node of document.querySelectorAll("[class*='_card']")) {
-					if (node.querySelector("[contenteditable='true']") !== null) mark(node, "data-tl-composer");
+					if (
+						node.querySelector("[contenteditable='true'], textarea") !== null &&
+						node.getAttribute("data-tl-composer") === null
+					) {
+						mark(node, "data-tl-composer");
+					}
 				}
-				// Model trigger: a `_trigger` inside the stamped composer.
+				// ---- model trigger and its two text parts, inside the composer ----
 				const composer = document.querySelector("[data-tl-composer]");
 				if (composer !== null) {
-					for (const node of composer.querySelectorAll("[class*='_trigger']")) mark(node, "data-tl-model");
+					for (const node of composer.querySelectorAll("[class*='_trigger']")) {
+						mark(node, "data-tl-model");
+					}
+					for (const node of composer.querySelectorAll("[class*='_triggerLabel']")) {
+						mark(node, "data-tl-model-label");
+					}
+					for (const node of composer.querySelectorAll("[class*='_triggerEffort']")) {
+						mark(node, "data-tl-model-effort");
+					}
 				}
-				// Conversation surfaces and popovers.
-				for (const node of document.querySelectorAll("[class*='_bubble']")) mark(node, "data-tl-bubble");
-				for (const node of document.querySelectorAll("[class*='_menu']")) mark(node, "data-tl-menu");
+				// ---- settings page surfaces ----
+				// Stable path: inside the product's right-side panel. Legacy path: a
+				// `_panel` nested directly in a `_mask` overlay. `data-dockkit-pane`
+				// is the 0.2.2-alpha dockkit hook; keep it as a forward fallback.
+				for (const node of document.querySelectorAll(
+					"[data-sidebar-right-panel] [class*='_surface'], [data-sidebar-right-panel] [class*='_pane'], [data-dockkit-pane]",
+				)) {
+					mark(node, "data-tl-settings");
+				}
+				for (const node of document.querySelectorAll("[class*='_panel']")) {
+					const parent = node.parentElement;
+					if (parent !== null && typeof parent.className === "string" && parent.className.includes("_mask")) {
+						mark(node, "data-tl-settings");
+					}
+				}
+				// ---- conversation surfaces and popovers ----
+				// `data-message-bubble` is the 0.2.2-alpha primitives hook; the
+				// `_bubble` suffix keeps working on 0.2.1.x.
+				for (const node of document.querySelectorAll("[class*='_bubble'], [data-message-bubble]")) {
+					mark(node, "data-tl-bubble");
+				}
+				for (const node of document.querySelectorAll("[class*='_menu'], [data-trigger-menu]")) {
+					mark(node, "data-tl-menu");
+				}
 			};
 
 			// Debounced to one pass per frame: the app mutates constantly.
@@ -67,12 +125,9 @@
 				observer.disconnect();
 				if (queued !== 0) globalThis.cancelAnimationFrame(queued);
 				for (const node of stamped) {
-					for (const attr of ["data-tl-sidebar", "data-tl-settings", "data-tl-composer", "data-tl-model", "data-tl-bubble", "data-tl-menu"]) {
-						node.removeAttribute(attr);
-					}
+					for (const attr of STAMPED_ATTRS) node.removeAttribute(attr);
 				}
 				stamped.clear();
 			};
 		}
 		//#endregion
-
