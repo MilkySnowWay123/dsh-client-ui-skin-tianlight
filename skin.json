@@ -8,7 +8,7 @@
   "tags": ["shinkai", "sky", "video", "wallpaper-engine", "webwallgl", "anime", "mint", "pet"],
   "accent": "#3f8fe0",
   "bodyAttr": "data-dsh-tianlight",
-  "dshCompatibility": "0.2.0rc2",
+  "dshCompatibility": "0.2.1rc3",
   "package": "@dsh-external/dsh-client-ui-skin-tianlight",
   "wiring": {
     "id": "ui-skin-tianlight",

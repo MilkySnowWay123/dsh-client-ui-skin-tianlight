@@ -19,6 +19,8 @@ const ROOT = dirname(HERE)
 const CLIENT = join(ROOT, 'lib', 'client.js')
 
 function findDshRoot() {
+  const fromEnv = process.env.DSH_PKGS_ROOT
+  if (fromEnv && existsSync(join(fromEnv, 'dsh-web-frontend'))) return fromEnv
   const candidates = [join(homedir(), '.dsh', 'profiles', 'web', 'node_modules', '@deepseek-ai')]
   const npx = join(homedir(), 'AppData', 'Local', 'npm-cache', '_npx')
   try {

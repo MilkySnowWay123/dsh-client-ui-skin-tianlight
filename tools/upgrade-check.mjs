@@ -14,6 +14,8 @@ const args = process.argv.slice(2)
 const explicit = args[args.indexOf('--dsh') + 1]
 
 function findDshRoot() {
+  const fromEnv = process.env.DSH_PKGS_ROOT
+  if (fromEnv && existsSync(join(fromEnv, 'dsh-web-frontend'))) return fromEnv
   const candidates = []
   if (args.includes('--dsh') && explicit) candidates.push(explicit)
   candidates.push(join(homedir(), '.dsh', 'profiles', 'web', 'node_modules', '@deepseek-ai'))
@@ -83,15 +85,22 @@ check('static module seed: react', true, () => {
 check('boot payload (window.__DSH_BOOT__)', true, () => shell.includes('__DSH_BOOT__'))
 
 // Hashed selectors are cosmetic: losing one degrades, it never breaks the layout.
+// Names below are the DSH 0.2.1-rc.3 build (2026-10-29). Re-run
+// `node tools/resolve-selectors.mjs` after every DSH upgrade and update these.
 const selectors = {
-  'composer card .uV2eYG_card': 'uV2eYG_card',
-  'settings panel .VOzbGW_panel': 'VOzbGW_panel',
-  'sidebar column .pI_x6G_sidebarCol': 'pI_x6G_sidebarCol',
-  'model trigger ._7KE1Ra_trigger': '_7KE1Ra_trigger',
-  'message bubble .Sixlwa_bubble': 'Sixlwa_bubble',
+  'composer card .GRgSLq_card': 'GRgSLq_card',
+  'settings panel ._pane_6nhg2_209': '_pane_6nhg2_209',
+  'sidebar column .mP3x-q_sidebarCol': 'mP3x-q_sidebarCol',
+  'model trigger ._9r0rkG_trigger': '_9r0rkG_trigger',
+  'message bubble .LOmM4q_bubble': 'LOmM4q_bubble',
+  'sidebar root .wtg9ga_root': 'wtg9ga_root',
+  'workspace root .GAkraW_root': 'GAkraW_root',
 }
 for (const [label, token] of Object.entries(selectors)) {
   check('selector ' + label, false, () => {
+    // Settings-shell surfaces live in the frontend app bundle, the rest in the
+    // client plugin bundles, so a selector may be in either.
+    if (frontendBundle().includes(token)) return true
     const pkgs = readdirSync(ROOT)
     for (const pkg of pkgs) {
       if (readBundle(pkg).includes(token)) return true
@@ -106,7 +115,10 @@ check('injected package dsh-api-remotes', true, () => existsSync(join(ROOT, 'dsh
 check('injected package dsh-api-session-controller', true, () =>
   existsSync(join(ROOT, 'dsh-api-session-controller', 'package.json')),
 )
-check('slots service is a client package', true, () => existsSync(join(ROOT, 'dsh-client-ui-slots', 'package.json')))
+// 0.2.1 renamed the slots package; SlotCore now ships in dsh-client-ui-renderer.
+check('slots service is a client package', true, () =>
+  existsSync(join(ROOT, 'dsh-client-ui-renderer', 'package.json')) || existsSync(join(ROOT, 'dsh-client-ui-slots', 'package.json')),
+)
 check('theme service is a client package', true, () => existsSync(join(ROOT, 'dsh-client-ui-theme', 'package.json')))
 
 const version = (() => {
