@@ -13,16 +13,20 @@
 export const DATA_HOOKS = [
   'data-composer-card',
   'data-sidebar-collapsed',
-  'data-sidebar-right-panel',
   'data-trigger-menu',
 ]
 
 // Forward-compatibility hooks: present in DSH 0.2.2-alpha builds, absent on
 // 0.2.1.x. The bridge uses them when available and falls back to the suffix
 // hooks above; a MISS here is informational, never a release blocker.
+//
+// NOTE (2026-10-30): `data-dockkit-pane` and `data-sidebar-right-panel` were
+// removed from the bridge. Stamping the right-side panel / dockkit panes as
+// `data-tl-settings` painted huge panel bodies with the opaque settings fill —
+// a giant dark block covering half the window. The new settings UI keeps the
+// product's own styling; only the legacy `_panel`-inside-`_mask` shape is themed.
 export const ADVISORY_HOOKS = [
   'data-message-bubble', // 0.2.2-alpha: chat bubbles moved to primitives
-  'data-dockkit-pane', // 0.2.2-alpha: dockkit panes replace the `_pane` shell class
 ]
 
 export const SUFFIX_HOOKS = [
@@ -36,8 +40,6 @@ export const SUFFIX_HOOKS = [
   '_menu',
   '_panel',
   '_mask',
-  '_surface',
-  '_pane',
 ]
 
 /** First class-like token containing the suffix, e.g. "mP3x-q_sidebarCol" for `_sidebar`. */
