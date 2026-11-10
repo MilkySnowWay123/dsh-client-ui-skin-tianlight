@@ -9,8 +9,12 @@
 | `structure.mjs` | 结构审计：分区顺序、`apply()` 顺序与 try/catch 边界 | 否 |
 | `audit.mjs` | 静态审计：变量、监听器、定时器、Hook 顺序 | 否 |
 | `check-css.mjs` | 样式结构检查 | 否 |
-| `verify.mjs` | 路由/封装/清单契约断言（含上传、场景、引擎拒绝路径） | 否 |
-| `upgrade-check.mjs` | DSH 升级兼容性自检：模块加载器/启动载荷/remote 契约/服务包 + **结构桥接钩子**（v0.2.0 起不再依赖构建哈希） | 是 |
+| `verify.mjs` | 路由/封装/清单契约断言（含上传、场景、引擎拒绝路径 + v0.5.0 的 settings/bundle/frame-cache/transcode/web-project 拒绝路径与能力通告） | 否 |
+| `upgrade-check.mjs` | DSH 升级兼容性自检：模块加载器/启动载荷/remote 契约/服务包 + **结构桥接钩子**（v0.2.0 起不再依赖构建哈希）+ v0.5.0 运行时状态钩子（`data-chat-running`）与 locale 服务 | 是 |
+| `compat-matrix.mjs` | 多份 DSH 安装静态矩阵：逐版列出钩子层/契约/`COMPATIBLE` 判定（0.2.0 / 0.2.1 / 0.2.2） | 是 |
+| `agent-check.mjs` | 并行开发的自检：把当前片段构建到 `diag/tmp/`（不碰 `lib/client.js`），做语法 + CSS 作用域检查 | 否 |
+| `i18n-audit.mjs` | zh/en 字典完整性审计：静态引用的 key 是否两语言齐全、en 是否混入中文、zh 是否残留纯英文（`npm run check` 已包含，缺 key 即红） | 否 |
+| `release.mjs` | E5 发布流水线：版本自增 / 静态链 / 快照 / CHANGELOG / 提交 / 注记 tag（`--dry-run` 可预览；不联网） | 否 |
 | `hook-scan.mjs` | 对**任意 DSH 版本目录**扫描桥接钩子（`data-*` 属性 + CSS 类名后缀）；升级 Desktop 前先跑；`--self-check` 同时校验 `src/65-bridge.js` 与钩子清单同步 | 是 |
 | `hooks.mjs` | 桥接钩子清单（data-* 与类名后缀），被 `upgrade-check` / `hook-scan` / 测试共用 | 否 |
 | `resolve-selectors.mjs` | 历史工具：构建哈希选择器体检（v0.2.0 起 CSS 已无哈希依赖，仅排查旧版/外部版本时用） | 是 |
@@ -30,7 +34,7 @@
 | `restore-disabled-rows.mjs` | 恢复被清空的插件行 |
 | `rheostat.css` | 推理滑杆早期样式的暂存副本 |
 
-`npm run check` 先跑 `build --check`，再跑第一张表里的静态工具；`npm run upgrade` 跑 `upgrade-check` + `hook-scan --self-check`（都需要 DSH）。
+`npm run check` 先跑 `build --check`，再跑第一张表里的静态工具；`npm run upgrade` 跑 `upgrade-check` + `hook-scan --self-check`（都需要 DSH）。`npm run agent-check` 是并发开发时的轻量自检；`npm run release` 只在确定要发版时用（先 `--dry-run`）。
 
 **DSH 升级流程**：拿到新版本 DSH 的 `@deepseek-ai` 目录后（app.asar 需用 Electron-as-Node 读，或 npm 解包），先跑
 `node tools/hook-scan.mjs --dsh <该目录>`；所有钩子 OK 再升级 Desktop；有 MISS 就先改 `src/65-bridge.js` 的探测查询，再发布皮肤新版本。

@@ -22,31 +22,54 @@ const SRC = join(ROOT, 'src')
 const FRAGMENTS = [
   '00-envelope.js',
   '10-constants.js',
+  '11-platform.js',
+  '12-schema.js',
+  '13-i18n.js',
   '20-stylesheet.js',
   '30-wallpaper.js',
+  '31-engine-extra.js',
+  '32-effects.js',
+  '35-context.js',
   '40-companion.js',
+  '42-life.js',
   '50-rheostat.js',
   '55-lowpower.js',
   '57-glass.js',
+  '58-legibility.js',
   '60-zones.js',
   '65-bridge.js',
   '70-sidebar.js',
+  '72-we-library.js',
+  '74-life-settings.js',
   '90-font.js',
+  '95-a11y.js',
   '99-apply.js',
 ]
 
 const REGIONS = [
   'constants',
+  'platform',
+  'schema',
+  'i18n',
   'stylesheet',
   'wallpaper',
+  'wallpaper engine extras',
+  'ambient effects',
+  'smart context',
   'companion',
+  'life rhythm',
   'reasoning rheostat',
   'low power',
   'glass opacity',
+  'legibility',
   'zone framing',
   'selector bridge',
   'wallpaper sidebar',
+  'we library',
+  'life settings',
   'font panel',
+  'accessibility',
+  'apply',
 ]
 
 const args = process.argv.slice(2)
@@ -68,7 +91,8 @@ const text = parts.join('')
 // Cheap product invariants: the loader envelope and every region must survive assembly.
 const problems = []
 if (!text.startsWith('window.__ModuleLoader__.load(')) problems.push('loader envelope missing')
-if (!/^[ \t]+function apply\(ctx\) \{/m.test(text)) problems.push('apply() missing')
+// apply() may be async since v0.5.0 (it awaits the host-settings bootstrap).
+if (!/^[ \t]+(async )?function apply\(ctx\) \{/m.test(text)) problems.push('apply() missing')
 for (const region of REGIONS) {
   if (!text.includes('//#region ' + region)) problems.push('region missing: ' + region)
 }

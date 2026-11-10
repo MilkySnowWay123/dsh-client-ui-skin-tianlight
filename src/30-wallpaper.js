@@ -53,6 +53,104 @@
 		}
 
 		/** User's wallpaper choice: `{ kind: "video"|"image", url }`, absent = automatic. */
+		// The provider cards are user-visible fixed labels: all five rows are bilingual
+		// v0.5.2 copy (they used to be hardcoded Chinese except the web row).
+		registerTl5Strings({
+			zh: {
+				"wp.local.label": "本地壁纸",
+				"wp.local.desc": "assets/ 里的图片或视频",
+				"wp.local.note": "把图片/视频放进 skin-tianlight/assets/，刷新页面即可",
+				"wp.url.label": "URL 地址",
+				"wp.url.desc": "粘贴图片/视频网址",
+				"wp.url.note": "支持能直接打开的 http(s) 图片或视频地址",
+				"wp.we.label": "Wallpaper Engine",
+				"wp.we.desc": "读取 WE 项目目录（可选）",
+				"wp.we.note": "视频/图片直接读；场景目录走内置 WebWallGL（失败自动降级）",
+				"wp.web.label": "网页壁纸",
+				"wp.web.desc": "WE type:web 项目，沙箱隔离",
+				"wp.web.note": "在 ① 来源 → Wallpaper Engine 的清单里选择；失败会自动退回上一张",
+				"wp.shader.label": "ShaderToy 代码",
+				"wp.shader.desc": "GLSL 实时壁纸，可改代码",
+				"wp.shader.note": "本地 GLSL 运行时：iTime / iResolution / iMouse + 速度/强度/色相；不抓取网站源码",
+				"wp.layer.none": "无",
+				"wp.layer.vignette": "暗角",
+				"wp.layer.grain": "颗粒",
+				"wp.layer.glow": "光晕",
+				"wp.layer.scan": "扫描线",
+				"wp.blend.normal": "正常",
+				"wp.blend.overlay": "叠加",
+				"wp.blend.screen": "滤色",
+				"wp.blend.multiply": "正片叠底",
+				"wp.shaderPreset.aurora": "极光",
+				"wp.shaderPreset.nebula": "星云",
+				"wp.shaderPreset.water": "水波",
+				"wp.shaderPreset.audio": "音频极光",
+				"wp.shaderErr.empty": "着色器源码为空",
+				"wp.shaderErr.tooLong": "着色器源码太长（上限 {max} 字符）",
+				"wp.shaderErr.noWebgl": "当前环境不支持 WebGL",
+				"wp.shaderErr.compileFail": "片元着色器编译失败",
+				"wp.shaderErr.linkFail": "着色器链接失败",
+				"wp.frames.noUrl": "缺少视频地址，无法取帧",
+				"wp.frames.loadFail": "视频加载失败，无法取帧",
+				"wp.frames.noDuration": "视频时长无效，无法取帧",
+				"wp.frames.noCanvas": "无法创建取帧画布",
+				"wp.frames.cors": "视频跨域，浏览器禁止取帧；本地/WE 视频可用",
+				"wp.frames.seekFail": "无法定位视频帧",
+				"wp.frames.timeout": "取帧超时（视频可能仍未加载完）",
+				"wp.choice.none": "没有选择壁纸",
+				"wp.choice.unsupported": "不支持的壁纸类型",
+				"wp.choice.noUrl": "壁纸缺少地址",
+				"wp.choice.webUrl": "网页壁纸必须是宿主 _web-project 目录里的项目",
+				"wp.choice.providerNote": "{label}：{note}",
+			},
+			en: {
+				"wp.local.label": "Local wallpapers",
+				"wp.local.desc": "Images or videos in assets/",
+				"wp.local.note": "Drop images/videos into skin-tianlight/assets/ and reload the page",
+				"wp.url.label": "URL",
+				"wp.url.desc": "Paste an image/video URL",
+				"wp.url.note": "Direct http(s) image or video links only",
+				"wp.we.label": "Wallpaper Engine",
+				"wp.we.desc": "Read WE project folders (optional)",
+				"wp.we.note": "Videos/images read directly; scene folders use the bundled WebWallGL engine (automatic fallback on failure)",
+				"wp.web.label": "Web wallpaper",
+				"wp.web.desc": "WE type:web project, sandboxed",
+				"wp.web.note": "Pick it from the ① Sources → Wallpaper Engine list; failures fall back to the previous wallpaper",
+				"wp.shader.label": "ShaderToy code",
+				"wp.shader.desc": "Live GLSL wallpaper, editable",
+				"wp.shader.note": "Local GLSL runtime: iTime / iResolution / iMouse + speed/intensity/hue; never scrapes website source",
+				"wp.layer.none": "None",
+				"wp.layer.vignette": "Vignette",
+				"wp.layer.grain": "Grain",
+				"wp.layer.glow": "Glow",
+				"wp.layer.scan": "Scanlines",
+				"wp.blend.normal": "Normal",
+				"wp.blend.overlay": "Overlay",
+				"wp.blend.screen": "Screen",
+				"wp.blend.multiply": "Multiply",
+				"wp.shaderPreset.aurora": "Aurora",
+				"wp.shaderPreset.nebula": "Nebula",
+				"wp.shaderPreset.water": "Water",
+				"wp.shaderPreset.audio": "Audio aurora",
+				"wp.shaderErr.empty": "Shader source is empty",
+				"wp.shaderErr.tooLong": "Shader source is too long (max {max} characters)",
+				"wp.shaderErr.noWebgl": "WebGL is not available in this environment",
+				"wp.shaderErr.compileFail": "Fragment shader compilation failed",
+				"wp.shaderErr.linkFail": "Shader linking failed",
+				"wp.frames.noUrl": "No video URL: cannot grab frames",
+				"wp.frames.loadFail": "Video failed to load: cannot grab frames",
+				"wp.frames.noDuration": "Invalid video duration: cannot grab frames",
+				"wp.frames.noCanvas": "Cannot create the frame canvas",
+				"wp.frames.cors": "Cross-origin video: the browser blocks frame grabs; local/WE videos work",
+				"wp.frames.seekFail": "Cannot seek to the video frame",
+				"wp.frames.timeout": "Frame grab timed out (the video may still be loading)",
+				"wp.choice.none": "No wallpaper selected",
+				"wp.choice.unsupported": "Unsupported wallpaper kind",
+				"wp.choice.noUrl": "Wallpaper URL is missing",
+				"wp.choice.webUrl": "Web wallpapers must be a project under the host _web-project route",
+				"wp.choice.providerNote": "{label}: {note}",
+			},
+		});
 		/**
 		 * Wallpaper source providers. A provider is a source of frames; the scene renders
 		 * video, image and the ShaderToy-style GLSL channel today. URL and ShaderToy are
@@ -61,28 +159,249 @@
 		 * Adding one: set `available: true`, give `kind`, and teach applyWallpaper how to
 		 * mount it.
 		 */
+		/**
+		 * `label`/`desc`/`note` are getters on purpose: the panel reads those fields at
+		 * render time, so a live language switch updates the source cards without the
+		 * panel having to know a key. `id`/`kind`/`available` stay plain data.
+		 *
+		 * Full literal keys live in this map instead of being concatenated: the
+		 * factory-time i18n audit can only verify literal TL_T arguments, and a
+		 * concatenated prefix previously looked like a missing key (platform-core T11-E).
+		 */
+		const PROVIDER_KEYS = {
+			local: { label: "wp.local.label", desc: "wp.local.desc", note: "wp.local.note" },
+			url: { label: "wp.url.label", desc: "wp.url.desc", note: "wp.url.note" },
+			we: { label: "wp.we.label", desc: "wp.we.desc", note: "wp.we.note" },
+			web: { label: "wp.web.label", desc: "wp.web.desc", note: "wp.web.note" },
+			shader: { label: "wp.shader.label", desc: "wp.shader.desc", note: "wp.shader.note" },
+		};
+		/** Full literal key or "" — an unknown id must never render a raw key. */
+		const providerKey = (id, field) => {
+			const entry = PROVIDER_KEYS[id];
+			if (entry === undefined) return "";
+			const key = entry[field];
+			return typeof key === "string" ? key : "";
+		};
+		const providerCopy = (id, fields) => ({
+			...fields,
+			get label() {
+				const key = providerKey(id, "label");
+				return key === "" ? "" : TL_T(key);
+			},
+			get desc() {
+				const key = providerKey(id, "desc");
+				return key === "" ? "" : TL_T(key);
+			},
+			get note() {
+				const key = providerKey(id, "note");
+				return key === "" ? "" : TL_T(key);
+			},
+		});
 		const PROVIDERS = [
-			{ id: "local", label: "本地壁纸", kind: "video", available: true, desc: "assets/ 里的图片或视频", note: "把图片/视频放进 skin-tianlight/assets/，刷新页面即可" },
-			{ id: "url", label: "URL 地址", kind: "video", available: true, desc: "粘贴图片/视频网址", note: "支持能直接打开的 http(s) 图片或视频地址" },
+			providerCopy("local", { id: "local", kind: "video", available: true }),
+			providerCopy("url", { id: "url", kind: "video", available: true }),
 			// Clickable: opens the project-directory editor. It is not a frame source
 			// itself, so `kind` stays null and its note explains what it can and cannot do.
-			{ id: "we", label: "Wallpaper Engine", kind: null, available: true, desc: "读取 WE 项目目录（可选）", note: "视频/图片直接读；场景目录走内置 WebWallGL（失败自动降级）" },
-			{ id: "shader", label: "ShaderToy 代码", kind: "shader", available: true, desc: "GLSL 实时壁纸，可改代码", note: "本地 GLSL 运行时：iTime / iResolution / iMouse + 速度/强度/色相；不抓取网站源码" },
+			providerCopy("we", { id: "we", kind: null, available: true }),
+			// v0.5.0: WE projects of type "web" are a wallpaper kind, but they are picked
+			// from the same WE catalog (① 来源 → Wallpaper Engine) instead of a second
+			// directory editor. `available:false` keeps the card explanatory: the panel's
+			// per-source tabs are owned elsewhere and must not gain a fourth tab here.
+			providerCopy("web", { id: "web", kind: "web", available: false }),
+			providerCopy("shader", { id: "shader", kind: "shader", available: true }),
 		];
 		/** Kinds the scene can actually render today. */
-		const RENDERABLE_KINDS = new Set(["video", "image", "shader", "scene"]);
+		const RENDERABLE_KINDS = new Set(["video", "image", "shader", "scene", "web"]);
+
+		/* ---- A3 web wallpaper: opaque-origin sandboxed project (WE type:"web") ---- */
+		/**
+		 * A web wallpaper is a self-contained WE `type:"web"` project served by the
+		 * host under `_web-project/`. The iframe is sandboxed WITHOUT
+		 * `allow-same-origin`, so the project runs in an opaque origin: it can paint its
+		 * own canvas but cannot reach this page's DOM, storage, cookies or DSH state.
+		 * Only host-served URLs are accepted — an external URL would turn the
+		 * wallpaper into an arbitrary network client that survives every reload.
+		 *
+		 * v0.6.0: the WE library host serves `type:"web"` projects under
+		 * `/api/we-wallpaper/web/<id>/`; that same-origin host route is accepted too.
+		 */
+		const WEB_WALLPAPER_PREFIX = ASSET_BASE + "/_web-project/";
+		const WE_WEB_WALLPAPER_PREFIX = "/api/we-wallpaper/web/";
+		function isWebWallpaperUrl(url) {
+			if (typeof url !== "string") return false;
+			if (url.startsWith(WEB_WALLPAPER_PREFIX) && url.length > WEB_WALLPAPER_PREFIX.length) return true;
+			return url.startsWith(WE_WEB_WALLPAPER_PREFIX) && url.length > WE_WEB_WALLPAPER_PREFIX.length;
+		}
+		/** Mount URL for the web iframe: host route only, no fragment, no credentials. */
+		function webWallpaperSrc(url) {
+			if (isWebWallpaperUrl(url) === false) return "";
+			return url.split("#")[0];
+		}
+
+		/* ---- A4 dynamic resolution: stem grouping + window/DPR choice ---- */
+		/**
+		 * One logical wallpaper can have several encodes:
+		 *   name.1080.mp4 / name.1440.mp4 / name.4k.mp4 / name-2160p.mp4
+		 * The suffix is metadata, not part of the wallpaper: the user picks one card,
+		 * the scene picks the encode that matches the current window, and a settled
+		 * resize switches encodes without touching the saved choice.
+		 */
+		const VARIANT_TIERS = ["4k", "1440", "1080", "720"];
+		function variantTierOf(token) {
+			const value = String(token).toLowerCase();
+			if (value === "4k" || value.startsWith("2160")) return "4k";
+			if (value === "2k" || value.startsWith("1440")) return "1440";
+			if (value.startsWith("1080")) return "1080";
+			if (value.startsWith("720")) return "720";
+			return null;
+		}
+		/** `{ stem, tier }` for a variant file name, or null when it has no suffix. */
+		function parseVariantName(name) {
+			if (typeof name !== "string" || name === "") return null;
+			const base = name.slice(name.lastIndexOf("/") + 1).split(/[?#]/)[0];
+			const dot = base.lastIndexOf(".");
+			const stemPart = dot > 0 ? base.slice(0, dot) : base;
+			const match = /^(.*?)[._-](2160p?|1440p?|1080p?|720p?|4k|2k)$/i.exec(stemPart);
+			if (match === null) return null;
+			const tier = variantTierOf(match[2]);
+			const stem = match[1];
+			if (tier === null || stem === "") return null;
+			return { stem, tier };
+		}
+		/** Groups catalog items into logical wallpapers: Map<"kind:stemLower", group>. */
+		function groupVariantItems(items) {
+			const groups = new Map();
+			if (!Array.isArray(items)) return groups;
+			for (const item of items) {
+				if (item === null || typeof item !== "object") continue;
+				if (item.kind !== "video" && item.kind !== "image") continue;
+				const parsed = parseVariantName(typeof item.url === "string" ? item.url : item.id);
+				if (parsed === null || typeof item.url !== "string") continue;
+				const key = item.kind + ":" + parsed.stem.toLowerCase();
+				let group = groups.get(key);
+				if (group === undefined) {
+					group = { kind: item.kind, stem: parsed.stem, tiers: {} };
+					groups.set(key, group);
+				}
+				if (group.tiers[parsed.tier] === undefined) group.tiers[parsed.tier] = item;
+			}
+			return groups;
+		}
+		function groupForUrl(groups, kind, url) {
+			if (typeof url !== "string" || groups === null) return null;
+			for (const group of groups.values()) {
+				if (group.kind !== kind) continue;
+				for (const tier of VARIANT_TIERS) {
+					const item = group.tiers[tier];
+					if (item !== undefined && item.url === url) return group;
+				}
+			}
+			return null;
+		}
+		/** Window pixels decide the encode: 4K only when the device really has them. */
+		function targetVariantOrder() {
+			const px = (globalThis.innerWidth || 0) * (globalThis.devicePixelRatio || 1);
+			if (px >= 2200) return ["4k", "1440", "1080", "720"];
+			if (px >= 1400) return ["1440", "1080", "4k", "720"];
+			return ["1080", "720", "1440", "4k"];
+		}
+		function variantTiersOf(group) {
+			if (group === null || group === undefined || group.tiers === undefined) return [];
+			return VARIANT_TIERS.filter((tier) => group.tiers[tier] !== undefined);
+		}
+		/**
+		 * Best available encode of the logical wallpaper the choice points at.
+		 * `null` when the URL is not a variant (single-file wallpapers stay untouched).
+		 */
+		function resolveVariantChoice(choice, groups) {
+			if (choice === null || typeof choice !== "object") return null;
+			if (choice.kind !== "video" && choice.kind !== "image") return null;
+			const group = groupForUrl(groups, choice.kind, choice.url);
+			if (group === null) return null;
+			let picked = null;
+			for (const tier of targetVariantOrder()) {
+				const item = group.tiers[tier];
+				if (item !== undefined) {
+					picked = { item, tier };
+					break;
+				}
+			}
+			if (picked === null) return null;
+			const next =
+				picked.item.url === choice.url
+					? choice
+					: { kind: choice.kind, url: picked.item.url, ...(Number.isFinite(choice.still) ? { still: choice.still } : {}) };
+			return { choice: next, tier: picked.tier, tiers: variantTiersOf(group), changed: next.url !== choice.url };
+		}
+		/** Human-readable target: "2560x1440@1.25" (window pixels, not media pixels). */
+		function resolutionLabel() {
+			const width = Math.round(globalThis.innerWidth || 0);
+			const height = Math.round(globalThis.innerHeight || 0);
+			const dpr = Math.round((globalThis.devicePixelRatio || 1) * 100) / 100;
+			return width + "x" + height + "@" + dpr;
+		}
+
+		/**
+		 * One catalog read shared by automatic selection, dynamic resolution and the
+		 * frame cache: those three must not race three `_wallpapers` fetches on every
+		 * switch. A 15s TTL keeps a fresh upload visible without a reload.
+		 */
+		const CATALOG_TTL_MS = 15000;
+		let catalogPromise = null;
+		let catalogCache = { at: 0, items: null };
+		function readCatalog() {
+			if (catalogCache.items !== null && Date.now() - catalogCache.at < CATALOG_TTL_MS) {
+				return Promise.resolve(catalogCache.items);
+			}
+			if (catalogPromise !== null) return catalogPromise;
+			catalogPromise = fetch(ASSET_BASE + "/_wallpapers", { cache: "no-store" })
+				.then((response) => (response.ok ? response.json() : null))
+				.then((value) => (Array.isArray(value?.items) ? value.items : null))
+				.catch(() => null)
+				.then((items) => {
+					if (items !== null) catalogCache = { at: Date.now(), items };
+					catalogPromise = null;
+					return items;
+				});
+			return catalogPromise;
+		}
+		/** Drops the shared catalog snapshot (upload/transcode/WE-root change). */
+		function forgetCatalog() {
+			catalogCache = { at: 0, items: null };
+		}
+		/**
+		 * Synchronous best-variant substitution from the catalog already in memory. This
+		 * is what keeps rotation/panel switches from loading the wrong encode first (and
+		 * then reloading it after the async resolution lands).
+		 */
+		function pickCachedVariant(choice) {
+			if (choice === null || typeof choice !== "object" || choice.kind !== "video") return choice;
+			const items = catalogCache.items;
+			if (items === null) return choice;
+			const resolved = resolveVariantChoice(choice, groupVariantItems(items));
+			return resolved === null ? choice : resolved.choice;
+		}
 
 		/**
 		 * Validates a choice before it reaches the scene. Returns the reason instead of
 		 * silently doing nothing, so an unsupported provider is visible in the UI.
 		 */
 		function resolveWallpaperChoice(choice) {
-			if (choice === null || typeof choice !== "object") return { ok: false, reason: "没有选择壁纸" };
+			if (choice === null || typeof choice !== "object") return { ok: false, reason: TL_T("wp.choice.none") };
 			if (!RENDERABLE_KINDS.has(choice.kind)) {
 				const provider = PROVIDERS.find((entry) => entry.kind === choice.kind);
-				return { ok: false, reason: provider === undefined ? "不支持的壁纸类型" : provider.label + "：" + provider.note };
+				return {
+					ok: false,
+					reason:
+						provider === undefined
+							? TL_T("wp.choice.unsupported")
+							: TL_T("wp.choice.providerNote", { label: provider.label, note: provider.note }),
+				};
 			}
-			if (typeof choice.url !== "string" || choice.url === "") return { ok: false, reason: "壁纸缺少地址" };
+			if (typeof choice.url !== "string" || choice.url === "") return { ok: false, reason: TL_T("wp.choice.noUrl") };
+			if (choice.kind === "web" && isWebWallpaperUrl(choice.url) === false) {
+				return { ok: false, reason: TL_T("wp.choice.webUrl") };
+			}
 			const still =
 				choice.kind === "video" && Number.isFinite(choice.still) && choice.still >= 0 ? choice.still : undefined;
 			return { ok: true, choice: { kind: choice.kind, url: choice.url, ...(still === undefined ? {} : { still }) } };
@@ -101,7 +420,16 @@
 				const parsed = JSON.parse(raw);
 				if (parsed === null || typeof parsed !== "object") return null;
 				if (typeof parsed.url !== "string" || parsed.url === "") return null;
-				const kind = parsed.kind === "image" ? "image" : parsed.kind === "shader" ? "shader" : parsed.kind === "scene" ? "scene" : "video";
+				const kind =
+					parsed.kind === "image"
+						? "image"
+						: parsed.kind === "shader"
+							? "shader"
+							: parsed.kind === "scene"
+								? "scene"
+								: parsed.kind === "web"
+									? "web"
+									: "video";
 				const still = kind === "video" && Number.isFinite(parsed.still) && parsed.still >= 0 ? parsed.still : undefined;
 				return { kind, url: parsed.url, ...(still === undefined ? {} : { still }) };
 			} catch {
@@ -127,8 +455,39 @@
 		const LAYER_PRESETS = ["none", "vignette", "grain", "glow", "scan"];
 		const LAYER_BLENDS = ["normal", "overlay", "screen", "multiply"];
 		const LAYER_FITS = ["cover", "contain", "stretch"];
-		const LAYER_LABELS = { none: "无", vignette: "暗角", grain: "颗粒", glow: "光晕", scan: "扫描线" };
-		const LAYER_BLEND_LABELS = { normal: "正常", overlay: "叠加", screen: "滤色", multiply: "正片叠底" };
+		// Getters, not frozen strings: the panel reads Object.entries(...) per render, so
+		// a live language switch re-labels the overlay controls without a reload.
+		const LAYER_LABELS = {
+			get none() {
+				return TL_T("wp.layer.none");
+			},
+			get vignette() {
+				return TL_T("wp.layer.vignette");
+			},
+			get grain() {
+				return TL_T("wp.layer.grain");
+			},
+			get glow() {
+				return TL_T("wp.layer.glow");
+			},
+			get scan() {
+				return TL_T("wp.layer.scan");
+			},
+		};
+		const LAYER_BLEND_LABELS = {
+			get normal() {
+				return TL_T("wp.blend.normal");
+			},
+			get overlay() {
+				return TL_T("wp.blend.overlay");
+			},
+			get screen() {
+				return TL_T("wp.blend.screen");
+			},
+			get multiply() {
+				return TL_T("wp.blend.multiply");
+			},
+		};
 		const LAYER_SLOT_DEFAULTS = { kind: "none", preset: "none", url: "", fit: "cover", opacity: 0.55, blend: "normal" };
 		function defaultLayerSlot() {
 			return { ...LAYER_SLOT_DEFAULTS };
@@ -744,11 +1103,32 @@
 				"}",
 			].join("\n"),
 		};
+		// Literal label keys (see PROVIDER_KEYS): the prefix is never concatenated, so
+		// the factory-time i18n audit sees real full keys only.
+		const SHADER_PRESET_KEYS = {
+			aurora: "wp.shaderPreset.aurora",
+			nebula: "wp.shaderPreset.nebula",
+			water: "wp.shaderPreset.water",
+			audio: "wp.shaderPreset.audio",
+		};
+		/** Full literal key or "" — an unknown preset id must never render a raw key. */
+		const shaderPresetKey = (id) => {
+			const key = SHADER_PRESET_KEYS[id];
+			return typeof key === "string" ? key : "";
+		};
+		const shaderPreset = (id, source) => ({
+			id,
+			source,
+			get label() {
+				const key = shaderPresetKey(id);
+				return key === "" ? "" : TL_T(key);
+			},
+		});
 		const SHADER_PRESETS = [
-			{ id: "aurora", label: "极光", source: SHADER_SOURCES.aurora },
-			{ id: "nebula", label: "星云", source: SHADER_SOURCES.nebula },
-			{ id: "water", label: "水波", source: SHADER_SOURCES.water },
-			{ id: "audio", label: "音频极光", source: SHADER_SOURCES.audio },
+			shaderPreset("aurora", SHADER_SOURCES.aurora),
+			shaderPreset("nebula", SHADER_SOURCES.nebula),
+			shaderPreset("water", SHADER_SOURCES.water),
+			shaderPreset("audio", SHADER_SOURCES.audio),
 		];
 		const SHADER_DEFAULTS = {
 			preset: "aurora",
@@ -807,9 +1187,22 @@
 		let audioData = null;
 		let audioLevel = 0;
 		let audioSubscriber = null;
+		/** "mic" (v1, shader-gated) or "system" (v2 loopback); "" when idle. */
+		let audioMode = "";
+		/** Machine-readable last outcome: unsupported | denied | no-device | busy | hidden | lowpower | cancelled. */
+		let audioFailure = "";
 
 		function audioState() {
-			return { active: audioActive, busy: audioBusy, reason: audioReason };
+			return { active: audioActive, busy: audioBusy, reason: audioReason, mode: audioMode, code: audioFailure };
+		}
+		/** What the browser can even attempt; the panel uses it to hide dead buttons. */
+		function audioSupport() {
+			const media = globalThis.navigator?.mediaDevices;
+			return {
+				mic: media !== undefined && media !== null && typeof media.getUserMedia === "function",
+				display: media !== undefined && media !== null && typeof media.getDisplayMedia === "function",
+				webaudio: typeof (globalThis.AudioContext ?? globalThis.webkitAudioContext) === "function",
+			};
 		}
 		function notifyAudio() {
 			if (audioSubscriber !== null) audioSubscriber(audioState());
@@ -859,40 +1252,59 @@
 			audioToken += 1;
 			audioActive = false;
 			audioBusy = false;
+			audioMode = "";
+			audioFailure = "";
 			audioReason = typeof reason === "string" ? reason : "";
 			releaseAudio();
 			notifyAudio();
 		}
 		function onAudioVisibility() {
-			if (document.hidden) stopAudio("页面隐藏，已停止音频");
+			if (document.hidden) stopAudio(TL_T("audio.stopHidden"));
 		}
-		function audioStartError(error) {
-			if (error !== null && error !== undefined && error.name === "NotAllowedError") {
-				return "麦克风被拒绝：在地址栏权限里允许后重试";
+		/**
+		 * Both capture paths (mic v1, system loopback v2) share ONE visibility listener.
+		 * Registering an identical listener twice is a no-op per DOM spec, so this is
+		 * idempotent; `releaseAudio` owns the single matching removal.
+		 */
+		function bindAudioVisibility() {
+			document.addEventListener("visibilitychange", onAudioVisibility);
+		}
+		/**
+		 * One error taxonomy for both capture paths, so the panel can show an honest
+		 * sentence for each of the three A1 outcomes: unsupported / denied / no device.
+		 */
+		function audioFailureOf(error, source) {
+			const name = error !== null && error !== undefined ? String(error.name ?? "") : "";
+			const system = source === "system";
+			if (name === "NotAllowedError" || name === "PermissionDeniedError" || name === "SecurityError" || name === "AbortError") {
+				return { code: "denied", reason: TL_T(system ? "audio.denied" : "audio.micDenied") };
 			}
-			if (error !== null && error !== undefined && error.name === "NotFoundError") {
-				return "没有可用的麦克风";
+			if (name === "NotFoundError" || name === "DevicesNotFoundError" || name === "OverconstrainedError" || name === "NotReadableError") {
+				return { code: "no-device", reason: TL_T(system ? "audio.noDevice" : "audio.micMissing") };
 			}
-			const message = error !== null && error !== undefined && error.message ? String(error.message) : "未知错误";
-			return "无法启用麦克风：" + message;
+			if (name === "NotSupportedError" || name === "TypeError") {
+				return { code: "unsupported", reason: TL_T("audio.unsupported") };
+			}
+			const message = error !== null && error !== undefined && error.message ? String(error.message) : TL_T("audio.unknownError");
+			return { code: "failed", reason: TL_T(system ? "audio.failedSystem" : "audio.failedMic", { reason: message }) };
 		}
 		async function startAudio() {
 			if (audioActive) return { ok: true };
-			if (audioBusy) return { ok: false, reason: "正在请求麦克风，请稍候" };
+			if (audioBusy) return { ok: false, reason: TL_T("audio.micBusy") };
 			if (document.querySelector("[data-tl-scene][data-tl-shader-on]") === null) {
-				return { ok: false, reason: "先应用 ShaderToy 壁纸，再启用音频" };
+				return { ok: false, reason: TL_T("audio.micNeedsShader") };
 			}
 			if (document.body !== null && document.body.hasAttribute("data-tl-lowpower")) {
-				return { ok: false, reason: "省电模式暂停中，先关闭省电再启用音频" };
+				return { ok: false, reason: TL_T("audio.lowpower") };
 			}
-			if (document.hidden) return { ok: false, reason: "页面隐藏，回到页面后再启用音频" };
+			if (document.hidden) return { ok: false, reason: TL_T("audio.hiddenPage") };
 			const media = globalThis.navigator?.mediaDevices;
 			if (media === undefined || media === null || typeof media.getUserMedia !== "function") {
-				return { ok: false, reason: "当前浏览器不支持麦克风" };
+				return { ok: false, reason: TL_T("audio.micUnsupported") };
 			}
 			const Context = globalThis.AudioContext ?? globalThis.webkitAudioContext;
 			if (typeof Context !== "function") {
-				return { ok: false, reason: "当前浏览器不支持 WebAudio" };
+				return { ok: false, reason: TL_T("audio.webaudioUnsupported") };
 			}
 			const token = audioToken + 1;
 			audioToken = token;
@@ -911,7 +1323,7 @@
 							// cancelled start must release the mic
 						}
 					}
-					return { ok: false, reason: "已取消" };
+					return { ok: false, reason: TL_T("audio.cancelled") };
 				}
 				context = new Context();
 				const source = context.createMediaStreamSource(stream);
@@ -933,7 +1345,7 @@
 					} catch {
 						// closing is best effort
 					}
-					return { ok: false, reason: "已取消" };
+					return { ok: false, reason: TL_T("audio.cancelled") };
 				}
 				audioStream = stream;
 				audioContext = context;
@@ -942,11 +1354,13 @@
 				audioData = new Uint8Array(analyser.fftSize);
 				audioActive = true;
 				audioBusy = false;
+				audioMode = "mic";
+				audioFailure = "";
 				audioReason = "";
 				audioLevel = 0;
-				document.addEventListener("visibilitychange", onAudioVisibility);
+				bindAudioVisibility();
 				notifyAudio();
-				return { ok: true };
+				return { ok: true, mode: "mic" };
 			} catch (error) {
 				for (const track of stream?.getTracks() ?? []) {
 					try {
@@ -962,19 +1376,180 @@
 				}
 				releaseAudio();
 				if (token === audioToken) {
+					const failure = audioFailureOf(error, "mic");
 					audioBusy = false;
 					audioActive = false;
-					audioReason = audioStartError(error);
+					audioMode = "";
+					audioFailure = failure.code;
+					audioReason = failure.reason;
 					notifyAudio();
-					return { ok: false, reason: audioReason };
+					return { ok: false, code: failure.code, reason: audioReason };
 				}
-				return { ok: false, reason: "已取消" };
+				return { ok: false, reason: TL_T("audio.cancelled") };
 			}
 		}
+		function releaseMediaStream(stream) {
+			if (stream === null || stream === undefined) return;
+			let tracks = [];
+			try {
+				tracks = stream.getTracks();
+			} catch {
+				return;
+			}
+			for (const track of tracks) {
+				try {
+					track.stop();
+				} catch {
+					// a stopped track must not keep the capture alive
+				}
+			}
+		}
+
+		/**
+		 * A1: system audio loopback. `getDisplayMedia({audio:true, video:true})` is the
+		 * only web API that can capture system output; the video track is requested
+		 * solely because browsers require it, then stopped and discarded immediately.
+		 * Analysis only: no MediaRecorder, no sample storage, no upload. The stream is
+		 * released on stop/visibility/low-power/wallpaper switch/module dispose.
+		 *
+		 * v0.5.3: `options.userInitiated` marks the one path that runs from a real click.
+		 * Only that path logs `audio:system-failed`; any non-gesture attempt (future
+		 * automation, tests, retries) records tl5Diag instead so the console stays quiet.
+		 */
+		async function startSystemAudio(options) {
+			const userInitiated = options !== null && typeof options === "object" && options.userInitiated === true;
+			if (audioActive) return { ok: true, mode: audioMode };
+			if (audioBusy) return { ok: false, code: "busy", reason: TL_T("audio.busy") };
+			const support = audioSupport();
+			if (support.display === false || support.webaudio === false) {
+				audioFailure = "unsupported";
+				audioReason = TL_T("audio.unsupported");
+				notifyAudio();
+				return { ok: false, code: "unsupported", reason: audioReason };
+			}
+			if (document.body !== null && document.body.hasAttribute("data-tl-lowpower")) {
+				audioFailure = "lowpower";
+				audioReason = TL_T("audio.lowpower");
+				notifyAudio();
+				return { ok: false, code: "lowpower", reason: audioReason };
+			}
+			if (document.hidden) {
+				audioFailure = "hidden";
+				audioReason = TL_T("audio.hiddenPage");
+				notifyAudio();
+				return { ok: false, code: "hidden", reason: audioReason };
+			}
+			const Context = globalThis.AudioContext ?? globalThis.webkitAudioContext;
+			if (typeof Context !== "function") {
+				audioFailure = "unsupported";
+				audioReason = TL_T("audio.unsupported");
+				notifyAudio();
+				return { ok: false, code: "unsupported", reason: audioReason };
+			}
+			const token = audioToken + 1;
+			audioToken = token;
+			audioBusy = true;
+			audioReason = "";
+			audioFailure = "";
+			notifyAudio();
+			let stream = null;
+			let context = null;
+			try {
+				stream = await globalThis.navigator.mediaDevices.getDisplayMedia({ audio: true, video: true });
+				if (token !== audioToken) {
+					releaseMediaStream(stream);
+					return { ok: false, code: "cancelled", reason: TL_T("audio.cancelled") };
+				}
+				// Drop the permission vehicle: only the audio track may stay alive.
+				for (const track of stream.getVideoTracks()) {
+					try {
+						track.stop();
+					} catch {
+						// a discarded video track must not keep the capture alive
+					}
+					try {
+						stream.removeTrack(track);
+					} catch {
+						// some browsers return an immutable stream; stopping is enough
+					}
+				}
+				const audioTracks = typeof stream.getAudioTracks === "function" ? stream.getAudioTracks() : [];
+				if (audioTracks.length === 0) {
+					// The user shared a window/screen without ticking "share audio".
+					releaseMediaStream(stream);
+					if (token !== audioToken) return { ok: false, code: "cancelled", reason: TL_T("audio.cancelled") };
+					audioBusy = false;
+					audioActive = false;
+					audioMode = "";
+					audioFailure = "no-device";
+					audioReason = TL_T("audio.noDevice");
+					notifyAudio();
+					return { ok: false, code: "no-device", reason: audioReason };
+				}
+				context = new Context();
+				const source = context.createMediaStreamSource(stream);
+				const analyser = context.createAnalyser();
+				analyser.fftSize = 2048;
+				analyser.smoothingTimeConstant = 0.8;
+				source.connect(analyser);
+				await context.resume();
+				if (token !== audioToken) {
+					releaseMediaStream(stream);
+					try {
+						void context.close();
+					} catch {
+						// closing is best effort
+					}
+					return { ok: false, code: "cancelled", reason: TL_T("audio.cancelled") };
+				}
+				audioStream = stream;
+				audioContext = context;
+				audioSource = source;
+				audioAnalyser = analyser;
+				audioData = new Uint8Array(analyser.fftSize);
+				audioActive = true;
+				audioBusy = false;
+				audioMode = "system";
+				audioFailure = "";
+				audioReason = "";
+				audioLevel = 0;
+				bindAudioVisibility();
+				notifyAudio();
+				note("audio:system-started", { tracks: audioTracks.length });
+				return { ok: true, mode: "system" };
+			} catch (error) {
+				releaseMediaStream(stream);
+				try {
+					void context?.close();
+				} catch {
+					// closing is best effort
+				}
+				releaseAudio();
+				if (token !== audioToken) return { ok: false, code: "cancelled", reason: TL_T("audio.cancelled") };
+				const failure = audioFailureOf(error, "system");
+				audioBusy = false;
+				audioActive = false;
+				audioMode = "";
+				audioFailure = failure.code;
+				audioReason = failure.reason;
+				notifyAudio();
+				if (userInitiated) note("audio:system-failed", { code: failure.code });
+				else tl5Diag("audio", { systemFailure: { code: failure.code, reason: failure.reason, auto: true } });
+				return { ok: false, code: failure.code, reason: audioReason };
+			}
+		}
+
+		/** Stops the loopback capture only when it is the active source. */
+		function stopSystemAudio(reason) {
+			if (audioActive !== true && audioBusy !== true) return { ok: true };
+			stopAudio(typeof reason === "string" ? reason : TL_T("audio.stopped"));
+			return { ok: true };
+		}
+
 		function audioLevelNow() {
 			if (audioActive === false || audioAnalyser === null || audioData === null) return 0;
 			if (document.hidden) {
-				stopAudio("页面隐藏，已停止音频");
+				stopAudio(TL_T("audio.stopHidden"));
 				return 0;
 			}
 			try {
@@ -989,7 +1564,7 @@
 				audioLevel += (mapped - audioLevel) * 0.35;
 				return audioLevel;
 			} catch {
-				stopAudio("音频分析失败，已停止");
+				stopAudio(TL_T("audio.stopAnalysis"));
 				return 0;
 			}
 		}
@@ -1002,8 +1577,13 @@
 		}
 		const audioController = {
 			read: audioState,
+			/** v1 mic path, unchanged: shader-gated, explicit opt-in. */
 			start: startAudio,
+			startSystem: startSystemAudio,
+			/** Stops whichever capture is active (mic or system loopback). */
 			stop: stopAudio,
+			stopSystem: stopSystemAudio,
+			supported: audioSupport,
 			level: audioLevelNow,
 			subscribe: subscribeAudio,
 			clearReason: () => {
@@ -1013,19 +1593,562 @@
 			},
 		};
 
+		/* ---- A5 pre-crop frame cache (host-backed first-paint still) ---- */
+		/**
+		 * The first paint of a 4K video scales a huge decoder surface; a still cropped
+		 * to the current window aspect paints under it immediately and fades out when
+		 * the real frame arrives. The cache lives in the HOST (`_frame-cache`), not in
+		 * localStorage: images are bytes, and every failure here is a silent no-op so
+		 * the wallpaper itself is never affected.
+		 */
+		const FRAME_CACHE_ROUTE = ASSET_BASE + "/_frame-cache";
+		const FRAME_CACHE_MAX_WIDTH = 1920;
+		const FRAME_CACHE_WEBP_QUALITY = 0.72;
+		/** v0.5.3: capture waits for first paint; never runs hidden/not-visible/low-power. */
+		const FRAME_CACHE_CAPTURE_DELAY_MS = 2500;
+		function frameCacheCaptureAllowed() {
+			if (typeof document === "undefined") return false;
+			if (document.hidden === true) return false;
+			if (document.visibilityState !== undefined && document.visibilityState !== "visible") return false;
+			if (typeof document.body !== "undefined" && document.body !== null && document.body.hasAttribute("data-tl-lowpower")) return false;
+			return true;
+		}
+		/** Same 38% focal point as the scene composition, so the crop matches. */
+		const FRAME_CACHE_FOCAL_X = 0.38;
+		const frameCacheState = {
+			hit: 0,
+			miss: 0,
+			entries: 0,
+			bytes: 0,
+			maxBytes: 0,
+			lastKey: "",
+			lastError: "",
+			host: false,
+		};
+		let frameCacheTimer = 0;
+		/**
+		 * v0.5.3: keys this profile has actually captured. A GET for an unknown key can
+		 * only 404, so it is counted as a local miss WITHOUT a network request — that is
+		 * what keeps the console free of `_frame-cache` resource errors. The list is
+		 * small, persisted, and cleared together with the host cache / when status
+		 * reports an empty cache.
+		 */
+		const FRAME_CACHE_KNOWN_KEY = "tianlight.cache.known";
+		const FRAME_CACHE_KNOWN_MAX = 60;
+		let frameCacheKnownKeys = null;
+		function loadFrameCacheKnownKeys() {
+			if (frameCacheKnownKeys !== null) return frameCacheKnownKeys;
+			frameCacheKnownKeys = new Set();
+			try {
+				const raw = JSON.parse(globalThis.localStorage?.getItem(FRAME_CACHE_KNOWN_KEY) ?? "null");
+				if (Array.isArray(raw)) {
+					for (const key of raw.slice(-FRAME_CACHE_KNOWN_MAX)) {
+						if (typeof key === "string" && key !== "" && /^[a-z0-9._-]{1,120}$/.test(key)) frameCacheKnownKeys.add(key);
+					}
+				}
+			} catch {
+				// a corrupt known-key list only means "no pre-paint this session"
+			}
+			return frameCacheKnownKeys;
+		}
+		function saveFrameCacheKnownKeys() {
+			try {
+				if (frameCacheKnownKeys === null) return;
+				globalThis.localStorage?.setItem(FRAME_CACHE_KNOWN_KEY, JSON.stringify([...frameCacheKnownKeys].slice(-FRAME_CACHE_KNOWN_MAX)));
+			} catch {
+				// persistence is optional; the session set still works
+			}
+		}
+		function rememberFrameCacheKey(key) {
+			if (typeof key !== "string" || key === "") return;
+			const known = loadFrameCacheKnownKeys();
+			if (known.has(key)) return;
+			known.add(key);
+			while (known.size > FRAME_CACHE_KNOWN_MAX) known.delete(known.values().next().value);
+			saveFrameCacheKnownKeys();
+		}
+		function forgetFrameCacheKey(key) {
+			const known = loadFrameCacheKnownKeys();
+			if (known.delete(key)) saveFrameCacheKnownKeys();
+		}
+		function clearFrameCacheKnownKeys() {
+			loadFrameCacheKnownKeys().clear();
+			saveFrameCacheKnownKeys();
+		}
+		/** Object URLs created for cached stills; revoked on dispose / after a few uses. */
+		const frameCacheObjectUrls = [];
+		function releaseFrameCacheUrls() {
+			while (frameCacheObjectUrls.length > 0) {
+				const url = frameCacheObjectUrls.pop();
+				try {
+					if (typeof globalThis.URL === "object" && typeof globalThis.URL.revokeObjectURL === "function") {
+						globalThis.URL.revokeObjectURL(url);
+					}
+				} catch {
+					// revoking an already-revoked URL is best effort
+				}
+			}
+		}
+		function trackFrameCacheUrl(url) {
+			frameCacheObjectUrls.push(url);
+			while (frameCacheObjectUrls.length > 4) {
+				const old = frameCacheObjectUrls.shift();
+				try {
+					if (typeof globalThis.URL === "object" && typeof globalThis.URL.revokeObjectURL === "function") {
+						globalThis.URL.revokeObjectURL(old);
+					}
+				} catch {
+					// revoking an already-revoked URL is best effort
+				}
+			}
+		}
+		/**
+		 * Host capability probe (one fetch per page). A host from an older build has no
+		 * `_frame-cache` route at all; asking for it would 404 on every wallpaper load,
+		 * so the cache is simply OFF until the host reports `capabilities.frameCache`.
+		 */
+		let frameCacheSupport = null;
+		function frameCacheSupported() {
+			if (frameCacheSupport !== null) return frameCacheSupport;
+			frameCacheSupport = fetch(ASSET_BASE + "/_engines", { cache: "no-store" })
+				.then((response) => (response.ok ? response.json() : null))
+				.then((value) =>
+					value !== null && typeof value === "object" && value.capabilities !== undefined
+						? value.capabilities.frameCache === true
+						: null,
+				)
+				.catch(() => null);
+			return frameCacheSupport;
+		}
+
+		/** Host cache keys accept `[a-z0-9._-]` only; lowercase everything else away. */
+		function cacheTokens(value, max) {
+			return String(value ?? "")
+				.toLowerCase()
+				.replace(/[^a-z0-9._-]+/g, "_")
+				.replace(/^[._-]+|[._-]+$/g, "")
+				.slice(0, max);
+		}
+		/**
+		 * Stable short hash. Two CJK filenames both sanitise to "mp4", so a lossy token
+		 * needs a discriminator or different wallpapers would share one cache entry.
+		 */
+		function cacheHash(value) {
+			let hash = 2166136261;
+			const text = String(value ?? "");
+			for (let index = 0; index < text.length; index += 1) {
+				hash ^= text.charCodeAt(index);
+				hash = Math.imul(hash, 16777619) >>> 0;
+			}
+			return hash.toString(36);
+		}
+		/** Nearest canonical aspect, so two slightly different windows share one still. */
+		function cacheAspectBucket() {
+			const width = globalThis.innerWidth || 1600;
+			const height = globalThis.innerHeight || 900;
+			const ratio = width / Math.max(1, height);
+			const presets = [[21, 9], [16, 9], [16, 10], [3, 2], [4, 3], [1, 1], [9, 16]];
+			let best = "";
+			let bestDelta = Infinity;
+			for (const preset of presets) {
+				const delta = Math.abs(ratio - preset[0] / preset[1]);
+				if (delta < bestDelta) {
+					bestDelta = delta;
+					best = preset[0] + "x" + preset[1];
+				}
+			}
+			if (best !== "" && bestDelta <= 0.18) return best;
+			return "r" + String(Math.round(ratio * 10) / 10).replace(".", "_");
+		}
+		/** Target width bucket (<=1920): a 4K still is wasted on a 1080p window. */
+		function cacheTierWidth() {
+			const width = (globalThis.innerWidth || 1600) * (globalThis.devicePixelRatio || 1);
+			const clamped = Math.min(FRAME_CACHE_MAX_WIDTH, Math.max(640, width));
+			return String(Math.round(clamped / 160) * 160);
+		}
+		function frameCacheKey(choice) {
+			if (choice === null || typeof choice !== "object") return "";
+			if (choice.kind !== "video" && choice.kind !== "image") return "";
+			const url = typeof choice.url === "string" ? choice.url : "";
+			const file = url.slice(url.lastIndexOf("/") + 1).split(/[?#]/)[0];
+			const id = cacheTokens(file, 56);
+			if (id === "") return "";
+			// Non-ASCII names are lossy after sanitising; keep them unique with a hash.
+			const lossy = /[^a-z0-9._-]/.test(file);
+			const stable = lossy ? id + "-" + cacheHash(file) : id;
+			return stable + "." + cacheAspectBucket() + "." + cacheTierWidth();
+		}
+		function frameCacheTargetSize() {
+			const tier = Number(cacheTierWidth()) || 1280;
+			const aspect = (globalThis.innerWidth || 16) / Math.max(1, globalThis.innerHeight || 9);
+			return {
+				width: Math.max(320, Math.min(FRAME_CACHE_MAX_WIDTH, tier)),
+				height: Math.max(180, Math.min(2160, Math.round(tier / Math.max(0.4, aspect)))),
+			};
+		}
+		function publishCacheMetrics() {
+			publishTl5Metrics({ cacheHit: frameCacheState.hit, cacheMiss: frameCacheState.miss });
+			tl5Diag("cache", { ...frameCacheState });
+		}
+		function cancelFrameCacheCapture() {
+			if (frameCacheTimer === 0) return;
+			window.clearTimeout(frameCacheTimer);
+			frameCacheTimer = 0;
+		}
+		/** POSTs a blob; 8s cap so a hung host cannot keep a request forever. */
+		function postFrameCache(key, blob) {
+			let controller = null;
+			try {
+				if (typeof AbortController === "function") controller = new AbortController();
+			} catch {
+				controller = null;
+			}
+			let timer = 0;
+			if (controller !== null) {
+				timer = window.setTimeout(() => {
+					try {
+						controller.abort();
+					} catch {
+						// an already-finished request is fine
+					}
+				}, 8000);
+			}
+			fetch(FRAME_CACHE_ROUTE + "?key=" + encodeURIComponent(key), {
+				method: "POST",
+				headers: { "content-type": blob.type || "image/webp" },
+				body: blob,
+				signal: controller === null ? undefined : controller.signal,
+			})
+				.then((response) => {
+					if (response.ok) {
+						frameCacheState.lastKey = key;
+						rememberFrameCacheKey(key);
+					} else {
+						frameCacheState.lastError = "http-" + response.status;
+					}
+					publishCacheMetrics();
+				})
+				.catch(() => {
+					frameCacheState.lastError = "network";
+					publishCacheMetrics();
+				})
+				.finally(() => {
+					if (timer !== 0) {
+						window.clearTimeout(timer);
+						timer = 0;
+					}
+				});
+		}
+		/**
+		 * Schedules one capture for a decodable source (video element or loaded Image).
+		 * v0.5.3: waits 2.5s so the capture never competes with first paint, and skips
+		 * entirely while hidden / not visible / low-power. `stillCurrent` is checked at
+		 * fire time: a wallpaper switched during the delay must not overwrite the new key.
+		 */
+		function captureFrameCache(choice, source, stillCurrent) {
+			cancelFrameCacheCapture();
+			const key = frameCacheKey(choice);
+			if (key === "" || source === null || source === undefined) return;
+			if (frameCacheCaptureAllowed() === false) return;
+			void frameCacheSupported().then((supported) => {
+				if (supported !== true) return;
+				frameCacheTimer = window.setTimeout(() => {
+					frameCacheTimer = 0;
+					try {
+						if (typeof stillCurrent === "function" && stillCurrent() !== true) return;
+						// Re-check at fire time: the tab may have gone hidden / low-power
+						// during the 2.5s delay, and a hidden capture is wasted work.
+						if (frameCacheCaptureAllowed() === false) return;
+						const width = Number(source.videoWidth ?? source.naturalWidth ?? 0);
+						const height = Number(source.videoHeight ?? source.naturalHeight ?? 0);
+						if (!(width > 0) || !(height > 0)) return;
+						const target = frameCacheTargetSize();
+						const canvas = document.createElement("canvas");
+						canvas.width = target.width;
+						canvas.height = target.height;
+						const context = canvas.getContext("2d");
+						if (context === null) return;
+						const sourceRatio = width / height;
+						const targetRatio = target.width / target.height;
+						let cropWidth = width;
+						let cropHeight = height;
+						if (sourceRatio > targetRatio) cropWidth = Math.round(height * targetRatio);
+						else cropHeight = Math.round(width / targetRatio);
+						const left = Math.min(width - cropWidth, Math.max(0, Math.round(FRAME_CACHE_FOCAL_X * width - cropWidth / 2)));
+						const top = Math.round((height - cropHeight) / 2);
+						context.drawImage(source, left, top, cropWidth, cropHeight, 0, 0, target.width, target.height);
+						canvas.toBlob(
+							(blob) => {
+								if (blob !== null && blob.size > 0) {
+									postFrameCache(key, blob);
+									return;
+								}
+								// A browser without canvas WebP support returns null; the host sniffs
+								// the bytes anyway, so JPEG is a valid fallback cache entry.
+								canvas.toBlob(
+									(jpeg) => {
+										if (jpeg !== null && jpeg.size > 0) postFrameCache(key, jpeg);
+									},
+									"image/jpeg",
+									0.75,
+								);
+							},
+							"image/webp",
+							FRAME_CACHE_WEBP_QUALITY,
+						);
+					} catch {
+						// A cross-origin source taints the canvas; the cache stays a no-op.
+						frameCacheState.lastError = "tainted";
+						publishCacheMetrics();
+					}
+				}, FRAME_CACHE_CAPTURE_DELAY_MS);
+			});
+		}
+		/**
+		 * Resolves the cached still URL for this choice, counting hit/miss metrics.
+		 * v0.5.3: a fetch+blob-URL probe replaces `<img src=...>` so a cache MISS is a
+		 * normal 404 branch (counter only) instead of a console resource error.
+		 */
+		function lookupFrameCache(choice) {
+			const key = frameCacheKey(choice);
+			if (key === "") return Promise.resolve(null);
+			// Unknown keys can only 404: count the miss locally and skip the request.
+			if (loadFrameCacheKnownKeys().has(key) === false) {
+				frameCacheState.miss += 1;
+				frameCacheState.lastError = "miss";
+				publishCacheMetrics();
+				return Promise.resolve(null);
+			}
+			return frameCacheSupported().then((supported) => {
+				if (supported !== true) return null;
+				const url = FRAME_CACHE_ROUTE + "?key=" + encodeURIComponent(key);
+				return fetch(url, { cache: "no-store" })
+					.then((response) => {
+						if (!response.ok) {
+							// A stale known key (host LRU eviction / another profile): forget it
+							// so the next lookup is a quiet local miss again.
+							forgetFrameCacheKey(key);
+							frameCacheState.miss += 1;
+							frameCacheState.lastError = response.status === 404 ? "miss" : "http-" + response.status;
+							publishCacheMetrics();
+							return null;
+						}
+						return response.blob().then((blob) => {
+							if (blob === null || blob.size === 0) {
+								frameCacheState.miss += 1;
+								publishCacheMetrics();
+								return null;
+							}
+							const BlobUrl = globalThis.URL;
+							if (BlobUrl === undefined || typeof BlobUrl.createObjectURL !== "function") {
+								frameCacheState.miss += 1;
+								publishCacheMetrics();
+								return null;
+							}
+							const objectUrl = BlobUrl.createObjectURL(blob);
+							trackFrameCacheUrl(objectUrl);
+							frameCacheState.hit += 1;
+							frameCacheState.lastError = "";
+							publishCacheMetrics();
+							return { url: objectUrl, key };
+						});
+					})
+					.catch(() => {
+						frameCacheState.miss += 1;
+						frameCacheState.lastError = "network";
+						publishCacheMetrics();
+						return null;
+					});
+			});
+		}
+		function readFrameCacheStatus() {
+			return frameCacheSupported().then((supported) => {
+				if (supported !== true) return null;
+				return fetch(FRAME_CACHE_ROUTE + "/status", { cache: "no-store" })
+					.then((response) => (response.ok ? response.json() : null))
+					.then((value) => {
+						if (value === null || typeof value !== "object") return null;
+						frameCacheState.host = true;
+						frameCacheState.entries = Number(value.entries) || 0;
+						frameCacheState.bytes = Number(value.bytes) || 0;
+						frameCacheState.maxBytes = Number(value.maxBytes) || 0;
+						frameCacheState.lastError = "";
+						// The host cache was cleared (or lost): the local known-key list is stale.
+						if (frameCacheState.entries === 0) clearFrameCacheKnownKeys();
+						publishCacheMetrics();
+						return value;
+					})
+					.catch(() => null);
+			});
+		}
+		function clearFrameCache() {
+			return frameCacheSupported().then((supported) => {
+				if (supported !== true) return null;
+				return fetch(FRAME_CACHE_ROUTE, { method: "DELETE" })
+					.then((response) => (response.ok ? response.json() : null))
+					.then((value) => {
+						frameCacheState.hit = 0;
+						frameCacheState.miss = 0;
+						frameCacheState.lastKey = "";
+						clearFrameCacheKnownKeys();
+						publishCacheMetrics();
+						return value;
+					})
+					.catch(() => null);
+			});
+		}
+		const frameCacheController = {
+			key: frameCacheKey,
+			state: () => ({ ...frameCacheState }),
+			capture: captureFrameCache,
+			cancel: cancelFrameCacheCapture,
+			captureAllowed: frameCacheCaptureAllowed,
+			delayMs: FRAME_CACHE_CAPTURE_DELAY_MS,
+			lookup: lookupFrameCache,
+			status: readFrameCacheStatus,
+			clear: clearFrameCache,
+			revoke: releaseFrameCacheUrls,
+			targetSize: frameCacheTargetSize,
+		};
+
+		/* ---- C3 performance-adaptive v2: shared state for the engine panel ---- */
+		/**
+		 * The sampler lives inside the scene (it owns fps/jitter); this top-level state
+		 * is the read-only surface the panel and diagnostics use. `adaptiveHooks` is
+		 * bound by installScene and unbound on dispose, so the module switch really
+		 * removes the behaviour.
+		 */
+		const ADAPTIVE_DEFAULTS = { active: false, kind: "", level: 0, reason: "", fps: 0, jitter: 0 };
+		const adaptiveState = { ...ADAPTIVE_DEFAULTS };
+		const adaptiveSubscribers = new Set();
+		let adaptiveHooks = null;
+		function publishAdaptive(patch) {
+			const next = { ...adaptiveState, ...(patch === null || typeof patch !== "object" ? {} : patch) };
+			const changed =
+				next.active !== adaptiveState.active ||
+				next.kind !== adaptiveState.kind ||
+				next.level !== adaptiveState.level ||
+				next.reason !== adaptiveState.reason;
+			Object.assign(adaptiveState, next);
+			if (changed) {
+				for (const listener of [...adaptiveSubscribers]) {
+					try {
+						listener({ ...adaptiveState });
+					} catch (error) {
+						note("adaptive:subscriber", error);
+					}
+				}
+			}
+			tl5Diag("engine", { adaptive: { ...adaptiveState } });
+			// C3 contract with the Smart-context workstream: they publish
+			// TL5_DIAG.context.adaptiveEnabled (their switch); the readable downgrade
+			// reason string is owned here.
+			tl5Diag("context", {
+				adaptive: adaptiveState.active === true ? adaptiveState.reason : "",
+				adaptiveActive: adaptiveState.active,
+				adaptiveKind: adaptiveState.kind,
+				adaptiveLevel: adaptiveState.level,
+			});
+		}
+		const adaptiveController = {
+			read: () => ({ ...adaptiveState }),
+			subscribe: (listener) => {
+				if (typeof listener !== "function") return () => {};
+				adaptiveSubscribers.add(listener);
+				listener({ ...adaptiveState });
+				return () => {
+					adaptiveSubscribers.delete(listener);
+				};
+			},
+			/** Re-evaluate now: the engine panel's lock toggle calls this after writing context. */
+			sync: () => {
+				if (adaptiveHooks !== null && typeof adaptiveHooks.sync === "function") adaptiveHooks.sync();
+			},
+		};
+
+		/* ---- C3 adaptive v3 hard limits (v0.5.3 live-runtime fix) ----
+		 * v0.5.2 downgraded after 3 samples of fps<18/jitter>140 with a 60s probe, and it
+		 * sampled even while the window was occluded. On the live Desktop that cycled
+		 * "video -> static -> resume" forever (a background window reports near-zero fps),
+		 * which read as a frozen wallpaper. The limits below are deliberately hard to
+		 * reach: focus+visibility gated, 5 consecutive lows over >=10s, and a 5 minute
+		 * probe cooldown. Pure so the smoke tests can drive time/focus without waiting.
+		 */
+		const ADAPTIVE_LOW_FPS = 15;
+		const ADAPTIVE_HIGH_JITTER = 180;
+		const ADAPTIVE_LOW_STREAK = 5;
+		const ADAPTIVE_LOW_SPAN_MS = 10000;
+		const ADAPTIVE_RECOVER_FPS = 28;
+		const ADAPTIVE_RECOVER_STREAK = 5;
+		const ADAPTIVE_PROBE_COOLDOWN_MS = 5 * 60 * 1000;
+		const ADAPTIVE_PROBE_MAX_SAMPLES = 15;
+		function adaptiveSampleIsLow(sample) {
+			if (sample === null || typeof sample !== "object") return false;
+			const fps = Number(sample.fps);
+			const jitter = Number(sample.jitter);
+			if (!Number.isFinite(fps)) return false;
+			if (fps < ADAPTIVE_LOW_FPS) return true;
+			return Number.isFinite(jitter) && jitter > ADAPTIVE_HIGH_JITTER;
+		}
+		function adaptiveSustainedLow(streak, spanMs) {
+			return Number(streak) >= ADAPTIVE_LOW_STREAK && Number(spanMs) >= ADAPTIVE_LOW_SPAN_MS;
+		}
+		/**
+		 * Pure C3 decision for the sampler tick.
+		 * actions: none | clear | start-probe | probe-fail | downgrade | recover | limit-shader
+		 */
+		function adaptiveDecision(input) {
+			const source = input !== null && typeof input === "object" ? input : {};
+			if (source.autoAllowed !== true) return { action: "clear" };
+			// Gate first: an unfocused/occluded/hidden page must never act, even though it
+			// may already be in the middle of a static-frame state.
+			if (source.eligible !== true) return { action: "none" };
+			const now = Number(source.now) || 0;
+			const stillAt = Number(source.stillAt) || 0;
+			if (source.still === true) {
+				if (source.probe === true) return { action: "none" };
+				return now - stillAt >= ADAPTIVE_PROBE_COOLDOWN_MS ? { action: "start-probe" } : { action: "none" };
+			}
+			const sample = source.sample !== null && typeof source.sample === "object" ? source.sample : null;
+			if (sample === null) return { action: "none" };
+			const low = adaptiveSampleIsLow(sample);
+			const healthy = Number(sample.fps) >= ADAPTIVE_RECOVER_FPS;
+			const streak = Math.max(0, Math.round(Number(source.lowStreak) || 0));
+			const span = Math.max(0, now - (Number(source.lowSince) || 0));
+			const samples = Math.max(0, Math.round(Number(source.samples) || 0));
+			const highStreak = Math.max(0, Math.round(Number(source.highStreak) || 0));
+			if (source.probe === true) {
+				if (healthy && highStreak >= ADAPTIVE_RECOVER_STREAK) return { action: "recover" };
+				// A failed probe re-parks the frame, which starts a fresh 5 min cooldown;
+				// it must NOT chain another downgrade (that was the v0.5.2 loop).
+				if (adaptiveSustainedLow(streak, span)) return { action: "probe-fail" };
+				if (samples >= ADAPTIVE_PROBE_MAX_SAMPLES) return { action: "probe-fail" };
+				return { action: "none" };
+			}
+			if (adaptiveSustainedLow(streak, span)) {
+				return { action: source.kind === "shader" ? "limit-shader" : "downgrade" };
+			}
+			if (source.kind === "shader" && Number(source.level) > 0 && healthy && highStreak >= ADAPTIVE_RECOVER_STREAK) {
+				return { action: "raise-shader" };
+			}
+			return { action: "none" };
+		}
+
+
+
 		/**
 		 * Compiles a candidate in a throwaway context so the panel can refuse a broken
 		 * shader before the scene swaps away a working wallpaper.
 		 */
 		function validateShaderSource(source) {
-			if (typeof source !== "string" || source.trim() === "") return "着色器源码为空";
-			if (source.length > SHADER_SOURCE_MAX) return "着色器源码太长（上限 " + SHADER_SOURCE_MAX + " 字符）";
+			if (typeof source !== "string" || source.trim() === "") return TL_T("wp.shaderErr.empty");
+			if (source.length > SHADER_SOURCE_MAX) return TL_T("wp.shaderErr.tooLong", { max: SHADER_SOURCE_MAX });
 			if (typeof document === "undefined") return null;
 			let gl = null;
 			try {
 				const probe = document.createElement("canvas");
 				gl = probe.getContext("webgl", { antialias: false, alpha: false, depth: false, stencil: false });
-				if (gl === null) return "当前环境不支持 WebGL";
+				if (gl === null) return TL_T("wp.shaderErr.noWebgl");
 				const vertex = gl.createShader(gl.VERTEX_SHADER);
 				const fragment = gl.createShader(gl.FRAGMENT_SHADER);
 				gl.shaderSource(vertex, SHADER_VERTEX);
@@ -1033,14 +2156,14 @@
 				gl.compileShader(vertex);
 				gl.compileShader(fragment);
 				if (gl.getShaderParameter(fragment, gl.COMPILE_STATUS) !== true) {
-					return String(gl.getShaderInfoLog(fragment) ?? "片元着色器编译失败").slice(0, 240);
+					return String(gl.getShaderInfoLog(fragment) ?? TL_T("wp.shaderErr.compileFail")).slice(0, 240);
 				}
 				const program = gl.createProgram();
 				gl.attachShader(program, vertex);
 				gl.attachShader(program, fragment);
 				gl.linkProgram(program);
 				if (gl.getProgramParameter(program, gl.LINK_STATUS) !== true) {
-					return String(gl.getProgramInfoLog(program) ?? "着色器链接失败").slice(0, 240);
+					return String(gl.getProgramInfoLog(program) ?? TL_T("wp.shaderErr.linkFail")).slice(0, 240);
 				}
 				return null;
 			} catch (error) {
@@ -1083,7 +2206,7 @@
 			};
 			return {
 				apply: (source) => {
-					if (typeof source !== "string" || source.trim() === "") return "着色器源码为空";
+					if (typeof source !== "string" || source.trim() === "") return TL_T("wp.shaderErr.empty");
 					const vertex = gl.createShader(gl.VERTEX_SHADER);
 					const fragment = gl.createShader(gl.FRAGMENT_SHADER);
 					let next = null;
@@ -1093,14 +2216,14 @@
 						gl.compileShader(vertex);
 						gl.compileShader(fragment);
 						if (gl.getShaderParameter(fragment, gl.COMPILE_STATUS) !== true) {
-							return String(gl.getShaderInfoLog(fragment) ?? "片元着色器编译失败").slice(0, 240);
+							return String(gl.getShaderInfoLog(fragment) ?? TL_T("wp.shaderErr.compileFail")).slice(0, 240);
 						}
 						next = gl.createProgram();
 						gl.attachShader(next, vertex);
 						gl.attachShader(next, fragment);
 						gl.linkProgram(next);
 						if (gl.getProgramParameter(next, gl.LINK_STATUS) !== true) {
-							const log = String(gl.getProgramInfoLog(next) ?? "着色器链接失败").slice(0, 240);
+							const log = String(gl.getProgramInfoLog(next) ?? TL_T("wp.shaderErr.linkFail")).slice(0, 240);
 							gl.deleteProgram(next);
 							next = null;
 							return log;
@@ -1174,7 +2297,7 @@
 		 */
 		function sampleVideoFrames(url, count) {
 			if (typeof url !== "string" || url === "") {
-				return Promise.resolve({ ok: false, reason: "缺少视频地址，无法取帧" });
+				return Promise.resolve({ ok: false, reason: TL_T("wp.frames.noUrl") });
 			}
 			return new Promise((resolve) => {
 				let settled = false;
@@ -1201,11 +2324,11 @@
 					cleanup();
 					resolve(value);
 				};
-				const onError = () => finish({ ok: false, reason: "视频加载失败，无法取帧" });
+				const onError = () => finish({ ok: false, reason: TL_T("wp.frames.loadFail") });
 				const onReady = () => {
 					const duration = video.duration;
 					if (!Number.isFinite(duration) || duration <= 0) {
-						finish({ ok: false, reason: "视频时长无效，无法取帧" });
+						finish({ ok: false, reason: TL_T("wp.frames.noDuration") });
 						return;
 					}
 					const canvas = document.createElement("canvas");
@@ -1213,7 +2336,7 @@
 					canvas.height = 90;
 					const context = canvas.getContext("2d");
 					if (context === null) {
-						finish({ ok: false, reason: "无法创建取帧画布" });
+						finish({ ok: false, reason: TL_T("wp.frames.noCanvas") });
 						return;
 					}
 					const frames = [];
@@ -1233,7 +2356,7 @@
 								context.drawImage(video, 0, 0, canvas.width, canvas.height);
 								frames.push({ time, dataUrl: canvas.toDataURL("image/jpeg", 0.55) });
 							} catch {
-								finish({ ok: false, reason: "视频跨域，浏览器禁止取帧；本地/WE 视频可用" });
+								finish({ ok: false, reason: TL_T("wp.frames.cors") });
 								return;
 							}
 							index += 1;
@@ -1244,12 +2367,12 @@
 						try {
 							video.currentTime = time;
 						} catch {
-							finish({ ok: false, reason: "无法定位视频帧" });
+							finish({ ok: false, reason: TL_T("wp.frames.seekFail") });
 						}
 					};
 					seekNext();
 				};
-				timer = window.setTimeout(() => finish({ ok: false, reason: "取帧超时（视频可能仍未加载完）" }), 8000);
+				timer = window.setTimeout(() => finish({ ok: false, reason: TL_T("wp.frames.timeout") }), 8000);
 				video.muted = true;
 				video.playsInline = true;
 				video.preload = "auto";
@@ -1271,12 +2394,19 @@
 			}
 		}
 
+		/** Automatic selection is also where dynamic resolution first kicks in. */
+		function withPreferredVariant(choice, items) {
+			const resolved = resolveVariantChoice(choice, groupVariantItems(items));
+			return resolved === null ? choice : resolved.choice;
+		}
+
 		/**
 		 * Automatic catalog: the known-good video candidates by codec probe, then any
-		 * other video, then a still image. Never consults the saved choice.
+		 * other video, then a still image. Never consults the saved choice, and never
+		 * auto-picks a web/GLSL wallpaper (those are explicit choices only).
 		 */
 		async function resolveAutoWallpaper() {
-			const items = await listWallpapers();
+			const items = await readCatalog();
 			if (items === null) {
 				const fallback = await resolveVideoSource();
 				return fallback === null ? null : { kind: "video", url: fallback };
@@ -1287,10 +2417,10 @@
 				const item = byId.get(candidate.file);
 				if (item === undefined) continue;
 				if (candidate.codec !== undefined && probe.canPlayType(candidate.codec) === "") continue;
-				return { kind: "video", url: item.url };
+				return withPreferredVariant({ kind: "video", url: item.url }, items);
 			}
 			const video = items.find((item) => item.kind === "video");
-			if (video !== undefined) return { kind: "video", url: video.url };
+			if (video !== undefined) return withPreferredVariant({ kind: "video", url: video.url }, items);
 			const image = items.find((item) => item.kind === "image");
 			if (image !== undefined) return { kind: "image", url: image.url };
 			return null;
@@ -1300,6 +2430,34 @@
 			const chosen = readWallpaperChoice();
 			if (chosen !== null) return chosen;
 			return resolveAutoWallpaper();
+		}
+
+		/**
+		 * Rotation list: one entry per LOGICAL wallpaper. `bg-4k.mp4` / `bg-1080.mp4` are
+		 * two encodes of one picture, so rotating between them would produce a "switch"
+		 * that looks identical; the preferred encode for the current window is used.
+		 */
+		async function listRotationCandidates() {
+			const items = await listWallpapers();
+			if (items === null) return null;
+			const groups = groupVariantItems(items);
+			const seen = new Set();
+			const result = [];
+			for (const item of items) {
+				if (item === null || typeof item !== "object") continue;
+				if (item.kind !== "video" && item.kind !== "image") continue;
+				const group = item.kind === "video" ? groupForUrl(groups, "video", item.url) : null;
+				if (group === null) {
+					result.push(item);
+					continue;
+				}
+				const key = group.stem.toLowerCase();
+				if (seen.has(key)) continue;
+				seen.add(key);
+				const resolved = resolveVariantChoice(item, groups);
+				result.push(resolved === null ? item : { ...item, url: resolved.choice.url });
+			}
+			return result;
 		}
 
 		async function resolveCompanionArt() {
@@ -1355,6 +2513,19 @@
 			sceneFrame.setAttribute("title", "Wallpaper Engine scene");
 			scene.appendChild(sceneFrame);
 
+			// Fifth channel: a WE `type:"web"` project. Deliberately a SECOND iframe with
+			// its own protocol-less lifecycle; the WebWallGL adapter contract must not be
+			// reused here. `allow-scripts` WITHOUT `allow-same-origin` gives the project an
+			// opaque origin, so it cannot touch this page or DSH's origin storage.
+			const webFrame = document.createElement("iframe");
+			webFrame.dataset.tlWeb = "";
+			webFrame.hidden = true;
+			webFrame.setAttribute("sandbox", "allow-scripts");
+			webFrame.setAttribute("allow", "autoplay");
+			webFrame.setAttribute("referrerpolicy", "no-referrer");
+			webFrame.setAttribute("title", "Web wallpaper");
+			scene.appendChild(webFrame);
+
 			// Overlay stack: two CSS-only slots above all media, below the veil/crest.
 			for (const index of [0, 1]) {
 				const overlay = document.createElement("div");
@@ -1388,6 +2559,9 @@
 
 			const markReady = () => {
 				video.dataset.tlReady = "";
+				// B4: the incoming layer has a decodable frame NOW; that is when the
+				// transition starts, never when the request was merely issued.
+				startTransition();
 			};
 			// Two attributes on purpose: `data-tl-state` is the coarse legacy contract the
 			// quality line already keys off; `data-tl-play` is the detailed state the
@@ -1436,6 +2610,41 @@
 			let watchdogTimer = 0;
 			let lastFrameAt = 0;
 			let heldFrame = "";
+			// ---- A3 web wallpaper state ----
+			let webActive = false;
+			let webTimer = 0;
+			let webParked = false;
+			// ---- B4 transition state ----
+			let transitionTimer = 0;
+			let transitionPreset = "fade";
+			let transitionDuration = 600;
+			// ---- A4 dynamic resolution ----
+			let pendingSeekTo = null;
+			let resizeTimer = 0;
+			let variantToken = 0;
+			// ---- C3 adaptive v2 sampler ----
+			let adaptiveTimer = 0;
+			let adaptiveStill = false;
+			let adaptiveStillAt = 0;
+			let adaptiveProbe = false;
+			let adaptiveLevel = 0;
+			let adaptiveLow = 0;
+			let adaptiveHigh = 0;
+			let adaptiveSamples = 0;
+			let adaptiveReason = "";
+			// v0.5.3: timestamp of the first low sample in the current streak + the last
+			// measured values (for the readable downgrade reason) + the last logged gate.
+			let adaptiveLowSince = 0;
+			let adaptiveLastFps = 0;
+			let adaptiveLastJitter = 0;
+			let adaptiveGateKey = "";
+			let shaderFrameTicks = 0;
+			let shaderWindowStart = 0;
+			let shaderLastPaint = 0;
+			let shaderMaxGap = 0;
+			let shaderProbeAt = 0;
+			// ---- A5 frame cache bookkeeping ----
+			let cachePrimeToken = 0;
 			const clearStillHandlers = () => {
 				if (stillSeekHandler !== null) {
 					video.removeEventListener("seeked", stillSeekHandler);
@@ -1467,11 +2676,24 @@
 				}
 			};
 			const shaderPixelRatio = () => Math.min(1.25, Math.max(1, globalThis.devicePixelRatio || 1));
+			/** C3: the adaptive sampler may lower the shader budget below the saved tier. */
+			function effectiveShaderCap() {
+				const base = effectiveShaderFps();
+				return adaptiveLevel > 0 ? Math.min(base, adaptiveLevel) : base;
+			}
 			function paintShader(now) {
 				if (shaderRenderer === null) return;
 				const ratio = shaderPixelRatio();
 				shaderRenderer.resize(globalThis.innerWidth * ratio, globalThis.innerHeight * ratio);
 				shaderRenderer.render(now / 1000, shaderParams, shaderMouse, audioController.level());
+				// Real rendered fps for the adaptive sampler: the render tier is only the
+				// requested budget, not what the GPU managed.
+				shaderFrameTicks += 1;
+				if (shaderLastPaint > 0) {
+					const gap = now - shaderLastPaint;
+					if (gap > shaderMaxGap) shaderMaxGap = gap;
+				}
+				shaderLastPaint = now;
 			}
 			function stopShaderLoop() {
 				if (shaderRaf !== 0) globalThis.cancelAnimationFrame(shaderRaf);
@@ -1483,7 +2705,7 @@
 					shaderRaf = 0;
 					if (shaderActive === false || document.hidden) return;
 					if (document.body !== null && document.body.hasAttribute("data-tl-lowpower")) return;
-					if (now - shaderLast >= 1000 / effectiveShaderFps()) {
+					if (now - shaderLast >= 1000 / effectiveShaderCap()) {
 						shaderLast = now;
 						try {
 							paintShader(now);
@@ -1516,7 +2738,7 @@
 				shaderCanvas.hidden = true;
 				scene.removeAttribute("data-tl-shader-on");
 				if (wallpaperController !== null) wallpaperController.shaderSwatch = null;
-				audioController.stop("图形上下文丢失，已停止音频");
+				audioController.stop(TL_T("audio.stopContext"));
 				report("error", "error", "context-lost");
 				note("shader:context-lost");
 			};
@@ -1610,6 +2832,7 @@
 						else report("paused", "hidden");
 						return;
 					}
+					startTransition();
 					report("ready", "playing");
 					// The mount URL may carry `paused=1` from an earlier state; an explicit
 					// resume is idempotent and makes the visible state authoritative.
@@ -1655,6 +2878,590 @@
 					String(fps) +
 					(paused ? "&paused=1" : "");
 			};
+
+			// ---- A3 web wallpaper: mount / park / fail ----
+			const clearWebTimer = () => {
+				if (webTimer !== 0) {
+					window.clearTimeout(webTimer);
+					webTimer = 0;
+				}
+			};
+			/** Navigating away is the only reliable stop for a sandboxed project. */
+			const unloadWebFrame = () => {
+				webFrame.hidden = true;
+				scene.removeAttribute("data-tl-web-on");
+				try {
+					webFrame.src = "about:blank";
+				} catch {
+					// detaching a frame is best effort
+				}
+			};
+			const stopWebWallpaper = () => {
+				webActive = false;
+				webParked = false;
+				clearWebTimer();
+				unloadWebFrame();
+			};
+			const parkWebWallpaper = (owner) => {
+				if (webActive === false) return;
+				webActive = false;
+				webParked = true;
+				clearWebTimer();
+				unloadWebFrame();
+				if (owner === "user") report("paused", "paused", "user");
+				else if (hasLowPower()) report("paused", "lowpower", "lowpower");
+				else if (document.hidden) report("paused", "hidden");
+				else report("paused", "paused");
+			};
+			const onWebLoad = () => {
+				if (webActive === false) return;
+				let loadedSrc = "";
+				try {
+					loadedSrc = String(webFrame.src ?? "");
+				} catch {
+					loadedSrc = "";
+				}
+				// The park path loads about:blank; that is not a rendered wallpaper.
+				if (loadedSrc === "" || loadedSrc.startsWith("about:")) return;
+				clearWebTimer();
+				if (currentChoice === null || currentChoice.kind !== "web") return;
+				lastGoodChoice = currentChoice;
+				webParked = false;
+				scene.dataset.tlWidth = String(Math.round(globalThis.innerWidth || 0));
+				scene.dataset.tlHeight = String(Math.round(globalThis.innerHeight || 0));
+				scene.removeAttribute("data-tl-duration");
+				if (userPaused || hasLowPower() || document.hidden) {
+					parkWebWallpaper(userPaused ? "user" : hasLowPower() ? "lowpower" : "hidden");
+					return;
+				}
+				markReady();
+				report("ready", "playing");
+				startTransition();
+			};
+			const onWebError = () => {
+				if (webActive === false) return;
+				failWebWallpaper("web-error");
+			};
+			const failWebWallpaper = (reason) => {
+				if (webActive === false && webParked === false) return;
+				const failed = currentChoice;
+				stopWebWallpaper();
+				report("error", "error", reason);
+				if (
+					lastGoodChoice !== null &&
+					(failed === null || lastGoodChoice.url !== failed.url || lastGoodChoice.kind !== failed.kind)
+				) {
+					const restore = lastGoodChoice;
+					lastGoodChoice = null;
+					applyWallpaper(restore);
+					return;
+				}
+				// No known-good source: the automatic chain must replace the failure, never a
+				// blank scene gradient behind an error message.
+				void resolveAutoWallpaper().then((fallback) => {
+					if (fallback !== null && (failed === null || fallback.url !== failed.url)) applyWallpaper(fallback);
+				});
+			};
+			const mountWebWallpaper = (choice) => {
+				const src = webWallpaperSrc(choice.url);
+				stopSceneFrame();
+				stopWebWallpaper();
+				if (src === "") {
+					report("error", "error", "web-url");
+					return;
+				}
+				webParked = false;
+				scene.dataset.tlMedia = "web";
+				// A persisted pause / low power / hidden tab must not load (and immediately
+				// discard) a whole sandboxed project; park first, mount on resume.
+				if (userPaused || hasLowPower() || document.hidden) {
+					webActive = false;
+					webParked = true;
+					unloadWebFrame();
+					if (userPaused) report("paused", "paused", "user");
+					else if (hasLowPower()) report("paused", "lowpower", "lowpower");
+					else report("paused", "hidden");
+					return;
+				}
+				webActive = true;
+				webFrame.hidden = false;
+				scene.setAttribute("data-tl-web-on", "");
+				report("loading", "loading");
+				// A sandboxed 404 page still fires `load`, so probe the route first: a host
+				// without `_web-project` must fall back at once instead of after 20 seconds.
+				void fetch(src, { method: "HEAD", cache: "no-store" })
+					.then((response) => {
+						// Only a definitive "route/file missing" fails here; a host that
+						// answers HEAD with 405 must still get its chance via the iframe load.
+						if (response.status !== 404 && response.status !== 410 && response.status !== 501) return;
+						if (currentChoice !== null && currentChoice.url === choice.url) failWebWallpaper("web-http-" + response.status);
+					})
+					.catch(() => {
+						if (currentChoice !== null && currentChoice.url === choice.url) failWebWallpaper("web-http");
+					});
+				webTimer = window.setTimeout(() => failWebWallpaper("web-timeout"), 20000);
+				try {
+					webFrame.src = src;
+				} catch {
+					failWebWallpaper("web-load");
+				}
+			};
+			webFrame.addEventListener("load", onWebLoad);
+			webFrame.addEventListener("error", onWebError);
+			disposers.push(() => {
+				webFrame.removeEventListener("load", onWebLoad);
+				webFrame.removeEventListener("error", onWebError);
+				stopWebWallpaper();
+			});
+
+			// ---- B4 transitions: preset + duration around every source swap ----
+			/**
+			 * The preset lives in transitionController (31-engine-extra). Reading it here,
+			 * lazily, keeps 30 independent of fragment evaluation order: the controller is
+			 * referenced only when a wallpaper actually swaps.
+			 */
+			function readTransitionSettings() {
+				let state = null;
+				try {
+					if (typeof transitionController !== "undefined" && transitionController !== null && typeof transitionController.read === "function") {
+						state = transitionController.read();
+					}
+				} catch {
+					state = null;
+				}
+				const preset = state !== null && typeof state.preset === "string" ? state.preset : "fade";
+				const duration = state !== null && Number.isFinite(state.durationMs) ? state.durationMs : 600;
+				return {
+					preset: ["fade", "slide", "zoom", "dissolve"].includes(preset) ? preset : "fade",
+					durationMs: Math.min(1500, Math.max(200, Math.round(duration))),
+				};
+			}
+			function transitionsAllowed() {
+				if (hasLowPower()) return false;
+				try {
+					if (typeof globalThis.matchMedia === "function" && globalThis.matchMedia("(prefers-reduced-motion: reduce)").matches === true) {
+						return false;
+					}
+				} catch {
+					// a missing matchMedia is not a reason to disable transitions
+				}
+				return true;
+			}
+			function clearTransition() {
+				if (transitionTimer !== 0) {
+					window.clearTimeout(transitionTimer);
+					transitionTimer = 0;
+				}
+				scene.removeAttribute("data-tl-transition");
+			}
+			/** The outgoing still is done: drop its role so the layer settles hidden. */
+			function finishHeldPhoto() {
+				if (photo.dataset.tlPhotoRole !== "held") return;
+				photo.removeAttribute("data-tl-photo-role");
+				if (currentChoice === null || currentChoice.kind !== "image") {
+					photo.removeAttribute("data-tl-ready");
+					photo.hidden = true;
+					photo.style.removeProperty("background-image");
+				}
+			}
+			/**
+			 * Called when the incoming source is actually decodable. Starting here (not at
+			 * request time) means the animation never plays against a still-black layer.
+			 */
+			function startTransition() {
+				clearTransition();
+				if (transitionsAllowed() === false) {
+					finishHeldPhoto();
+					return;
+				}
+				scene.style.setProperty("--tl-tx-ms", transitionDuration + "ms");
+				void scene.offsetHeight; // restart a still-running CSS animation on a fast switch
+				scene.setAttribute("data-tl-transition", transitionPreset);
+				transitionTimer = window.setTimeout(() => {
+					transitionTimer = 0;
+					scene.removeAttribute("data-tl-transition");
+					finishHeldPhoto();
+				}, transitionDuration + 80);
+			}
+			function requestTransition() {
+				const settings = readTransitionSettings();
+				transitionPreset = settings.preset;
+				transitionDuration = settings.durationMs;
+				clearTransition();
+			}
+
+			// ---- A5 frame cache: pre-paint under a loading video ----
+			/**
+			 * The cached still is only used while there is no live frame yet: once the
+			 * real video decodes, `releaseHeldFrame` fades the photo layer out.
+			 */
+			function primeFrameCache(choice) {
+				if (choice === null || choice.kind !== "video") return;
+				const token = (cachePrimeToken += 1);
+				void frameCacheController.lookup(choice).then((cached) => {
+					if (cached === null || token !== cachePrimeToken) return;
+					if (currentChoice === null || currentChoice.url !== choice.url) return;
+					if (video.readyState >= 2 || heldFrame !== "") return;
+					heldFrame = "cache";
+					photo.dataset.tlPhotoRole = "held";
+					photo.style.backgroundImage = 'url("' + cached.url.replace(/["\\)]/g, "") + '")';
+					photo.dataset.tlReady = "";
+					photo.hidden = false;
+					// Diagnostic only: a note() here would log on every wallpaper load.
+					tl5Diag("cache", { prepaint: cached.key });
+				});
+			}
+
+			// ---- A4 dynamic resolution: pick / switch the encode of the logical wallpaper ----
+			function syncResolutionDataset() {
+				const label = resolutionLabel();
+				if (scene.dataset.tlResolution !== label) scene.dataset.tlResolution = label;
+			}
+			function applyVariantDatasets(resolved) {
+				if (resolved === null) {
+					scene.removeAttribute("data-tl-variant");
+					scene.removeAttribute("data-tl-variants");
+					return;
+				}
+				scene.dataset.tlVariant = resolved.tier;
+				scene.dataset.tlVariants = resolved.tiers.join(",");
+			}
+			function variantForChoice(choice, items) {
+				if (choice === null || typeof choice !== "object" || choice.kind !== "video") return null;
+				return resolveVariantChoice(choice, groupVariantItems(items));
+			}
+			/** Switches encode without touching the saved choice (logical wallpaper stays). */
+			function switchVariant(nextChoice) {
+				if (currentChoice === null || currentChoice.kind !== "video") return;
+				const seek = video.currentTime;
+				applyWallpaper(nextChoice, {
+					seekTo: Number.isFinite(seek) ? seek : null,
+					variantSwitch: true,
+				});
+			}
+			async function maybeApplyVariant(choice) {
+				const token = (variantToken += 1);
+				syncResolutionDataset();
+				if (choice === null || typeof choice !== "object" || choice.kind !== "video") {
+					applyVariantDatasets(null);
+					return;
+				}
+				const items = await readCatalog();
+				if (token !== variantToken) return;
+				if (currentChoice === null || currentChoice.kind !== "video") return;
+				if (items === null) {
+					applyVariantDatasets(null);
+					return;
+				}
+				const resolved = variantForChoice(currentChoice, items);
+				applyVariantDatasets(resolved);
+				if (resolved === null || resolved.changed === false) return;
+				if (currentChoice.url !== choice.url) return;
+				if (videoStill !== null || userPaused || hasLowPower() || document.hidden) return;
+				switchVariant(resolved.choice);
+			}
+			async function onResolutionSettled() {
+				syncResolutionDataset();
+				if (currentChoice === null || currentChoice.kind !== "video") return;
+				if (videoStill !== null || userPaused || hasLowPower() || document.hidden) return;
+				if (video.readyState === 0) return;
+				const items = await readCatalog();
+				if (items === null || currentChoice === null || currentChoice.kind !== "video") return;
+				const resolved = variantForChoice(currentChoice, items);
+				applyVariantDatasets(resolved);
+				if (resolved !== null && resolved.changed) switchVariant(resolved.choice);
+			}
+			let resizeRaf = 0;
+			const onWindowResize = () => {
+				// The window may resize for many frames; one coalesced handler is enough.
+				if (resizeRaf !== 0) return;
+				resizeRaf = globalThis.requestAnimationFrame(() => {
+					resizeRaf = 0;
+					syncResolutionDataset();
+				});
+				if (resizeTimer !== 0) window.clearTimeout(resizeTimer);
+				resizeTimer = window.setTimeout(() => {
+					resizeTimer = 0;
+					void onResolutionSettled();
+				}, 400);
+			};
+			window.addEventListener("resize", onWindowResize, { passive: true });
+
+			// ---- C3 performance-adaptive v2 ----
+			/** Context/module/lock gate: false means "do not touch the scene". */
+			function adaptiveAllowed() {
+				try {
+					if (
+						typeof moduleController !== "undefined" &&
+						moduleController !== null &&
+						typeof moduleController.isEnabled === "function" &&
+						moduleController.isEnabled("context") === false
+					) {
+						return false;
+					}
+				} catch {
+					// a missing module layer means the context switch cannot veto; allow
+				}
+				let context = null;
+				try {
+					if (typeof contextController !== "undefined" && contextController !== null && typeof contextController.state === "function") {
+						context = contextController.state();
+					}
+				} catch {
+					context = null;
+				}
+				if (context === null || typeof context !== "object") return true;
+				if (context.adaptive === false) return false;
+				if (context.adaptiveLocked === true) return false;
+				return true;
+			}
+			function publishAdaptiveStatus(reasonText, level, kind, fps, jitter) {
+				adaptiveReason = reasonText;
+				scene.dataset.tlAdaptive = reasonText;
+				publishAdaptive({ active: true, kind, level, reason: reasonText, fps, jitter });
+			}
+			/**
+			 * Restores the un-adapted state. Called when the context toggle/lock turns the
+			 * sampler off, when the user explicitly resumes, and after sustained recovery.
+			 */
+			function clearAdaptive(why, silent) {
+				const wasActive = adaptiveStill || adaptiveLevel !== 0 || adaptiveReason !== "";
+				// Called on every wallpaper switch and every sampler tick while disabled;
+				// once there is nothing to restore this must cost no DOM/diag writes.
+				if (wasActive === false) return;
+				adaptiveStill = false;
+				adaptiveProbe = false;
+				adaptiveLevel = 0;
+				adaptiveLow = 0;
+				adaptiveLowSince = 0;
+				adaptiveHigh = 0;
+				adaptiveSamples = 0;
+				adaptiveStillAt = 0;
+				adaptiveReason = "";
+				scene.removeAttribute("data-tl-adaptive");
+				publishAdaptive({ ...ADAPTIVE_DEFAULTS });
+				if (wasActive === false) return;
+				note("adaptive:cleared", why);
+				if (silent === true || currentChoice === null) return;
+				if (currentChoice.kind === "shader") {
+					if (shaderActive && !video.paused) report("playing", "playing");
+					return;
+				}
+				if (currentChoice.kind === "video") {
+					if (userPaused || hasLowPower() || document.hidden) return;
+					attemptPlay("adaptive");
+				}
+			}
+			/**
+			 * Video -> static frame at the current time: a paused element freezes for free.
+			 * v0.5.3: every park resets the probe clock, so a failed probe re-parks and then
+			 * waits the full 5 minute cooldown instead of chaining downgrades.
+			 */
+			function downgradeVideoToStatic(fps, jitter, why) {
+				const wasStill = adaptiveStill;
+				adaptiveStill = true;
+				adaptiveStillAt = performance.now();
+				adaptiveProbe = false;
+				adaptiveLow = 0;
+				adaptiveLowSince = 0;
+				adaptiveHigh = 0;
+				adaptiveSamples = 0;
+				const reason = TL_T("engine.adaptive.staticReason", { fps: Math.round(fps) });
+				try {
+					video.pause();
+				} catch {
+					// a detached video cannot throw anything worth surfacing
+				}
+				publishAdaptiveStatus(reason, 0, "video", fps, jitter);
+				report("still", "still", reason);
+				// One note per state transition only (v0.5.3: no per-sample/per-probe spam).
+				if (wasStill === false) note("adaptive:video-static", { fps: Math.round(fps), jitter, why: why ?? "sustained-low" });
+			}
+			function limitShaderFps(fps, jitter, cap) {
+				const previous = adaptiveLevel;
+				adaptiveLevel = Math.max(15, Math.round(cap));
+				const reason = TL_T("engine.adaptive.fpsReason", { fps: Math.round(fps), cap: adaptiveLevel });
+				publishAdaptiveStatus(reason, adaptiveLevel, "shader", fps, jitter);
+				publishSceneStatus({ reason });
+				scene.dataset.tlReason = reason;
+				if (previous !== adaptiveLevel) note("adaptive:shader-fps", { fps: Math.round(fps), cap: adaptiveLevel });
+			}
+			/** Samples the channels that can actually be measured right now. */
+			function collectAdaptiveSample() {
+				if (sceneFrameActive) {
+					const fps = Number(scene.dataset.tlFps) || 0;
+					return fps > 0 ? { fps, jitter: 0 } : null;
+				}
+				if (currentChoice !== null && currentChoice.kind === "shader" && shaderActive) {
+					const now = performance.now();
+					const elapsed = now - (shaderWindowStart || now - 2000);
+					shaderWindowStart = now;
+					const fps = elapsed > 200 ? Math.round((shaderFrameTicks * 1000) / elapsed) : 0;
+					const jitter = Math.round(shaderMaxGap);
+					shaderFrameTicks = 0;
+					shaderMaxGap = 0;
+					return fps > 0 ? { fps, jitter } : null;
+				}
+				if (currentChoice !== null && currentChoice.kind === "video" && video.paused === false) {
+					const fps = Number(scene.dataset.tlFps) || 0;
+					const jitter = Number(scene.dataset.tlJitter) || 0;
+					return fps > 0 ? { fps, jitter } : null;
+				}
+				return null;
+			}
+			/**
+			 * v0.5.3 sampling gate: a background/occluded/minimized window reports near-zero
+			 * fps, which is what froze the live 4K wallpaper in v0.5.2. Never sample there.
+			 */
+			function adaptiveEligible() {
+				let focused = true;
+				try {
+					focused = typeof document.hasFocus === "function" ? document.hasFocus() === true : true;
+				} catch {
+					focused = false;
+				}
+				const hidden = document.hidden === true;
+				const visible = hidden === false && (document.visibilityState === undefined || document.visibilityState === "visible");
+				const lowPower = hasLowPower();
+				return {
+					eligible: focused && visible && lowPower === false && userPaused === false,
+					focused,
+					visible,
+					hidden,
+					lowPower,
+					userPaused,
+				};
+			}
+			function adaptiveTick() {
+				if (scene.isConnected === false) return;
+				if (adaptiveAllowed() === false) {
+					// The module switch / the user's adaptive toggle or lock is authoritative:
+					// park an automatic downgrade instead of keeping it stuck.
+					clearAdaptive("context-off");
+					return;
+				}
+				if (currentChoice === null) return;
+				// A loading/buffering frame-rate sample describes network/decode, not GPU
+				// headroom; acting on it would downgrade a wallpaper that is merely fetching.
+				if (scene.dataset.tlPlay === "loading" || scene.dataset.tlPlay === "buffering") return;
+				const gate = adaptiveEligible();
+				const gateKey =
+					(gate.focused ? "f" : "-") +
+					(gate.visible ? "v" : "-") +
+					(gate.lowPower ? "l" : "-") +
+					(gate.userPaused ? "u" : "-") +
+					(gate.eligible ? "1" : "0");
+				if (gateKey !== adaptiveGateKey) {
+					adaptiveGateKey = gateKey;
+					// Focus/visibility included in the diagnostics payload; only on change.
+					tl5Diag("engine", { adaptiveGate: gate });
+				}
+				const now = performance.now();
+				const sample = gate.eligible ? collectAdaptiveSample() : null;
+				if (sample !== null) {
+					adaptiveLastFps = Number(sample.fps) || 0;
+					adaptiveLastJitter = Number(sample.jitter) || 0;
+					adaptiveSamples += 1;
+					if (adaptiveSampleIsLow(sample)) {
+						if (adaptiveLow === 0) adaptiveLowSince = now;
+						adaptiveLow += 1;
+					} else {
+						adaptiveLow = 0;
+						adaptiveLowSince = 0;
+					}
+					adaptiveHigh = Number(sample.fps) >= ADAPTIVE_RECOVER_FPS ? adaptiveHigh + 1 : 0;
+				}
+				const decision = adaptiveDecision({
+					eligible: gate.eligible,
+					autoAllowed: true,
+					kind: currentChoice.kind,
+					still: adaptiveStill,
+					probe: adaptiveProbe,
+					now,
+					stillAt: adaptiveStillAt,
+					sample,
+					lowStreak: adaptiveLow,
+					lowSince: adaptiveLowSince,
+					highStreak: adaptiveHigh,
+					samples: adaptiveSamples,
+					level: adaptiveLevel,
+				});
+				if (decision.action === "start-probe") {
+					adaptiveProbe = true;
+					adaptiveStill = false;
+					adaptiveStillAt = now;
+					adaptiveLow = 0;
+					adaptiveLowSince = 0;
+					adaptiveHigh = 0;
+					adaptiveSamples = 0;
+					attemptPlay("adaptive-probe");
+					// Routine bookkeeping: diag only, no console note (v0.5.3 quiet console).
+					tl5Diag("engine", { adaptiveProbe: { startedAt: now, cooldownMs: ADAPTIVE_PROBE_COOLDOWN_MS } });
+					return;
+				}
+				if (decision.action === "probe-fail") {
+					// Re-park; downgradeVideoToStatic resets stillAt => full new cooldown.
+					downgradeVideoToStatic(adaptiveLastFps, adaptiveLastJitter, "probe-failed");
+					return;
+				}
+				if (decision.action === "recover") {
+					adaptiveProbe = false;
+					clearAdaptive("recovered");
+					return;
+				}
+				if (decision.action === "downgrade") {
+					downgradeVideoToStatic(adaptiveLastFps, adaptiveLastJitter, "sustained-low");
+					return;
+				}
+				if (currentChoice.kind === "shader" && (decision.action === "limit-shader" || decision.action === "raise-shader")) {
+					const base = effectiveShaderFps();
+					const current = adaptiveLevel > 0 ? adaptiveLevel : base;
+					if (decision.action === "limit-shader") {
+						const nextCap = Math.max(15, Math.round(current / 2));
+						if (nextCap < current) limitShaderFps(adaptiveLastFps, adaptiveLastJitter, nextCap);
+					} else {
+						const restored = Math.min(base, adaptiveLevel * 2);
+						if (restored >= base) clearAdaptive("shader-recovered");
+						else limitShaderFps(adaptiveLastFps, adaptiveLastJitter, restored);
+					}
+					return;
+				}
+				// Shader 15fps probe: 5 minute cooldown (v0.5.3, was 60s); diag only.
+				if (
+					currentChoice.kind === "shader" &&
+					adaptiveLevel > 0 &&
+					adaptiveLevel <= 15 &&
+					gate.eligible &&
+					now - shaderProbeAt >= ADAPTIVE_PROBE_COOLDOWN_MS
+				) {
+					shaderProbeAt = now;
+					limitShaderFps(adaptiveLastFps, adaptiveLastJitter, Math.min(effectiveShaderFps(), 30));
+				}
+			}
+			function bindAdaptiveHooks() {
+				adaptiveHooks = {
+					sync: () => {
+						if (scene.isConnected === false) return;
+						adaptiveTick();
+					},
+				};
+			}
+			bindAdaptiveHooks();
+			adaptiveTimer = window.setInterval(adaptiveTick, 2000);
+			disposers.push(() => {
+				if (adaptiveTimer !== 0) {
+					window.clearInterval(adaptiveTimer);
+					adaptiveTimer = 0;
+				}
+				adaptiveHooks = null;
+				adaptiveStill = false;
+				adaptiveProbe = false;
+				adaptiveLevel = 0;
+				adaptiveReason = "";
+				scene.removeAttribute("data-tl-adaptive");
+				publishAdaptive({ ...ADAPTIVE_DEFAULTS });
+			});
+
 			/**
 			 * The moving wallpaper is the whole point of this skin, so
 			 * prefers-reduced-motion only trims decorative CSS animation; it must
@@ -1672,6 +3479,7 @@
 					currentChoice !== null &&
 					currentChoice.kind === "video" &&
 					videoStill === null &&
+					adaptiveStill === false &&
 					userPaused === false &&
 					video.hidden === false &&
 					document.hidden === false &&
@@ -1755,6 +3563,9 @@
 			function start() {
 				if (hasLowPower()) return;
 				if (sceneFrameActive) return;
+				// C3: a static-frame downgrade owns the paused state; the watchdog and a
+				// visibility change must not silently undo it.
+				if (adaptiveStill) return;
 				if (videoStill !== null) return;
 				if (shaderActive) {
 					startShaderLoop();
@@ -1768,6 +3579,10 @@
 			scenePlayback = {
 				pause: (owner) => {
 					if (owner === "user") userPaused = true;
+					if (currentChoice !== null && currentChoice.kind === "web") {
+						parkWebWallpaper(owner);
+						return;
+					}
 					if (sceneFrameActive) {
 						postSceneFrame({ type: "pause" });
 						scene.removeAttribute("data-tl-fps");
@@ -1790,6 +3605,15 @@
 					// Low-power/visibility may ask for a resume; a standing user pause wins.
 					if (owner !== "user" && readPlayback().paused === true) return;
 					userPaused = false;
+					// Any resume request (user pause toggle, low-power exit) overrules the
+					// static-frame downgrade; the sampler re-evaluates on the next tick.
+					if (owner === "user" || adaptiveStill) clearAdaptive("resume");
+					if (currentChoice !== null && currentChoice.kind === "web") {
+						if (hasLowPower() || document.hidden) return;
+						if (webActive === false) mountWebWallpaper(currentChoice);
+						report("playing", "playing");
+						return;
+					}
 					if (sceneFrameActive) {
 						postSceneFrame({ type: "resume" });
 						report("playing", "playing");
@@ -1829,6 +3653,9 @@
 					const frame = canvas.toDataURL("image/jpeg", 0.6);
 					if (frame === "" || frame === "data:,") return;
 					heldFrame = frame;
+					// The role tells the transition CSS which direction this layer animates:
+					// "held" is the OUTGOING still, "media" is a still wallpaper being shown.
+					photo.dataset.tlPhotoRole = "held";
 					photo.style.backgroundImage = 'url("' + frame + '")';
 					photo.dataset.tlReady = "";
 					photo.hidden = false;
@@ -1836,6 +3663,17 @@
 					// A cross-origin frame taints the canvas; the scene gradient holds instead.
 					heldFrame = "";
 				}
+			}
+			/**
+			 * Switching from a STILL wallpaper to a video has no video frame to capture;
+			 * the already-visible photo layer is the outgoing snapshot instead.
+			 */
+			function captureHeldFromPhoto() {
+				if (heldFrame !== "") return;
+				if (photo.dataset.tlPhotoRole !== "media" || photo.hidden) return;
+				heldFrame = "previous-image";
+				photo.dataset.tlPhotoRole = "held";
+				photo.dataset.tlReady = "";
 			}
 			const stopFpsProbe = () => {
 				if (fpsHandle !== 0 && typeof video.cancelVideoFrameCallback === "function") {
@@ -1885,6 +3723,19 @@
 				fpsHandle = video.requestVideoFrameCallback(probe);
 			};
 			const onLoaded = () => {
+				// A resolution switch keeps the playback position instead of restarting the
+				// video from zero; only a real wallpaper change starts at the beginning.
+				if (pendingSeekTo !== null) {
+					const target = pendingSeekTo;
+					pendingSeekTo = null;
+					try {
+						if (Number.isFinite(video.duration) && video.duration > 0) {
+							video.currentTime = Math.min(Math.max(0, target), Math.max(0, video.duration - 0.05));
+						}
+					} catch {
+						// seeking before metadata is best effort; playback continues anyway
+					}
+				}
 				// The new source has a frame: the held previous frame has done its job.
 				// Keeping it past this point would show the OLD wallpaper over a new one
 				// that failed to autoplay, which reads as "the switch did nothing".
@@ -1901,6 +3752,11 @@
 				applyPlayback(scene, readPlayback());
 				markReady();
 				report("ready", userPaused ? "paused" : video.paused ? "ready" : "playing", userPaused ? "user" : "");
+				// A5: snapshot this frame for the next load of the same wallpaper.
+				const captured = currentChoice;
+				if (captured !== null && captured.kind === "video" && video.readyState >= 2) {
+					captureFrameCache(captured, video, () => currentChoice !== null && currentChoice.url === captured.url);
+				}
 				start();
 			};
 			const onPlaying = () => {
@@ -1916,6 +3772,11 @@
 				scene.removeAttribute("data-tl-fps");
 				scene.removeAttribute("data-tl-jitter");
 				publishSceneStatus({ fps: 0, jitter: 0 });
+				// C3 paused the video itself; the reason must survive this event.
+				if (adaptiveStill) {
+					report("still", "still", adaptiveReason);
+					return;
+				}
 				if (hasLowPower()) report("paused", "lowpower", "lowpower");
 				else if (document.hidden) report("paused", "hidden");
 				else if (userPaused) report("paused", "paused", "user");
@@ -1958,20 +3819,34 @@
 				if (document.hidden) {
 					if (sceneFrameActive) postSceneFrame({ type: "pause" });
 					video.pause();
+					// A web project cannot be frozen from outside: unload it, remount on show.
+					if (currentChoice !== null && currentChoice.kind === "web") parkWebWallpaper("hidden");
 					report("paused", "hidden");
 				} else if (userPaused === false) {
+					// v0.5.3: an automatic C3 downgrade measured while the tab was hidden is
+					// stale; a visible tab must not come back to a frozen frame.
+					clearAdaptive("visible");
 					if (sceneFrameActive) {
 						postSceneFrame({ type: "resume" });
 						report("playing", "playing");
+					}
+					if (currentChoice !== null && currentChoice.kind === "web" && !hasLowPower() && webActive === false) {
+						mountWebWallpaper(currentChoice);
 					}
 					start();
 				}
 			};
 			const onResumeSignal = () => {
 				if (document.hidden || userPaused) return;
+				// v0.5.3: refocusing the window clears any automatic downgrade immediately;
+				// C3 may only downgrade again after a fresh focused 5-sample/10s streak.
+				clearAdaptive("refocus");
 				if (sceneFrameActive) {
 					postSceneFrame({ type: "resume" });
 					report("playing", "playing");
+				}
+				if (currentChoice !== null && currentChoice.kind === "web" && !hasLowPower() && webActive === false) {
+					mountWebWallpaper(currentChoice);
 				}
 				start();
 			};
@@ -1986,6 +3861,9 @@
 			};
 			const watchdogTick = () => {
 				if (scene.isConnected === false) return;
+				// A web project reports nothing: its only health signal is the mount
+				// timeout, so the video watchdog must stay out of its way.
+				if (currentChoice !== null && currentChoice.kind === "web") return;
 				if (sceneFrameActive) {
 					// The adapter posts stats every second; silence while "playing" means the
 					// engine loop died. Surface it so the panel offers 重试 instead of a
@@ -2054,12 +3932,24 @@
 				window.removeEventListener("pointermove", onShaderPointer);
 			});
 
-			const applyWallpaper = (choice) => {
+			const applyWallpaper = (choice, options) => {
 				if (!scene.isConnected) return;
 				clearRetry();
 				stopFpsProbe();
 				scene.removeAttribute("data-tl-fps");
 				scene.removeAttribute("data-tl-jitter");
+				requestTransition();
+				// C3: a new source gets a clean adaptive baseline (silent: the old source is
+				// on its way out and must not be resumed just to be replaced).
+				clearAdaptive("source-switch", true);
+				shaderFrameTicks = 0;
+				shaderWindowStart = 0;
+				shaderLastPaint = 0;
+				shaderMaxGap = 0;
+				// A4: preserving the playback position is what makes a resolution switch
+				// invisible instead of "the wallpaper restarted".
+				pendingSeekTo =
+					options !== null && options !== undefined && Number.isFinite(options.seekTo) ? options.seekTo : null;
 				// Every source switch starts from a clean playback intent: a blocked or
 				// runtime-paused state belongs to the OLD source. A PERSISTED pause is the
 				// exception — it is the user's standing choice and survives a reload.
@@ -2070,10 +3960,16 @@
 				if (choice === null) {
 					currentChoice = null;
 					stopSceneFrame();
+					stopWebWallpaper();
+					applyVariantDatasets(null);
 					scene.removeAttribute("data-tl-media");
 					scene.removeAttribute("data-tl-width");
 					scene.removeAttribute("data-tl-height");
 					scene.removeAttribute("data-tl-duration");
+					if (wallpaperController !== null) {
+						wallpaperController.image = null;
+						wallpaperController.shaderSwatch = null;
+					}
 					report("no-source", "idle");
 					return;
 				}
@@ -2086,6 +3982,8 @@
 					return;
 				}
 				choice = verdict.choice;
+				// A4: if the catalog is already warm, pick the right encode before mounting.
+				choice = pickCachedVariant(choice);
 				currentChoice = choice;
 				scene.dataset.tlMedia = choice.kind;
 				scene.removeAttribute("data-tl-width");
@@ -2094,9 +3992,36 @@
 				videoStillToken += 1;
 				videoStill = null;
 				clearStillHandlers();
-				if (choice.kind !== "shader") audioController.stop("切换壁纸，已停止音频");
+				if (choice.kind !== "video") applyVariantDatasets(null);
+				if (choice.kind !== "shader") audioController.stop(TL_T("audio.stopSwitch"));
 				// Any non-scene source retires the optional scene frame first.
 				if (choice.kind !== "scene") stopSceneFrame();
+				// A3: the web project owns its own iframe; it is not one of the media
+				// channels, so the other four are retired before it mounts.
+				if (choice.kind === "web") {
+					shaderActive = false;
+					stopShaderLoop();
+					shaderCanvas.hidden = true;
+					scene.removeAttribute("data-tl-shader-on");
+					video.pause();
+					video.hidden = true;
+					video.removeAttribute("data-tl-ready");
+					heldFrame = "";
+					photo.hidden = true;
+					photo.removeAttribute("data-tl-ready");
+					photo.removeAttribute("data-tl-photo-role");
+					photo.style.removeProperty("background-image");
+					if (wallpaperController !== null) {
+						wallpaperController.image = null;
+						wallpaperController.shaderSwatch = null;
+					}
+					applyVariantDatasets(null);
+					syncResolutionDataset();
+					mountWebWallpaper(choice);
+					return;
+				}
+				// Every other source retires a mounted web project (scripts must stop).
+				stopWebWallpaper();
 				if (choice.kind === "scene") {
 					shaderActive = false;
 					stopShaderLoop();
@@ -2159,10 +4084,16 @@
 					} catch (error) {
 						note("shader:render", error);
 					}
+					// C3 measures real rendered frames from a fresh window per source.
+					shaderFrameTicks = 0;
+					shaderMaxGap = 0;
+					shaderLastPaint = 0;
+					shaderWindowStart = performance.now();
 					snapshotShader();
 					if (wallpaperController !== null) wallpaperController.shaderSwatch = shaderSwatch;
 					if (currentChoice !== null) lastGoodChoice = currentChoice;
 					start();
+					startTransition();
 					report("ready", "playing");
 					return;
 				}
@@ -2179,6 +4110,8 @@
 					heldFrame = "";
 					report("loading", "loading");
 					photo.hidden = false;
+					// A still wallpaper IS the photo layer; transitions animate it IN.
+					photo.dataset.tlPhotoRole = "media";
 					scene.dataset.tlFile = file;
 					// Preload separately: marking ready on the div would flash the empty
 					// layer before the bytes arrive.
@@ -2191,6 +4124,9 @@
 						if (currentChoice !== null) lastGoodChoice = currentChoice;
 						photo.dataset.tlReady = "";
 						markReady();
+						// A5: an image wallpaper is also a valid cache snapshot.
+						const captured = choice;
+						captureFrameCache(captured, probe, () => currentChoice !== null && currentChoice.url === captured.url);
 						report("ready", "ready");
 					};
 					probe.onerror = () => {
@@ -2210,15 +4146,19 @@
 					// Kept for the palette sampler: a still wallpaper is not a <video>.
 					if (wallpaperController !== null) wallpaperController.image = probe;
 					photo.style.backgroundImage = 'url("' + choice.url.replace(/["\\)]/g, "") + '")';
+					applyVariantDatasets(null);
+					syncResolutionDataset();
 					return;
 				}
 				// Hold the last decoded frame while the next video loads: the element goes
 				// blank the moment `load()` runs, and the scene gradient alone reads as a
 				// flicker on every switch.
 				holdCurrentFrame();
+				captureHeldFromPhoto();
 				if (heldFrame === "") {
 					photo.hidden = true;
 					photo.removeAttribute("data-tl-ready");
+					photo.removeAttribute("data-tl-photo-role");
 					photo.style.removeProperty("background-image");
 				}
 				if (wallpaperController !== null) wallpaperController.image = null;
@@ -2234,6 +4174,10 @@
 				video.load();
 				// Which file actually won: readable from devtools when diagnosing decode.
 				scene.dataset.tlFile = file;
+				// A5 + A4: cached still paints under the loading video; the shared catalog
+				// then decides whether a better encode exists for this window.
+				primeFrameCache(choice);
+				void maybeApplyVariant(choice);
 				if (still === null) {
 					start();
 					return;
@@ -2285,7 +4229,7 @@
 			};
 			rotationRuntime = createRotationRuntime({
 				model: readRotation(),
-				list: listWallpapers,
+				list: listRotationCandidates,
 				apply: (choice) => {
 					if (wallpaperController !== null) wallpaperController.apply(choice);
 				},
@@ -2293,15 +4237,38 @@
 				isStill: () => videoStill !== null,
 				prepare: prepareWallpaper,
 			});
-			void resolveWallpaper().then(applyWallpaper);
+			syncResolutionDataset();
+			void (async () => {
+				// The catalog decides the encode: waiting for it once means the very first
+				// mount already uses the window-appropriate variant (no reload on start).
+				await readCatalog();
+				applyWallpaper(await resolveWallpaper());
+			})();
 
 			return () => {
 				clearStillHandlers();
 				clearRetry();
 				releaseHeldFrame();
-				audioController.stop("皮肤已关闭");
+				audioController.stop(TL_T("audio.stopSkin"));
 				stopFpsProbe();
 				stopShaderLoop();
+				// Teardown of everything the engine extras mounted or scheduled: after this
+				// the scene DOM is gone and no stray fetch/timer may touch it.
+				currentChoice = null;
+				cachePrimeToken += 1;
+				cancelFrameCacheCapture();
+				releaseFrameCacheUrls();
+				clearTransition();
+				stopWebWallpaper();
+				if (resizeTimer !== 0) {
+					window.clearTimeout(resizeTimer);
+					resizeTimer = 0;
+				}
+				if (resizeRaf !== 0) {
+					globalThis.cancelAnimationFrame(resizeRaf);
+					resizeRaf = 0;
+				}
+				window.removeEventListener("resize", onWindowResize);
 				for (const dispose of disposers) dispose();
 				if (shaderRenderer !== null) shaderRenderer.dispose();
 				shaderRenderer = null;

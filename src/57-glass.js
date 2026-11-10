@@ -45,5 +45,96 @@
 				if (body !== null) body.style.removeProperty("--tl-glass-m");
 			};
 		}
+
+		// ---- v1.0.0 liquid-glass depth: off / frosted / soft / real ----
+		/**
+		 * The depth is a semantic preset over the scene layer: `off` keeps the v0.7
+		 * look (no extra compositing), the three on-levels add a specular + blur
+		 * treatment between the wallpaper and the product UI (the `[data-tl-scene]`
+		 * layer, painted by the stylesheet ::after). The effective level degrades
+		 * automatically under low power / 15fps so the energy promise holds.
+		 */
+		const GLASS_DEPTH_KEY = "tianlight.glassDepth";
+		const GLASS_DEPTHS = ["off", "frosted", "soft", "real"];
+		const GLASS_DEPTH_DEFAULT = "off";
+		let glassDepthController = null;
+
+		function readGlassDepth() {
+			try {
+				const raw = globalThis.localStorage.getItem(GLASS_DEPTH_KEY);
+				if (GLASS_DEPTHS.includes(raw)) return raw;
+			} catch {
+				// storage may be blocked
+			}
+			return GLASS_DEPTH_DEFAULT;
+		}
+
+		function effectiveGlassDepth(depth) {
+			if (depth === "off") return "off";
+			try {
+				if (readRenderTier() === "15") return "soft";
+				if (document.body !== null && document.body.hasAttribute("data-tl-lowpower")) return depth === "real" ? "soft" : depth;
+			} catch {
+				// degrade silently
+			}
+			return depth;
+		}
+
+		function applyGlassDepth(depth) {
+			const body = document.body;
+			if (body === null) return "off";
+			const effective = effectiveGlassDepth(depth);
+			body.setAttribute("data-tl-glass-depth", depth);
+			body.setAttribute("data-tl-glass-effective", effective);
+			return effective;
+		}
+
+		function installGlassDepth() {
+			let depth = readGlassDepth();
+			let effective = applyGlassDepth(depth);
+			glassDepthController = {
+				read: () => depth,
+				effective: () => effective,
+				levels: () => [...GLASS_DEPTHS],
+				apply: (next) => {
+					depth = GLASS_DEPTHS.includes(next) ? next : GLASS_DEPTH_DEFAULT;
+					effective = applyGlassDepth(depth);
+					try {
+						globalThis.localStorage.setItem(GLASS_DEPTH_KEY, depth);
+					} catch {
+						// persistence is optional
+					}
+					return { depth, effective };
+				},
+				refresh: () => {
+					effective = applyGlassDepth(depth);
+					return effective;
+				},
+			};
+			let observer = null;
+			try {
+				observer = new MutationObserver(() => {
+					const next = effectiveGlassDepth(depth);
+					if (next === effective) return;
+					effective = applyGlassDepth(depth);
+				});
+				observer.observe(document.body, { attributes: true, attributeFilter: ["data-tl-lowpower", "data-tl-lowpower-reason"] });
+			} catch (error) {
+				note("glass-depth:observer", error);
+			}
+			return () => {
+				glassDepthController = null;
+				try {
+					observer?.disconnect();
+				} catch (error) {
+					note("glass-depth:disconnect", error);
+				}
+				const body = document.body;
+				if (body !== null) {
+					body.removeAttribute("data-tl-glass-depth");
+					body.removeAttribute("data-tl-glass-effective");
+				}
+			};
+		}
 		//#endregion
 

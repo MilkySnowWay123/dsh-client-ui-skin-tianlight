@@ -5,6 +5,1127 @@
 		 * thumbnails, the other a small draggable settings card. Sharing one host made
 		 * both feel cramped and put unrelated controls in the same panel.
 		 */
+		/**
+		 * v0.5.0 面板新增文案（工作流 panel-library 自有前缀 `lib.`）。
+		 * v0.4.0 的既有中文标签保持原样：skinlab 运行时矩阵按这些字符串断言
+		 * （"壁纸" / "N 张" / "全部 3" / "WE 目录" / "查看全部壁纸"），
+		 * 翻译它们会把布局验证变成语言相关，所以只给新增控件走 TL_T。
+		 */
+		registerTl5Strings({
+			zh: {
+				"lib.sort": "排序",
+				"lib.sortName": "名称",
+				"lib.sortKind": "类型",
+				"lib.sortRecent": "最近使用",
+				"lib.sortFavorites": "收藏优先",
+				"lib.favorites": "收藏",
+				"lib.hidden": "显示隐藏",
+				"lib.hiddenOn": "隐藏中",
+				"lib.filterClear": "清除筛选",
+				"lib.filterEmpty": "没有匹配的壁纸：换关键词，或清空收藏/标签筛选",
+				"lib.searchPlaceholder": "搜索名称、标签或类型",
+				"lib.searchAria": "搜索壁纸",
+				"lib.shareTitle": "分享链接",
+				"lib.shareCopy": "复制分享链接",
+				"lib.shareCopied": "已复制分享链接（只含配置，不含壁纸文件）",
+				"lib.shareFailed": "复制失败，请手动选择下面的链接复制",
+				"lib.shareHint": "分享链接包含当前壁纸、取景、外观、播放、轮播、特效、情境与排版；只有对方点「应用」才会写入设置。",
+				"lib.shareDetected": "检测到共享配方（{n} 项）",
+				"lib.shareApply": "应用",
+				"lib.shareIgnore": "忽略",
+				"lib.shareApplied": "共享配方已应用",
+				"lib.shareIgnored": "已忽略共享配方（设置未改动）",
+				"lib.shareInvalid": "分享链接无效，已忽略（未修改任何设置）",
+				"lib.shareManual": "或手动复制这段链接：",
+				"lib.shareLinkAria": "共享配方链接",
+				"lib.shareLong": "链接较长（含着色器源码），部分聊天工具可能截断。",
+				"lib.shareBuildFail": "生成分享链接失败：{reason}",
+				"lib.bundleTitle": "导入 / 导出包",
+				"lib.bundleHint": "包内含设置、配方与上传的壁纸；导出由宿主直接流式打包，不经过浏览器内存。",
+				"lib.bundleExport": "导出包",
+				"lib.bundleExportBusy": "准备下载…",
+				"lib.bundleExportStarted": "已开始下载。若浏览器提示 404，说明宿主半还是旧版本，重启 DSH 后重试。",
+				"lib.bundleExportFail": "导出失败：{reason}",
+				"lib.bundleImport": "导入包",
+				"lib.bundleImporting": "导入中…",
+				"lib.bundleImportDone": "导入完成：新增 {imported} 个，跳过 {skipped} 个",
+				"lib.bundleImportSettings": "设置已写入宿主，刷新页面后统一生效",
+				"lib.bundleImportFail": "导入失败：{reason}",
+				"lib.bundleImportSize": "包超过 {mb}MB 上限，请分开导入",
+				"lib.bundleImportType": "只支持 .tgz / .tar.gz 包",
+				"lib.bundleNoHost": "当前宿主没有提供打包接口：重启 DSH Desktop 后可用。",
+				"lib.bundleProgress": "上传 {pct}%",
+				"lib.recipeHint": "配方 v2 含壁纸、取景、外观、播放、轮播、特效、情境、可读性与排版（含着色器源码与参数）。",
+				"lib.recipeExported": "已生成配方（v2），复制这段分享给别人",
+				"lib.recipeBadText": "导入失败：不是有效的配方文本",
+				"lib.recipeBadValue": "导入失败：不是有效的配方",
+				"lib.exportRecipe": "导出配方",
+				"lib.importRecipe": "导入配方",
+				"lib.resetWallpaper": "恢复壁纸默认",
+				"lib.recipePlaceholder": "{ format: \"tianlight-recipe\", version: 2 }",
+				"lib.we.readFailed": "无法读取目录列表（宿主接口需重启 DSH 后才存在）",
+				"lib.we.saving": "保存中…",
+				"lib.we.savedPrefix": "已保存 ",
+				"lib.we.savedDirs": " 个目录",
+				"lib.punct.openParen": "（",
+				"lib.we.savedSkipped": " 条无效/相对路径已忽略，需填绝对路径）",
+				"lib.we.saveFailed": "保存失败：宿主接口需重启 DSH 后才存在",
+				"lib.ctrl.off": "关闭",
+				"lib.slot.imageUnset": "图片（未选）",
+				"lib.kind.image": "图片",
+				"lib.slot.preset": "预设",
+				"lib.url.empty": "先粘贴一个图片或视频直链",
+				"lib.url.scheme": "地址要以 http:// 或 https:// 开头",
+				"lib.url.httpsBlocked": "当前页面是 HTTPS，浏览器会拦截 http 资源；请换用 https 地址",
+				"lib.url.checking": "正在检查地址…",
+				"lib.url.notMedia": "这不是可直接加载的图片/视频直链；请确认地址以 .jpg/.png/.mp4/.webm 等结尾，或手动选「图片 / 视频」。",
+				"lib.url.applied": "已应用：",
+				"lib.kind.video": "视频",
+				"lib.url.remoteHost": "远程地址",
+				"lib.shader.compileFailed": "编译失败：",
+				"lib.shader.applied": "已应用着色器",
+				"lib.shader.reset": "已恢复默认，点「应用着色器」生效",
+				"lib.audio.stopped": "已停止音频",
+				"lib.audio.requesting": "正在请求麦克风…",
+				"lib.audio.failed": "无法启用麦克风",
+				"lib.shader.audioPreset": "已切到「音频极光」，点「应用着色器」生效",
+				"lib.frame.sampling": "正在从视频取帧…",
+				"lib.frame.pickHint": "点一帧设为静态壁纸（切走壁纸后需重新取帧）",
+				"lib.frame.pinned": "已设为静态帧 ",
+				"lib.frame.resumed": "已恢复动态播放",
+				"lib.upload.hostStale": "宿主半还是旧版本（页面已更新、进程未重启）：重启一次 DSH Desktop 后再上传；点「重新检测」可复查。",
+				"lib.upload.notWritable": "上传目录不可写：检查 skin-tianlight/assets/ 的写权限",
+				"lib.upload.tooBigPrefix": "超过 ",
+				"lib.upload.tooBigSuffix": "MB 上限；4K 长片请先压缩，或设置 TIANLIGHT_UPLOAD_MAX",
+				"lib.upload.types": "只支持 mp4/webm/mov/m4v/png/jpg/webp/avif/gif/svg",
+				"lib.upload.busy": "上传中…",
+				"lib.upload.done": "已上传：",
+				"lib.upload.failed": "上传失败：",
+				"lib.current.auto": "自动（按素材优先级）",
+				"lib.current.scenePrefix": "场景 · ",
+				"lib.current.customShader": "自定义代码",
+				"lib.current.unnamed": "未命名",
+				"lib.current.videoStill": "视频静态帧",
+				"lib.quality.loadFailed": "壁纸加载失败：请换一个文件，或检查编码/地址；皮肤会自动退回可播画面",
+				"lib.quality.scene": "画质：WebWallGL 实时场景",
+				"lib.quality.measured": " · 实测 ",
+				"lib.quality.engineNotReady": " · 引擎未就绪",
+				"lib.quality.shader": "画质：程序化着色器，不受源分辨率影响",
+				"lib.quality.source": "画质：源 ",
+				"lib.quality.crop": " · 当前裁切约 ",
+				"lib.quality.upscaled": " · 会放大，可能发糊",
+				"lib.quality.native": " · 不需放大",
+				"lib.quality.low": "（偏低）",
+				"lib.quality.eightK": " · 8K 源可能被浏览器降采样",
+				"lib.quality.duration": " · 时长 ",
+				"lib.power.reducedMotion": "系统开启了「减少动态效果」",
+				"lib.power.saveData": "浏览器开启了流量节省",
+				"lib.power.battery": "电量偏低且未充电",
+				"lib.power.manual": "手动开启省电",
+				"lib.status.lowPower": "省电暂停",
+				"lib.status.still": "静态帧",
+				"lib.status.blocked": "自动播放被拦截",
+				"lib.status.stalled": "画面卡住",
+				"lib.status.failed": "加载失败",
+				"lib.status.image": "图片壁纸",
+				"lib.status.loading": "加载中",
+				"lib.status.scene": "场景运行中",
+				"lib.status.shader": "着色器运行中",
+				"lib.status.playing": "动态播放中",
+				"lib.status.idle": "未选择壁纸",
+				"lib.status.paused": "已暂停",
+				"lib.status.ready": "已就绪",
+				"lib.hint.lowPowerPauseOpen": "省电自动暂停（",
+				"lib.power.mode": "省电模式",
+				"lib.hint.lowPowerPauseClose": "）；点按钮会关闭省电并恢复播放。",
+				"lib.hint.still": "当前固定在静态帧，刷新后仍保持；点「回到动态」恢复播放。",
+				"lib.hint.blocked": "浏览器拦下了自动播放。点「播放动态」一次即可；之后回到页面会自动继续。",
+				"lib.hint.stalled": "已请求播放但没有新画面。点「重试」重新加载当前壁纸。",
+				"lib.hint.decodeFailedOpen": "解码或播放失败（",
+				"lib.common.unknownReason": "未知原因",
+				"lib.hint.decodeFailedClose": "）；皮肤会自动退回可播画面。",
+				"lib.hint.idle": "还没有选择壁纸；从下面「来源」开始挑一张。",
+				"lib.hint.buffering": "正在加载/解码，画面出现后会自动开始播放。",
+				"lib.hint.scene": "WebWallGL 正在渲染 WE 场景；加载失败会自动退回视频/图片。",
+				"lib.hint.shader": "程序化着色器按当前渲染档位运行。",
+				"lib.hint.videoPlaying": "视频正在播放；切换页面会暂停、回来继续。",
+				"lib.hint.paused": "已暂停在当前帧；点「继续播放」恢复。",
+				"lib.hint.ready": "画面已就绪。",
+				"lib.action.lowPowerPlay": "关闭省电并播放",
+				"lib.action.backToMotion": "回到动态",
+				"lib.action.play": "播放动态",
+				"lib.action.retry": "重试",
+				"lib.action.pause": "暂停",
+				"lib.action.resume": "继续播放",
+				"lib.quality.jitter": " · 帧间隔抖动 ",
+				"lib.quality.high": "（偏高）",
+				"lib.listHint.url": "把完整媒体直链粘到下面；不是网页地址。网络直链只播放，不下载进壁纸库。",
+				"lib.listHint.shader": "先选预设或贴 GLSL，调好参数，再点「应用着色器」。",
+				"lib.listHint.weOpen": "Wallpaper Engine：",
+				"lib.unit.items": " 张",
+				"lib.listHint.weSceneOpen": "（场景 ",
+				"lib.punct.closeParen": "）",
+				"lib.listHint.weClose": "；目录在清单顶部「配置目录」里改，场景失败会自动降级。",
+				"lib.listHint.local": "本地与上传：",
+				"lib.listHint.localSuffix": " 张。点缩略图直接应用；4K/8K 也可直接点。",
+				"lib.listHint.all": "全部壁纸：",
+				"lib.listHint.allMiddle": " 张（本地 ",
+				"lib.listHint.allSuffix": "）。点缩略图直接应用；上方可筛选，或从「网址 / WE 目录 / GLSL」导入。",
+				"lib.list.loading": "加载中…",
+				"lib.list.failed": "读取失败",
+				"lib.list.loadingHint": "正在读取壁纸清单…",
+				"lib.list.errNetwork": "无法读取壁纸清单：宿主接口不可用或网络错误",
+				"lib.list.errHostStale": "无法读取壁纸清单：宿主半还是旧版本，重启 DSH Desktop 后重试",
+				"lib.pick.more": "更多设置",
+				"lib.pick.back": "返回快捷选择",
+				"lib.pick.applied": "已切换：{name}",
+				"lib.pick.failed": "切换失败：{reason}",
+				"lib.pick.noScene": "壁纸场景未启用：请先在高级中开启壁纸模块",
+				"lib.card.inUse": "使用中",
+				"lib.source.url": "URL 地址",
+				"lib.source.local": "本地/上传",
+				"lib.source.all": "全部",
+				"lib.source.engine": "壁纸引擎",
+				"lib.we.detected": "Wallpaper Engine：已检测到 {n} 张（Steam 工坊 {steam} / 我的项目 {project}）",
+				"lib.we.openLibrary": "打开壁纸库",
+				"lib.we.openRequested": "已请求打开壁纸库",
+				"lib.we.openFallback": "已请求打开壁纸库；若没有打开，请到 设置 → 壁纸",
+				"lib.we.manual": "高级（手动路径）",
+				"lib.we.manualHint": "仅用于自动检测不到的旧版目录；一般不需要设置。",
+				"lib.we.autoDesc": "自动检测本机壁纸库（无需配置路径）",
+				"lib.we.staticHint": "静态高清",
+				"lib.we.staticHintTitle": "场景以静态高清图应用；动态缓存可在设置页选择「生成动态」",
+				"lib.listHint.engine": "壁纸引擎：{n} 张（自动检测，点卡片直接应用；场景为静态高清）",
+				"lib.listValue.pasteUrl": "粘贴地址",
+				"lib.ctrl.auto": "自动",
+				"lib.appearance.glassPrefix": "玻璃 ",
+				"lib.perf.powerAuto": "省电自动",
+				"lib.perf.powerOn": "省电开",
+				"lib.perf.powerOff": "省电关",
+				"lib.perf.rotationOn": " · 轮播开",
+				"lib.panel.title": "壁纸",
+				"lib.view.pick": "选壁纸",
+				"lib.view.advanced": "高级",
+				"lib.panel.close": "关闭壁纸侧栏",
+				"lib.current.prefix": "当前壁纸：",
+				"lib.source.localShort": "本地",
+				"lib.label.playing": "播放中",
+				"lib.label.unlock": "待恢复",
+				"lib.label.play": "播放",
+				"lib.group.sources": "来源（目录/代码）",
+				"lib.punct.colon": "：",
+				"lib.group.list": "壁纸清单",
+				"lib.we.hint": "把 Wallpaper Engine 的 projects 目录粘在这里，每行一个；只读，不修改原文件。",
+				"lib.we.placeholder": "每行一个绝对路径，例如 …/steamapps/workshop/content/431960/<项目ID>",
+				"lib.we.save": "保存目录",
+				"lib.upload.title": "上传后自动出现在本地清单；不会覆盖同名文件",
+				"lib.upload.button": "上传壁纸",
+				"lib.upload.hostStaleShort": "宿主半待重启 DSH",
+				"lib.upload.limitSuffix": "MB · 图片/视频",
+				"lib.upload.redetecting": "正在重新检测宿主路由…",
+				"lib.upload.redetect": "重新检测",
+				"lib.hiddenHint": "隐藏只改变列表，不删除源文件",
+				"lib.tag.prefix": "标签：",
+				"lib.tag.remove": "移除这个标签",
+				"lib.tag.placeholder": "输入标签后回车，例如 夜景",
+				"lib.common.done": "完成",
+				"lib.card.autoTitle": "自动选择",
+				"lib.card.autoNote": "按素材优先级",
+				"lib.card.scene": "场景 · WebWallGL",
+				"lib.card.unhide": "恢复显示",
+				"lib.card.hide": "隐藏",
+				"lib.card.unhideTitle": "恢复显示（不删除文件）",
+				"lib.card.hideTitle": "隐藏（不删除文件，也不打断当前播放）",
+				"lib.card.unhideShort": "显",
+				"lib.card.hideShort": "隐",
+				"lib.card.unfavorite": "取消收藏",
+				"lib.card.favorite": "收藏",
+				"lib.card.editTags": "编辑标签",
+				"lib.empty.we": "这个来源下没有可读的视频/场景：旧版目录可在高级 ① 的「高级（手动路径）」里检查；自动检测的条目在「壁纸引擎」来源里。",
+				"lib.empty.all": "还没有壁纸：点下方「上传壁纸」，或用上方「网址导入 / WE 目录 / GLSL」。",
+				"lib.empty.local": "本地还没有壁纸：把图片/视频放进 skin-tianlight/assets/，刷新页面即可；也可以直接点「上传壁纸」。",
+				"lib.empty.engine": "壁纸引擎没有可显示的壁纸：请在 设置 → 壁纸 里查看自动检测状态。",
+				"lib.empty.showAll": "查看全部壁纸",
+				"lib.url.hint": "只支持「能直接打开的媒体直链」：图片或视频地址，不是网页地址。网络直链直接播放，不下载到本机；要进壁纸库请用上传。",
+				"lib.field.type": "类型",
+				"lib.url.pasted": "已从剪贴板粘贴，点「应用地址」或按回车",
+				"lib.url.clipboardEmpty": "剪贴板是空的；请手动 Ctrl+V",
+				"lib.url.clipboardDenied": "浏览器拒绝读取剪贴板；请手动 Ctrl+V",
+				"lib.url.paste": "粘贴",
+				"lib.url.placeholder": "粘贴完整直链，例如 https://…/wallpaper.mp4",
+				"lib.url.checkingShort": "检查中…",
+				"lib.url.apply": "应用地址",
+				"lib.url.autoHint": "自动会先按扩展名判断，无扩展名时实际探测图片/视频；不确定就保持自动。",
+				"lib.shader.intro": "ShaderToy 风格：不需要网站账号，也不抓取 shadertoy.com。① 选预设或贴 GLSL → ② 调速度/强度/色相 → ③ 点「应用着色器」。",
+				"lib.shader.uniforms": "可用 uniform：iTime / iResolution / iMouse / u_speed / u_intensity / u_hue / u_audio。",
+				"lib.audio.hint": "音频响应：把麦克风实时电平送给 u_audio；只分析，不录音、不上传。",
+				"lib.audio.requestingShort": "请求中…",
+				"lib.audio.stop": "停止音频",
+				"lib.audio.start": "启用麦克风",
+				"lib.audio.usePreset": "用「音频极光」",
+				"lib.audio.active": "音频响应中；关闭面板/省电/页面隐藏会自动停止。",
+				"lib.audio.idle": "未启用。先应用 ShaderToy 壁纸，再启用。",
+				"lib.shader.sourceAria": "着色器源码",
+				"lib.shader.speed": "速度 ",
+				"lib.shader.intensity": "强度 ",
+				"lib.shader.hue": "色相 ",
+				"lib.shader.apply": "应用着色器",
+				"lib.shader.resetButton": "恢复默认",
+				"lib.group.framing": "画面",
+				"lib.framing.followWindow": "跟随窗口",
+				"lib.framing.zoom": "缩放 ",
+				"lib.framing.cx": "取景横向 ",
+				"lib.framing.notCropped": "% · 当前画面未裁切",
+				"lib.framing.cy": "取景纵向 ",
+				"lib.framing.window": "窗口 ",
+				"lib.framing.cropFollows": " · 裁切跟随窗口",
+				"lib.framing.cropIs": " · 裁切 ",
+				"lib.framing.hint": "取景滑杆只在画面被裁切时可用：提高缩放，或换一个与窗口不同的比例。",
+				"lib.frame.needExplicit": "静态帧：先显式选择一个视频壁纸（自动选择不支持取帧）",
+				"lib.frame.videoOnly": "静态帧：只有视频壁纸支持取帧",
+				"lib.frame.hint": "静态帧：从当前视频取 6 帧，点一帧固定为静态壁纸",
+				"lib.frame.busy": "取帧中…",
+				"lib.frame.generate": "生成帧预览",
+				"lib.frame.currentPrefix": "当前：静态帧 ",
+				"lib.frame.currentSuffix": "s（「回到动态」恢复播放）",
+				"lib.frame.set": "设为静态帧 ",
+				"lib.playback.hint": "播放控制：倍速/翻转只影响视频；60fps 源仍按源帧率，倍速会按比例改变实际帧率。",
+				"lib.playback.speed": "倍速",
+				"lib.playback.pause": "暂停动态",
+				"lib.playback.flip": "水平翻转",
+				"lib.playback.filter": "画面滤镜",
+				"lib.ctrl.on": "已开启",
+				"lib.ctrl.offByDefault": "默认关闭",
+				"lib.playback.filterOnHint": "滤镜会多一层全屏合成；4K/60fps 下若掉帧，先关掉它。",
+				"lib.playback.filterOffHint": "滤镜默认关闭；开启后才对画面做亮度/对比度/饱和度调整。",
+				"lib.filter.brightness": "亮度",
+				"lib.filter.contrast": "对比度",
+				"lib.filter.saturate": "饱和度",
+				"lib.group.appearance": "外观",
+				"lib.appearance.glassLabel": "玻璃不透明度 ",
+				"lib.layer.slots": "叠加槽",
+				"lib.layer.slotA": "A（下）",
+				"lib.layer.slotB": "B（上）",
+				"lib.layer.swap": "交换 A/B",
+				"lib.layer.pattern": "图案",
+				"lib.layer.imageAria": "本地图片叠加",
+				"lib.layer.selectImage": "选本地图片…",
+				"lib.layer.pasteImage": "或粘贴图片地址",
+				"lib.layer.fit": "图片适配",
+				"lib.layer.fitCover": "填满",
+				"lib.layer.fitContain": "完整",
+				"lib.layer.fitStretch": "拉伸",
+				"lib.layer.offHint": "这一槽关闭；选「预设」或「图片」启用。",
+				"lib.layer.opacity": "叠加不透明度 ",
+				"lib.layer.blend": "混合",
+				"lib.layer.hint": "两层都叠在视频/图片/Shader 之上；纯 CSS，不增加解码；省电时保持静态。",
+				"lib.rail.title": "侧栏壁纸",
+				"lib.rail.same": "与主壁纸相同",
+				"lib.rail.separate": "独立分开",
+				"lib.rail.follow": "侧栏：跟随主壁纸",
+				"lib.group.performance": "自动/性能",
+				"lib.perf.lowPower": "省电",
+				"lib.ctrl.onShort": "开",
+				"lib.ctrl.offShort": "关",
+				"lib.perf.renderFps": "渲染帧率",
+				"lib.perf.fpsHint": "帧率档位作用于 ShaderToy 渲染与侧栏镜像；视频走原生解码，按源帧率播放，60fps 源不需要设置。60fps 更耗电，省电设置优先。",
+				"lib.perf.autoHint": "自动：低电量、省流量或系统开启「减少动态效果」时，暂停动态壁纸并冻结装饰动画",
+				"lib.perf.onHint": "已暂停动态壁纸（停在当前帧），并冻结桌宠等装饰动画",
+				"lib.perf.offHint": "始终播放动态壁纸，不再因电量或流量降级",
+				"lib.rotation.title": "自动轮播",
+				"lib.rotation.order": "顺序",
+				"lib.rotation.random": "随机",
+				"lib.rotation.interval": "间隔",
+				"lib.unit.minutesShort": "分",
+				"lib.rotation.favoritesOnly": "只轮播收藏",
+				"lib.rotation.everyPrefix": "每 ",
+				"lib.unit.secondsSuffix": " 秒",
+				"lib.unit.minutesSuffix": " 分钟",
+				"lib.rotation.onHint": "换一张；页面隐藏、省电或暂停播放时顺延，当前这张不会重复选中。",
+				"lib.rotation.offHint": "开启后自动轮换本地/WE 的图片与视频；隐藏的壁纸不参与，坏文件会跳过。",
+				"lib.group.recipe": "保存/分享",
+				"lib.group.recipeValue": "精选 · 导出/导入",
+				"lib.preset.aurora.label": "极光 · 暗角",
+				"lib.preset.aurora.desc": "ShaderToy 极光 + 暗角，冷色桌面",
+				"lib.preset.audioScan.label": "音频极光 · 扫描线",
+				"lib.preset.audioScan.desc": "麦克风律动 + 扫描线；需手动启用麦克风",
+				"lib.preset.cinemaGrain.label": "电影感 · 颗粒",
+				"lib.preset.cinemaGrain.desc": "保留当前壁纸，只加颗粒和暗角",
+				"lib.preset.nightGlow.label": "冷夜 · 光晕",
+				"lib.preset.nightGlow.desc": "保留当前壁纸，叠加冷色光晕与扫描线",
+				"lib.preset.clean.label": "纯净",
+				"lib.preset.clean.desc": "清空两层叠加，回到干净壁纸",
+				"lib.preset.applied": "已应用精选：{name}",
+				"lib.recipeApplied": "配方已应用",
+				"lib.recipeAppliedShader": "配方已应用（着色器源码无效，已保留原设置）",
+				"lib.recipeBadApply": "导入失败：配方内容无法应用",
+				"lib.handle.title": "壁纸（Alt+W）",
+				"lib.handle.text": "壁纸",
+				"lib.audio.stoppedOnClose": "面板已关闭，已停止音频",
+				"lib.kind.scene": "场景",
+				"lib.kind.shader": "着色器",
+				"lib.kind.web": "网页",
+				"lib.card.web": "网页 · WE web",
+				"lib.status.web": "网页壁纸运行中",
+				"lib.quality.web": "画质：网页壁纸（沙箱 iframe，分辨率随窗口）",
+				"lib.hint.web": "网页壁纸在沙箱 iframe 里运行；隐藏页面、省电或关闭面板时暂停。",
+				"lib.current.webPrefix": "网页 · ",
+			},
+			en: {
+				"lib.sort": "Sort",
+				"lib.sortName": "Name",
+				"lib.sortKind": "Type",
+				"lib.sortRecent": "Recent",
+				"lib.sortFavorites": "Favorites first",
+				"lib.favorites": "Favorites",
+				"lib.hidden": "Show hidden",
+				"lib.hiddenOn": "Hidden shown",
+				"lib.filterClear": "Clear filters",
+				"lib.filterEmpty": "No wallpapers match: change the keywords or clear the favorite/tag filters",
+				"lib.searchPlaceholder": "Search name, tag or type",
+				"lib.searchAria": "Search wallpapers",
+				"lib.shareTitle": "Share link",
+				"lib.shareCopy": "Copy share link",
+				"lib.shareCopied": "Share link copied (config only, no media files)",
+				"lib.shareFailed": "Copy failed — select the link below and copy it manually",
+				"lib.shareHint": "The link carries the wallpaper, framing, appearance, playback, rotation, effects, context and typography config; it only writes settings when the receiver clicks Apply.",
+				"lib.shareDetected": "Shared recipe detected ({n} items)",
+				"lib.shareApply": "Apply",
+				"lib.shareIgnore": "Ignore",
+				"lib.shareApplied": "Shared recipe applied",
+				"lib.shareIgnored": "Shared recipe ignored (nothing changed)",
+				"lib.shareInvalid": "Invalid share link — ignored (nothing changed)",
+				"lib.shareManual": "Or copy this link manually:",
+				"lib.shareLinkAria": "Shared recipe link",
+				"lib.shareLong": "The link is long (it embeds shader source); some chat tools may truncate it.",
+				"lib.shareBuildFail": "Could not build the share link: {reason}",
+				"lib.bundleTitle": "Bundle import / export",
+				"lib.bundleHint": "The bundle holds settings, recipes and uploaded wallpapers; the host streams the export without buffering it in the page.",
+				"lib.bundleExport": "Export bundle",
+				"lib.bundleExportBusy": "Preparing download…",
+				"lib.bundleExportStarted": "Download started. A 404 means the host half is still the old build — restart DSH and retry.",
+				"lib.bundleExportFail": "Export failed: {reason}",
+				"lib.bundleImport": "Import bundle",
+				"lib.bundleImporting": "Importing…",
+				"lib.bundleImportDone": "Import finished: {imported} added, {skipped} skipped",
+				"lib.bundleImportSettings": "Settings were saved on the host; reload the page to apply them",
+				"lib.bundleImportFail": "Import failed: {reason}",
+				"lib.bundleImportSize": "The bundle exceeds the {mb}MB limit; split it and import in parts",
+				"lib.bundleImportType": "Only .tgz / .tar.gz bundles are supported",
+				"lib.bundleNoHost": "This host build exposes no bundle route — restart DSH Desktop to enable it.",
+				"lib.bundleProgress": "Uploading {pct}%",
+				"lib.recipeHint": "Recipe v2 carries the wallpaper, framing, appearance, playback, rotation, effects, context, legibility and typography config (including shader source and parameters).",
+				"lib.recipeExported": "Recipe v2 generated — copy this to share it",
+				"lib.recipeBadText": "Import failed: not valid recipe text",
+				"lib.recipeBadValue": "Import failed: not a valid recipe",
+				"lib.exportRecipe": "Export recipe",
+				"lib.importRecipe": "Import recipe",
+				"lib.resetWallpaper": "Reset wallpaper defaults",
+				"lib.recipePlaceholder": "{ format: \"tianlight-recipe\", version: 2 }",
+				"lib.we.readFailed": "Cannot read the folder list (restart DSH to enable the host route)",
+				"lib.we.saving": "Saving…",
+				"lib.we.savedPrefix": "Saved ",
+				"lib.we.savedDirs": " folders",
+				"lib.punct.openParen": " (",
+				"lib.we.savedSkipped": " invalid/relative paths ignored — use absolute paths)",
+				"lib.we.saveFailed": "Save failed: restart DSH to enable the host route",
+				"lib.ctrl.off": "Off",
+				"lib.slot.imageUnset": "Image (none selected)",
+				"lib.kind.image": "Image",
+				"lib.slot.preset": "Preset",
+				"lib.url.empty": "Paste a direct image or video URL first",
+				"lib.url.scheme": "The URL must start with http:// or https://",
+				"lib.url.httpsBlocked": "This page is HTTPS, so the browser blocks http media; use an https URL",
+				"lib.url.checking": "Checking the URL…",
+				"lib.url.notMedia": "That is not a directly loadable image/video URL; use an address ending in .jpg/.png/.mp4/.webm, or pick Image/Video manually.",
+				"lib.url.applied": "Applied: ",
+				"lib.kind.video": "Video",
+				"lib.url.remoteHost": "remote host",
+				"lib.shader.compileFailed": "Compile failed: ",
+				"lib.shader.applied": "Shader applied",
+				"lib.shader.reset": "Defaults restored — click Apply shader to use them",
+				"lib.audio.stopped": "Audio stopped",
+				"lib.audio.requesting": "Requesting the microphone…",
+				"lib.audio.failed": "Could not enable the microphone",
+				"lib.shader.audioPreset": "Switched to Audio aurora — click Apply shader to use it",
+				"lib.frame.sampling": "Extracting frames from the video…",
+				"lib.frame.pickHint": "Click a frame to pin it as a still wallpaper (frames are lost after switching wallpapers)",
+				"lib.frame.pinned": "Still frame pinned at ",
+				"lib.frame.resumed": "Live playback restored",
+				"lib.upload.hostStale": "The host half is still the old build (page updated, process not restarted): restart DSH Desktop, then upload again. Click Re-detect to re-check.",
+				"lib.upload.notWritable": "The upload folder is not writable: check write permission on skin-tianlight/assets/",
+				"lib.upload.tooBigPrefix": "Over ",
+				"lib.upload.tooBigSuffix": "MB limit; compress 4K clips first or raise TIANLIGHT_UPLOAD_MAX",
+				"lib.upload.types": "Only mp4/webm/mov/m4v/png/jpg/webp/avif/gif/svg are supported",
+				"lib.upload.busy": "Uploading…",
+				"lib.upload.done": "Uploaded: ",
+				"lib.upload.failed": "Upload failed: ",
+				"lib.current.auto": "Automatic (asset priority)",
+				"lib.current.scenePrefix": "Scene · ",
+				"lib.current.customShader": "Custom code",
+				"lib.current.unnamed": "Untitled",
+				"lib.current.videoStill": "Video still frame",
+				"lib.quality.loadFailed": "Wallpaper failed to load: pick another file or check the codec/URL; the skin falls back to a playable frame",
+				"lib.quality.scene": "Quality: WebWallGL real-time scene",
+				"lib.quality.measured": " · measured ",
+				"lib.quality.engineNotReady": " · engine not ready",
+				"lib.quality.shader": "Quality: procedural shader, independent of source resolution",
+				"lib.quality.source": "Quality: source ",
+				"lib.quality.crop": " · current crop ≈ ",
+				"lib.quality.upscaled": " · upscaled, may look soft",
+				"lib.quality.native": " · no upscaling",
+				"lib.quality.low": " (low)",
+				"lib.quality.eightK": " · 8K sources may be downsampled",
+				"lib.quality.duration": " · duration ",
+				"lib.power.reducedMotion": "Reduced motion is on in the system",
+				"lib.power.saveData": "Data saver is on in the browser",
+				"lib.power.battery": "Battery is low and not charging",
+				"lib.power.manual": "Low power turned on manually",
+				"lib.status.lowPower": "Low-power pause",
+				"lib.status.still": "Still frame",
+				"lib.status.blocked": "Autoplay blocked",
+				"lib.status.stalled": "Picture stalled",
+				"lib.status.failed": "Load failed",
+				"lib.status.image": "Image wallpaper",
+				"lib.status.loading": "Loading",
+				"lib.status.scene": "Scene running",
+				"lib.status.shader": "Shader running",
+				"lib.status.playing": "Playing",
+				"lib.status.idle": "No wallpaper selected",
+				"lib.status.paused": "Paused",
+				"lib.status.ready": "Ready",
+				"lib.hint.lowPowerPauseOpen": "Auto-paused by low power (",
+				"lib.power.mode": "low power",
+				"lib.hint.lowPowerPauseClose": "); click the button to turn low power off and resume playback.",
+				"lib.hint.still": "Pinned to a still frame; it stays after a reload. Click Back to motion to resume playback.",
+				"lib.hint.blocked": "The browser blocked autoplay. Click Play once; afterwards returning to the page resumes automatically.",
+				"lib.hint.stalled": "Playback was requested but no new frame arrived. Click Retry to reload the current wallpaper.",
+				"lib.hint.decodeFailedOpen": "Decode or playback failed (",
+				"lib.common.unknownReason": "unknown reason",
+				"lib.hint.decodeFailedClose": "); the skin falls back to a playable frame.",
+				"lib.hint.idle": "No wallpaper selected yet; start from Sources below.",
+				"lib.hint.buffering": "Loading/decoding; playback starts as soon as the picture appears.",
+				"lib.hint.scene": "WebWallGL is rendering the WE scene; a failed load falls back to video/image.",
+				"lib.hint.shader": "The procedural shader runs at the current render tier.",
+				"lib.hint.videoPlaying": "The video is playing; switching pages pauses it and returning resumes.",
+				"lib.hint.paused": "Paused on the current frame; click Resume playback to continue.",
+				"lib.hint.ready": "The picture is ready.",
+				"lib.action.lowPowerPlay": "Turn off low power and play",
+				"lib.action.backToMotion": "Back to motion",
+				"lib.action.play": "Play",
+				"lib.action.retry": "Retry",
+				"lib.action.pause": "Pause",
+				"lib.action.resume": "Resume playback",
+				"lib.quality.jitter": " · frame jitter ",
+				"lib.quality.high": " (high)",
+				"lib.listHint.url": "Paste the full media URL below; not a web page. Remote URLs play without being downloaded into the library.",
+				"lib.listHint.shader": "Pick a preset or paste GLSL, tune the parameters, then click Apply shader.",
+				"lib.listHint.weOpen": "Wallpaper Engine: ",
+				"lib.unit.items": " items",
+				"lib.listHint.weSceneOpen": " (scenes ",
+				"lib.punct.closeParen": ")",
+				"lib.listHint.weClose": "; change folders under Configure folders at the top of the list. Failed scenes fall back automatically.",
+				"lib.listHint.local": "Local & uploads: ",
+				"lib.listHint.localSuffix": " items. Click a thumbnail to apply it; 4K/8K are fine too.",
+				"lib.listHint.all": "All wallpapers: ",
+				"lib.listHint.allMiddle": " items (local ",
+				"lib.listHint.allSuffix": "). Click a thumbnail to apply it, or filter above, or import from URL / WE folder / GLSL.",
+				"lib.list.loading": "Loading…",
+				"lib.list.failed": "Unavailable",
+				"lib.list.loadingHint": "Loading the wallpaper list…",
+				"lib.list.errNetwork": "Cannot read the wallpaper list: the host route or network failed",
+				"lib.list.errHostStale": "Cannot read the wallpaper list: the host half is the old build — restart DSH Desktop and retry",
+				"lib.pick.more": "More settings",
+				"lib.pick.back": "Back to quick pick",
+				"lib.pick.applied": "Switched to: {name}",
+				"lib.pick.failed": "Switch failed: {reason}",
+				"lib.pick.noScene": "Wallpaper scene is off: enable the Wallpaper module in Advanced",
+				"lib.card.inUse": "In use",
+				"lib.source.url": "URL",
+				"lib.source.local": "Local/uploads",
+				"lib.source.all": "All",
+				"lib.source.engine": "Wallpaper Engine",
+				"lib.we.detected": "Wallpaper Engine: {n} wallpapers detected (Steam Workshop {steam} / My projects {project})",
+				"lib.we.openLibrary": "Open wallpaper library",
+				"lib.we.openRequested": "Wallpaper library requested",
+				"lib.we.openFallback": "Wallpaper library requested; if it did not open, go to Settings → Wallpaper",
+				"lib.we.manual": "Advanced (manual path)",
+				"lib.we.manualHint": "Only for legacy folders auto-detect cannot find; normally not needed.",
+				"lib.we.autoDesc": "Auto-detects the local wallpaper library (no path setup)",
+				"lib.we.staticHint": "Still HD",
+				"lib.we.staticHintTitle": "Scenes apply as a still HD image; opt into Generate animated in the settings page",
+				"lib.listHint.engine": "Wallpaper Engine: {n} wallpapers (auto-detected — click a card to apply; scenes are still-HD)",
+				"lib.listValue.pasteUrl": "Paste URL",
+				"lib.ctrl.auto": "Auto",
+				"lib.appearance.glassPrefix": "Glass ",
+				"lib.perf.powerAuto": "Low power auto",
+				"lib.perf.powerOn": "Low power on",
+				"lib.perf.powerOff": "Low power off",
+				"lib.perf.rotationOn": " · rotation on",
+				"lib.panel.title": "Wallpaper",
+				"lib.view.pick": "Pick",
+				"lib.view.advanced": "Advanced",
+				"lib.panel.close": "Close the wallpaper sidebar",
+				"lib.current.prefix": "Current wallpaper: ",
+				"lib.source.localShort": "Local",
+				"lib.label.playing": "Playing",
+				"lib.label.unlock": "Needs a click",
+				"lib.label.play": "Play",
+				"lib.group.sources": "Sources (folders/code)",
+				"lib.punct.colon": ": ",
+				"lib.group.list": "Wallpaper list",
+				"lib.we.hint": "Paste the Wallpaper Engine projects folders here, one per line; read-only, the original files are untouched.",
+				"lib.we.placeholder": "One absolute path per line, e.g. …/steamapps/workshop/content/431960/<projectID>",
+				"lib.we.save": "Save folders",
+				"lib.upload.title": "Uploaded files appear in the local list; same-name files are not overwritten",
+				"lib.upload.button": "Upload wallpaper",
+				"lib.upload.hostStaleShort": "Host half needs a DSH restart",
+				"lib.upload.limitSuffix": "MB · images/videos",
+				"lib.upload.redetecting": "Re-checking the host routes…",
+				"lib.upload.redetect": "Re-detect",
+				"lib.hiddenHint": "Hiding only changes the list; source files are kept",
+				"lib.tag.prefix": "Tags: ",
+				"lib.tag.remove": "Remove this tag",
+				"lib.tag.placeholder": "Type a tag and press Enter, e.g. night",
+				"lib.common.done": "Done",
+				"lib.card.autoTitle": "Automatic",
+				"lib.card.autoNote": "Asset priority",
+				"lib.card.scene": "Scene · WebWallGL",
+				"lib.card.unhide": "Show again",
+				"lib.card.hide": "Hide",
+				"lib.card.unhideTitle": "Show again (files are kept)",
+				"lib.card.hideTitle": "Hide (files kept, playback not interrupted)",
+				"lib.card.unhideShort": "S",
+				"lib.card.hideShort": "H",
+				"lib.card.unfavorite": "Remove favorite",
+				"lib.card.favorite": "Favorite",
+				"lib.card.editTags": "Edit tags",
+				"lib.empty.we": "No readable video/scene in this source: legacy folders can be checked under Advanced ① → Advanced (manual path); auto-detected items live under the Wallpaper Engine source.",
+				"lib.empty.all": "No wallpapers yet: click Upload wallpaper below, or use Import URL / WE folder / GLSL above.",
+				"lib.empty.local": "No local wallpapers yet: put images/videos into skin-tianlight/assets/ and reload, or click Upload wallpaper.",
+				"lib.empty.engine": "No Wallpaper Engine wallpapers to show: check auto-detection in Settings → Wallpaper.",
+				"lib.empty.showAll": "View all wallpapers",
+				"lib.url.hint": "Only directly loadable media URLs: image or video addresses, not web pages. Remote URLs play without being downloaded; upload to add to the library.",
+				"lib.field.type": "Type",
+				"lib.url.pasted": "Pasted from the clipboard — click Apply URL or press Enter",
+				"lib.url.clipboardEmpty": "The clipboard is empty; press Ctrl+V manually",
+				"lib.url.clipboardDenied": "The browser refused clipboard access; press Ctrl+V manually",
+				"lib.url.paste": "Paste",
+				"lib.url.placeholder": "Paste a full direct URL, e.g. https://…/wallpaper.mp4",
+				"lib.url.checkingShort": "Checking…",
+				"lib.url.apply": "Apply URL",
+				"lib.url.autoHint": "Auto checks the extension first and probes the media when there is none; keep Auto if unsure.",
+				"lib.shader.intro": "ShaderToy style: no account and no scraping. ① pick a preset or paste GLSL → ② tune speed/intensity/hue → ③ click Apply shader.",
+				"lib.shader.uniforms": "Available uniforms: iTime / iResolution / iMouse / u_speed / u_intensity / u_hue / u_audio.",
+				"lib.audio.hint": "Audio response: sends the live microphone level to u_audio; analysis only, never recorded or uploaded.",
+				"lib.audio.requestingShort": "Requesting…",
+				"lib.audio.stop": "Stop audio",
+				"lib.audio.start": "Enable microphone",
+				"lib.audio.usePreset": "Use Audio aurora",
+				"lib.audio.active": "Audio response is live; closing the panel, low power or a hidden page stops it.",
+				"lib.audio.idle": "Not enabled. Apply a ShaderToy wallpaper first.",
+				"lib.shader.sourceAria": "Shader source",
+				"lib.shader.speed": "Speed ",
+				"lib.shader.intensity": "Intensity ",
+				"lib.shader.hue": "Hue ",
+				"lib.shader.apply": "Apply shader",
+				"lib.shader.resetButton": "Reset defaults",
+				"lib.group.framing": "Picture",
+				"lib.framing.followWindow": "Fit window",
+				"lib.framing.zoom": "Zoom ",
+				"lib.framing.cx": "Framing X ",
+				"lib.framing.notCropped": "% · not cropped",
+				"lib.framing.cy": "Framing Y ",
+				"lib.framing.window": "Window ",
+				"lib.framing.cropFollows": " · crop follows the window",
+				"lib.framing.cropIs": " · crop ",
+				"lib.framing.hint": "Framing sliders only work when the picture is cropped: raise the zoom or pick a ratio different from the window.",
+				"lib.frame.needExplicit": "Still frame: select a video wallpaper explicitly first (Automatic does not support frame picking)",
+				"lib.frame.videoOnly": "Still frame: only video wallpapers support frame picking",
+				"lib.frame.hint": "Still frame: take 6 frames from the current video; click one to pin it as the wallpaper",
+				"lib.frame.busy": "Extracting frames…",
+				"lib.frame.generate": "Generate frame preview",
+				"lib.frame.currentPrefix": "Current: still frame ",
+				"lib.frame.currentSuffix": "s (Back to motion resumes playback)",
+				"lib.frame.set": "Pin still frame ",
+				"lib.playback.hint": "Playback: speed/flip affect video only; a 60fps source keeps its rate and speed scales the effective frame rate.",
+				"lib.playback.speed": "Speed",
+				"lib.playback.pause": "Pause",
+				"lib.playback.flip": "Flip horizontally",
+				"lib.playback.filter": "Picture filter",
+				"lib.ctrl.on": "On",
+				"lib.ctrl.offByDefault": "Off by default",
+				"lib.playback.filterOnHint": "The filter adds one full-screen composite; if 4K/60fps drops frames, turn it off first.",
+				"lib.playback.filterOffHint": "The filter is off by default; enable it to adjust brightness/contrast/saturation.",
+				"lib.filter.brightness": "Brightness",
+				"lib.filter.contrast": "Contrast",
+				"lib.filter.saturate": "Saturation",
+				"lib.group.appearance": "Appearance",
+				"lib.appearance.glassLabel": "Glass opacity ",
+				"lib.layer.slots": "Overlay slots",
+				"lib.layer.slotA": "A (lower)",
+				"lib.layer.slotB": "B (upper)",
+				"lib.layer.swap": "Swap A/B",
+				"lib.layer.pattern": "Pattern",
+				"lib.layer.imageAria": "Local image overlay",
+				"lib.layer.selectImage": "Select a local image…",
+				"lib.layer.pasteImage": "Or paste an image URL",
+				"lib.layer.fit": "Image fit",
+				"lib.layer.fitCover": "Fill",
+				"lib.layer.fitContain": "Fit",
+				"lib.layer.fitStretch": "Stretch",
+				"lib.layer.offHint": "This slot is off; choose Preset or Image to enable it.",
+				"lib.layer.opacity": "Overlay opacity ",
+				"lib.layer.blend": "Blend",
+				"lib.layer.hint": "Both slots sit above video/image/shader with pure CSS: no extra decoding, frozen under low power.",
+				"lib.rail.title": "Rail wallpaper",
+				"lib.rail.same": "Same as main",
+				"lib.rail.separate": "Separate",
+				"lib.rail.follow": "Rail: follow the main wallpaper",
+				"lib.group.performance": "Auto / performance",
+				"lib.perf.lowPower": "Low power",
+				"lib.ctrl.onShort": "On",
+				"lib.ctrl.offShort": "Off",
+				"lib.perf.renderFps": "Render frame rate",
+				"lib.perf.fpsHint": "The tier drives ShaderToy rendering and the rail mirror; video uses native decoding at its source rate, so a 60fps source needs no setting. 60fps costs more power; low-power settings win.",
+				"lib.perf.autoHint": "Auto: on low battery, data saver or reduced motion, pause the animated wallpaper and freeze decorative animations",
+				"lib.perf.onHint": "The animated wallpaper is paused on its current frame and decorative animations (companion etc.) are frozen",
+				"lib.perf.offHint": "Always play the animated wallpaper; no battery/data downgrade",
+				"lib.rotation.title": "Auto rotation",
+				"lib.rotation.order": "Order",
+				"lib.rotation.random": "Random",
+				"lib.rotation.interval": "Interval",
+				"lib.unit.minutesShort": "min",
+				"lib.rotation.favoritesOnly": "Favorites only",
+				"lib.rotation.everyPrefix": "Every ",
+				"lib.unit.secondsSuffix": " s",
+				"lib.unit.minutesSuffix": " min",
+				"lib.rotation.onHint": "switch to the next one; it waits while the page is hidden, under low power or when playback is paused, and never repeats the current wallpaper.",
+				"lib.rotation.offHint": "When on, rotate local/WE images and videos automatically; hidden wallpapers are excluded and broken files are skipped.",
+				"lib.group.recipe": "Save / share",
+				"lib.group.recipeValue": "Presets · export/import",
+				"lib.preset.aurora.label": "Aurora · vignette",
+				"lib.preset.aurora.desc": "ShaderToy aurora + vignette, cool desktop",
+				"lib.preset.audioScan.label": "Audio aurora · scanlines",
+				"lib.preset.audioScan.desc": "Microphone pulse + scanlines; enable the mic manually",
+				"lib.preset.cinemaGrain.label": "Cinematic · grain",
+				"lib.preset.cinemaGrain.desc": "Keep the current wallpaper, add grain + vignette only",
+				"lib.preset.nightGlow.label": "Cold night · glow",
+				"lib.preset.nightGlow.desc": "Keep the current wallpaper, add a cold glow + scanlines",
+				"lib.preset.clean.label": "Clean",
+				"lib.preset.clean.desc": "Clear both overlay slots for a clean wallpaper",
+				"lib.preset.applied": "Applied preset: {name}",
+				"lib.recipeApplied": "Recipe applied",
+				"lib.recipeAppliedShader": "Recipe applied (invalid shader source; original settings kept)",
+				"lib.recipeBadApply": "Import failed: the recipe could not be applied",
+				"lib.handle.title": "Wallpaper (Alt+W)",
+				"lib.handle.text": "Wallpaper",
+				"lib.audio.stoppedOnClose": "Panel closed — audio stopped",
+				"lib.kind.scene": "Scene",
+				"lib.kind.shader": "Shader",
+				"lib.kind.web": "Web",
+				"lib.card.web": "Web · WE web",
+				"lib.status.web": "Web wallpaper running",
+				"lib.quality.web": "Quality: web wallpaper (sandboxed iframe, sized to the window)",
+				"lib.hint.web": "The web wallpaper runs in a sandboxed iframe; it pauses when the page is hidden, under low power or when the panel closes.",
+				"lib.current.webPrefix": "Web · ",
+			},
+		});
+
+		/**
+		 * v0.5.0 面板新增样式。整块必须落在 body[data-dsh-tianlight] 作用域下
+		 * （agent-check / check-css 校验）；既有控件继续复用 v0.4.0 的类，
+		 * 面板几何不变，只给新控件补最小样式。
+		 */
+		registerTl5Css(String.raw`
+body[data-dsh-tianlight] .tl-wall-sort-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 6px;
+	align-items: center;
+}
+body[data-dsh-tianlight] .tl-wall-facet-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	align-items: center;
+}
+body[data-dsh-tianlight] .tl-wall-share-strip {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin: 2px 0 4px;
+	padding: 7px 9px;
+	border-radius: 10px;
+	border: 0.5px solid var(--tl-accent);
+	background: color-mix(in srgb, var(--tl-accent) 12%, var(--tl-glass-fill));
+	color: var(--tl-ink);
+	font-size: 11px;
+	line-height: 1.45;
+}
+body[data-dsh-tianlight] .tl-wall-share-strip[data-tone="warn"] {
+	border-color: var(--tl-line-strong);
+	background: var(--tl-glass-fill);
+	color: var(--tl-ink-soft);
+}
+body[data-dsh-tianlight] .tl-wall-share-strip-text {
+	margin: 0;
+	font-weight: 600;
+}
+body[data-dsh-tianlight] .tl-wall-share-strip-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	align-items: center;
+}
+body[data-dsh-tianlight] .tl-wall-bundle-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+}
+body[data-dsh-tianlight] .tl-wall-progress {
+	width: 100%;
+	height: 6px;
+	accent-color: var(--tl-accent);
+}
+body[data-dsh-tianlight] .tl-wall-v05-note {
+	margin: 0;
+	font-size: 10px;
+	line-height: 1.5;
+	color: var(--tl-ink-faint);
+}
+/* v0.5.2: the English copy is longer than the Chinese one. Rows already wrap
+   (.tl-wall-tabs does); long button/chip labels must wrap too instead of pushing
+   the fixed-width panel wider (measured on the 296px sidebar). */
+body[data-dsh-tianlight] [data-tl-wall] .tl-font-option,
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-filter-chip,
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-import-btn,
+body[data-dsh-tianlight] [data-tl-wall] .tl-font-reset {
+	max-width: 100%;
+	white-space: normal;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-tabs,
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-import-row,
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-sort-row,
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-bundle-row,
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-share-strip-actions,
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-filter-row,
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-filters {
+	flex-wrap: wrap;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-font-input,
+body[data-dsh-tianlight] [data-tl-wall] .tl-font-select,
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-textarea,
+body[data-dsh-tianlight] [data-tl-wall] .tl-source-card {
+	max-width: 100%;
+	box-sizing: border-box;
+	overflow-wrap: anywhere;
+}
+/* ---- v0.5.3 quick picker -------------------------------------------------
+   The pick view is a wallpaper chooser, not a settings page: compact header,
+   visual 2-column grid, no upload/import rows. The advanced view keeps the full
+   v0.5.2 guide. All rules stay scoped to the skin body + panel. */
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-more-settings {
+	margin-left: auto;
+	border-color: var(--tl-accent);
+	background: color-mix(in srgb, var(--tl-accent) 14%, transparent);
+	color: var(--tl-ink);
+	font-weight: 600;
+	padding: 4px 10px;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-more-settings:hover {
+	background: color-mix(in srgb, var(--tl-accent) 22%, transparent);
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-back-quick {
+	border-color: var(--tl-accent);
+	background: color-mix(in srgb, var(--tl-accent) 12%, transparent);
+	color: var(--tl-ink);
+	font-weight: 600;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-pick-status {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	margin: 2px 0 0;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-pick-status .tl-wall-status {
+	margin: 0;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-pick-error {
+	margin: 0;
+	width: 100%;
+	font-size: 11px;
+	line-height: 1.5;
+	color: var(--tl-ink);
+	border-left: 2px solid var(--tl-line-strong);
+	padding-left: 6px;
+}
+/* In the pick view the sticky block is a compact bar; its guide only keeps the
+   source chips (and a pending share-recipe strip). */
+body[data-dsh-tianlight] [data-tl-wall] [data-tl-view="pick"] .tl-wall-guide {
+	gap: 4px;
+	margin-bottom: 0;
+}
+body[data-dsh-tianlight] [data-tl-wall] [data-tl-view="pick"] .tl-wall-view-switch {
+	display: none;
+}
+body[data-dsh-tianlight] [data-tl-wall] [data-tl-view="pick"] .tl-wall-head {
+	gap: 6px;
+}
+/* The grid is the body of the picker: two large columns, bigger previews. */
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-grid-pick {
+	gap: 10px;
+	margin: 2px 0 0;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-grid-pick .tl-wall-cell > .tl-wall-card {
+	padding: 7px;
+	gap: 7px;
+	border-radius: 14px;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-grid-pick .tl-wall-thumb {
+	aspect-ratio: 4 / 3;
+	border-radius: 10px;
+}
+/* "Click anywhere on the card switches": preview media must not eat the gesture. */
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-grid-pick .tl-wall-thumb > img,
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-grid-pick .tl-wall-thumb > video {
+	pointer-events: none;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-grid-pick .tl-wall-name {
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.35;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-grid-pick .tl-wall-tags-mini {
+	white-space: normal;
+	line-height: 1.35;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-grid-pick .tl-wall-card[data-active] {
+	border-color: var(--tl-accent);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--tl-accent) 40%, transparent);
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-using {
+	align-self: flex-start;
+	padding: 1px 7px;
+	border-radius: 999px;
+	background: var(--tl-accent);
+	color: #ffffff;
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 1.5;
+	letter-spacing: 0.02em;
+}
+/* Transient "switched to …" feedback. The host is a transformed fixed layer, so a
+   fixed toast is positioned against the panel itself. */
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-toast {
+	position: fixed;
+	left: 14px;
+	right: 14px;
+	bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+	z-index: 6;
+	padding: 8px 12px;
+	border-radius: 12px;
+	border: 0.5px solid var(--tl-glass-line);
+	background: color-mix(in srgb, var(--tl-panel-fill) 92%, var(--tl-accent));
+	color: var(--tl-ink);
+	font-size: 12px;
+	line-height: 1.4;
+	box-shadow: 0 8px 24px rgba(8, 26, 48, 0.22);
+	pointer-events: none;
+	overflow-wrap: anywhere;
+	animation: tl-wall-toast-in 0.16s ease-out;
+}
+@keyframes tl-wall-toast-in {
+	from { opacity: 0; transform: translateY(6px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+/* ---- v0.6.0 Wallpaper Engine library ------------------------------------- */
+/* Four source chips (all/local/legacy-WE/engine) must wrap inside the 296px panel
+   instead of being squeezed into the old 3-column grid. */
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-filter-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-filter-row .tl-wall-filter-chip {
+	flex: 0 1 auto;
+	max-width: 100%;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-we-auto {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+	margin: 2px 0 0;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-we-auto-text {
+	flex: 1 1 150px;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-we-open-library {
+	flex: 0 0 auto;
+	border-color: var(--tl-accent);
+	background: color-mix(in srgb, var(--tl-accent) 14%, transparent);
+	color: var(--tl-ink);
+	font-weight: 600;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-we-open-library:hover {
+	background: color-mix(in srgb, var(--tl-accent) 22%, transparent);
+}
+/* The manual-path fallback is a nested collapsed details; keep it quiet. */
+body[data-dsh-tianlight] [data-tl-wall] .tl-we-manual {
+	margin-top: 2px;
+	padding: 5px 7px;
+	border-style: dashed;
+	background: transparent;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-we-manual > summary {
+	font-size: 11px;
+	font-weight: 500;
+	color: var(--tl-ink-soft);
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-we-manual-body {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
+	align-self: flex-start;
+	padding: 0 6px;
+	border-radius: 999px;
+	border: 0.5px solid var(--tl-line-strong);
+	color: var(--tl-ink-soft);
+	font-size: 9px;
+	font-weight: 600;
+	line-height: 1.6;
+	cursor: help;
+}
+`);
+
+		/** v0.5.0 面板「最近使用」顺序：只记录用户主动选中的壁纸，供排序使用。 */
+		const PANEL_RECENT_KEY = "tianlight.recent";
+		/** v0.5.2: one silent list retry before the panel reports a failure (~1.2s). */
+		const PANEL_LIST_RETRY_MS = 1200;
+		function readPanelRecent() {
+			try {
+				const raw = JSON.parse(globalThis.localStorage?.getItem(PANEL_RECENT_KEY) ?? "null");
+				if (!Array.isArray(raw)) return [];
+				return [...new Set(raw.filter((url) => typeof url === "string" && url !== ""))].slice(0, 64);
+			} catch {
+				return [];
+			}
+		}
+
+		/**
+		 * v0.5.0 D3 分享链接：`#tl=<base64url(recipe json)>`。哈希不会发给宿主，
+		 * 也不写任何设置；只有用户在确认条里点「应用」才会走 applyPresetValue
+		 * 那套既有 normalizer。
+		 */
+		const PANEL_SHARE_FORMATS = ["tianlight-recipe", "tianlight-preset"];
+		const PANEL_SHARE_KEYS = [
+			"zones",
+			"glass",
+			"lowPower",
+			"lowpower",
+			"wallpaper",
+			"shader",
+			"layers",
+			"playback",
+			"rotation",
+			"effects",
+			"context",
+			"legibility",
+			"typography",
+		];
+		const PANEL_SHARE_MAX = 512 * 1024;
+		/** D2 导入包上限：超过后先提示，绝不把大文件读进内存。 */
+		const PANEL_BUNDLE_LIMIT = 256 * 1024 * 1024;
+
+		function tl5Base64UrlEncode(text) {
+			const bytes = new TextEncoder().encode(String(text));
+			let binary = "";
+			const chunk = 0x8000;
+			for (let index = 0; index < bytes.length; index += chunk) {
+				binary += String.fromCharCode.apply(null, bytes.subarray(index, index + chunk));
+			}
+			return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+		}
+
+		function tl5Base64UrlDecode(data) {
+			const padded = String(data)
+				.replace(/-/g, "+")
+				.replace(/_/g, "/");
+			const withPad = padded + "=".repeat((4 - (padded.length % 4)) % 4);
+			const binary = atob(withPad);
+			const bytes = new Uint8Array(binary.length);
+			for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+			return new TextDecoder().decode(bytes);
+		}
+
+		/** 只认 tianlight-recipe/preset 形状；返回 { recipe, count } 或 null。 */
+		function readTl5RecipeObject(value) {
+			if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
+			const format = typeof value.format === "string" ? value.format : "";
+			if (format !== "" && PANEL_SHARE_FORMATS.includes(format) === false) return null;
+			const version = Number(value.version);
+			if (!Number.isFinite(version) || version < 1 || version > 2) return null;
+			let count = 0;
+			for (const key of PANEL_SHARE_KEYS) {
+				const present = value[key] !== undefined && value[key] !== null;
+				if (present === false) continue;
+				// lowPower / lowpower 是同一个字段的两种写法，只计一次。
+				if (key === "lowpower" && value.lowPower !== undefined && value.lowPower !== null) continue;
+				count += 1;
+			}
+			if (count === 0) return null;
+			return { recipe: value, count };
+		}
+
+		function decodeTl5ShareRecipe(payload) {
+			try {
+				if (typeof payload !== "string" || payload.length < 8 || payload.length > PANEL_SHARE_MAX) return null;
+				return readTl5RecipeObject(JSON.parse(tl5Base64UrlDecode(payload)));
+			} catch {
+				return null;
+			}
+		}
+
+		function clearTl5ShareHash() {
+			try {
+				const location = globalThis.location;
+				if (location === undefined || location === null) return;
+				const clean = String(location.pathname ?? "") + String(location.search ?? "");
+				if (typeof globalThis.history?.replaceState === "function") globalThis.history.replaceState(null, "", clean);
+			} catch {
+				// history may be unavailable; an un-cleared hash changes nothing
+			}
+		}
+
+		/** 读取当前 URL 的 #tl=；非法链接立即清掉并只记一条警告，绝不写设置。 */
+		function readTl5ShareHash() {
+			try {
+				const hash = String(globalThis.location?.hash ?? "");
+				if (hash.startsWith("#tl=") === false) return null;
+				const decoded = decodeTl5ShareRecipe(hash.slice(4));
+				if (decoded === null) {
+					note("share:invalid-link", {});
+					clearTl5ShareHash();
+					return null;
+				}
+				return decoded;
+			} catch (error) {
+				note("share:read-link", error);
+				return null;
+			}
+		}
+
 		function installWallpaperSidebar(ctx) {
 			if (React === null || typeof ctx.inject !== "function") return () => {};
 
@@ -22,8 +1143,8 @@
 			const CURATED_PRESETS = [
 				{
 					id: "aurora-vignette",
-					label: "极光 · 暗角",
-					desc: "ShaderToy 极光 + 暗角，冷色桌面",
+					labelKey: "lib.preset.aurora.label",
+					descKey: "lib.preset.aurora.desc",
 					value: {
 						format: "tianlight-preset",
 						version: 1,
@@ -37,8 +1158,8 @@
 				},
 				{
 					id: "audio-scan",
-					label: "音频极光 · 扫描线",
-					desc: "麦克风律动 + 扫描线；需手动启用麦克风",
+					labelKey: "lib.preset.audioScan.label",
+					descKey: "lib.preset.audioScan.desc",
 					value: {
 						format: "tianlight-preset",
 						version: 1,
@@ -52,8 +1173,8 @@
 				},
 				{
 					id: "cinema-grain",
-					label: "电影感 · 颗粒",
-					desc: "保留当前壁纸，只加颗粒和暗角",
+					labelKey: "lib.preset.cinemaGrain.label",
+					descKey: "lib.preset.cinemaGrain.desc",
 					value: {
 						format: "tianlight-preset",
 						version: 1,
@@ -62,8 +1183,8 @@
 				},
 				{
 					id: "night-glow",
-					label: "冷夜 · 光晕",
-					desc: "保留当前壁纸，叠加冷色光晕与扫描线",
+					labelKey: "lib.preset.nightGlow.label",
+					descKey: "lib.preset.nightGlow.desc",
 					value: {
 						format: "tianlight-preset",
 						version: 1,
@@ -72,8 +1193,8 @@
 				},
 				{
 					id: "clean",
-					label: "纯净",
-					desc: "清空两层叠加，回到干净壁纸",
+					labelKey: "lib.preset.clean.label",
+					descKey: "lib.preset.clean.desc",
 					value: {
 						format: "tianlight-preset",
 						version: 1,
@@ -83,6 +1204,9 @@
 			];
 
 			const WallpaperPanel = (props) => {
+				// v0.5.0: re-render on a language change. This hook is the first hook in
+				// the component so the hook order stays fixed for its whole lifetime.
+				const { t } = useTl5I18n();
 				const [items, setItems] = React.useState([]);
 				const [active, setActive] = React.useState(() => {
 					const chosen = readWallpaperChoice();
@@ -107,6 +1231,17 @@
 				// reveals the adjustment groups. The old six-section wall was the main
 				// complaint, so the default view no longer shows it at all.
 				const [view, setView] = React.useState("pick");
+				// v0.5.3 quick picker: "更多设置"/"返回快捷选择" replace the old
+				// discoverability hint; the pick view is a pure visual grid.
+				const [toast, setToast] = React.useState(null);
+				const [pickError, setPickError] = React.useState("");
+				const showToast = (text) => {
+					const next = { text, at: Date.now() };
+					setToast(next);
+					globalThis.setTimeout(() => {
+						setToast((current) => (current !== null && current.at === next.at ? null : current));
+					}, 1800);
+				};
 				// ---- library: search, favourites and tags ----
 				const [library, setLibrary] = React.useState(() => wallpaperLibraryController.read());
 				const [query, setQuery] = React.useState("");
@@ -117,13 +1252,41 @@
 				const [tagDraft, setTagDraft] = React.useState("");
 				const [uploadBusy, setUploadBusy] = React.useState(false);
 				const [uploadNote, setUploadNote] = React.useState("");
+				// ---- v0.5.2: wallpaper list loading / retry state ----
+				// "loading" until the first _wallpapers answer (or its silent retry);
+				// "error" only after both attempts failed, with an inline retry button.
+				const [listState, setListState] = React.useState("loading");
+				const [listAttempt, setListAttempt] = React.useState(0);
+				const applyWallpaperList = (list) => {
+					if (list === null) return;
+					setItems(list);
+					setListState("ready");
+				};
+				// ---- library v2: explicit sort + recent-use order ----
+				const [sortMode, setSortMode] = React.useState("name");
+				const [recentUrls, setRecentUrls] = React.useState(() => readPanelRecent());
+				const rememberWallpaper = (url) => {
+					if (typeof url !== "string" || url === "") return;
+					setRecentUrls((current) => {
+						const next = [url, ...current.filter((entry) => entry !== url)].slice(0, 64);
+						try {
+							globalThis.localStorage?.setItem(PANEL_RECENT_KEY, JSON.stringify(next));
+						} catch {
+							// usage order is a convenience, never a requirement
+						}
+						return next;
+					});
+				};
 				// Optional engine availability, fetched once: the WE tab tells the truth
 				// about scene support instead of rendering a dead card.
 				const [engine, setEngine] = React.useState(null);
 				const [engineProbe, setEngineProbe] = React.useState(0);
 				React.useEffect(() => {
 					let alive = true;
-					void fetch(ASSET_BASE + "/_engines", { cache: "no-store" })
+					// The build query is a host/client handshake: a host started from an older
+					// plugin build answers `stale: true`, which the panel surfaces as a
+					// "restart DSH" hint instead of a bare network error on upload.
+					void fetch(ASSET_BASE + "/_engines?build=" + encodeURIComponent(HOST_BUILD), { cache: "no-store" })
 						.then((response) => (response.ok ? response.json() : null))
 						.then((value) => {
 							if (alive) setEngine(value ?? { webwallgl: false, adapter: false, sceneProjects: 0, stale: true });
@@ -219,7 +1382,7 @@
 				const [powerState, setPowerState] = React.useState(() => {
 					const controller = lowPowerController;
 					return controller === null || typeof controller.state !== "function"
-						? { mode: readLowPowerMode(), active: false, reason: "", detail: "" }
+						? { mode: readLowPowerMode(), active: false, reason: "", detail: "", detailKey: "", detailParams: null }
 						: controller.state();
 				});
 				React.useEffect(() => {
@@ -234,6 +1397,27 @@
 				const [frameBusy, setFrameBusy] = React.useState(false);
 				const [weDraft, setWeDraft] = React.useState("");
 				const [weStatus, setWeStatus] = React.useState("");
+				const [weLibraryNote, setWeLibraryNote] = React.useState("");
+				/**
+				 * v0.6.0: the Wallpaper Engine library is a DSH settings page owned by
+				 * src/72-we-library.js. The panel only requests it: a cancelable
+				 * CustomEvent on window; a listener that handles it calls preventDefault().
+				 * Without a listener the panel shows the "Settings → Wallpaper" fallback.
+				 */
+				const openWallpaperLibrary = () => {
+					let handled = false;
+					try {
+						const event = new CustomEvent("tianlight:open-wallpaper-library", {
+							bubbles: true,
+							cancelable: true,
+							detail: { source: "wallpaper-panel", engineCount },
+						});
+						handled = globalThis.dispatchEvent(event) === false || event.defaultPrevented === true;
+					} catch (error) {
+						note("we-library:open", error);
+					}
+					setWeLibraryNote(handled ? t("lib.we.openRequested") : t("lib.we.openFallback"));
+				};
 				const openWe = () => {
 					setWeOpen(true);
 					setNote("");
@@ -244,12 +1428,12 @@
 							const value = await response.json();
 							setWeDraft(Array.isArray(value.roots) ? value.roots.join("\n") : "");
 						} catch {
-							setWeStatus("无法读取目录列表（宿主接口需重启 DSH 后才存在）");
+							setWeStatus(t("lib.we.readFailed"));
 						}
 					})();
 				};
 				const saveWe = () => {
-					setWeStatus("保存中…");
+					setWeStatus(t("lib.we.saving"));
 					void (async () => {
 						try {
 							const roots = weDraft
@@ -264,28 +1448,88 @@
 							if (!response.ok) throw new Error(String(response.status));
 							const value = await response.json();
 							const kept = Array.isArray(value.roots) ? value.roots.length : 0;
-							setWeStatus("已保存 " + kept + " 个目录" + (kept < roots.length ? "（无效路径已忽略）" : ""));
-							void listWallpapers().then((list) => {
-								if (list !== null) setItems(list);
-							});
+							const skipped = Number(value.skipped) || 0;
+							setWeStatus(
+								t("lib.we.savedPrefix") +
+									kept +
+									t("lib.we.savedDirs") +
+									(skipped > 0 ? t("lib.punct.openParen") + skipped + t("lib.we.savedSkipped") : ""),
+							);
+							void listWallpapers().then(applyWallpaperList);
 						} catch {
-							setWeStatus("保存失败：宿主接口需重启 DSH 后才存在");
+							setWeStatus(t("lib.we.saveFailed"));
 						}
 					})();
 				};
+				// ---- v0.5.2: list load with one silent retry ----
+				// The panel used to show "全部 0 / 0 张" forever when the first _wallpapers
+				// request lost a race with the host (or hit a transient error). Now the
+				// summary/hint say "加载中…" during the attempt, one retry happens after
+				// ~1.2s, and only a second failure surfaces the reason + inline retry.
 				React.useEffect(() => {
 					let alive = true;
-					void listWallpapers().then((list) => {
-						if (alive && list !== null) setItems(list);
-					});
+					let retryTimer = 0;
+					const load = (attempt) => {
+						void listWallpapers().then((list) => {
+							if (alive === false) return;
+							if (list !== null) {
+								setItems(list);
+								setListState("ready");
+								return;
+							}
+							if (attempt === 0) {
+								setListState("loading");
+								retryTimer = globalThis.setTimeout(() => {
+									retryTimer = 0;
+									if (alive) load(1);
+								}, PANEL_LIST_RETRY_MS);
+								return;
+							}
+							setListState("error");
+						});
+					};
+					setListState("loading");
+					load(0);
 					return () => {
 						alive = false;
+						if (retryTimer !== 0) globalThis.clearTimeout(retryTimer);
 					};
-				}, []);
+				}, [listAttempt]);
 				const pick = (choice) => {
 					if (wallpaperController !== null) wallpaperController.apply(choice);
 					setActive(choice === null ? "" : choice.url);
 					setActiveChoice(choice);
+					// v0.5.0: an explicit pick feeds the "最近使用" sort. Automatic
+					// rotation deliberately does not, so the order stays the user's.
+					if (choice !== null) rememberWallpaper(choice.url);
+				};
+				/**
+				 * v0.5.3: card click path. The ring is optimistic (state is set before the
+				 * controller call, so the highlight lands in the same React batch), and a
+				 * throwing controller reverts it and shows an inline error instead of
+				 * silently swallowing the click.
+				 */
+				const pickCard = (choice, name) => {
+					setPickError("");
+					// A disabled wallpaper module leaves wallpaperController null: that is a
+					// real failure the user must see, not a silent dead click.
+					if (wallpaperController === null) {
+						setPickError(t("lib.pick.noScene"));
+						return;
+					}
+					const previousActive = active;
+					const previousChoice = activeChoice;
+					setActive(choice === null ? "" : choice.url);
+					setActiveChoice(choice);
+					try {
+						wallpaperController.apply(choice);
+						if (choice !== null) rememberWallpaper(choice.url);
+						showToast(t("lib.pick.applied", { name }));
+					} catch (error) {
+						setActive(previousActive);
+						setActiveChoice(previousChoice);
+						setPickError(t("lib.pick.failed", { reason: String(error?.message ?? error) }));
+					}
 				};
 				// ---- the only zone question that matters: separate or continuous ----
 				const [zones, setZones] = React.useState(() => readZones());
@@ -310,9 +1554,9 @@
 				const layerSlots = layers.slots;
 				const selectedSlot = layerSlots[layerSlot];
 				const layerSlotLabel = (slot) => {
-					if (slot === undefined || slot.kind === "none") return "关闭";
-					if (slot.kind === "image") return slot.url === "" ? "图片（未选）" : "图片";
-					return slot.preset === "none" ? "关闭" : LAYER_LABELS[slot.preset] ?? "预设";
+					if (slot === undefined || slot.kind === "none") return t("lib.ctrl.off");
+					if (slot.kind === "image") return slot.url === "" ? t("lib.slot.imageUnset") : t("lib.kind.image");
+					return slot.preset === "none" ? t("lib.ctrl.off") : LAYER_LABELS[slot.preset] ?? t("lib.slot.preset");
 				};
 				const updateLayerSlot = (index, patch) => {
 					const slots = layerSlots.map((slot, position) => (position === index ? { ...slot, ...patch } : slot));
@@ -340,28 +1584,77 @@
 					[],
 				);
 				const updateRotation = (patch) => setRotation(rotationController.apply({ ...rotation, ...patch }));
-				// ---- preset import / export ----
+				// ---- recipe v2 import / export ----
 				const [presetText, setPresetText] = React.useState("");
 				const [presetStatus, setPresetStatus] = React.useState("");
+				const resolveThemeService = () => {
+					try {
+						return typeof ctx?.get === "function" ? ctx.get("theme") : undefined;
+					} catch {
+						return undefined;
+					}
+				};
+				/**
+				 * Recipe v2 = v1 fields + the v0.5.0 sections. effects/context/legibility
+				 * are declared in fragments that run before this one; readTypography /
+				 * applyTypography are function declarations in the later font fragment, so
+				 * they are only referenced through TYPE OF guards evaluated at click time
+				 * (never at module scope), and every optional section is try/caught.
+				 */
+				const buildShareRecipe = () => {
+					const recipe = {
+						format: "tianlight-recipe",
+						version: 2,
+						zones: readZones(),
+						glass: readGlass(),
+						lowPower: readLowPowerMode(),
+						wallpaper: readWallpaperChoice(),
+						shader: shaderController.read(),
+						layers: layerController.read(),
+						playback: playbackController.read(),
+						rotation: rotationController.read(),
+					};
+					// v1/v2 compatibility: v2 writes the contract's lowercase spelling as an
+					// alias while lowPower stays the canonical field the apply path reads.
+					recipe.lowpower = recipe.lowPower;
+					try {
+						if (typeof effectsController !== "undefined" && effectsController !== null && typeof effectsController.read === "function") {
+							recipe.effects = effectsController.read();
+						}
+					} catch {
+						// an optional section must never block the rest of the recipe
+					}
+					try {
+						if (typeof contextController !== "undefined" && contextController !== null && typeof contextController.read === "function") {
+							recipe.context = contextController.read();
+						}
+					} catch {
+						// optional
+					}
+					try {
+						if (typeof legibilityController !== "undefined" && legibilityController !== null && typeof legibilityController.read === "function") {
+							recipe.legibility = legibilityController.read();
+						}
+					} catch {
+						// optional
+					}
+					try {
+						if (typeof readTypography === "function") recipe.typography = readTypography();
+					} catch {
+						// optional
+					}
+					return recipe;
+				};
 				const exportPreset = () => {
-					setPresetText(
-						JSON.stringify({
-							format: "tianlight-preset",
-							version: 1,
-							zones: readZones(),
-							glass: readGlass(),
-							lowPower: readLowPowerMode(),
-							wallpaper: readWallpaperChoice(),
-							shader: shaderController.read(),
-							layers: layerController.read(),
-							playback: playbackController.read(),
-							rotation: rotationController.read(),
-						}),
-					);
-					setPresetStatus("已生成配方，复制这段分享给别人");
+					try {
+						setPresetText(JSON.stringify(buildShareRecipe()));
+						setPresetStatus(t("lib.recipeExported"));
+					} catch {
+						setPresetStatus(t("lib.recipeBadValue"));
+					}
 				};
 				const applyPresetValue = (value) => {
-					if (value === null || typeof value !== "object") return "导入失败：不是有效的配方";
+					if (value === null || typeof value !== "object") return "lib.recipeBadValue";
 					let shaderRejected = false;
 					try {
 						// Re-validated by the existing readers: a hand-edited preset cannot push
@@ -376,9 +1669,17 @@
 							setGlassLevel(next);
 							if (glassController !== null) glassController.apply(next);
 						}
-						if (value.lowPower === "auto" || value.lowPower === "on" || value.lowPower === "off") {
-							setPowerMode(value.lowPower);
-							if (lowPowerController !== null) lowPowerController.set(value.lowPower);
+						// v2 export writes lowPower; v1-style links or hand edits may write
+						// lowpower, so both spellings are accepted and normalized here.
+						const lowPowerValue =
+							value.lowPower === "auto" || value.lowPower === "on" || value.lowPower === "off"
+								? value.lowPower
+								: value.lowpower === "auto" || value.lowpower === "on" || value.lowpower === "off"
+									? value.lowpower
+									: null;
+						if (lowPowerValue !== null) {
+							setPowerMode(lowPowerValue);
+							if (lowPowerController !== null) lowPowerController.set(lowPowerValue);
 						}
 						if (value.layers !== null && typeof value.layers === "object") {
 							const clean = layerController.apply(value.layers);
@@ -418,28 +1719,297 @@
 								if (wallpaperController !== null) wallpaperController.apply(verdict.choice);
 							}
 						}
+						// ---- v0.5.0 recipe sections ----
+						// Only keys the owning controller declares are copied, and only when
+						// the source value has the declared type: a hand-edited share link can
+						// never push a nested object into a boolean/enum slot.
+						const patchOf = (source, defaults) => {
+							const patch = {};
+							if (source === null || typeof source !== "object" || defaults === null || typeof defaults !== "object") return patch;
+							for (const key of Object.keys(defaults)) {
+								if (Object.prototype.hasOwnProperty.call(source, key) === false) continue;
+								if (typeof source[key] !== typeof defaults[key]) continue;
+								patch[key] = source[key];
+							}
+							return patch;
+						};
+						const applyControllerPatch = (controller, defaults, source) => {
+							if (typeof controller === "undefined" || controller === null || typeof controller.apply !== "function") return;
+							const patch = patchOf(source, typeof defaults === "undefined" ? null : defaults);
+							if (Object.keys(patch).length > 0) controller.apply(patch);
+						};
+						if (typeof effectsController !== "undefined") {
+							applyControllerPatch(
+								effectsController,
+								typeof EFFECTS_DEFAULTS === "undefined" ? null : EFFECTS_DEFAULTS,
+								value.effects,
+							);
+						}
+						if (typeof contextController !== "undefined") {
+							applyControllerPatch(
+								contextController,
+								typeof CONTEXT_DEFAULTS === "undefined" ? null : CONTEXT_DEFAULTS,
+								value.context,
+							);
+						}
+						if (typeof legibilityController !== "undefined") {
+							applyControllerPatch(
+								legibilityController,
+								typeof LEGIBILITY_DEFAULTS === "undefined" ? null : LEGIBILITY_DEFAULTS,
+								value.legibility,
+							);
+						}
+						if (typeof readTypography === "function" && typeof applyTypography === "function") {
+							const typography = value.typography;
+							if (typography !== null && typeof typography === "object") {
+								// Merge only fields the typography model actually declares, with a
+								// matching type: v0.5.0 added fields (content width, paragraph
+								// spacing, code size, reading family) travel without this panel
+								// knowing their names, and a hand-edited link cannot invent keys.
+								const current = readTypography();
+								const next = { ...current };
+								for (const key of Object.keys(current)) {
+									if (Object.prototype.hasOwnProperty.call(typography, key) === false) continue;
+									if (typeof typography[key] !== typeof current[key]) continue;
+									next[key] = typography[key];
+								}
+								// Size is the one field the host API accepts directly: clamp it here
+								// so a shared recipe cannot push an out-of-range font size.
+								if (Number.isFinite(next.size)) next.size = Math.min(22, Math.max(12, Math.round(next.size)));
+								applyTypography(resolveThemeService(), next, true);
+							}
+						}
 					} catch {
-						return "导入失败：配方内容无法应用";
+						return "lib.recipeBadApply";
 					}
-					return shaderRejected ? "配方已应用（着色器源码无效，已保留原设置）" : "配方已应用";
+					return shaderRejected ? "lib.recipeAppliedShader" : "lib.recipeApplied";
 				};
 				const importPreset = () => {
 					try {
 						const value = JSON.parse(presetText);
-						setPresetStatus(applyPresetValue(value));
+						setPresetStatus(t(applyPresetValue(value)));
 					} catch {
-						setPresetStatus("导入失败：不是有效的配方文本");
+						setPresetStatus(t("lib.recipeBadText"));
 					}
 				};
 				const applyCuratedPreset = (preset) => {
 					setPresetText(JSON.stringify(preset.value));
 					const status = applyPresetValue(preset.value);
-					setPresetStatus(status === "配方已应用" ? "已应用精选：" + preset.label : status);
+					setPresetStatus(
+						status === "lib.recipeApplied" ? t("lib.preset.applied", { name: t(preset.labelKey) }) : t(status),
+					);
+				};
+				// ---- v0.5.0 D3: share link (#tl=<base64url recipe v2>) ----
+				const [shareLink, setShareLink] = React.useState("");
+				const [shareNote, setShareNote] = React.useState("");
+				// v0.5.3: shareStatus stores the i18n KEY (not the rendered string), so a
+				// language switch re-renders it; no empty-deps translation cache is left.
+				const [shareStatus, setShareStatus] = React.useState(() =>
+					props !== undefined && props.shareRejected === true ? "lib.shareInvalid" : "",
+				);
+				// A recipe parsed from the URL (install time or a later open) is a pending
+				// PROPOSAL: it is displayed in a confirm strip and never applied until the
+				// user clicks 应用. Invalid links are dropped by readTl5ShareHash without
+				// touching settings.
+				const [sharedRecipe, setSharedRecipe] = React.useState(() =>
+					props !== undefined && props.sharedRecipe !== undefined && props.sharedRecipe !== null
+						? props.sharedRecipe
+						: null,
+				);
+				React.useEffect(() => {
+					if (sharedRecipe !== null) return;
+					const hash = String(globalThis.location?.hash ?? "");
+					if (hash.startsWith("#tl=") === false) return;
+					const next = readTl5ShareHash();
+					if (next === null) {
+						setShareStatus("lib.shareInvalid");
+						return;
+					}
+					pendingShare = next;
+					setSharedRecipe(next);
+				}, []);
+				const copyShareLink = () => {
+					try {
+						const payload = tl5Base64UrlEncode(JSON.stringify(buildShareRecipe()));
+						const location = globalThis.location;
+						const base =
+							String(location?.origin ?? "") + String(location?.pathname ?? "") + String(location?.search ?? "");
+						const link = base + "#tl=" + payload;
+						setShareLink(link);
+						setShareNote(payload.length > 6000 ? t("lib.shareLong") : "");
+						const clipboard = globalThis.navigator?.clipboard;
+						if (clipboard !== null && clipboard !== undefined && typeof clipboard.writeText === "function") {
+							void clipboard.writeText(link).then(
+								() => setShareNote(t("lib.shareCopied")),
+								() => setShareNote(t("lib.shareFailed")),
+							);
+						} else {
+							// No async clipboard here: the textarea below is the manual fallback.
+							setShareNote(t("lib.shareFailed"));
+						}
+					} catch (error) {
+						setShareNote(t("lib.shareBuildFail", { reason: String(error?.message ?? error) }));
+					}
+				};
+				const clearSharedRecipe = () => {
+					pendingShare = null;
+					clearTl5ShareHash();
+					setSharedRecipe(null);
+				};
+				const applySharedRecipe = () => {
+					if (sharedRecipe === null) return;
+					try {
+						setPresetStatus(t(applyPresetValue(sharedRecipe.recipe)));
+						setShareStatus("lib.shareApplied");
+					} catch {
+						setShareStatus("lib.shareInvalid");
+					}
+					clearSharedRecipe();
+				};
+				const ignoreSharedRecipe = () => {
+					clearSharedRecipe();
+					setShareStatus("lib.shareIgnored");
+				};
+				// ---- v0.5.0 D2: bundle export / import (gated on host capabilities) ----
+				const [bundleBusy, setBundleBusy] = React.useState(false);
+				const [bundleNote, setBundleNote] = React.useState("");
+				const [importBusy, setImportBusy] = React.useState(false);
+				const [importPct, setImportPct] = React.useState(0);
+				const [importNote, setImportNote] = React.useState("");
+				const hostCapabilities =
+					engine !== null && typeof engine.capabilities === "object" && engine.capabilities !== null
+						? engine.capabilities
+						: null;
+				const hostCapability = (name) => {
+					if (hostCapabilities === null) return false;
+					const direct = hostCapabilities[name];
+					if (typeof direct === "boolean") return direct;
+					if (direct !== undefined && direct !== null) return direct !== false;
+					const routes = hostCapabilities.routes;
+					if (Array.isArray(routes)) return routes.includes(name);
+					if (routes !== null && typeof routes === "object") {
+						const entry = routes[name];
+						if (typeof entry === "boolean") return entry;
+						if (typeof entry === "string") return true;
+					}
+					// A host that publishes a capabilities object is new enough for the
+					// v0.5.0 routes; only an explicit false hides a control.
+					return true;
+				};
+				const bundleSupported = hostCapability("bundle") === true;
+				const importSupported = hostCapability("import") === true;
+				const exportBundle = () => {
+					if (bundleBusy) return;
+					setBundleBusy(true);
+					setBundleNote(t("lib.bundleExportBusy"));
+					try {
+						// The host streams the tar.gz straight to the browser: a plain anchor
+						// download never buffers the archive in page memory.
+						const link = document.createElement("a");
+						link.href = ASSET_BASE + "/_bundle?build=" + encodeURIComponent(HOST_BUILD);
+						link.download = "tianlight-bundle-" + new Date().toISOString().slice(0, 10) + ".tgz";
+						link.rel = "noopener";
+						document.body.appendChild(link);
+						link.click();
+						link.remove();
+						setBundleNote(t("lib.bundleExportStarted"));
+					} catch (error) {
+						setBundleNote(t("lib.bundleExportFail", { reason: String(error?.message ?? error) }));
+					}
+					globalThis.setTimeout(() => setBundleBusy(false), 400);
+				};
+				const importBundle = (event) => {
+					const input = event.currentTarget;
+					const file = input.files !== null && input.files.length > 0 ? input.files[0] : null;
+					// Clear immediately so picking the same file twice still fires onChange.
+					input.value = "";
+					if (file === null || importBusy) return;
+					if (/\.(tgz|tar\.gz)$/i.test(file.name) === false && /gzip/.test(file.type) === false) {
+						setImportNote(t("lib.bundleImportType"));
+						return;
+					}
+					if (file.size > PANEL_BUNDLE_LIMIT) {
+						setImportNote(t("lib.bundleImportSize", { mb: Math.round(PANEL_BUNDLE_LIMIT / (1024 * 1024)) }));
+						return;
+					}
+					setImportBusy(true);
+					setImportPct(0);
+					setImportNote(t("lib.bundleImporting"));
+					try {
+						// XHR (not fetch) because the upload progress bar is the only honest
+						// signal for a large archive; failures never clear existing config.
+						// The host accepts gzip/octet-stream and rejects anything else with 415.
+						const xhr = new XMLHttpRequest();
+						xhr.open("POST", ASSET_BASE + "/_import");
+						const mime = String(file.type || "");
+						xhr.setRequestHeader("content-type", /gzip/.test(mime) || /octet-stream/.test(mime) ? mime : "application/gzip");
+						xhr.upload.onprogress = (progress) => {
+							if (progress.lengthComputable && progress.total > 0) {
+								setImportPct(Math.round((progress.loaded / progress.total) * 100));
+							}
+						};
+						xhr.onerror = () => {
+							setImportBusy(false);
+							setImportNote(t("lib.bundleImportFail", { reason: "network" }));
+						};
+						xhr.onload = () => {
+							setImportBusy(false);
+							let value = null;
+							try {
+								value = JSON.parse(xhr.responseText);
+							} catch {
+								value = null;
+							}
+							if (xhr.status < 200 || xhr.status >= 300) {
+								// JSON errors carry a message; plain-text failures (405/413/415)
+								// are short enough to show verbatim.
+								const plain = typeof xhr.responseText === "string" ? xhr.responseText.trim().slice(0, 160) : "";
+								const reason =
+									value !== null && typeof value.error === "string"
+										? value.error
+										: plain !== ""
+											? plain
+											: "HTTP " + xhr.status;
+								setImportNote(t("lib.bundleImportFail", { reason }));
+								return;
+							}
+							const imported = value !== null && Array.isArray(value.imported) ? value.imported.length : 0;
+							const skipped = value !== null && Array.isArray(value.skipped) ? value.skipped.length : 0;
+							setImportNote(t("lib.bundleImportDone", { imported, skipped }) + " · " + t("lib.bundleImportSettings"));
+							// The settings layer owns the merge; this event is a notification for
+							// anyone listening, and the manifest refresh is what the panel needs.
+							if (value !== null && value.settings !== null && typeof value.settings === "object") {
+								try {
+									globalThis.dispatchEvent(
+										new CustomEvent("tianlight:settings", { detail: { settings: value.settings, source: "bundle" } }),
+									);
+								} catch {
+									// a notification is best effort
+								}
+								// Pull the freshly merged host settings into the browser mirror now;
+								// a missing settings layer just means "reload applies them" instead.
+								try {
+									if (typeof settingsStore !== "undefined" && settingsStore !== null) {
+										if (typeof settingsStore.bootstrap === "function") void settingsStore.bootstrap();
+										else if (typeof settingsStore.forceSync === "function") void settingsStore.forceSync();
+									}
+								} catch {
+									// the import already succeeded on the host
+								}
+							}
+							void listWallpapers().then(applyWallpaperList);
+							setEngineProbe((current) => current + 1);
+						};
+						xhr.send(file);
+					} catch (error) {
+						setImportBusy(false);
+						setImportNote(t("lib.bundleImportFail", { reason: String(error?.message ?? error) }));
+					}
 				};
 				const applyDraft = async () => {
 					const url = draft.trim();
 					if (url === "") {
-						setDraftNote("先粘贴一个图片或视频直链");
+						setDraftNote(t("lib.url.empty"));
 						return;
 					}
 					let parsed = null;
@@ -449,15 +2019,15 @@
 						parsed = null;
 					}
 					if (parsed === null || (parsed.protocol !== "http:" && parsed.protocol !== "https:")) {
-						setDraftNote("地址要以 http:// 或 https:// 开头");
+						setDraftNote(t("lib.url.scheme"));
 						return;
 					}
 					if (globalThis.location?.protocol === "https:" && parsed.protocol === "http:") {
-						setDraftNote("当前页面是 HTTPS，浏览器会拦截 http 资源；请换用 https 地址");
+						setDraftNote(t("lib.url.httpsBlocked"));
 						return;
 					}
 					setDraftBusy(true);
-					setDraftNote("正在检查地址…");
+					setDraftNote(t("lib.url.checking"));
 					// Extension first; when the link is signed/extensionless, probe the media
 					// itself instead of defaulting every unknown URL to "video" (which made
 					// ordinary image CDN links fail).
@@ -468,57 +2038,57 @@
 					else if (kind === null) kind = await probeUrlKind(url);
 					if (kind === null) {
 						setDraftBusy(false);
-						setDraftNote("这不是可直接加载的图片/视频直链；请确认地址以 .jpg/.png/.mp4/.webm 等结尾，或手动选「图片 / 视频」。");
+						setDraftNote(t("lib.url.notMedia"));
 						return;
 					}
 					setComposer("url");
 					setNote("");
 					pick({ kind, url });
 					setDraftBusy(false);
-					setDraftNote("已应用：" + (kind === "image" ? "图片" : "视频") + " · " + (parsed.hostname || "远程地址"));
+					setDraftNote(t("lib.url.applied") + (kind === "image" ? t("lib.kind.image") : t("lib.kind.video")) + " · " + (parsed.hostname || t("lib.url.remoteHost")));
 				};
 				const applyShader = () => {
 					const error = validateShaderSource(shader.source);
 					if (error !== null) {
-						setShaderStatus("编译失败：" + error);
+						setShaderStatus(t("lib.shader.compileFailed") + error);
 						return;
 					}
 					shaderController.save(shader);
-					setShaderStatus("已应用着色器");
+					setShaderStatus(t("lib.shader.applied"));
 					pick({ kind: "shader", url: "shader://live" });
 				};
 				const resetShader = () => {
 					setShader({ ...SHADER_DEFAULTS });
-					setShaderStatus("已恢复默认，点「应用着色器」生效");
+					setShaderStatus(t("lib.shader.reset"));
 				};
 				const toggleAudio = async () => {
 					if (audio.active) {
-						audioController.stop("已停止音频");
+						audioController.stop(t("lib.audio.stopped"));
 						setAudioNote("");
 						return;
 					}
-					setAudioNote("正在请求麦克风…");
+					setAudioNote(t("lib.audio.requesting"));
 					const result = await audioController.start();
-					setAudioNote(result.ok === true ? "" : result.reason ?? "无法启用麦克风");
+					setAudioNote(result.ok === true ? "" : result.reason ?? t("lib.audio.failed"));
 				};
 				const useAudioPreset = () => {
 					const preset = SHADER_PRESETS.find((entry) => entry.id === "audio");
 					if (preset === undefined) return;
 					setShader((current) => ({ ...current, preset: preset.id, source: preset.source }));
-					setShaderStatus("已切到「音频极光」，点「应用着色器」生效");
+					setShaderStatus(t("lib.shader.audioPreset"));
 				};
 				// ---- video still-frame picker ----
 				const requestFrames = () => {
 					if (activeChoice === null || activeChoice.kind !== "video") return;
 					const url = activeChoice.url;
 					setFrameBusy(true);
-					setFrameStatus("正在从视频取帧…");
+					setFrameStatus(t("lib.frame.sampling"));
 					void sampleVideoFrames(url, 6).then((result) => {
 						setFrameBusy(false);
 						if (result.ok === true) {
 							setFrames(result.frames);
 							setFrameSource(url);
-							setFrameStatus("点一帧设为静态壁纸（切走壁纸后需重新取帧）");
+							setFrameStatus(t("lib.frame.pickHint"));
 						} else {
 							setFrames([]);
 							setFrameSource("");
@@ -529,17 +2099,84 @@
 				const applyFrame = (time) => {
 					if (activeChoice === null || activeChoice.kind !== "video") return;
 					pick({ kind: "video", url: activeChoice.url, still: time });
-					setFrameStatus("已设为静态帧 " + Number(time).toFixed(1) + "s");
+					setFrameStatus(t("lib.frame.pinned") + Number(time).toFixed(1) + "s");
 				};
 				const resumeVideo = () => {
 					if (activeChoice === null || activeChoice.kind !== "video") return;
 					pick({ kind: "video", url: activeChoice.url });
-					setFrameStatus("已恢复动态播放");
+					setFrameStatus(t("lib.frame.resumed"));
 				};
 				// ---- library helpers: one read path, one write path ----
 				const metaOf = (item) => library.items[item.url] ?? { favorite: false, tags: [], hidden: false };
 				const nameOf = (item) =>
-					item.id.replace(/^ext:\d+:/, "").replace(/^uploads\//, "").replace(/^scene:\d+:/, "");
+					item.id.replace(/^ext:\d+:/, "").replace(/^web:\d+:/, "").replace(/^uploads\//, "").replace(/^scene:\d+:/, "");
+				// Kind is searchable and sortable in v2: "视频" matches every video even
+				// when the file name is a hash, which is what a wall paper library needs.
+				const kindLabelOf = (item) =>
+					item.kind === "video"
+						? t("lib.kind.video")
+						: item.kind === "scene"
+							? t("lib.kind.scene")
+							: item.kind === "shader"
+								? t("lib.kind.shader")
+								: item.kind === "web"
+									? t("lib.kind.web")
+									: t("lib.kind.image");
+				const kindRank = (item) => (item.kind === "image" ? 0 : item.kind === "video" ? 1 : item.kind === "scene" ? 2 : 3);
+				// ---- v0.6.0: auto-detected Wallpaper Engine library items ----
+				// host-core appends WE items to /_wallpapers; they are identified by
+				// source:"we"/weId and must need no folder configuration at all.
+				const isEngineItem = (item) =>
+					item !== null &&
+					typeof item === "object" &&
+					(item.source === "we" || typeof item.weId === "string" || (typeof item.id === "string" && item.id.startsWith("we:")));
+				const isLegacyWeItem = (item) =>
+					isEngineItem(item) === false &&
+					(item.url.includes("/ext/") === true || item.kind === "scene" || item.kind === "web");
+				const engineSourceOf = (item) => {
+					const raw = String(item.weSource ?? "").toLowerCase();
+					if (raw === "steam" || raw === "workshop") return "steam";
+					if (raw === "project" || raw === "local" || raw === "mine") return "project";
+					// Tolerate a host that only distinguishes the roots via the item path/id.
+					const sourceField = String(item.source ?? "").toLowerCase();
+					if (sourceField === "steam" || sourceField === "workshop") return "steam";
+					if (sourceField === "project" || sourceField === "local" || sourceField === "mine") return "project";
+					const label = [item.weId, item.id, item.path, item.url]
+						.filter((entry) => typeof entry === "string")
+						.join(" ");
+					return /steam|workshop|431960|steamapps/i.test(label) ? "steam" : "project";
+				};
+				const engineTypeOf = (item) => {
+					const type = String(item.weType ?? "").toLowerCase();
+					return type === "video" || type === "scene" || type === "web" || type === "image" ? type : "";
+				};
+				const engineLabelOf = (item) => {
+					const type = engineTypeOf(item);
+					if (type === "video") return t("lib.kind.video");
+					if (type === "scene") return t("lib.kind.scene");
+					if (type === "web") return t("lib.kind.web");
+					if (type === "image") return t("lib.kind.image");
+					return t("lib.source.engine");
+				};
+				const badgeOf = (item) =>
+					isEngineItem(item)
+						? engineLabelOf(item)
+						: item.kind === "video"
+							? t("lib.kind.video")
+							: item.kind === "scene"
+								? t("lib.card.scene")
+								: item.kind === "web"
+									? t("lib.card.web")
+									: t("lib.kind.image");
+				// All thumbnails prefer the host preview; a WE video preview must never be
+				// replaced by the media URL (that would download the whole wallpaper).
+				const previewOf = (item) => (typeof item.preview === "string" ? item.preview : "");
+				const displayNameOf = (item) =>
+					(isEngineItem(item) || item.kind === "scene" || item.kind === "web") &&
+					typeof item.title === "string" &&
+					item.title !== ""
+						? item.title
+						: nameOf(item);
 				const updateMeta = (url, patch) => {
 					const current = library.items[url] ?? { favorite: false, tags: [], hidden: false };
 					const next = { ...current, ...patch };
@@ -566,23 +2203,23 @@
 					input.value = "";
 					if (file === null) return;
 					if (hostStale) {
-						setUploadNote("宿主路由仍是旧的（404）：多半是旧的 dsh web 进程还占着 3080，新进程启动失败。先结束旧进程再启动；点「重新检测」不必刷新页面。");
+						setUploadNote(t("lib.upload.hostStale"));
 						return;
 					}
 					if (engine !== null && engine.upload !== undefined && engine.upload.writable === false) {
-						setUploadNote("上传目录不可写：检查 skin-tianlight/assets/ 的写权限");
+						setUploadNote(t("lib.upload.notWritable"));
 						return;
 					}
 					if (file.size > uploadLimit) {
-						setUploadNote("超过 " + uploadLimitMb + "MB 上限；4K 长片请先压缩，或设置 TIANLIGHT_UPLOAD_MAX");
+						setUploadNote(t("lib.upload.tooBigPrefix") + uploadLimitMb + t("lib.upload.tooBigSuffix"));
 						return;
 					}
 					if (/\.(mp4|m4v|mov|webm|png|jpe?g|webp|avif|gif|svg)$/i.test(file.name) === false) {
-						setUploadNote("只支持 mp4/webm/mov/m4v/png/jpg/webp/avif/gif/svg");
+						setUploadNote(t("lib.upload.types"));
 						return;
 					}
 					setUploadBusy(true);
-					setUploadNote("上传中…");
+					setUploadNote(t("lib.upload.busy"));
 					void (async () => {
 						try {
 							const response = await fetch(ASSET_BASE + "/_upload?name=" + encodeURIComponent(file.name), {
@@ -592,11 +2229,10 @@
 							});
 							const value = await response.json().catch(() => null);
 							if (!response.ok) throw new Error(value?.error ?? String(response.status));
-							setUploadNote("已上传：" + String(value?.item?.id ?? file.name).replace(/^uploads\//, ""));
-							const list = await listWallpapers();
-							if (list !== null) setItems(list);
+							setUploadNote(t("lib.upload.done") + String(value?.item?.id ?? file.name).replace(/^uploads\//, ""));
+							applyWallpaperList(await listWallpapers());
 						} catch (error) {
-							setUploadNote("上传失败：" + String(error?.message ?? error));
+							setUploadNote(t("lib.upload.failed") + String(error?.message ?? error));
 						} finally {
 							setUploadBusy(false);
 						}
@@ -610,19 +2246,75 @@
 				const tagChoices = [...new Set([...allTags, ...tagFilter])].sort((left, right) => left.localeCompare(right));
 				const filtersActive = query.trim() !== "" || favoritesOnly || tagFilter.length > 0;
 				const hiddenCount = items.filter((item) => metaOf(item).hidden === true).length;
-				const isWeItem = (item) => item.url.includes("/ext/") === true || item.kind === "scene";
+				const favoriteCount = items.filter((item) => metaOf(item).favorite === true).length;
+				// v0.6.0 source tabs: all | local (our own assets/uploads) | we (legacy
+				// WE folders from v0.5) | engine (auto-detected Wallpaper Engine library).
+				const matchesSourceTab = (item) => {
+					if (sourceTab === "all") return true;
+					if (sourceTab === "we") return isLegacyWeItem(item);
+					if (sourceTab === "engine") return isEngineItem(item);
+					return isLegacyWeItem(item) === false && isEngineItem(item) === false;
+				};
 				const allCount = items.length;
 				const visibleItems = items
-					.filter((item) => (sourceTab === "all" ? true : sourceTab === "we" ? isWeItem(item) : !isWeItem(item)))
+					.filter(matchesSourceTab)
 					.filter((item) => showHidden || metaOf(item).hidden !== true)
 					.filter((item) => favoritesOnly === false || metaOf(item).favorite)
-					.filter((item) => tagFilter.length === 0 || tagFilter.some((tag) => metaOf(item).tags.includes(tag)))
+					// v2 facet semantics: multiple selected tags narrow the list (AND), so
+					// "夜景 + 4K" finds the intersection instead of the union.
+					.filter((item) => tagFilter.length === 0 || tagFilter.every((tag) => metaOf(item).tags.includes(tag)))
 					.filter((item) => {
 						const needle = query.trim().toLowerCase();
 						if (needle === "") return true;
-						return (nameOf(item) + " " + metaOf(item).tags.join(" ")).toLowerCase().includes(needle);
+						// v0.6.0: WE items are searchable by their library title and weType
+						// (video/scene/web/image) on top of the normal name/kind/tag haystack.
+						return (
+							displayNameOf(item) +
+							" " +
+							nameOf(item) +
+							" " +
+							kindLabelOf(item) +
+							" " +
+							(isEngineItem(item) ? engineLabelOf(item) + " " : "") +
+							String(item.title ?? "") +
+							" " +
+							String(item.weType ?? "") +
+							" " +
+							item.kind +
+							" " +
+							item.id +
+							" #" +
+							metaOf(item).tags.join(" #")
+						)
+							.toLowerCase()
+							.includes(needle);
 					})
 					.map((item) => ({ item, meta: metaOf(item) }));
+				// v0.5.0 D1: sort is a pure view concern — the ② summary keeps reporting
+				// "filtered / all" counts and the order is stable for every mode.
+				const sortLibraryItems = (list) => {
+					const copy = [...list];
+					const byName = (left, right) =>
+						displayNameOf(left.item).localeCompare(displayNameOf(right.item), "zh") || left.item.id.localeCompare(right.item.id);
+					if (sortMode === "kind") {
+						copy.sort((left, right) => kindRank(left.item) - kindRank(right.item) || byName(left, right));
+					} else if (sortMode === "recent") {
+						const rank = (entry) => {
+							const index = recentUrls.indexOf(entry.item.url);
+							return index < 0 ? Number.MAX_SAFE_INTEGER : index;
+						};
+						copy.sort((left, right) => rank(left) - rank(right) || byName(left, right));
+					} else if (sortMode === "favorites") {
+						copy.sort(
+							(left, right) =>
+								Number(right.meta.favorite === true) - Number(left.meta.favorite === true) || byName(left, right),
+						);
+					} else {
+						copy.sort(byName);
+					}
+					return copy;
+				};
+				const sortedItems = sortLibraryItems(visibleItems);
 				const editingItem = tagEditorUrl === "" ? null : items.find((item) => item.url === tagEditorUrl) ?? null;
 				const editingMeta = editingItem === null ? { favorite: false, tags: [] } : metaOf(editingItem);
 				const addTag = () => {
@@ -641,21 +2333,30 @@
 				};
 				// Plain-language orientation: what is showing now, and one sentence telling
 				// the active source what to do next.
-				const localCount = items.filter((item) => isWeItem(item) === false).length;
-				const weCount = items.filter((item) => isWeItem(item)).length;
+				const engineItems = items.filter(isEngineItem);
+				const engineCount = engineItems.length;
+				const engineSteamCount = engineItems.filter((item) => engineSourceOf(item) === "steam").length;
+				const engineProjectCount = engineCount - engineSteamCount;
+				const localCount = items.filter((item) => isLegacyWeItem(item) === false && isEngineItem(item) === false).length;
+				const weCount = items.filter(isLegacyWeItem).length;
 				const sceneCount = items.filter((item) => item.kind === "scene").length;
 				const currentTitle = (() => {
-					if (activeChoice === null) return "自动（按素材优先级）";
-					if (activeChoice.kind === "scene") {
-						const item = items.find((entry) => entry.url === activeChoice.url);
-						return "场景 · " + (item !== undefined && item.title !== undefined ? item.title : activeChoice.url.slice(activeChoice.url.lastIndexOf("/") + 1));
+					if (activeChoice === null) return t("lib.current.auto");
+					const activeItem = items.find((entry) => entry.url === activeChoice.url) ?? null;
+					if (activeItem !== null && isEngineItem(activeItem)) {
+						return t("lib.source.engine") + " · " + displayNameOf(activeItem);
+					}
+					if (activeChoice.kind === "scene" || activeChoice.kind === "web") {
+						const item = activeItem;
+						const prefix = activeChoice.kind === "web" ? t("lib.current.webPrefix") : t("lib.current.scenePrefix");
+						return prefix + (item !== undefined && item.title !== undefined ? item.title : activeChoice.url.slice(activeChoice.url.lastIndexOf("/") + 1));
 					}
 					if (activeChoice.kind === "shader") {
 						const preset = SHADER_PRESETS.find((entry) => entry.id === shader.preset);
-						return "ShaderToy · " + (preset === undefined ? "自定义代码" : preset.label);
+						return "ShaderToy · " + (preset === undefined ? t("lib.current.customShader") : preset.label);
 					}
-					const file = activeChoice.url.slice(activeChoice.url.lastIndexOf("/") + 1) || "未命名";
-					const kind = activeChoice.kind === "image" ? "图片" : activeChoice.still !== undefined ? "视频静态帧" : "视频";
+					const file = activeChoice.url.slice(activeChoice.url.lastIndexOf("/") + 1) || t("lib.current.unnamed");
+					const kind = activeChoice.kind === "image" ? t("lib.kind.image") : activeChoice.still !== undefined ? t("lib.current.videoStill") : t("lib.kind.video");
 					return kind + " · " + file;
 				})();
 				const screenWidth = Math.round((globalThis.innerWidth || 0) * (globalThis.devicePixelRatio || 1));
@@ -664,21 +2365,25 @@
 				const croppedHeight = Math.round((mediaInfo === null ? 0 : mediaInfo.height) * Number(cropInfo.h));
 				let qualityNote = "";
 				if (mediaInfo !== null && mediaInfo.state === "error") {
-					qualityNote = "壁纸加载失败：请换一个文件，或检查编码/地址；皮肤会自动退回可播画面";
+					qualityNote = t("lib.quality.loadFailed");
 				} else if (mediaInfo !== null && mediaInfo.kind === "scene") {
 					qualityNote =
-						"画质：WebWallGL 实时场景" +
-						(mediaInfo.fps > 0 ? " · 实测 " + mediaInfo.fps + "fps" : "") +
-						(engine !== null && engine.webwallgl === false ? " · 引擎未就绪" : "");
+						t("lib.quality.scene") +
+						(mediaInfo.fps > 0 ? t("lib.quality.measured") + mediaInfo.fps + "fps" : "") +
+						(engine !== null && engine.webwallgl === false ? t("lib.quality.engineNotReady") : "");
 				} else if (mediaInfo !== null && mediaInfo.kind === "shader") {
-					qualityNote = "画质：程序化着色器，不受源分辨率影响";
+					qualityNote = t("lib.quality.shader");
+				} else if (mediaInfo !== null && mediaInfo.kind === "web") {
+					// A WE web project runs in 30-wallpaper's sandboxed iframe; this line only
+					// reports it (the panel must never mount the iframe itself).
+					qualityNote = t("lib.quality.web");
 				} else if (mediaInfo !== null && mediaInfo.width > 0 && mediaInfo.height > 0) {
 					qualityNote =
-						"画质：源 " +
+						t("lib.quality.source") +
 						mediaInfo.width +
 						"×" +
 						mediaInfo.height +
-						" · 当前裁切约 " +
+						t("lib.quality.crop") +
 						croppedWidth +
 						"×" +
 						croppedHeight +
@@ -687,15 +2392,15 @@
 						zones.main.fit === "contain"
 							? screenWidth > 0 && croppedWidth + 1 < screenWidth && croppedHeight + 1 < screenHeight
 							: screenWidth > 0 && (croppedWidth + 1 < screenWidth || croppedHeight + 1 < screenHeight);
-					qualityNote += upscaled ? " · 会放大，可能发糊" : " · 不需放大";
+					qualityNote += upscaled ? t("lib.quality.upscaled") : t("lib.quality.native");
 					if (mediaInfo.fps > 0) {
-						qualityNote += " · 实测 " + mediaInfo.fps + "fps" + (mediaInfo.fps < 50 ? "（偏低）" : "");
+						qualityNote += t("lib.quality.measured") + mediaInfo.fps + "fps" + (mediaInfo.fps < 50 ? t("lib.quality.low") : "");
 					}
-					if (mediaInfo.width >= 7680 || mediaInfo.height >= 4320) qualityNote += " · 8K 源可能被浏览器降采样";
+					if (mediaInfo.width >= 7680 || mediaInfo.height >= 4320) qualityNote += t("lib.quality.eightK");
 					if (mediaInfo.duration > 0) {
 						const minutes = Math.floor(mediaInfo.duration / 60);
 						const seconds = String(mediaInfo.duration % 60).padStart(2, "0");
-						qualityNote += " · 时长 " + minutes + ":" + seconds;
+						qualityNote += t("lib.quality.duration") + minutes + ":" + seconds;
 					}
 				}
 				const lowPowerActive = powerState.active === true;
@@ -708,6 +2413,8 @@
 					activeChoice !== null ? activeChoice.kind === "image" : mediaInfo !== null && mediaInfo.kind === "image";
 				const isSceneWallpaper =
 					activeChoice !== null ? activeChoice.kind === "scene" : mediaInfo !== null && mediaInfo.kind === "scene";
+				const isWebWallpaper =
+					activeChoice !== null ? activeChoice.kind === "web" : mediaInfo !== null && mediaInfo.kind === "web";
 				// One vocabulary for "is the wallpaper actually moving", fed by the scene
 				// bus rather than inferred from a paused DOM element.
 				const playState = playStatus.status || (mediaInfo === null ? "" : mediaInfo.play);
@@ -720,39 +2427,46 @@
 				const isPaused = playState === "paused" || playState === "hidden" || playState === "ready";
 				const lowPowerReasonLabel =
 					powerState.reason === "reduced-motion"
-						? "系统开启了「减少动态效果」"
+						? t("lib.power.reducedMotion")
 						: powerState.reason === "save-data"
-							? "浏览器开启了流量节省"
+							? t("lib.power.saveData")
 							: powerState.reason === "battery"
-								? powerState.detail || "电量偏低且未充电"
+								? // v0.5.2: 55-lowpower now hands back a language-neutral detail
+									// ("15%") plus detailKey/detailParams, so the full sentence is
+									// localized at render time (switching language re-renders it).
+									typeof powerState.detailKey === "string" && powerState.detailKey !== ""
+									? t(powerState.detailKey, powerState.detailParams ?? {})
+									: powerState.detail || t("lib.power.battery")
 								: powerState.reason === "manual"
-									? "手动开启省电"
+									? t("lib.power.manual")
 									: "";
 				const statusLabel = lowPowerActive
-					? "省电暂停"
+					? t("lib.status.lowPower")
 					: hasStaticFrame
-						? "静态帧"
+						? t("lib.status.still")
 						: isBlocked
-							? "自动播放被拦截"
+							? t("lib.status.blocked")
 							: isStalled
-								? "画面卡住"
+								? t("lib.status.stalled")
 								: sceneBroken
-									? "加载失败"
+									? t("lib.status.failed")
 									: isImageWallpaper
-										? "图片壁纸"
+										? t("lib.status.image")
 										: isBuffering
-											? "加载中"
+											? t("lib.status.loading")
 											: isMoving
 												? isSceneWallpaper
-													? "场景运行中"
+													? t("lib.status.scene")
 													: isShaderWallpaper
-														? "着色器运行中"
-														: "动态播放中"
+														? t("lib.status.shader")
+														: isWebWallpaper
+															? t("lib.status.web")
+															: t("lib.status.playing")
 												: playState === "idle"
-													? "未选择壁纸"
+													? t("lib.status.idle")
 													: isPaused
-														? "已暂停"
-														: "已就绪";
+														? t("lib.status.paused")
+														: t("lib.status.ready");
 				const statusTone = lowPowerActive || hasStaticFrame
 					? "warn"
 					: isBlocked || isStalled || sceneBroken
@@ -761,40 +2475,42 @@
 							? "live"
 							: "idle";
 				const statusHint = lowPowerActive
-					? "省电自动暂停（" + (lowPowerReasonLabel || "省电模式") + "）；点按钮会关闭省电并恢复播放。"
+					? t("lib.hint.lowPowerPauseOpen") + (lowPowerReasonLabel || t("lib.power.mode")) + t("lib.hint.lowPowerPauseClose")
 					: hasStaticFrame
-						? "当前固定在静态帧，刷新后仍保持；点「回到动态」恢复播放。"
+						? t("lib.hint.still")
 						: isBlocked
-							? "浏览器拦下了自动播放。点「播放动态」一次即可；之后回到页面会自动继续。"
+							? t("lib.hint.blocked")
 							: isStalled
-								? "已请求播放但没有新画面。点「重试」重新加载当前壁纸。"
+								? t("lib.hint.stalled")
 								: sceneBroken
-									? "解码或播放失败（" + (playReason || "未知原因") + "）；皮肤会自动退回可播画面。"
+									? t("lib.hint.decodeFailedOpen") + (playReason || t("lib.common.unknownReason")) + t("lib.hint.decodeFailedClose")
 									: playState === "idle"
-										? "还没有选择壁纸；从下面「来源」开始挑一张。"
+										? t("lib.hint.idle")
 										: isBuffering
-										? "正在加载/解码，画面出现后会自动开始播放。"
+										? t("lib.hint.buffering")
 										: isMoving
 											? isSceneWallpaper
-												? "WebWallGL 正在渲染 WE 场景；加载失败会自动退回视频/图片。"
+												? t("lib.hint.scene")
 												: isShaderWallpaper
-													? "程序化着色器按当前渲染档位运行。"
-													: "视频正在播放；切换页面会暂停、回来继续。"
+													? t("lib.hint.shader")
+													: isWebWallpaper
+														? t("lib.hint.web")
+														: t("lib.hint.videoPlaying")
 											: isPaused
-												? "已暂停在当前帧；点「继续播放」恢复。"
-												: "画面已就绪。";
-				const showPlaybackAction = isVideoWallpaper || isShaderWallpaper || isSceneWallpaper;
+												? t("lib.hint.paused")
+												: t("lib.hint.ready");
+				const showPlaybackAction = isVideoWallpaper || isShaderWallpaper || isSceneWallpaper || isWebWallpaper;
 				const actionLabel = lowPowerActive
-					? "关闭省电并播放"
+					? t("lib.action.lowPowerPlay")
 					: hasStaticFrame
-						? "回到动态"
+						? t("lib.action.backToMotion")
 						: isBlocked
-							? "播放动态"
+							? t("lib.action.play")
 							: isStalled || sceneBroken
-								? "重试"
+								? t("lib.action.retry")
 								: isMoving
-									? "暂停"
-									: "继续播放";
+									? t("lib.action.pause")
+									: t("lib.action.resume");
 				const playWallpaper = () => {
 					if (lowPowerActive) {
 						setPowerMode("off");
@@ -822,47 +2538,71 @@
 				const qualityExtra = (() => {
 					if (mediaInfo === null) return "";
 					if (mediaInfo.jitter > 0 && mediaInfo.fps > 0) {
-						return " · 帧间隔抖动 " + mediaInfo.jitter + "ms" + (mediaInfo.jitter > 90 ? "（偏高）" : "");
+						return t("lib.quality.jitter") + mediaInfo.jitter + "ms" + (mediaInfo.jitter > 90 ? t("lib.quality.high") : "");
 					}
 					return "";
 				})();
-				const listHint =
+				const readyListHint =
 					composer === "url"
-						? "把完整媒体直链粘到下面；不是网页地址。网络直链只播放，不下载进壁纸库。"
+						? t("lib.listHint.url")
 						: composer === "shader"
-							? "先选预设或贴 GLSL，调好参数，再点「应用着色器」。"
-							: sourceTab === "we"
-								? "Wallpaper Engine：" +
+							? t("lib.listHint.shader")
+							: sourceTab === "engine"
+								? t("lib.listHint.engine", { n: engineCount })
+								: sourceTab === "we"
+								? t("lib.listHint.weOpen") +
 									weCount +
-									" 张" +
-									(sceneCount > 0 ? "（场景 " + sceneCount + "）" : "") +
-									"；目录在清单顶部「配置目录」里改，场景失败会自动降级。"
+									t("lib.unit.items") +
+									(sceneCount > 0 ? t("lib.listHint.weSceneOpen") + sceneCount + t("lib.punct.closeParen") : "") +
+									t("lib.listHint.weClose")
 								: sourceTab === "local"
-									? "本地与上传：" + localCount + " 张。点缩略图直接应用；4K/8K 也可直接点。"
-									: "全部壁纸：" +
+									? t("lib.listHint.local") + localCount + t("lib.listHint.localSuffix")
+									: t("lib.listHint.all") +
 										allCount +
-										" 张（本地 " +
+										t("lib.listHint.allMiddle") +
 										localCount +
 										" / WE " +
 										weCount +
-										"）。点缩略图直接应用；上方可筛选，或从「网址 / WE 目录 / GLSL」导入。";
+										t("lib.listHint.allSuffix");
+				// v0.5.2 loading/retry gates the ② copy: the v0.5.1 strings below are only
+				// used once the list state is "ready".
+				const listErrorText = hostStale ? t("lib.list.errHostStale") : t("lib.list.errNetwork");
+				const listHint =
+					listState === "loading"
+						? t("lib.list.loadingHint")
+						: listState === "error"
+							? listErrorText
+							: readyListHint;
 				const sourceValue =
 					composer === "url"
-						? "URL 地址"
+						? t("lib.source.url")
 						: composer === "shader"
 							? "ShaderToy"
-							: sourceTab === "we"
-								? "Wallpaper Engine"
-								: sourceTab === "local"
-									? "本地/上传"
-									: "全部";
-				const listValue =
+							: sourceTab === "engine"
+								? t("lib.source.engine")
+								: sourceTab === "we"
+									? "Wallpaper Engine"
+									: sourceTab === "local"
+										? t("lib.source.local")
+										: t("lib.source.all");
+				const readyListValue =
 					composer === "url"
-						? "粘贴地址"
+						? t("lib.listValue.pasteUrl")
 						: composer === "shader"
 							? "GLSL"
-							: (sourceTab === "we" ? weCount : sourceTab === "local" ? localCount : allCount) + " 张";
-				const framingValue = zones.main.zoom + "% · " + (zones.main.ratio === "auto" ? "自动" : zones.main.ratio);
+							: sourceTab === "all" && filtersActive === false
+								? allCount + t("lib.unit.items")
+								: // A filtered list states both numbers: "0 / 3 张" is honest about
+									// an empty WE filter, while a bare "0 张" next to chips reading
+									// "全部 3" looked like the library had lost its wallpapers.
+									visibleItems.length + " / " + allCount + t("lib.unit.items");
+				const listValue =
+					listState === "loading"
+						? t("lib.list.loading")
+						: listState === "error"
+							? t("lib.list.failed")
+							: readyListValue;
+				const framingValue = zones.main.zoom + "% · " + (zones.main.ratio === "auto" ? t("lib.ctrl.auto") : zones.main.ratio);
 				const activeLayerLabels = layerSlots
 					.filter((slot) =>
 						slot.kind === "preset"
@@ -873,15 +2613,15 @@
 					)
 					.map((slot) => layerSlotLabel(slot));
 				const appearanceValue =
-					"玻璃 " +
+					t("lib.appearance.glassPrefix") +
 					Math.round(glassLevel * 100) +
 					"%" +
 					(activeLayerLabels.length === 0 ? "" : " · " + activeLayerLabels.join(" + "));
 				const performanceValue =
-					(powerMode === "auto" ? "省电自动" : powerMode === "on" ? "省电开" : "省电关") +
+					(powerMode === "auto" ? t("lib.perf.powerAuto") : powerMode === "on" ? t("lib.perf.powerOn") : t("lib.perf.powerOff")) +
 					" · " +
 					(fpsMode === "auto" ? "30fps" : fpsMode + "fps") +
-					(rotation.on ? " · 轮播开" : "");
+					(rotation.on ? t("lib.perf.rotationOn") : "");
 				const groupSummary = (step, title, value) =>
 					React.createElement(
 						"summary",
@@ -900,13 +2640,25 @@
 						React.createElement(
 							"div",
 							{ className: "tl-wall-head" },
-							React.createElement("div", { className: "tl-font-title" }, "壁纸"),
+							React.createElement("div", { className: "tl-font-title" }, t("lib.panel.title")),
+							view === "pick"
+								? React.createElement(
+										"button",
+										{
+											type: "button",
+											className: "tl-font-option tl-wall-more-settings",
+											"data-tl-more-settings": "",
+											onClick: () => setView("advanced"),
+										},
+										t("lib.pick.more"),
+									)
+								: null,
 							React.createElement(
 								"div",
 								{ className: "tl-wall-view-switch" },
 								[
-									["pick", "选壁纸"],
-									["advanced", "高级"],
+									["pick", t("lib.view.pick")],
+									["advanced", t("lib.view.advanced")],
 								].map(([value, label]) =>
 									React.createElement(
 										"button",
@@ -916,6 +2668,7 @@
 											"data-active": view === value ? "" : undefined,
 											onClick: () => {
 												setView(value);
+												setPickError("");
 												// Simple view has no filter row; clear hidden filters so the list
 												// cannot look mysteriously empty after leaving 高级.
 												if (value === "pick") {
@@ -924,6 +2677,7 @@
 													setTagFilter([]);
 													setShowHidden(false);
 													setTagEditorUrl("");
+													setComposer("none");
 												}
 											},
 										},
@@ -936,7 +2690,7 @@
 								{
 									type: "button",
 									className: "tl-font-close",
-									"aria-label": "关闭壁纸侧栏",
+									"aria-label": t("lib.panel.close"),
 									onClick: () => {
 										if (props !== undefined && typeof props.onClose === "function") props.onClose();
 									},
@@ -944,20 +2698,97 @@
 								"\u00d7",
 							),
 						),
+						// v0.5.3 quick picker: one compact status line with an immediate
+						// pause/resume; the full guide only belongs to the advanced view.
+						view === "pick"
+							? React.createElement(
+									"div",
+									{ className: "tl-wall-pick-status", "data-tl-pick-status": "" },
+									React.createElement(
+										"p",
+										{ className: "tl-wall-status", "data-tone": statusTone, title: statusHint },
+										React.createElement("span", { className: "tl-wall-status-dot", "aria-hidden": "true" }),
+										statusLabel,
+									),
+									showPlaybackAction
+										? React.createElement(
+												"button",
+												{ type: "button", className: "tl-font-option", "data-tone": statusTone, onClick: playWallpaper },
+												actionLabel,
+											)
+										: null,
+									pickError === "" ? null : React.createElement("p", { className: "tl-wall-pick-error", "data-tl-pick-error": "" }, pickError),
+								)
+							: null,
 						React.createElement(
 							"div",
 							{ className: "tl-wall-guide" },
-							React.createElement(
-								"p",
-								{ className: "tl-wall-status", "data-tone": statusTone, title: statusHint },
-								React.createElement("span", { className: "tl-wall-status-dot", "aria-hidden": "true" }),
-								statusLabel,
-							),
-							React.createElement(
-								"p",
-								{ className: "tl-wall-current", title: activeChoice === null ? undefined : activeChoice.url },
-								"当前壁纸：" + currentTitle,
-							),
+							view === "advanced"
+								? React.createElement(
+										"div",
+										{ className: "tl-wall-tabs" },
+										React.createElement(
+											"button",
+											{
+												type: "button",
+												className: "tl-font-option tl-wall-back-quick",
+												"data-tl-back-quick": "",
+												onClick: () => {
+													setView("pick");
+													setComposer("none");
+													setPickError("");
+												},
+											},
+											t("lib.pick.back"),
+										),
+									)
+								: null,
+							view === "advanced"
+								? React.createElement(
+										"p",
+										{ className: "tl-wall-status", "data-tone": statusTone, title: statusHint },
+										React.createElement("span", { className: "tl-wall-status-dot", "aria-hidden": "true" }),
+										statusLabel,
+									)
+								: null,
+							view === "advanced"
+								? React.createElement(
+										"p",
+										{ className: "tl-wall-current", title: activeChoice === null ? undefined : activeChoice.url },
+										t("lib.current.prefix") + currentTitle,
+									)
+								: null,
+							// v0.5.0 D3: a #tl= recipe found in the URL is a PROPOSAL. This strip
+							// is the only place that can turn it into settings (应用), and an
+							// invalid link never reaches it at all.
+							sharedRecipe === null
+								? shareStatus === ""
+									? null
+									: React.createElement("p", { className: "tl-wall-v05-note" }, t(shareStatus))
+								: React.createElement(
+										"div",
+										{ className: "tl-wall-share-strip", "data-tone": "accent" },
+										React.createElement(
+											"p",
+											{ className: "tl-wall-share-strip-text" },
+											t("lib.shareDetected", { n: sharedRecipe.count }),
+										),
+										React.createElement(
+											"div",
+											{ className: "tl-wall-share-strip-actions" },
+											React.createElement(
+												"button",
+												{ type: "button", className: "tl-font-reset", onClick: applySharedRecipe },
+												t("lib.shareApply"),
+											),
+											React.createElement(
+												"button",
+												{ type: "button", className: "tl-font-option", onClick: ignoreSharedRecipe },
+												t("lib.shareIgnore"),
+											),
+										),
+										React.createElement("p", { className: "tl-wall-hint" }, t("lib.shareHint")),
+									),
 							// The pick view is one library: all sources are already in the grid,
 							// so the default action is simply "click a thumbnail". These chips
 							// only filter it; URL/GLSL/WE config are secondary import actions.
@@ -969,9 +2800,10 @@
 											"div",
 											{ className: "tl-wall-filter-row" },
 											[
-												["all", "全部", allCount],
-												["local", "本地", localCount],
+												["all", t("lib.source.all"), allCount],
+												["local", t("lib.source.localShort"), localCount],
 												["we", "WE", weCount],
+												["engine", t("lib.source.engine"), engineCount],
 											].map(([value, label, count]) =>
 												React.createElement(
 													"button",
@@ -989,74 +2821,20 @@
 															if (value === "we" && weCount === 0) openWe();
 														},
 													},
-													label + " " + count,
+													// Counts are only meaningful once the list actually loaded:
+													// during loading/error the chips stay label-only instead of
+													// claiming "全部 0" (the v0.5.1 "0 张 forever" complaint).
+													listState === "ready" ? label + " " + count : label,
 												),
-											),
-										),
-										React.createElement(
-											"div",
-											{ className: "tl-wall-import-row" },
-											React.createElement(
-												"button",
-												{
-													type: "button",
-													className: "tl-wall-import-btn",
-													"data-active": composer === "url" ? "" : undefined,
-													onClick: () => {
-													const next = composer === "url" ? "none" : "url";
-													setComposer(next);
-													const list = document.querySelector("[data-tl-wall-list]");
-													if (list !== null) list.open = true;
-													if (next === "url") {
-														globalThis.setTimeout(() => {
-															const input = document.querySelector("[data-tl-wall-url-input]");
-															if (input !== null && typeof input.focus === "function") input.focus();
-														}, 60);
-													}
-												},
-												},
-												composer === "url" ? "收起网址" : "网址导入",
-											),
-											React.createElement(
-												"button",
-												{
-													type: "button",
-													className: "tl-wall-import-btn",
-													onClick: () => {
-														setSourceTab("we");
-														setComposer("none");
-														const list = document.querySelector("[data-tl-wall-list]");
-														if (list !== null) list.open = true;
-														openWe();
-													},
-												},
-												"WE 目录",
-											),
-											React.createElement(
-												"button",
-												{
-													type: "button",
-													className: "tl-wall-import-btn",
-													"data-active": composer === "shader" ? "" : undefined,
-													onClick: () => {
-													const next = composer === "shader" ? "none" : "shader";
-													setComposer(next);
-													const list = document.querySelector("[data-tl-wall-list]");
-													if (list !== null) list.open = true;
-												},
-												},
-												composer === "shader" ? "收起 GLSL" : "GLSL",
 											),
 										),
 									)
 								: null,
-							React.createElement(
-								"p",
-								{ className: "tl-wall-hint" },
-								view === "pick" && statusTone === "live"
-									? "点卡片立即生效；要调画面/外观点右上「高级」。"
-									: statusHint,
-							),
+							// v0.5.3: the pick view is a wallpaper picker, not a file/URL
+							// importer — URL / WE / GLSL import links only exist in 高级.
+							view === "advanced"
+								? React.createElement("p", { className: "tl-wall-hint" }, statusHint)
+								: null,
 							view === "advanced" && qualityNote + qualityExtra !== ""
 								? React.createElement(
 										"p",
@@ -1064,14 +2842,14 @@
 										qualityNote + qualityExtra,
 									)
 								: null,
-							showPlaybackAction
+							view === "advanced" && showPlaybackAction
 								? React.createElement(
 										"div",
-										{ className: "tl-wall-tabs" },
+										{ className: "tl-wall-tabs tl-wall-play-row" },
 										React.createElement(
 											"span",
 											{ className: "tl-wall-label" },
-											isMoving ? "播放中" : isBlocked ? "待恢复" : "播放",
+											isMoving ? t("lib.label.playing") : isBlocked ? t("lib.label.unlock") : t("lib.label.play"),
 										),
 										React.createElement(
 											"button",
@@ -1086,7 +2864,7 @@
 					React.createElement(
 						"details",
 						{ className: "tl-wall-group", open: false, "data-tl-group": "sources" },
-						groupSummary("①", "来源（目录/代码）", sourceValue),
+						groupSummary("①", t("lib.group.sources"), sourceValue),
 						React.createElement(
 							"div",
 							{ className: "tl-source-grid" },
@@ -1101,20 +2879,27 @@
 										// has no list of its own but is still a real choice.
 										"data-active":
 											provider.available &&
-											(provider.id === "local" || provider.id === "we"
-												? sourceTab === provider.id && composer === "none"
-												: composer === provider.id)
+											(provider.id === "local"
+												? sourceTab === "local" && composer === "none"
+												: provider.id === "we"
+													? sourceTab === "engine" && composer === "none"
+													: composer === provider.id)
 												? ""
 												: undefined,
 										"data-tl-disabled": provider.available ? undefined : "",
-										title: provider.available ? provider.note : provider.label + "：" + provider.note,
+										title:
+											provider.id === "we"
+												? t("lib.we.autoDesc")
+												: provider.available
+													? provider.note
+													: provider.label + t("lib.punct.colon") + provider.note,
 										onClick: () => {
 											if (provider.id === "we") {
-												// One click shows the WE selection, and the directory editor
-												// only when nothing is configured yet.
-												setSourceTab("we");
+												// v0.6.0: no folder browsing. The auto-detected library lives
+												// in the DSH settings page; ask it to open and filter the grid.
+												setSourceTab("engine");
 												setComposer("none");
-												openWe();
+												openWallpaperLibrary();
 												return;
 											}
 											if (provider.id === "local") {
@@ -1145,76 +2930,116 @@
 										},
 									},
 									React.createElement("span", { className: "tl-source-name" }, provider.label),
-									React.createElement("span", { className: "tl-source-note" }, provider.desc),
+									React.createElement(
+										"span",
+										{ className: "tl-source-note" },
+										provider.id === "we" ? t("lib.we.autoDesc") : provider.desc,
+									),
 								),
 							),
+						),
+						// v0.6.0: Wallpaper Engine is auto-detected from the app's library; the
+						// folder-path editor is now only a collapsed edge-case fallback.
+						React.createElement(
+							"div",
+							{ className: "tl-wall-tabs tl-we-auto", "data-tl-we-auto": "" },
+							React.createElement(
+								"span",
+								{ className: "tl-wall-hint tl-we-auto-text", "data-tl-we-detected": "" },
+								t("lib.we.detected", { n: engineCount, steam: engineSteamCount, project: engineProjectCount }),
+							),
+							React.createElement(
+								"button",
+								{
+									type: "button",
+									className: "tl-font-option tl-we-open-library",
+									"data-tl-open-library": "",
+									onClick: openWallpaperLibrary,
+								},
+								t("lib.we.openLibrary"),
+							),
+						),
+						weLibraryNote === ""
+							? null
+							: React.createElement("p", { className: "tl-wall-hint", "data-tl-we-note": "" }, weLibraryNote),
+						React.createElement(
+							"details",
+							{
+								className: "tl-wall-group tl-we-manual",
+								open: false,
+								"data-tl-group": "we-manual",
+								"data-tl-we-manual": "",
+							},
+							React.createElement(
+								"summary",
+								{
+									className: "tl-wall-group-summary",
+									onClick: () => {
+										if (weOpen === false) openWe();
+									},
+								},
+								React.createElement("span", { className: "tl-wall-group-title" }, t("lib.we.manual")),
+							),
+							weOpen
+								? React.createElement(
+										"div",
+										{ className: "tl-we-manual-body" },
+										React.createElement("p", { className: "tl-wall-hint" }, t("lib.we.hint")),
+										React.createElement("textarea", {
+											className: "tl-wall-textarea",
+											rows: 3,
+											placeholder: t("lib.we.placeholder"),
+											value: weDraft,
+											onChange: (event) => setWeDraft(event.target.value),
+										}),
+										React.createElement(
+											"button",
+											{ type: "button", className: "tl-font-reset", onClick: saveWe },
+											t("lib.we.save"),
+										),
+										weStatus === "" ? null : React.createElement("p", { className: "tl-wall-hint" }, weStatus),
+									)
+								: React.createElement("p", { className: "tl-wall-hint" }, t("lib.we.manualHint")),
 						),
 						noteText === "" ? null : React.createElement("p", { className: "tl-wall-hint" }, noteText),
 					),
 					React.createElement(
 						"details",
 						{ className: "tl-wall-group", open: true, "data-tl-wall-list": "" },
-						groupSummary("②", "壁纸清单", listValue),
-						React.createElement("p", { className: "tl-wall-hint" }, listHint),
-						// WE setup lives with the WE list, not behind ①. The pick view hides ①,
-						// so keeping the directory editor there made it undiscoverable.
-						sourceTab === "we" && composer === "none"
+						groupSummary("②", t("lib.group.list"), listValue),
+						// v0.5.3: the pick view is a pure visual grid — long hints only in 高级.
+						view === "advanced" ? React.createElement("p", { className: "tl-wall-hint" }, listHint) : null,
+						// v0.5.2: only after the silent retry failed does the panel admit an
+						// error; the ② hint carries the reason and this row adds the retry.
+						listState === "error"
 							? React.createElement(
 									"div",
-									{ className: "tl-wall-url" },
+									{ className: "tl-wall-empty tl-wall-list-error" },
+									// In the pick view the long hint is hidden, so the reason lives
+									// inside the error row instead (no silent failure).
+									view === "pick" ? React.createElement("p", { className: "tl-wall-hint" }, listErrorText) : null,
 									React.createElement(
-										"div",
-										{ className: "tl-wall-tabs" },
-										React.createElement("span", { className: "tl-wall-label" }, "WE 目录"),
-										React.createElement(
-											"button",
-											{
-												type: "button",
-												className: "tl-font-option",
-												onClick: () => {
-													if (weOpen) setWeOpen(false);
-													else openWe();
-												},
-											},
-											weOpen ? "收起设置" : "配置目录",
-										),
+										"button",
+										{
+											type: "button",
+											className: "tl-font-option",
+											onClick: () => setListAttempt((current) => current + 1),
+										},
+										t("lib.action.retry"),
 									),
-									weOpen
-										? React.createElement(
-												"div",
-												null,
-												React.createElement(
-													"p",
-													{ className: "tl-wall-hint" },
-													"把 Wallpaper Engine 的 projects 目录粘在这里，每行一个；只读，不修改原文件。",
-												),
-												React.createElement("textarea", {
-													className: "tl-wall-textarea",
-													rows: 3,
-													placeholder: "每行一个绝对路径，例如 …/steamapps/workshop/content/431960/<项目ID>",
-													value: weDraft,
-													onChange: (event) => setWeDraft(event.target.value),
-												}),
-												React.createElement(
-													"button",
-													{ type: "button", className: "tl-font-reset", onClick: saveWe },
-													"保存目录",
-												),
-												weStatus === "" ? null : React.createElement("p", { className: "tl-wall-hint" }, weStatus),
-											)
-										: React.createElement(
-												"p",
-												{ className: "tl-wall-hint" },
-												"没有配置 WE 目录时，这里为空；点「配置目录」粘贴 Steam 的 431960 项目目录。",
-											),
 								)
 							: null,
+						// v0.6.0: the WE folder-path editor moved into ① as a collapsed
+						// "Advanced (manual path)" fallback; auto-detection needs no config.
 						composer !== "none"
 							? null
 							: React.createElement(
 									"div",
 									{ className: "tl-wall-library" },
-							React.createElement(
+							// v0.5.3: upload is an advanced-view action; the pick view must not
+							// contain a file picker at all.
+							view === "advanced"
+								? React.createElement(
 								"div",
 								{ className: "tl-wall-tabs" },
 								React.createElement(
@@ -1222,9 +3047,9 @@
 									{
 										className: "tl-wall-upload",
 										"data-busy": uploadBusy ? "" : undefined,
-										title: "上传后自动出现在本地清单；不会覆盖同名文件",
+										title: t("lib.upload.title"),
 									},
-									uploadBusy ? "上传中…" : "上传壁纸",
+									uploadBusy ? t("lib.upload.busy") : t("lib.upload.button"),
 									React.createElement("input", {
 										type: "file",
 										accept: "video/*,image/*",
@@ -1236,7 +3061,7 @@
 								React.createElement(
 									"span",
 									{ className: "tl-wall-hint" },
-									hostStale ? "旧宿主仍占用端口" : "≤" + uploadLimitMb + "MB · 图片/视频",
+									hostStale ? t("lib.upload.hostStaleShort") : "≤" + uploadLimitMb + t("lib.upload.limitSuffix"),
 								),
 								hostStale
 									? React.createElement(
@@ -1245,24 +3070,56 @@
 												type: "button",
 												className: "tl-font-option",
 												onClick: () => {
-													setUploadNote("正在重新检测宿主路由…");
+													setUploadNote(t("lib.upload.redetecting"));
 													setEngineProbe((value) => value + 1);
 												},
 											},
-											"重新检测",
+											t("lib.upload.redetect"),
 										)
 									: null,
-							),
-							uploadNote === "" ? null : React.createElement("p", { className: "tl-wall-hint" }, uploadNote),
+								)
+								: null,
+							view === "advanced" && uploadNote !== ""
+								? React.createElement("p", { className: "tl-wall-hint" }, uploadNote)
+								: null,
 							React.createElement("input", {
 								className: "tl-font-input",
 								type: "search",
-								placeholder: "搜索名称或标签",
-								"aria-label": "搜索壁纸",
+								placeholder: t("lib.searchPlaceholder"),
+								"aria-label": t("lib.searchAria"),
 								value: query,
 								onChange: (event) => setQuery(event.target.value),
 							}),
+							// v0.5.0 D1: sort is its own labelled row, so the filter chips keep
+							// their v0.4.0 shape ("全部 N" / "本地" / "WE") that skinlab asserts.
 							React.createElement(
+								"div",
+								{ className: "tl-wall-sort-row", role: "group", "aria-label": t("lib.sort") },
+								React.createElement("span", { className: "tl-wall-label" }, t("lib.sort")),
+								[
+									["name", t("lib.sortName")],
+									["kind", t("lib.sortKind")],
+									["recent", t("lib.sortRecent")],
+									["favorites", t("lib.sortFavorites")],
+								].map(([value, label]) =>
+									React.createElement(
+										"button",
+										{
+											key: value,
+											type: "button",
+											className: "tl-font-option",
+											"data-active": sortMode === value ? "" : undefined,
+											"aria-pressed": sortMode === value,
+											onClick: () => setSortMode(value),
+										},
+										label,
+									),
+								),
+							),
+							// v0.5.3: favorites/tags/clear facets stay in 高级; the pick view keeps
+							// only the source chips, search and sort.
+							view === "advanced"
+								? React.createElement(
 								"div",
 								{ className: "tl-wall-tabs tl-wall-filters" },
 								React.createElement(
@@ -1274,7 +3131,7 @@
 										"aria-pressed": favoritesOnly,
 										onClick: () => setFavoritesOnly((value) => !value),
 									},
-									"收藏",
+									favoriteCount > 0 ? t("lib.favorites") + " " + favoriteCount : t("lib.favorites"),
 								),
 								hiddenCount === 0
 									? null
@@ -1284,10 +3141,13 @@
 												type: "button",
 												className: "tl-font-option",
 												"data-active": showHidden ? "" : undefined,
-												title: "隐藏只改变列表，不删除源文件",
+												"aria-pressed": showHidden,
+												title: t("lib.hiddenHint"),
 												onClick: () => setShowHidden((value) => !value),
 											},
-											showHidden ? "隐藏中 " + hiddenCount : "显示隐藏 " + hiddenCount,
+											showHidden
+												? t("lib.hiddenOn") + " " + hiddenCount
+												: t("lib.hidden") + " " + hiddenCount,
 										),
 								tagChoices.map((tag) =>
 									React.createElement(
@@ -1320,17 +3180,18 @@
 													setTagFilter([]);
 												},
 											},
-											"清除筛选",
+											t("lib.filterClear"),
 										)
 									: null,
-							),
+								)
+								: null,
 						),
-						editingItem === null || composer !== "none"
+						editingItem === null || composer !== "none" || view !== "advanced"
 							? null
 							: React.createElement(
 									"div",
 									{ className: "tl-wall-url tl-wall-tag-editor" },
-									React.createElement("p", { className: "tl-wall-hint" }, "标签：" + nameOf(editingItem)),
+									React.createElement("p", { className: "tl-wall-hint" }, t("lib.tag.prefix") + nameOf(editingItem)),
 									editingMeta.tags.length === 0
 										? null
 										: React.createElement(
@@ -1343,7 +3204,7 @@
 															key: tag,
 															type: "button",
 															className: "tl-font-option",
-															title: "移除这个标签",
+															title: t("lib.tag.remove"),
 															onClick: () => removeTag(tag),
 														},
 														"#" + tag + " ×",
@@ -1353,7 +3214,7 @@
 									React.createElement("input", {
 										className: "tl-font-input",
 										type: "text",
-										placeholder: "输入标签后回车，例如 夜景",
+										placeholder: t("lib.tag.placeholder"),
 										value: tagDraft,
 										onChange: (event) => setTagDraft(event.target.value),
 										onKeyDown: (event) => {
@@ -1376,7 +3237,7 @@
 													setTagDraft("");
 												},
 											},
-											"完成",
+											t("lib.common.done"),
 										),
 									),
 								),
@@ -1384,7 +3245,7 @@
 							? null
 							: React.createElement(
 									"div",
-									{ className: "tl-wall-grid" },
+									{ className: view === "pick" ? "tl-wall-grid tl-wall-grid-pick" : "tl-wall-grid" },
 							filtersActive
 								? null
 								: React.createElement(
@@ -1392,14 +3253,17 @@
 										{
 											type: "button",
 											className: "tl-wall-card",
+											"data-tl-wall-card": "",
+											"data-tl-auto-card": "",
 											"data-active": active === "" ? "" : undefined,
-											onClick: () => pick(null),
+											onClick: () => pickCard(null, t("lib.card.autoTitle")),
 										},
-										React.createElement("div", { className: "tl-wall-thumb tl-wall-auto" }, "自动"),
-										React.createElement("span", { className: "tl-wall-name" }, "自动选择"),
-										React.createElement("span", { className: "tl-wall-tags-mini" }, "按素材优先级"),
+										React.createElement("div", { className: "tl-wall-thumb tl-wall-auto" }, t("lib.ctrl.auto")),
+										React.createElement("span", { className: "tl-wall-name" }, t("lib.card.autoTitle")),
+										React.createElement("span", { className: "tl-wall-tags-mini" }, t("lib.card.autoNote")),
+										active === "" ? React.createElement("span", { className: "tl-wall-using", "data-tl-in-use": "" }, t("lib.card.inUse")) : null,
 									),
-							visibleItems.map(({ item, meta }) =>
+							sortedItems.map(({ item, meta }) =>
 								React.createElement(
 									"div",
 									{ key: item.id, className: "tl-wall-cell", "data-tl-hidden": meta.hidden ? "" : undefined },
@@ -1408,54 +3272,80 @@
 										{
 											type: "button",
 											className: "tl-wall-card",
+											"data-tl-wall-card": "",
+											"data-tl-url": item.url,
+											"data-tl-kind": item.kind,
+											"data-tl-we-item": isEngineItem(item) ? "" : undefined,
+											"data-tl-we-type": isEngineItem(item) ? engineTypeOf(item) || "unknown" : undefined,
 											"data-active": active === item.url ? "" : undefined,
-											onClick: () => pick({ kind: item.kind, url: item.url }),
+											onClick: () => pickCard({ kind: item.kind, url: item.url }, displayNameOf(item)),
 										},
 										React.createElement(
 											"div",
 											{ className: "tl-wall-thumb" },
-											item.kind === "scene"
+											previewOf(item) !== ""
 												? React.createElement("img", {
-														src: item.preview || "",
-														alt: item.title || nameOf(item),
+														// v0.6.0: every kind prefers the host preview; a WE video
+														// must never be downloaded just to paint a thumbnail.
+														src: previewOf(item),
+														alt: displayNameOf(item),
 														loading: "lazy",
 														onError: (event) => {
 															event.currentTarget.style.display = "none";
 														},
 													})
-												: item.kind === "video"
-													? React.createElement("video", {
-															src: item.url + "#t=0.1",
-															muted: true,
-															preload: "metadata",
-															playsInline: true,
-															// A codec the browser cannot decode (e.g. HEVC) would
-															// otherwise leave a black box that reads as "unreadable".
-															onLoadedData: (event) => {
-																event.currentTarget.dataset.tlThumb = "";
-															},
+												: item.kind === "scene" || item.kind === "web"
+													? React.createElement("img", {
+															src: "",
+															alt: displayNameOf(item),
+															loading: "lazy",
 															onError: (event) => {
 																event.currentTarget.style.display = "none";
 															},
 														})
-													: React.createElement("img", { src: item.url, alt: nameOf(item), loading: "lazy" }),
+													: item.kind === "video"
+														? React.createElement("video", {
+																src: item.url + "#t=0.1",
+																muted: true,
+																preload: "metadata",
+																playsInline: true,
+																// A codec the browser cannot decode (e.g. HEVC) would
+																// otherwise leave a black box that reads as "unreadable".
+																onLoadedData: (event) => {
+																	event.currentTarget.dataset.tlThumb = "";
+																},
+																onError: (event) => {
+																	event.currentTarget.style.display = "none";
+																},
+															})
+														: React.createElement("img", {
+																src: item.url,
+																alt: displayNameOf(item),
+																loading: "lazy",
+															}),
 										),
+										React.createElement("span", { className: "tl-wall-name" }, displayNameOf(item)),
+										active === item.url
+											? React.createElement("span", { className: "tl-wall-using", "data-tl-in-use": "" }, t("lib.card.inUse"))
+											: null,
 										React.createElement(
 											"span",
-											{ className: "tl-wall-name" },
-											item.kind === "scene" && item.title !== undefined ? item.title : nameOf(item),
-										),
-										React.createElement(
-											"span",
-											{ className: "tl-wall-tags-mini" },
+											{ className: "tl-wall-tags-mini", "data-tl-badge": "" },
 											[
-												item.kind === "video" ? "视频" : item.kind === "scene" ? "场景 · WebWallGL" : "图片",
+												badgeOf(item),
 												formatBytes(item.bytes),
 												...meta.tags.map((tag) => "#" + tag),
 											]
 												.filter((entry) => entry !== "")
 												.join(" · "),
 										),
+										isEngineItem(item) && engineTypeOf(item) === "scene"
+											? React.createElement(
+													"span",
+													{ className: "tl-wall-badge-hint", "data-tl-static-hint": "", title: t("lib.we.staticHintTitle") },
+													t("lib.we.staticHint"),
+												)
+											: null,
 									),
 									React.createElement(
 										"button",
@@ -1463,11 +3353,11 @@
 											type: "button",
 											className: "tl-wall-hide",
 											"data-active": meta.hidden ? "" : undefined,
-											"aria-label": meta.hidden ? "恢复显示" : "隐藏",
-											title: meta.hidden ? "恢复显示（不删除文件）" : "隐藏（不删除文件，也不打断当前播放）",
+											"aria-label": meta.hidden ? t("lib.card.unhide") : t("lib.card.hide"),
+											title: meta.hidden ? t("lib.card.unhideTitle") : t("lib.card.hideTitle"),
 											onClick: () => updateMeta(item.url, { hidden: meta.hidden !== true }),
 										},
-										meta.hidden ? "显" : "隐",
+										meta.hidden ? t("lib.card.unhideShort") : t("lib.card.hideShort"),
 									),
 									React.createElement(
 										"button",
@@ -1475,52 +3365,108 @@
 											type: "button",
 											className: "tl-wall-fav",
 											"data-active": meta.favorite ? "" : undefined,
-											"aria-label": meta.favorite ? "取消收藏" : "收藏",
-											title: meta.favorite ? "取消收藏" : "收藏",
+											"aria-label": meta.favorite ? t("lib.card.unfavorite") : t("lib.card.favorite"),
+											title: meta.favorite ? t("lib.card.unfavorite") : t("lib.card.favorite"),
 											onClick: () => updateMeta(item.url, { favorite: meta.favorite === false }),
 										},
 										meta.favorite ? "★" : "☆",
+									),
+									// Tag editing is an advanced-view action; its editor container is
+									// hidden in the pick view, so rendering the "#" there made a
+									// button that could not do anything.
+									view === "advanced"
+										? React.createElement(
+												"button",
+												{
+													type: "button",
+													className: "tl-wall-tag-open",
+													"aria-label": t("lib.card.editTags"),
+													title: t("lib.card.editTags"),
+													onClick: () => {
+														setTagEditorUrl(item.url);
+														setTagDraft("");
+													},
+												},
+												"#",
+											)
+										: null,
+								),
+							),
+						),
+						composer === "none" && listState === "ready" && filtersActive && visibleItems.length === 0
+							? React.createElement(
+									"div",
+									{ className: "tl-wall-empty" },
+									React.createElement("p", { className: "tl-wall-hint" }, t("lib.filterEmpty")),
+									// Show exactly which filters are narrowing the list, in a
+									// language-neutral form, so "0 张" never looks like data loss.
+									React.createElement(
+										"p",
+										{ className: "tl-wall-v05-note" },
+										[
+											query.trim() === "" ? "" : "🔍 " + query.trim(),
+											favoritesOnly ? "★" : "",
+											tagFilter.length === 0 ? "" : tagFilter.map((tag) => "#" + tag).join(" + "),
+										]
+											.filter((entry) => entry !== "")
+											.join(" · "),
 									),
 									React.createElement(
 										"button",
 										{
 											type: "button",
-											className: "tl-wall-tag-open",
-											"aria-label": "编辑标签",
-											title: "编辑标签",
+											className: "tl-font-option",
 											onClick: () => {
-												setTagEditorUrl(item.url);
-												setTagDraft("");
+												setQuery("");
+												setFavoritesOnly(false);
+												setTagFilter([]);
+												setShowHidden(false);
 											},
 										},
-										"#",
+										t("lib.filterClear"),
 									),
-								),
-							),
-						),
-						composer === "none" && filtersActive && visibleItems.length === 0
-							? React.createElement(
-									"p",
-									{ className: "tl-wall-hint" },
-									"没有匹配的壁纸：换个关键词，或清空收藏/标签筛选",
 								)
 							: null,
-						composer === "none" && filtersActive === false && visibleItems.length === 0
+						composer === "none" && listState === "ready" && filtersActive === false && visibleItems.length === 0
 							? React.createElement(
-									"p",
-									{ className: "tl-wall-hint" },
-									sourceTab === "we"
-										? "这个目录下没有可读的视频/场景：点上方「WE 目录」检查路径；没有 Wallpaper Engine 就用本地或上传。"
-										: sourceTab === "all"
-											? "还没有壁纸：点下方「上传壁纸」，或用上方「网址导入 / WE 目录 / GLSL」。"
-											: "本地还没有壁纸：把图片/视频放进 skin-tianlight/assets/，刷新页面即可；也可以直接点「上传壁纸」。",
+									"div",
+									{ className: "tl-wall-empty" },
+									React.createElement(
+										"p",
+										{ className: "tl-wall-hint" },
+										sourceTab === "engine"
+											? t("lib.empty.engine")
+											: sourceTab === "we"
+												? t("lib.empty.we")
+												: sourceTab === "all"
+													? t("lib.empty.all")
+													: t("lib.empty.local"),
+									),
+									// A filtered-empty list must never be a dead end: one click goes
+									// back to the full library (this was the "0 张 and no way out"
+									// state when the panel reopened on a stale WE filter).
+									sourceTab !== "all"
+										? React.createElement(
+												"button",
+												{
+													type: "button",
+													className: "tl-font-option",
+													onClick: () => {
+														setSourceTab("all");
+														setComposer("none");
+														setNote("");
+													},
+												},
+												t("lib.empty.showAll"),
+											)
+										: null,
 								)
 							: null,
 						composer === "url"
 							? React.createElement(
 									"p",
 									{ className: "tl-wall-hint" },
-									"只支持「能直接打开的媒体直链」：图片或视频地址，不是网页地址。网络直链直接播放，不下载到本机；要进壁纸库请用上传。",
+									t("lib.url.hint"),
 								)
 							: null,
 						composer === "url"
@@ -1530,8 +3476,8 @@
 									React.createElement(
 										"div",
 										{ className: "tl-wall-tabs" },
-										React.createElement("span", { className: "tl-wall-label" }, "类型"),
-										[["auto", "自动"], ["image", "图片"], ["video", "视频"]].map(([value, label]) =>
+										React.createElement("span", { className: "tl-wall-label" }, t("lib.field.type")),
+										[["auto", t("lib.ctrl.auto")], ["image", t("lib.kind.image")], ["video", t("lib.kind.video")]].map(([value, label]) =>
 											React.createElement(
 												"button",
 												{
@@ -1558,24 +3504,24 @@
 															const text = await globalThis.navigator?.clipboard?.readText();
 															if (typeof text === "string" && text.trim() !== "") {
 																setDraft(text.trim());
-																setDraftNote("已从剪贴板粘贴，点「应用地址」或按回车");
+																setDraftNote(t("lib.url.pasted"));
 																return;
 															}
-															setDraftNote("剪贴板是空的；请手动 Ctrl+V");
+															setDraftNote(t("lib.url.clipboardEmpty"));
 														} catch {
-															setDraftNote("浏览器拒绝读取剪贴板；请手动 Ctrl+V");
+															setDraftNote(t("lib.url.clipboardDenied"));
 														}
 													})();
 												},
 											},
-											"粘贴",
+											t("lib.url.paste"),
 										),
 									),
 									React.createElement("input", {
 										className: "tl-font-input",
 										type: "url",
 										"data-tl-wall-url-input": "",
-										placeholder: "粘贴完整直链，例如 https://…/wallpaper.mp4",
+										placeholder: t("lib.url.placeholder"),
 										value: draft,
 										onChange: (event) => {
 											setDraft(event.target.value);
@@ -1593,13 +3539,13 @@
 											disabled: draftBusy,
 											onClick: () => void applyDraft(),
 										},
-										draftBusy ? "检查中…" : "应用地址",
+										draftBusy ? t("lib.url.checkingShort") : t("lib.url.apply"),
 									),
 									React.createElement(
 										"p",
 										{ className: "tl-wall-hint" },
 										draftNote === ""
-											? "自动会先按扩展名判断，无扩展名时实际探测图片/视频；不确定就保持自动。"
+											? t("lib.url.autoHint")
 											: draftNote,
 									),
 								)
@@ -1611,12 +3557,12 @@
 									React.createElement(
 										"p",
 										{ className: "tl-wall-hint" },
-										"ShaderToy 风格：不需要网站账号，也不抓取 shadertoy.com。① 选预设或贴 GLSL → ② 调速度/强度/色相 → ③ 点「应用着色器」。",
+										t("lib.shader.intro"),
 									),
 									React.createElement(
 										"p",
 										{ className: "tl-wall-hint" },
-										"可用 uniform：iTime / iResolution / iMouse / u_speed / u_intensity / u_hue / u_audio。",
+										t("lib.shader.uniforms"),
 									),
 									React.createElement(
 										"div",
@@ -1644,7 +3590,7 @@
 										React.createElement(
 											"p",
 											{ className: "tl-wall-hint" },
-											"音频响应：把麦克风实时电平送给 u_audio；只分析，不录音、不上传。",
+											t("lib.audio.hint"),
 										),
 										React.createElement(
 											"div",
@@ -1658,12 +3604,12 @@
 													disabled: audio.busy,
 													onClick: toggleAudio,
 												},
-												audio.busy ? "请求中…" : audio.active ? "停止音频" : "启用麦克风",
+												audio.busy ? t("lib.audio.requestingShort") : audio.active ? t("lib.audio.stop") : t("lib.audio.start"),
 											),
 											React.createElement(
 												"button",
 												{ type: "button", className: "tl-font-option", onClick: useAudioPreset },
-												"用「音频极光」",
+												t("lib.audio.usePreset"),
 											),
 										),
 										React.createElement(
@@ -1672,15 +3618,15 @@
 											audioNote ||
 												audio.reason ||
 												(audio.active
-													? "音频响应中；关闭面板/省电/页面隐藏会自动停止。"
-													: "未启用。先应用 ShaderToy 壁纸，再启用。"),
+													? t("lib.audio.active")
+													: t("lib.audio.idle")),
 										),
 									),
 									React.createElement("textarea", {
 										className: "tl-wall-textarea tl-wall-code",
 										rows: 8,
 										spellCheck: false,
-										"aria-label": "着色器源码",
+										"aria-label": t("lib.shader.sourceAria"),
 										value: shader.source,
 										onChange: (event) => {
 											setShader((current) => ({ ...current, preset: "custom", source: event.target.value }));
@@ -1690,7 +3636,7 @@
 									React.createElement(
 										"label",
 										{ className: "tl-wall-slider" },
-										React.createElement("span", null, "速度 " + shader.speed.toFixed(1) + "×"),
+										React.createElement("span", null, t("lib.shader.speed") + shader.speed.toFixed(1) + "×"),
 										React.createElement("input", {
 											type: "range",
 											min: 0.1,
@@ -1704,7 +3650,7 @@
 									React.createElement(
 										"label",
 										{ className: "tl-wall-slider" },
-										React.createElement("span", null, "强度 " + shader.intensity.toFixed(2)),
+										React.createElement("span", null, t("lib.shader.intensity") + shader.intensity.toFixed(2)),
 										React.createElement("input", {
 											type: "range",
 											min: 0,
@@ -1718,7 +3664,7 @@
 									React.createElement(
 										"label",
 										{ className: "tl-wall-slider" },
-										React.createElement("span", null, "色相 " + Math.round(shader.hue * 100) + "%"),
+										React.createElement("span", null, t("lib.shader.hue") + Math.round(shader.hue * 100) + "%"),
 										React.createElement("input", {
 											type: "range",
 											min: 0,
@@ -1732,8 +3678,8 @@
 									React.createElement(
 										"div",
 										{ className: "tl-wall-tabs" },
-										React.createElement("button", { type: "button", className: "tl-font-reset", onClick: applyShader }, "应用着色器"),
-										React.createElement("button", { type: "button", className: "tl-font-reset", onClick: resetShader }, "恢复默认"),
+										React.createElement("button", { type: "button", className: "tl-font-reset", onClick: applyShader }, t("lib.shader.apply")),
+										React.createElement("button", { type: "button", className: "tl-font-reset", onClick: resetShader }, t("lib.shader.resetButton")),
 									),
 									shaderStatus === "" ? null : React.createElement("p", { className: "tl-wall-hint" }, shaderStatus),
 								)
@@ -1743,7 +3689,7 @@
 					React.createElement(
 						"details",
 						{ className: "tl-wall-group", open: false, "data-tl-group": "advanced" },
-						groupSummary("③", "画面", framingValue),
+						groupSummary("③", t("lib.group.framing"), framingValue),
 						// ---- ratio-locked crop ----
 						React.createElement(
 							"div",
@@ -1762,14 +3708,14 @@
 											if (zoneController !== null) zoneController.apply(next);
 										},
 									},
-									key === "auto" ? "跟随窗口" : key,
+									key === "auto" ? t("lib.framing.followWindow") : key,
 								),
 							),
 						),
 						React.createElement(
 							"label",
 							{ className: "tl-wall-slider" },
-							React.createElement("span", null, "缩放 " + zones.main.zoom + "%"),
+							React.createElement("span", null, t("lib.framing.zoom") + zones.main.zoom + "%"),
 							React.createElement("input", {
 								type: "range",
 								min: 30,
@@ -1786,7 +3732,7 @@
 						React.createElement(
 							"label",
 							{ className: "tl-wall-slider" },
-							React.createElement("span", null, "取景横向 " + zones.main.cx + (pannable ? "%" : "% · 当前画面未裁切")),
+							React.createElement("span", null, t("lib.framing.cx") + zones.main.cx + (pannable ? "%" : t("lib.framing.notCropped"))),
 							React.createElement("input", {
 								type: "range",
 								min: 0,
@@ -1804,7 +3750,7 @@
 						React.createElement(
 							"label",
 							{ className: "tl-wall-slider" },
-							React.createElement("span", null, "取景纵向 " + zones.main.cy + (pannable ? "%" : "% · 当前画面未裁切")),
+							React.createElement("span", null, t("lib.framing.cy") + zones.main.cy + (pannable ? "%" : t("lib.framing.notCropped"))),
 							React.createElement("input", {
 								type: "range",
 								min: 0,
@@ -1822,15 +3768,15 @@
 						React.createElement(
 							"p",
 							{ className: "tl-wall-hint" },
-							"窗口 " + ((globalThis.innerWidth || 16) / (globalThis.innerHeight || 9)).toFixed(2) + ":1" +
-								(zones.main.ratio === "auto" ? " · 裁切跟随窗口" : " · 裁切 " + zones.main.ratio),
+							t("lib.framing.window") + ((globalThis.innerWidth || 16) / (globalThis.innerHeight || 9)).toFixed(2) + ":1" +
+								(zones.main.ratio === "auto" ? t("lib.framing.cropFollows") : t("lib.framing.cropIs") + zones.main.ratio),
 						),
 						pannable
 							? null
 							: React.createElement(
 									"p",
 									{ className: "tl-wall-hint" },
-									"取景滑杆只在画面被裁切时可用：提高缩放，或换一个与窗口不同的比例。",
+									t("lib.framing.hint"),
 								),
 						React.createElement(
 							"div",
@@ -1839,10 +3785,10 @@
 								"p",
 								{ className: "tl-wall-hint" },
 								activeChoice === null
-									? "静态帧：先显式选择一个视频壁纸（自动选择不支持取帧）"
+									? t("lib.frame.needExplicit")
 									: activeChoice.kind !== "video"
-										? "静态帧：只有视频壁纸支持取帧"
-										: "静态帧：从当前视频取 6 帧，点一帧固定为静态壁纸",
+										? t("lib.frame.videoOnly")
+										: t("lib.frame.hint"),
 							),
 							activeChoice !== null && activeChoice.kind === "video"
 								? React.createElement(
@@ -1851,13 +3797,13 @@
 										React.createElement(
 											"button",
 											{ type: "button", className: "tl-font-reset", disabled: frameBusy, onClick: requestFrames },
-											frameBusy ? "取帧中…" : "生成帧预览",
+											frameBusy ? t("lib.frame.busy") : t("lib.frame.generate"),
 										),
 										activeChoice.still !== undefined
 											? React.createElement(
 													"button",
 													{ type: "button", className: "tl-font-reset", onClick: resumeVideo },
-													"回到动态",
+													t("lib.action.backToMotion"),
 												)
 											: null,
 									)
@@ -1866,7 +3812,7 @@
 								? React.createElement(
 										"p",
 										{ className: "tl-wall-hint" },
-										"当前：静态帧 " + Number(activeChoice.still).toFixed(1) + "s（「回到动态」恢复播放）",
+										t("lib.frame.currentPrefix") + Number(activeChoice.still).toFixed(1) + t("lib.frame.currentSuffix"),
 									)
 								: null,
 							frameStatus === "" ? null : React.createElement("p", { className: "tl-wall-hint" }, frameStatus),
@@ -1882,7 +3828,7 @@
 													key: frame.time,
 													type: "button",
 													className: "tl-frame",
-													title: "设为静态帧 " + Number(frame.time).toFixed(1) + "s",
+													title: t("lib.frame.set") + Number(frame.time).toFixed(1) + "s",
 													onClick: () => applyFrame(frame.time),
 												},
 												React.createElement("img", { src: frame.dataUrl, alt: "" }),
@@ -1898,12 +3844,12 @@
 									React.createElement(
 										"p",
 										{ className: "tl-wall-hint" },
-										"播放控制：倍速/翻转只影响视频；60fps 源仍按源帧率，倍速会按比例改变实际帧率。",
+										t("lib.playback.hint"),
 									),
 									React.createElement(
 										"div",
 										{ className: "tl-wall-tabs" },
-										React.createElement("span", { className: "tl-wall-label" }, "倍速"),
+										React.createElement("span", { className: "tl-wall-label" }, t("lib.playback.speed")),
 										[0.5, 1, 1.25, 1.5].map((speed) =>
 											React.createElement(
 												"button",
@@ -1929,7 +3875,7 @@
 												"data-active": playback.paused ? "" : undefined,
 												onClick: () => updatePlayback({ paused: playback.paused === false }),
 											},
-											playback.paused ? "继续播放" : "暂停动态",
+											playback.paused ? t("lib.action.resume") : t("lib.playback.pause"),
 										),
 										React.createElement(
 											"button",
@@ -1939,13 +3885,13 @@
 												"data-active": playback.flip ? "" : undefined,
 												onClick: () => updatePlayback({ flip: playback.flip === false }),
 											},
-											"水平翻转",
+											t("lib.playback.flip"),
 										),
 									),
 									React.createElement(
 										"div",
 										{ className: "tl-wall-tabs" },
-										React.createElement("span", { className: "tl-wall-label" }, "画面滤镜"),
+										React.createElement("span", { className: "tl-wall-label" }, t("lib.playback.filter")),
 										React.createElement(
 											"button",
 											{
@@ -1954,24 +3900,24 @@
 												"data-active": playback.filter.on ? "" : undefined,
 												onClick: () => updatePlayback({ filter: { ...playback.filter, on: playback.filter.on === false } }),
 											},
-											playback.filter.on ? "已开启" : "默认关闭",
+											playback.filter.on ? t("lib.ctrl.on") : t("lib.ctrl.offByDefault"),
 										),
 									),
 									React.createElement(
 										"p",
 										{ className: "tl-wall-hint" },
 										playback.filter.on
-											? "滤镜会多一层全屏合成；4K/60fps 下若掉帧，先关掉它。"
-											: "滤镜默认关闭；开启后才对画面做亮度/对比度/饱和度调整。",
+											? t("lib.playback.filterOnHint")
+											: t("lib.playback.filterOffHint"),
 									),
 									playback.filter.on
 										? React.createElement(
 												"div",
 												null,
 												[
-													["brightness", "亮度"],
-													["contrast", "对比度"],
-													["saturate", "饱和度"],
+													["brightness", t("lib.filter.brightness")],
+													["contrast", t("lib.filter.contrast")],
+													["saturate", t("lib.filter.saturate")],
 												].map(([key, label]) =>
 													React.createElement(
 														"label",
@@ -1999,12 +3945,12 @@
 					React.createElement(
 						"details",
 						{ className: "tl-wall-group", open: false, "data-tl-group": "advanced" },
-						groupSummary("④", "外观", appearanceValue),
+						groupSummary("④", t("lib.group.appearance"), appearanceValue),
 						// ---- glass opacity ----
 						React.createElement(
 							"label",
 							{ className: "tl-wall-slider" },
-							React.createElement("span", null, "玻璃不透明度 " + Math.round(glassLevel * 100) + "%"),
+							React.createElement("span", null, t("lib.appearance.glassLabel") + Math.round(glassLevel * 100) + "%"),
 							React.createElement("input", {
 								type: "range",
 								min: 35,
@@ -2022,7 +3968,7 @@
 						React.createElement(
 							"div",
 							{ className: "tl-wall-tabs" },
-							React.createElement("span", { className: "tl-wall-label" }, "叠加槽"),
+							React.createElement("span", { className: "tl-wall-label" }, t("lib.layer.slots")),
 							[0, 1].map((index) =>
 								React.createElement(
 									"button",
@@ -2033,20 +3979,20 @@
 										"data-active": layerSlot === index ? "" : undefined,
 										onClick: () => setLayerSlot(index),
 									},
-									(index === 0 ? "A（下）" : "B（上）") + " · " + layerSlotLabel(layerSlots[index]),
+									(index === 0 ? t("lib.layer.slotA") : t("lib.layer.slotB")) + " · " + layerSlotLabel(layerSlots[index]),
 								),
 							),
 							React.createElement(
 								"button",
 								{ type: "button", className: "tl-font-option", onClick: swapLayers },
-								"交换 A/B",
+								t("lib.layer.swap"),
 							),
 						),
 						React.createElement(
 							"div",
 							{ className: "tl-wall-tabs" },
-							React.createElement("span", { className: "tl-wall-label" }, "类型"),
-							[["none", "关闭"], ["preset", "预设"], ["image", "图片"]].map(([value, label]) =>
+							React.createElement("span", { className: "tl-wall-label" }, t("lib.field.type")),
+							[["none", t("lib.ctrl.off")], ["preset", t("lib.slot.preset")], ["image", t("lib.kind.image")]].map(([value, label]) =>
 								React.createElement(
 									"button",
 									{
@@ -2068,7 +4014,7 @@
 							? React.createElement(
 									"div",
 									{ className: "tl-wall-tabs" },
-									React.createElement("span", { className: "tl-wall-label" }, "图案"),
+									React.createElement("span", { className: "tl-wall-label" }, t("lib.layer.pattern")),
 									Object.entries(LAYER_LABELS).map(([value, label]) =>
 										React.createElement(
 											"button",
@@ -2092,11 +4038,11 @@
 										"select",
 										{
 											className: "tl-font-select",
-											"aria-label": "本地图片叠加",
+											"aria-label": t("lib.layer.imageAria"),
 											value: items.some((item) => item.kind === "image" && item.url === selectedSlot.url) ? selectedSlot.url : "",
 											onChange: (event) => updateLayerSlot(layerSlot, { kind: "image", url: event.target.value }),
 										},
-										React.createElement("option", { value: "" }, "选本地图片…"),
+										React.createElement("option", { value: "" }, t("lib.layer.selectImage")),
 										items
 											.filter((item) => item.kind === "image")
 											.map((item) => React.createElement("option", { key: item.id, value: item.url }, item.id)),
@@ -2104,15 +4050,15 @@
 									React.createElement("input", {
 										className: "tl-font-input",
 										type: "url",
-										placeholder: "或粘贴图片地址",
+										placeholder: t("lib.layer.pasteImage"),
 										value: selectedSlot.url,
 										onChange: (event) => updateLayerSlot(layerSlot, { kind: "image", url: event.target.value }),
 									}),
 									React.createElement(
 										"div",
 										{ className: "tl-wall-tabs" },
-										React.createElement("span", { className: "tl-wall-label" }, "图片适配"),
-										[["cover", "填满"], ["contain", "完整"], ["stretch", "拉伸"]].map(([value, label]) =>
+										React.createElement("span", { className: "tl-wall-label" }, t("lib.layer.fit")),
+										[["cover", t("lib.layer.fitCover")], ["contain", t("lib.layer.fitContain")], ["stretch", t("lib.layer.fitStretch")]].map(([value, label]) =>
 											React.createElement(
 												"button",
 												{
@@ -2129,11 +4075,11 @@
 								)
 							: null,
 						selectedSlot.kind === "none"
-							? React.createElement("p", { className: "tl-wall-hint" }, "这一槽关闭；选「预设」或「图片」启用。")
+							? React.createElement("p", { className: "tl-wall-hint" }, t("lib.layer.offHint"))
 							: React.createElement(
 									"label",
 									{ className: "tl-wall-slider" },
-									React.createElement("span", null, "叠加不透明度 " + Math.round(selectedSlot.opacity * 100) + "%"),
+									React.createElement("span", null, t("lib.layer.opacity") + Math.round(selectedSlot.opacity * 100) + "%"),
 									React.createElement("input", {
 										type: "range",
 										min: 0,
@@ -2148,7 +4094,7 @@
 							: React.createElement(
 									"div",
 									{ className: "tl-wall-tabs" },
-									React.createElement("span", { className: "tl-wall-label" }, "混合"),
+									React.createElement("span", { className: "tl-wall-label" }, t("lib.layer.blend")),
 									Object.entries(LAYER_BLEND_LABELS).map(([value, label]) =>
 										React.createElement(
 											"button",
@@ -2166,14 +4112,14 @@
 						React.createElement(
 							"p",
 							{ className: "tl-wall-hint" },
-							"两层都叠在视频/图片/Shader 之上；纯 CSS，不增加解码；省电时保持静态。",
+							t("lib.layer.hint"),
 						),
 						// ---- the only zone question that matters: separate or continuous ----
 						React.createElement(
 							"div",
 							{ className: "tl-wall-tabs" },
-							React.createElement("span", { className: "tl-wall-label" }, "侧栏壁纸"),
-							[["no", "与主壁纸相同"], ["yes", "独立分开"]].map(([value, label]) =>
+							React.createElement("span", { className: "tl-wall-label" }, t("lib.rail.title")),
+							[["no", t("lib.rail.same")], ["yes", t("lib.rail.separate")]].map(([value, label]) =>
 								React.createElement(
 									"button",
 									{
@@ -2196,7 +4142,7 @@
 									"select",
 									{
 										className: "tl-font-select",
-										"aria-label": "侧栏壁纸",
+										"aria-label": t("lib.rail.title"),
 										value: zones.rail.url ?? "",
 										onChange: (event) => {
 											const url = event.target.value;
@@ -2209,7 +4155,7 @@
 											if (zoneController !== null) zoneController.apply(next);
 										},
 									},
-									React.createElement("option", { value: "" }, "侧栏：跟随主壁纸"),
+									React.createElement("option", { value: "" }, t("lib.rail.follow")),
 									items.map((item) =>
 										React.createElement("option", { key: item.id, value: item.url }, item.id),
 									),
@@ -2220,12 +4166,12 @@
 					React.createElement(
 						"details",
 						{ className: "tl-wall-group", open: false, "data-tl-group": "advanced" },
-						groupSummary("⑤", "自动/性能", performanceValue),
+						groupSummary("⑤", t("lib.group.performance"), performanceValue),
 						React.createElement(
 							"div",
 							{ className: "tl-wall-tabs" },
-							React.createElement("span", { className: "tl-wall-label" }, "省电"),
-							[["auto", "自动"], ["on", "开"], ["off", "关"]].map(([value, label]) =>
+							React.createElement("span", { className: "tl-wall-label" }, t("lib.perf.lowPower")),
+							[["auto", t("lib.ctrl.auto")], ["on", t("lib.ctrl.onShort")], ["off", t("lib.ctrl.offShort")]].map(([value, label]) =>
 								React.createElement(
 									"button",
 									{
@@ -2245,8 +4191,8 @@
 						React.createElement(
 							"div",
 							{ className: "tl-wall-tabs" },
-							React.createElement("span", { className: "tl-wall-label" }, "渲染帧率"),
-							[["auto", "自动"], ["60", "60"], ["30", "30"], ["15", "15"]].map(([value, label]) =>
+							React.createElement("span", { className: "tl-wall-label" }, t("lib.perf.renderFps")),
+							[["auto", t("lib.ctrl.auto")], ["60", "60"], ["30", "30"], ["15", "15"]].map(([value, label]) =>
 								React.createElement(
 									"button",
 									{
@@ -2266,21 +4212,21 @@
 						React.createElement(
 							"p",
 							{ className: "tl-wall-hint" },
-							"帧率档位作用于 ShaderToy 渲染与侧栏镜像；视频走原生解码，按源帧率播放，60fps 源不需要设置。60fps 更耗电，省电设置优先。",
+							t("lib.perf.fpsHint"),
 						),
 						React.createElement(
 							"p",
 							{ className: "tl-wall-hint" },
 							powerMode === "auto"
-								? "自动：低电量、省流量或系统开启「减少动态效果」时，暂停动态壁纸并冻结装饰动画"
+								? t("lib.perf.autoHint")
 								: powerMode === "on"
-									? "已暂停动态壁纸（停在当前帧），并冻结桌宠等装饰动画"
-									: "始终播放动态壁纸，不再因电量或流量降级",
+									? t("lib.perf.onHint")
+									: t("lib.perf.offHint"),
 						),
 						React.createElement(
 							"div",
 							{ className: "tl-wall-tabs" },
-							React.createElement("span", { className: "tl-wall-label" }, "自动轮播"),
+							React.createElement("span", { className: "tl-wall-label" }, t("lib.rotation.title")),
 							React.createElement(
 								"button",
 								{
@@ -2289,16 +4235,16 @@
 									"data-active": rotation.on ? "" : undefined,
 									onClick: () => updateRotation({ on: rotation.on === false }),
 								},
-								rotation.on ? "已开启" : "关闭",
+								rotation.on ? t("lib.ctrl.on") : t("lib.ctrl.off"),
 							),
 						),
 						React.createElement(
 							"div",
 							{ className: "tl-wall-tabs" },
-							React.createElement("span", { className: "tl-wall-label" }, "顺序"),
+							React.createElement("span", { className: "tl-wall-label" }, t("lib.rotation.order")),
 							[
-								["sequence", "顺序"],
-								["random", "随机"],
+								["sequence", t("lib.rotation.order")],
+								["random", t("lib.rotation.random")],
 							].map(([value, label]) =>
 								React.createElement(
 									"button",
@@ -2316,7 +4262,7 @@
 						React.createElement(
 							"div",
 							{ className: "tl-wall-tabs" },
-							React.createElement("span", { className: "tl-wall-label" }, "间隔"),
+							React.createElement("span", { className: "tl-wall-label" }, t("lib.rotation.interval")),
 							ROTATION_INTERVALS.map((seconds) =>
 								React.createElement(
 									"button",
@@ -2327,7 +4273,7 @@
 										"data-active": rotation.interval === seconds ? "" : undefined,
 										onClick: () => updateRotation({ interval: seconds }),
 									},
-									seconds < 60 ? seconds + "s" : Math.round(seconds / 60) + "分",
+									seconds < 60 ? seconds + "s" : Math.round(seconds / 60) + t("lib.unit.minutesShort"),
 								),
 							),
 						),
@@ -2342,31 +4288,31 @@
 									"data-active": rotation.favoritesOnly ? "" : undefined,
 									onClick: () => updateRotation({ favoritesOnly: rotation.favoritesOnly === false }),
 								},
-								"只轮播收藏",
+								t("lib.rotation.favoritesOnly"),
 							),
 						),
 						React.createElement(
 							"p",
 							{ className: "tl-wall-hint" },
 							rotation.on
-								? "每 " +
-										(rotation.interval < 60 ? rotation.interval + " 秒" : Math.round(rotation.interval / 60) + " 分钟") +
-										"换一张；页面隐藏、省电或暂停播放时顺延，当前这张不会重复选中。"
-								: "开启后自动轮换本地/WE 的图片与视频；隐藏的壁纸不参与，坏文件会跳过。",
+								? t("lib.rotation.everyPrefix") +
+										(rotation.interval < 60 ? rotation.interval + t("lib.unit.secondsSuffix") : Math.round(rotation.interval / 60) + t("lib.unit.minutesSuffix")) +
+										t("lib.rotation.onHint")
+								: t("lib.rotation.offHint"),
 						),
 					),
 					// ---- recipe: the whole panel configuration, exportable ----
 					React.createElement(
 						"details",
 						{ className: "tl-wall-group", open: false, "data-tl-group": "advanced" },
-						groupSummary("⑥", "保存/分享", "精选 · 导出/导入"),
+						groupSummary("⑥", t("lib.group.recipe"), t("lib.group.recipeValue")),
 						React.createElement(
 							"div",
 							{ className: "tl-wall-url" },
 							React.createElement(
 								"p",
 								{ className: "tl-wall-hint" },
-								"精选配方一键套用；也可导出/导入 JSON。壁纸 + 取景 + 播放 + 玻璃 + 叠加层 + 省电（含着色器源码与参数）。",
+								t("lib.recipeHint"),
 							),
 							React.createElement(
 								"div",
@@ -2378,28 +4324,116 @@
 											key: preset.id,
 											type: "button",
 											className: "tl-source-card",
-											title: preset.desc,
+											title: t(preset.descKey),
 											onClick: () => applyCuratedPreset(preset),
 										},
-										React.createElement("span", { className: "tl-source-name" }, preset.label),
-										React.createElement("span", { className: "tl-source-note" }, preset.desc),
+										React.createElement("span", { className: "tl-source-name" }, t(preset.labelKey)),
+										React.createElement("span", { className: "tl-source-note" }, t(preset.descKey)),
 									),
 								),
 							),
 							React.createElement("textarea", {
 								className: "tl-wall-textarea",
 								rows: 3,
-								placeholder: "{ format: tianlight-preset }",
+								placeholder: t("lib.recipePlaceholder"),
 								value: presetText,
 								onChange: (event) => setPresetText(event.target.value),
 							}),
 							React.createElement(
 								"div",
 								{ className: "tl-wall-tabs" },
-								React.createElement("button", { type: "button", className: "tl-font-reset", onClick: exportPreset }, "导出配方"),
-								React.createElement("button", { type: "button", className: "tl-font-reset", onClick: importPreset }, "导入配方"),
+								React.createElement("button", { type: "button", className: "tl-font-reset", onClick: exportPreset }, t("lib.exportRecipe")),
+								React.createElement("button", { type: "button", className: "tl-font-reset", onClick: importPreset }, t("lib.importRecipe")),
 							),
 							presetStatus === "" ? null : React.createElement("p", { className: "tl-wall-hint" }, presetStatus),
+							// ---- v0.5.0 D3: copy a #tl=<recipe v2> share link ----
+							React.createElement(
+								"div",
+								{ className: "tl-wall-url" },
+								React.createElement("p", { className: "tl-wall-hint" }, t("lib.shareTitle") + " · v2"),
+								React.createElement(
+									"div",
+									{ className: "tl-wall-tabs" },
+									React.createElement(
+										"button",
+										{ type: "button", className: "tl-font-reset", onClick: copyShareLink },
+										t("lib.shareCopy"),
+									),
+								),
+								React.createElement("p", { className: "tl-wall-hint" }, t("lib.shareHint")),
+								shareLink === ""
+									? null
+									: React.createElement(
+											"div",
+											null,
+											React.createElement("p", { className: "tl-wall-v05-note" }, t("lib.shareManual")),
+											React.createElement("textarea", {
+												className: "tl-wall-textarea",
+												rows: 2,
+												readOnly: true,
+												"aria-label": t("lib.shareLinkAria"),
+												value: shareLink,
+												onFocus: (event) => event.currentTarget.select(),
+											}),
+										),
+								shareNote === "" ? null : React.createElement("p", { className: "tl-wall-hint" }, shareNote),
+							),
+							// ---- v0.5.0 D2: export / import the host bundle ----
+							bundleSupported || importSupported
+								? React.createElement(
+										"div",
+										{ className: "tl-wall-url" },
+										React.createElement("p", { className: "tl-wall-hint" }, t("lib.bundleTitle")),
+										React.createElement(
+											"div",
+											{ className: "tl-wall-bundle-row" },
+											bundleSupported
+												? React.createElement(
+														"button",
+														{
+															type: "button",
+															className: "tl-font-reset",
+															disabled: bundleBusy,
+															onClick: exportBundle,
+														},
+														bundleBusy ? t("lib.bundleExportBusy") : t("lib.bundleExport"),
+													)
+												: null,
+											importSupported
+												? React.createElement(
+														"label",
+														{ className: "tl-wall-upload", "data-busy": importBusy ? "" : undefined, title: t("lib.bundleImport") },
+														importBusy ? t("lib.bundleImporting") : t("lib.bundleImport"),
+														React.createElement("input", {
+															type: "file",
+															accept: ".tgz,.tar.gz,application/gzip,application/x-gzip",
+															disabled: importBusy,
+															onChange: importBundle,
+															style: { display: "none" },
+														}),
+													)
+												: null,
+										),
+										React.createElement("p", { className: "tl-wall-hint" }, t("lib.bundleHint")),
+										importBusy
+											? React.createElement("progress", {
+													className: "tl-wall-progress",
+													max: 100,
+													value: importPct,
+													"aria-label": t("lib.bundleImporting"),
+												})
+											: null,
+										importBusy
+											? React.createElement("p", { className: "tl-wall-v05-note" }, t("lib.bundleProgress", { pct: importPct }))
+											: null,
+										bundleNote === "" ? null : React.createElement("p", { className: "tl-wall-hint" }, bundleNote),
+										importNote === "" ? null : React.createElement("p", { className: "tl-wall-hint" }, importNote),
+									)
+								: engine === null
+									// State probe still in flight: show nothing rather than flashing
+									// "host unavailable" for the first render.
+									? null
+									: React.createElement("p", { className: "tl-wall-hint" }, t("lib.bundleNoHost")),
 							// Reset lives next to the recipe: both own the same zones and glass.
 							React.createElement(
 								"button",
@@ -2419,10 +4453,22 @@
 										if (glassController !== null) glassController.apply(1);
 									},
 								},
-								"恢复壁纸默认",
+								t("lib.resetWallpaper"),
 							),
 						),
 					),
+					// ---- v0.5.0 extension sections: every workstream registers its own
+					// <details class="tl-wall-group"> component; the panel only mounts them
+					// in registration order, after ⑥, inside this same scroll container.
+					// ①-⑥ above stay untouched so the skinlab inventory/layout checks hold.
+					...tl5PanelSections().map((section) =>
+						React.createElement(section.Component, { key: "tl5-" + section.id }),
+					),
+					// v0.5.3: transient picker feedback ("已切换：…"/inline errors live in the
+					// compact status row). Rendered last so it floats above the grid.
+					toast === null || view !== "pick"
+						? null
+						: React.createElement("div", { className: "tl-wall-toast", "data-tl-toast": "", role: "status" }, toast.text),
 				);
 			};
 
@@ -2437,8 +4483,18 @@
 			handle.type = "button";
 			handle.setAttribute("data-tl-wall-handle", "");
 			handle.setAttribute("aria-keyshortcuts", "Alt+W");
-			handle.title = "壁纸（Alt+W）";
-			handle.textContent = "壁纸";
+			// The handle lives outside the React panel; keep it on the same dictionary and
+			// refresh it when the language changes (subscribeTl5I18n is disposed below).
+			// v0.5.3 13-i18n can also auto-rewrite these via data-tl-i18n-*; both paths are
+			// kept so older/newer i18n fragments behave the same.
+			handle.setAttribute("data-tl-i18n-key", "lib.handle.text");
+			handle.setAttribute("data-tl-i18n-title-key", "lib.handle.title");
+			const refreshHandleCopy = () => {
+				handle.title = TL_T("lib.handle.title");
+				handle.textContent = TL_T("lib.handle.text");
+			};
+			refreshHandleCopy();
+			const unsubscribeHandleI18n = subscribeTl5I18n(refreshHandleCopy);
 			const body = document.body;
 			if (body !== null) {
 				body.appendChild(scrim);
@@ -2449,6 +4505,15 @@
 			let root = null;
 			let open = false;
 			let tintTimer = 0;
+			// v0.5.0 D3: a validated #tl= recipe waiting for the user's explicit decision.
+			// Read once at install (page load with a shared link) and re-read on each open
+			// by the panel; a decision clears both this and the hash.
+			const hashAtInstall = String(globalThis.location?.hash ?? "");
+			let pendingShare = hashAtInstall.startsWith("#tl=") ? readTl5ShareHash() : null;
+			// A link that was present but rejected (invalid/oversized) is surfaced as a
+			// single note when the panel opens: the hash is already cleared, no settings
+			// were touched.
+			const shareRejectedAtLoad = hashAtInstall.startsWith("#tl=") && pendingShare === null;
 
 			// ---- background tinted by the wallpaper's own hue ----
 			const swatch = document.createElement("canvas");
@@ -2518,7 +4583,7 @@
 				// panel looked untinted, which is the bug this replaced.
 				const fillLight = dark ? 0.15 : 0.90;
 				const fillSat = Math.round(Math.min(0.52, Math.max(0.18, sat)) * 100);
-				const fill = "hsl(" + hue + " " + fillSat + "% " + Math.round(fillLight * 100) + "% / calc(0.94 * var(--tl-glass-m, 1)))";
+				const fill = "hsl(" + hue + " " + fillSat + "% " + Math.round(fillLight * 100) + "% / max(0.96, calc(0.94 * var(--tl-glass-m, 1))))";
 				host.style.setProperty("--tl-panel-fill", fill);
 				// The edge handle carries the same tint, so the wallpaper colour is visible
 				// even with the panel closed.
@@ -2706,6 +4771,36 @@
 			document.addEventListener("pointercancel", onDragEnd, true);
 			host.addEventListener("pointerleave", onGlowLeave);
 
+			// Each open remounts the panel component (via the React key), so the panel
+			// always starts on the full library. The React state (source tab, filters, WE
+			// editor) used to survive close/open for the whole page session: after the user
+			// clicked "WE 目录" once, every later open came back to an empty WE filter with
+			// "壁纸清单 0 张" and the directory editor expanded — the reported "wallpaper
+			// panel is broken" state.
+			let openSeq = 0;
+			const renderPanel = () => {
+				if (root === null) {
+					try {
+						root = require("react-dom/client").createRoot(host);
+					} catch {
+						root = null;
+						return;
+					}
+				}
+				openSeq += 1;
+				try {
+					root.render(
+						React.createElement(WallpaperPanel, {
+							key: "wall-panel-" + openSeq,
+							onClose: () => setOpen(false),
+							sharedRecipe: pendingShare,
+							shareRejected: shareRejectedAtLoad,
+						}),
+					);
+				} catch {
+					// a failing render must not keep the panel in a half-open state
+				}
+			};
 			const setOpen = (next) => {
 				open = next;
 				if (open) {
@@ -2716,19 +4811,13 @@
 					audioController.clearReason();
 					// Re-clamp against the current viewport before showing.
 					applyX(Math.min(offset, maxOffset()));
+					renderPanel();
 				} else {
 					host.removeAttribute("data-tl-open");
 					scrim.removeAttribute("data-tl-open");
 					handle.removeAttribute("data-tl-hidden");
 					stopTint();
-					audioController.stop("面板已关闭，已停止音频");
-				}
-				if (!open || root !== null) return;
-				try {
-					root = require("react-dom/client").createRoot(host);
-					root.render(React.createElement(WallpaperPanel, { onClose: () => setOpen(false) }));
-				} catch {
-					root = null;
+					audioController.stop(TL_T("lib.audio.stoppedOnClose"));
 				}
 			};
 			const onScrim = () => setOpen(false);
@@ -2739,6 +4828,14 @@
 				if (event.altKey && event.ctrlKey === false && event.metaKey === false && (event.key === "w" || event.key === "W")) {
 					event.preventDefault();
 					setOpen(!open);
+					return;
+				}
+				// Esc is the standard way out of a panel. Only claimed while the panel is open,
+				// so dialogs and menus elsewhere keep their own Esc behaviour.
+				if (event.key === "Escape" && open) {
+					event.preventDefault();
+					event.stopPropagation();
+					setOpen(false);
 				}
 			};
 			// A cached offset goes stale when the viewport shrinks: a panel pinned to the
@@ -2764,6 +4861,7 @@
 				document.removeEventListener("pointerup", onDragEnd, true);
 				document.removeEventListener("pointercancel", onDragEnd, true);
 				host.removeEventListener("pointerleave", onGlowLeave);
+				if (typeof unsubscribeHandleI18n === "function") unsubscribeHandleI18n();
 				stopTint();
 				if (raf !== 0) globalThis.cancelAnimationFrame(raf);
 				try {

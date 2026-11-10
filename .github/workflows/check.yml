@@ -1,20 +1,74 @@
 name: check
 
+# Static checks only, on Node 20 and Node 22, with NO install step: the skin has
+# zero runtime dependencies and the whole `check` chain is pure node + git-free
+# static analysis. DSH-dependent checks (tools/compat-matrix.mjs,
+# tools/upgrade-check.mjs, tools/hook-scan.mjs against a real install, and the
+# runtime skinlab matrix) are local-only and documented in docs/COMPATIBILITY.md —
+# CI does not have a DSH installation to inspect.
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  verify:
+  static:
+    name: static (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
+          node-version: ${{ matrix.node }}
+      # No `npm ci` / `npm install` on purpose: node_modules does not exist.
+      # Each step is separate so a red run names the failing tool immediately.
+      - name: build check (product is current)
+        run: node tools/build.mjs --check
+      - name: unit tests
+        run: node tools/test.mjs
+      - name: structure (strict)
+        run: node tools/structure.mjs --strict
+      - name: audit
+        run: node tools/audit.mjs
+      - name: check-css
+        run: node tools/check-css.mjs
+      - name: verify
+        run: node tools/verify.mjs
+      - name: i18n audit (zh/en completeness)
+        run: node tools/i18n-audit.mjs
+
+  # Tag-only packaging job: a tag that does not match package.json fails here, and
+  # a matching tag produces the same distributable directory `node tools/pack.mjs`
+  # would create locally. No publishing, no network credentials.
+  package:
+    name: package (tag)
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: static
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
           node-version: '20'
-      # No install step: the skin has zero runtime dependencies.
-      # The `check` chain needs no DSH install — upgrade-check does, and runs locally.
-      - name: static checks
-        run: npm run check
+      - name: tag matches package.json version
+        run: |
+          node -e "const expected = 'v' + require('./package.json').version; const actual = process.env.GITHUB_REF_NAME; if (actual !== expected) { console.error('tag ' + actual + ' does not match package.json ' + expected); process.exit(1); }"
+      - name: build distributable (pack, no media)
+        run: node tools/pack.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dsh-client-ui-skin-tianlight-${{ github.ref_name }}
+          path: dist/**
+          if-no-files-found: error

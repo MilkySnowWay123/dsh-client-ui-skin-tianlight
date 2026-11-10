@@ -1,0 +1,40 @@
+{
+  "format": "tianlight-preset",
+  "version": 2,
+  "effects": {
+    "enabled": true,
+    "parallax": false,
+    "parallaxStrength": 0.35,
+    "click": false,
+    "clickStyle": "ripple",
+    "ambience": "rain",
+    "ambienceDensity": 0.55,
+    "transition": "dissolve",
+    "transitionMs": 900,
+    "budget": "auto"
+  },
+  "context": {
+    "enabled": true,
+    "timeOfDay": true,
+    "manualPeriod": "night",
+    "focusLink": false,
+    "focusDim": 35,
+    "focusBlur": 4,
+    "adaptive": true,
+    "adaptiveLocked": false
+  },
+  "legibility": {
+    "enabled": true,
+    "threshold": 4.5,
+    "boost": 0.12
+  },
+  "layers": {
+    "version": 2,
+    "slots": [
+      { "kind": "preset", "preset": "grain", "url": "", "fit": "cover", "opacity": 0.34, "blend": "overlay" },
+      { "kind": "preset", "preset": "vignette", "url": "", "fit": "cover", "opacity": 0.55, "blend": "multiply" }
+    ]
+  },
+  "glass": 0.85,
+  "lowPower": "auto"
+}

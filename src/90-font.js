@@ -29,7 +29,187 @@
 			{ id: "normal", label: "标准", value: "" },
 			{ id: "loose", label: "宽松", value: "0.02em" },
 		];
-		const TYPO_DEFAULTS = { size: 14, ui: "system", code: "system", weight: "normal", lead: "normal", track: "normal" };
+		/** v0.5.0 正文衬线预设：只作用于消息正文，不碰界面骨架。 */
+		const READING_FAMILIES = [
+			{ id: "system", label: "系统", stack: "" },
+			{ id: "serif", label: "衬线", stack: 'Georgia, "Songti SC", "Noto Serif SC", "Songti TC", serif' },
+		];
+		/**
+		 * v0.5.0 模型：旧字段（size/ui/code/weight/lead/track）原样保留，新增
+		 * width/para/codeSize/serif。旧存档只有前六个字段，读取时缺省补默认值，
+		 * 因此 v0.4 的 `tianlight.font.family` 可以无缝升级。
+		 */
+		const TYPO_DEFAULTS = {
+			size: 14,
+			ui: "system",
+			code: "system",
+			weight: "normal",
+			lead: "normal",
+			track: "normal",
+			width: 860,
+			para: 0.5,
+			codeSize: 13,
+			serif: "system",
+		};
+		const TYPO_WIDTH_MIN = 640;
+		const TYPO_WIDTH_MAX = 1400;
+		const TYPO_PARA_MIN = 0;
+		const TYPO_PARA_MAX = 1.5;
+		const TYPO_CODE_SIZE_MIN = 11;
+		const TYPO_CODE_SIZE_MAX = 18;
+
+		registerTl5Strings({
+			zh: {
+				"typo.title": "字体",
+				"typo.subtitle": "{size}px · 界面 {ui} · 代码 {code}",
+				"typo.close": "关闭字体面板",
+				"typo.trigger": "字体设置（Alt+T）",
+				"typo.preview": "夜色温柔 · Aa 0123",
+				"typo.previewNote": "字重 {weight} · 行距 {lead} · 字距 {track}",
+				"typo.section.size": "字号",
+				"typo.section.family": "字族",
+				"typo.section.typeset": "排版",
+				"typo.section.content": "内容排版",
+				"typo.section.readability": "可读性",
+				"typo.uiSize": "界面字号",
+				"typo.uiFamily": "界面",
+				"typo.codeFamily": "代码",
+				"typo.weight": "字重",
+				"typo.lead": "行距",
+				"typo.track": "字距",
+				"typo.width": "内容宽度",
+				"typo.para": "段落间距",
+				"typo.codeSize": "代码字号",
+				"typo.reading": "正文衬线",
+				"typo.reset": "恢复默认",
+				"typo.slider.size": "字号",
+				"typo.slider.width": "内容宽度",
+				"typo.slider.para": "段落间距",
+				"typo.slider.codeSize": "代码字号",
+				"typo.family.system": "系统",
+				"typo.family.serif": "衬线",
+				"typo.family.round": "圆体",
+				"typo.family.mono": "等宽",
+				"typo.codeFamily.system": "默认",
+				"typo.codeFamily.mono": "Mono",
+				"typo.codeFamily.consolas": "Consolas",
+				"typo.weight.normal": "常规",
+				"typo.weight.medium": "中等",
+				"typo.weight.bold": "加粗",
+				"typo.lead.tight": "紧凑",
+				"typo.lead.normal": "标准",
+				"typo.lead.loose": "宽松",
+				"typo.track.tight": "紧凑",
+				"typo.track.normal": "标准",
+				"typo.track.loose": "宽松",
+				"typo.reading.system": "系统",
+				"typo.reading.serif": "衬线",
+			},
+			en: {
+				"typo.title": "Typography",
+				"typo.subtitle": "{size}px · UI {ui} · Code {code}",
+				"typo.close": "Close typography panel",
+				"typo.trigger": "Typography settings (Alt+T)",
+				"typo.preview": "Night light · Aa 0123",
+				"typo.previewNote": "Weight {weight} · Leading {lead} · Tracking {track}",
+				"typo.section.size": "Size",
+				"typo.section.family": "Family",
+				"typo.section.typeset": "Typesetting",
+				"typo.section.content": "Content layout",
+				"typo.section.readability": "Readability",
+				"typo.uiSize": "UI size",
+				"typo.uiFamily": "UI",
+				"typo.codeFamily": "Code",
+				"typo.weight": "Weight",
+				"typo.lead": "Leading",
+				"typo.track": "Tracking",
+				"typo.width": "Content width",
+				"typo.para": "Paragraph gap",
+				"typo.codeSize": "Code size",
+				"typo.reading": "Reading serif",
+				"typo.reset": "Reset",
+				"typo.slider.size": "Font size",
+				"typo.slider.width": "Content width",
+				"typo.slider.para": "Paragraph spacing",
+				"typo.slider.codeSize": "Code font size",
+				"typo.family.system": "System",
+				"typo.family.serif": "Serif",
+				"typo.family.round": "Rounded",
+				"typo.family.mono": "Monospace",
+				"typo.codeFamily.system": "Default",
+				"typo.codeFamily.mono": "Mono",
+				"typo.codeFamily.consolas": "Consolas",
+				"typo.weight.normal": "Regular",
+				"typo.weight.medium": "Medium",
+				"typo.weight.bold": "Semibold",
+				"typo.lead.tight": "Tight",
+				"typo.lead.normal": "Normal",
+				"typo.lead.loose": "Loose",
+				"typo.track.tight": "Tight",
+				"typo.track.normal": "Normal",
+				"typo.track.loose": "Loose",
+				"typo.reading.system": "System",
+				"typo.reading.serif": "Serif",
+			},
+		});
+
+		/**
+		 * D4 内容排版样式：只作用于桥接盖章的消息气泡与其 pre/code，
+		 * 不改变界面骨架。变量由 applyTypography 写在 body 上，
+		 * 未设置时回落到这里的默认值。
+		 */
+		registerTl5Css(String.raw`
+body[data-dsh-tianlight] {
+	--tl-content-width: 860px;
+	--tl-para-gap: 0.5em;
+	--tl-code-size: 13px;
+	--tl-reading-family: inherit;
+}
+body[data-dsh-tianlight] [data-tl-bubble] {
+	max-width: var(--tl-content-width);
+	font-family: var(--tl-reading-family);
+}
+body[data-dsh-tianlight] [data-tl-bubble] p,
+body[data-dsh-tianlight] [data-tl-bubble] ul,
+body[data-dsh-tianlight] [data-tl-bubble] ol,
+body[data-dsh-tianlight] [data-tl-bubble] blockquote,
+body[data-dsh-tianlight] [data-tl-bubble] pre {
+	margin-block: calc(var(--tl-para-gap) * 0.5);
+}
+body[data-dsh-tianlight] [data-tl-bubble] pre,
+body[data-dsh-tianlight] [data-tl-bubble] code {
+	font-size: var(--tl-code-size);
+}
+`);
+
+		function clampTypographyNumber(value, min, max) {
+			if (!Number.isFinite(value)) return null;
+			return Math.min(max, Math.max(min, value));
+		}
+
+		/**
+		 * 归一化一个（可能来自旧存档或配方的）排版模型。未知字段忽略，
+		 * 缺失字段补默认值，数值全部夹到面板滑杆范围内，保证 UI 与 CSS 一致。
+		 */
+		function normalizeTypography(model) {
+			const source = model !== null && typeof model === "object" ? model : {};
+			const next = { ...TYPO_DEFAULTS };
+			const size = clampTypographyNumber(source.size, 12, 22);
+			if (size !== null) next.size = Math.round(size);
+			if (FONT_FAMILIES.some((item) => item.id === source.ui)) next.ui = source.ui;
+			if (CODE_FAMILIES.some((item) => item.id === source.code)) next.code = source.code;
+			if (WEIGHTS.some((item) => item.id === source.weight)) next.weight = source.weight;
+			if (LEADS.some((item) => item.id === source.lead)) next.lead = source.lead;
+			if (TRACKS.some((item) => item.id === source.track)) next.track = source.track;
+			const width = clampTypographyNumber(source.width, TYPO_WIDTH_MIN, TYPO_WIDTH_MAX);
+			if (width !== null) next.width = Math.round(width);
+			const para = clampTypographyNumber(source.para, TYPO_PARA_MIN, TYPO_PARA_MAX);
+			if (para !== null) next.para = Math.round(para * 10) / 10;
+			const codeSize = clampTypographyNumber(source.codeSize, TYPO_CODE_SIZE_MIN, TYPO_CODE_SIZE_MAX);
+			if (codeSize !== null) next.codeSize = Math.round(codeSize);
+			if (READING_FAMILIES.some((item) => item.id === source.serif)) next.serif = source.serif;
+			return next;
+		}
 
 		/** Reads the persisted model. Tolerates the legacy plain-string value. */
 		function readTypography() {
@@ -52,13 +232,7 @@
 				if (FONT_FAMILIES.some((item) => item.id === raw)) model.ui = raw;
 				return model;
 			}
-			if (Number.isFinite(saved.size)) model.size = Math.min(22, Math.max(12, Math.round(saved.size)));
-			if (FONT_FAMILIES.some((item) => item.id === saved.ui)) model.ui = saved.ui;
-			if (CODE_FAMILIES.some((item) => item.id === saved.code)) model.code = saved.code;
-			if (WEIGHTS.some((item) => item.id === saved.weight)) model.weight = saved.weight;
-			if (LEADS.some((item) => item.id === saved.lead)) model.lead = saved.lead;
-			if (TRACKS.some((item) => item.id === saved.track)) model.track = saved.track;
-			return model;
+			return normalizeTypography(saved);
 		}
 
 		/**
@@ -71,6 +245,10 @@
 			if (body !== null) {
 				body.style.removeProperty("--dsw-font-family");
 				body.style.removeProperty("--ds-font-family-code");
+				body.style.removeProperty("--tl-content-width");
+				body.style.removeProperty("--tl-para-gap");
+				body.style.removeProperty("--tl-code-size");
+				body.style.removeProperty("--tl-reading-family");
 			}
 			const root = document.getElementById("root");
 			if (root !== null) {
@@ -84,38 +262,49 @@
 		 * Applies the whole model. Families and size are real APIs (a CSS variable and
 		 * theme.setFontSize); weight/leading/tracking are inline on #root with an empty
 		 * string meaning "inherit", which restores the product values without knowing
-		 * them. `theme` is optional so a missing service still leaves families working.
+		 * them. The v0.5.0 content fields (width/para/codeSize/reading serif) are CSS
+		 * variables consumed only under [data-tl-bubble], so the app skeleton keeps the
+		 * product layout. `theme` is optional so a missing service still leaves families
+		 * working. Signature kept compatible with v0.4.0 callers.
 		 */
 		function applyTypography(theme, model, persist) {
-			const ui = FONT_FAMILIES.find((item) => item.id === model.ui) ?? FONT_FAMILIES[0];
-			const code = CODE_FAMILIES.find((item) => item.id === model.code) ?? CODE_FAMILIES[0];
+			const next = normalizeTypography(model);
+			const ui = FONT_FAMILIES.find((item) => item.id === next.ui) ?? FONT_FAMILIES[0];
+			const code = CODE_FAMILIES.find((item) => item.id === next.code) ?? CODE_FAMILIES[0];
+			const reading = READING_FAMILIES.find((item) => item.id === next.serif) ?? READING_FAMILIES[0];
 			const body = document.body;
 			if (body !== null) {
 				if (ui.stack === "") body.style.removeProperty("--dsw-font-family");
 				else body.style.setProperty("--dsw-font-family", ui.stack);
 				if (code.stack === "") body.style.removeProperty("--ds-font-family-code");
 				else body.style.setProperty("--ds-font-family-code", code.stack);
+				body.style.setProperty("--tl-content-width", next.width + "px");
+				body.style.setProperty("--tl-para-gap", next.para + "em");
+				body.style.setProperty("--tl-code-size", next.codeSize + "px");
+				if (reading.stack === "") body.style.removeProperty("--tl-reading-family");
+				else body.style.setProperty("--tl-reading-family", reading.stack);
 			}
 			const root = document.getElementById("root");
 			if (root !== null) {
-				root.style.fontWeight = (WEIGHTS.find((item) => item.id === model.weight) ?? WEIGHTS[0]).value;
-				root.style.lineHeight = (LEADS.find((item) => item.id === model.lead) ?? LEADS[0]).value;
-				root.style.letterSpacing = (TRACKS.find((item) => item.id === model.track) ?? TRACKS[0]).value;
+				root.style.fontWeight = (WEIGHTS.find((item) => item.id === next.weight) ?? WEIGHTS[0]).value;
+				root.style.lineHeight = (LEADS.find((item) => item.id === next.lead) ?? LEADS[0]).value;
+				root.style.letterSpacing = (TRACKS.find((item) => item.id === next.track) ?? TRACKS[0]).value;
 			}
 			if (theme !== undefined && typeof theme.setFontSize === "function") {
 				try {
-					theme.setFontSize(model.size);
+					theme.setFontSize(next.size);
 				} catch {
 					// the host may clamp or refuse; the stored value stays authoritative
 				}
 			}
 			if (persist !== false) {
 				try {
-					globalThis.localStorage.setItem(FONT_STORAGE, JSON.stringify(model));
+					globalThis.localStorage.setItem(FONT_STORAGE, JSON.stringify(next));
 				} catch {
 					// a failed write must never break the panel
 				}
 			}
+			return next;
 		}
 
 		/**
@@ -149,7 +338,14 @@
 			applyTypography(theme, initial, false);
 
 			const FontPanel = (props) => {
+				const { t } = useTl5I18n();
 				const [model, setModel] = React.useState(() => readTypography());
+				const [legibility, setLegibility] = React.useState(() => legibilityController.snapshot());
+				React.useEffect(() => legibilityController.subscribe(setLegibility), []);
+				const tr = (key, fallback) => {
+					const value = t(key);
+					return value === key ? fallback : value;
+				};
 				const update = (patch) => {
 					setModel((current) => {
 						const next = { ...current, ...patch };
@@ -157,7 +353,14 @@
 						return next;
 					});
 				};
-				const pills = (list, activeId, onPick) =>
+				const updateLegibility = (patch) => {
+					legibilityController.apply(patch);
+					setLegibility(legibilityController.snapshot());
+				};
+				const labelOf = (list, item, prefix) => (item === undefined ? "" : tr(prefix + "." + item.id, item.label));
+				const optionLabel = (list, id, prefix) =>
+					labelOf(list, list.find((item) => item.id === id) ?? list[0], prefix);
+				const pills = (list, activeId, onPick, prefix) =>
 					list.map((item) =>
 						React.createElement(
 							"button",
@@ -166,9 +369,10 @@
 								type: "button",
 								className: "tl-font-option",
 								"data-active": item.id === activeId ? "" : undefined,
+								"aria-pressed": item.id === activeId ? "true" : "false",
 								onClick: () => onPick(item.id),
 							},
-							item.label,
+							labelOf(list, item, prefix),
 						),
 					);
 				const row = (label, content) =>
@@ -178,7 +382,6 @@
 						React.createElement("span", { className: "tl-font-label" }, label),
 						content,
 					);
-				const optionLabel = (list, id) => (list.find((item) => item.id === id) ?? list[0]).label;
 				const section = (title, ...children) =>
 					React.createElement(
 						"div",
@@ -189,7 +392,45 @@
 				// Progress is painted straight into the track gradient: range inputs expose
 				// no ::-webkit-slider-progress, and an inline gradient needs no extra state
 				// or custom property (which the audit would have to whitelist).
-				const ratio = (((model.size - 12) / 10) * 100).toFixed(2);
+				const sliderStyle = (value, min, max) => {
+					const percent = Math.round(((value - min) / (max - min)) * 100);
+					return {
+						background:
+							"linear-gradient(90deg, var(--tl-accent) 0%, color-mix(in srgb, var(--tl-accent) 45%, #ffffff) " +
+							percent +
+							"%, rgba(255, 255, 255, 0.16) " +
+							percent +
+							"%, rgba(255, 255, 255, 0.16) 100%)",
+					};
+				};
+				const slider = (attributes) =>
+					React.createElement(
+						"div",
+						{ className: "tl-font-slider" },
+						React.createElement("input", {
+							type: "range",
+							min: attributes.min,
+							max: attributes.max,
+							step: attributes.step,
+							value: attributes.value,
+							className: "tl-font-range",
+							"data-tl-field": attributes.field,
+							"aria-label": attributes.label,
+							style: sliderStyle(attributes.value, attributes.min, attributes.max),
+							onChange: attributes.onChange,
+						}),
+						React.createElement("span", { className: "tl-font-value" }, attributes.valueText),
+					);
+				const legibilityStatus =
+					legibility.sampled !== true
+						? t("legibility.statusIdle")
+						: legibility.boosted === true
+							? t("legibility.statusBoosted", { ratio: legibility.ratio, threshold: legibility.threshold })
+							: t("legibility.status", { ratio: legibility.ratio, threshold: legibility.threshold });
+				const legibilityProgress = Math.round(
+					((legibility.threshold - LEGIBILITY_THRESHOLD_MIN) / (LEGIBILITY_THRESHOLD_MAX - LEGIBILITY_THRESHOLD_MIN)) *
+						100,
+				);
 				return React.createElement(
 					"div",
 					{ className: "tl-font-panel" },
@@ -199,15 +440,15 @@
 						React.createElement(
 							"div",
 							{ className: "tl-font-heading" },
-							React.createElement("div", { className: "tl-font-title" }, "字体"),
+							React.createElement("div", { className: "tl-font-title" }, t("typo.title")),
 							React.createElement(
 								"div",
 								{ className: "tl-font-subtitle" },
-								model.size +
-									"px · 界面 " +
-									optionLabel(FONT_FAMILIES, model.ui) +
-									" · 代码 " +
-									optionLabel(CODE_FAMILIES, model.code),
+								t("typo.subtitle", {
+									size: model.size,
+									ui: optionLabel(FONT_FAMILIES, model.ui, "typo.family"),
+									code: optionLabel(CODE_FAMILIES, model.code, "typo.codeFamily"),
+								}),
 							),
 						),
 						React.createElement(
@@ -216,7 +457,7 @@
 								type: "button",
 								className: "tl-font-close",
 								"data-tl-font-close": "",
-								"aria-label": "关闭字体面板",
+								"aria-label": t("typo.close"),
 								onClick: () => {
 									if (props !== undefined && typeof props.onClose === "function") props.onClose();
 								},
@@ -227,92 +468,177 @@
 					React.createElement(
 						"div",
 						{ className: "tl-font-preview", style: { fontSize: model.size + "px" } },
-						React.createElement("div", { className: "tl-font-preview-line" }, "夜色温柔 · Aa 0123"),
+						React.createElement("div", { className: "tl-font-preview-line" }, t("typo.preview")),
 						React.createElement(
 							"div",
 							{ className: "tl-font-preview-note" },
-							"字重 " +
-								optionLabel(WEIGHTS, model.weight) +
-								" · 行距 " +
-								optionLabel(LEADS, model.lead) +
-								" · 字距 " +
-								optionLabel(TRACKS, model.track),
+							t("typo.previewNote", {
+								weight: optionLabel(WEIGHTS, model.weight, "typo.weight"),
+								lead: optionLabel(LEADS, model.lead, "typo.lead"),
+								track: optionLabel(TRACKS, model.track, "typo.track"),
+							}),
 						),
 					),
 					section(
-						"字号",
+						t("typo.section.size"),
 						row(
-							"界面字号",
+							t("typo.uiSize"),
+							slider({
+								field: "size",
+								min: 12,
+								max: 22,
+								step: 1,
+								value: model.size,
+								label: t("typo.slider.size"),
+								valueText: model.size + " px",
+								onChange: (event) => update({ size: Number(event.target.value) }),
+							}),
+						),
+					),
+					section(
+						t("typo.section.family"),
+						row(
+							t("typo.uiFamily"),
 							React.createElement(
 								"div",
-								{ className: "tl-font-slider" },
-								React.createElement("input", {
-									type: "range",
-									min: 12,
-									max: 22,
-									step: 1,
-									value: model.size,
-									className: "tl-font-range",
-									"aria-label": "字号",
-									style: {
-										background:
-											"linear-gradient(90deg, var(--tl-accent) 0%, color-mix(in srgb, var(--tl-accent) 45%, #ffffff) " +
-											ratio +
-											"%, rgba(255, 255, 255, 0.16) " +
-											ratio +
-											"%, rgba(255, 255, 255, 0.16) 100%)",
+								{ className: "tl-font-options", "data-tl-typo-ui": "" },
+								pills(FONT_FAMILIES, model.ui, (id) => update({ ui: id }), "typo.family"),
+							),
+						),
+						row(
+							t("typo.codeFamily"),
+							React.createElement(
+								"div",
+								{ className: "tl-font-options", "data-tl-typo-code": "" },
+								pills(CODE_FAMILIES, model.code, (id) => update({ code: id }), "typo.codeFamily"),
+							),
+						),
+					),
+					section(
+						t("typo.section.typeset"),
+						row(
+							t("typo.weight"),
+							React.createElement(
+								"div",
+								{ className: "tl-font-options", "data-tl-typo-weight": "" },
+								pills(WEIGHTS, model.weight, (id) => update({ weight: id }), "typo.weight"),
+							),
+						),
+						row(
+							t("typo.lead"),
+							React.createElement(
+								"div",
+								{ className: "tl-font-options", "data-tl-typo-lead": "" },
+								pills(LEADS, model.lead, (id) => update({ lead: id }), "typo.lead"),
+							),
+						),
+						row(
+							t("typo.track"),
+							React.createElement(
+								"div",
+								{ className: "tl-font-options", "data-tl-typo-track": "" },
+								pills(TRACKS, model.track, (id) => update({ track: id }), "typo.track"),
+							),
+						),
+					),
+					// ---- v0.5.0 content-only typography (messages & code) ----
+					section(
+						t("typo.section.content"),
+						row(
+							t("typo.width"),
+							slider({
+								field: "width",
+								min: TYPO_WIDTH_MIN,
+								max: TYPO_WIDTH_MAX,
+								step: 20,
+								value: model.width,
+								label: t("typo.slider.width"),
+								valueText: model.width + " px",
+								onChange: (event) => update({ width: Number(event.target.value) }),
+							}),
+						),
+						row(
+							t("typo.para"),
+							slider({
+								field: "para",
+								min: TYPO_PARA_MIN,
+								max: TYPO_PARA_MAX,
+								step: 0.1,
+								value: model.para,
+								label: t("typo.slider.para"),
+								valueText: model.para + " em",
+								onChange: (event) => update({ para: Number(event.target.value) }),
+							}),
+						),
+						row(
+							t("typo.codeSize"),
+							slider({
+								field: "codeSize",
+								min: TYPO_CODE_SIZE_MIN,
+								max: TYPO_CODE_SIZE_MAX,
+								step: 1,
+								value: model.codeSize,
+								label: t("typo.slider.codeSize"),
+								valueText: model.codeSize + " px",
+								onChange: (event) => update({ codeSize: Number(event.target.value) }),
+							}),
+						),
+						row(
+							t("typo.reading"),
+							React.createElement(
+								"div",
+								{ className: "tl-font-options", "data-tl-typo-serif": "" },
+								pills(READING_FAMILIES, model.serif, (id) => update({ serif: id }), "typo.reading"),
+							),
+						),
+					),
+					// ---- v0.5.0 readability guard settings (D5) ----
+					section(
+						t("legibility.title"),
+						row(
+							t("legibility.guard"),
+							React.createElement(
+								"div",
+								{ className: "tl-font-options", "data-tl-legibility-toggle": "" },
+								React.createElement(
+									"button",
+									{
+										type: "button",
+										className: "tl-font-option",
+										"data-active": legibility.enabled === true ? "" : undefined,
+										"aria-pressed": legibility.enabled === true ? "true" : "false",
+										onClick: () => updateLegibility({ enabled: true }),
 									},
-									onChange: (event) => update({ size: Number(event.target.value) }),
-								}),
-								React.createElement("span", { className: "tl-font-value" }, model.size + " px"),
-							),
-						),
-					),
-					section(
-						"字族",
-						row(
-							"界面",
-							React.createElement(
-								"div",
-								{ className: "tl-font-options" },
-								pills(FONT_FAMILIES, model.ui, (id) => update({ ui: id })),
-							),
-						),
-						row(
-							"代码",
-							React.createElement(
-								"div",
-								{ className: "tl-font-options" },
-								pills(CODE_FAMILIES, model.code, (id) => update({ code: id })),
-							),
-						),
-					),
-					section(
-						"排版",
-						row(
-							"字重",
-							React.createElement(
-								"div",
-								{ className: "tl-font-options" },
-								pills(WEIGHTS, model.weight, (id) => update({ weight: id })),
+									t("common.on"),
+								),
+								React.createElement(
+									"button",
+									{
+										type: "button",
+										className: "tl-font-option",
+										"data-active": legibility.enabled === true ? undefined : "",
+										"aria-pressed": legibility.enabled === true ? "false" : "true",
+										onClick: () => updateLegibility({ enabled: false }),
+									},
+									t("common.off"),
+								),
 							),
 						),
 						row(
-							"行距",
-							React.createElement(
-								"div",
-								{ className: "tl-font-options" },
-								pills(LEADS, model.lead, (id) => update({ lead: id })),
-							),
+							t("legibility.threshold"),
+							slider({
+								field: "legibility-threshold",
+								min: LEGIBILITY_THRESHOLD_MIN,
+								max: LEGIBILITY_THRESHOLD_MAX,
+								step: 0.5,
+								value: legibility.threshold,
+								label: t("legibility.threshold"),
+								valueText: legibility.threshold + ":1",
+								onChange: (event) => updateLegibility({ threshold: Number(event.target.value) }),
+							}),
 						),
-						row(
-							"字距",
-							React.createElement(
-								"div",
-								{ className: "tl-font-options" },
-								pills(TRACKS, model.track, (id) => update({ track: id })),
-							),
-						),
+						React.createElement("p", { className: "tl-wall-hint", "data-tl-legibility-status": "" }, legibilityStatus),
+						React.createElement("p", { className: "tl-wall-hint" }, t("legibility.hint")),
 					),
 					// ---- reset ----
 					React.createElement(
@@ -326,24 +652,29 @@
 								applyTypography(theme, reset, true);
 							},
 						},
-						"恢复默认",
+						t("typo.reset"),
 					),
 				);
 			};
 
-			const FontButton = () =>
-				React.createElement(
+			const FontButton = () => {
+				const { t } = useTl5I18n();
+				return React.createElement(
 					"button",
 					{
 						type: "button",
 						className: "tl-font-trigger",
-						title: "字体设置",
+						title: t("typo.trigger"),
+						"aria-label": t("typo.trigger"),
+						"aria-keyshortcuts": "Alt+T",
+						"aria-haspopup": "dialog",
 						onClick: () => {
 							toggleOverlay();
 						},
 					},
 					"Aa",
 				);
+			};
 
 			// Self-owned host, docked to the right edge and rendered with the same
 			// component. The right-sidebar tab path depends on internal controller
@@ -564,4 +895,3 @@
 			};
 		}
 		//#endregion
-

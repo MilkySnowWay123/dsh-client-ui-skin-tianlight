@@ -11,6 +11,11 @@ dist/
 # runtime diagnostics
 diag.log
 
+# v0.5.0 host-side state: settings file, pre-crop cache, derived transcodes.
+# These are per-machine runtime data, never committed.
+state/
+assets/derived/
+
 # local Wallpaper Engine roots (per-machine paths)
 we-roots.json
 

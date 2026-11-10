@@ -12,10 +12,12 @@ const report = (level, text) => {
   console.log(`[${level}] ${text}`)
 }
 
-// ---- extract the CSS template ----
-const open = source.indexOf('String.raw`') + 'String.raw`'.length
-const close = source.indexOf('`', open)
-const css = source.slice(open, close)
+// ---- extract every CSS template (main sheet + v0.5.0 feature blocks) ----
+// Convention since v0.5.0: all String.raw templates in the product are CSS blocks,
+// because feature fragments register their styles through registerTl5Css().
+const cssBlocks = [...source.matchAll(/String\.raw`([^`]*)`/g)].map((match) => match[1])
+if (cssBlocks.length === 0) throw new Error('CSS template not found')
+const css = cssBlocks.join('\n')
 const blanked = css.replace(/\/\*[\s\S]*?\*\//g, '')
 
 // ---- 1. duplicate declarations of the same custom property in one block ----
@@ -89,12 +91,23 @@ for (const [name, [a, r]] of Object.entries(timers)) {
 }
 
 // ---- 4. lifecycle: set and dispose must belong to the same effect ----
-const pairedAttr = /ctx\.effect\(\s*\(\)\s*=>\s*\{[\s\S]{0,140}?setAttribute\(BODY_ATTR[\s\S]{0,260}?removeAttribute\(BODY_ATTR/.test(source)
+// The body attribute is installed through the same wrapper as every other effect, so
+// the assertion is that its set/remove pair lives inside one `install(...)` factory.
+const pairedAttr = /install\(\s*"ui-skin-tianlight: body attribute"[\s\S]{0,400}?setAttribute\(BODY_ATTR[\s\S]{0,400}?removeAttribute\(BODY_ATTR/.test(source)
 if (!pairedAttr) {
-  report('FAIL', 'body attribute must be set AND removed inside one ctx.effect, or a throw leaves it armed')
+  report('FAIL', 'body attribute must be set AND removed inside one lifecycle-owned effect, or a throw leaves it armed')
 } else {
   report('PASS', 'body attribute set and removed inside one lifecycle-owned effect')
 }
+
+// Hot reload: the instance registry must be published and consulted.
+const hasRegistry =
+  source.includes('INSTANCE_REGISTRY_KEY') &&
+  source.includes('globalThis[INSTANCE_REGISTRY_KEY] = instance') &&
+  source.includes('disposePreviousInstance()')
+report(hasRegistry ? 'PASS' : 'FAIL', hasRegistry
+  ? 'singleton instance registry present (re-apply disposes the previous instance)'
+  : 'singleton instance registry missing: a loader re-apply would stack a second skin')
 
 // The attribute effect must be registered before the fallible installers.
 // Compare positions INSIDE apply(), not the module-wide function definitions.
@@ -132,6 +145,62 @@ if (order[0] >= 0 && order[0] < order[1] && order[1] < order[2]) {
 }
 
 console.log('\nstylesheet: ' + css.length + ' chars, ' + declared.size + ' custom properties')
+// ---- 7. duty channel: outbound events must survive the bubble teardown ----
+// Regression guard for the v0.7.0 first cut: hideDuty() clears the stored emitter,
+// so calling it before emit() swallowed every choice/timeout event. The shipped
+// shape must capture the emitter and signal id first, hide, then emit.
+const dutyClickAt = source.indexOf('button.addEventListener("click", (event) => {')
+const dutyTimeoutAt = source.indexOf("dutyTimer = window.setTimeout(() => {")
+const clickRegion = dutyClickAt >= 0 ? source.slice(dutyClickAt, dutyClickAt + 700) : ""
+const timeoutRegion = dutyTimeoutAt >= 0 ? source.slice(dutyTimeoutAt, dutyTimeoutAt + 700) : ""
+const emitOrderingOk = (region, eventType) => {
+  const capture = region.indexOf("const emit = dutyEmit")
+  const hide = region.indexOf("hideDuty(")
+  const emit = region.indexOf("emit({ type: \"" + eventType + "\"")
+  return capture >= 0 && hide >= 0 && emit >= 0 && capture < hide && hide < emit
+}
+report(emitOrderingOk(clickRegion, "choice") ? "PASS" : "FAIL", "duty choice: capture -> hide -> emit (outbound event survives teardown)")
+report(emitOrderingOk(timeoutRegion, "timeout") ? "PASS" : "FAIL", "duty timeout: capture -> hide -> emit (outbound event survives teardown)")
+const clearAt = source.indexOf('bridge.hideDuty("clear")')
+const clearRegion = clearAt >= 0 ? source.slice(clearAt, clearAt + 260) : ""
+report(clearRegion.includes("bridge.clearSay()") ? "PASS" : "FAIL", "duty clear also dismisses a pending speak bubble")
+report(
+  source.includes("globalThis.tianlightDuty = publicApi") && source.includes('document.addEventListener(DUTY_EVENT, onDutyEvent)')
+    ? "PASS"
+    : "FAIL",
+  "duty channel exposes tianlightDuty and listens for tianlight:duty",
+)
+
+// ---- 8. v1.0.0 role layer: life API / media cap / liquid glass / settings page ----
+report(source.includes("globalThis.tianlightLife") ? "PASS" : "FAIL", "life engine exposes globalThis.tianlightLife")
+report(
+  /32\s*\*\s*1024\s*\*\s*1024|33554432/.test(source) ? "PASS" : "FAIL",
+  "replaceable pet media enforces the 32 MiB cap",
+)
+report(
+  source.includes('data-tl-glass-depth') && source.includes('data-tl-glass-effective') ? "PASS" : "FAIL",
+  "liquid glass depth exposes configured + effective body attributes",
+)
+report(
+  source.includes('data-tl-glass-effective="real"') &&
+    source.includes('data-tl-glass-effective="soft"') &&
+    source.includes('data-tl-glass-effective="frosted"')
+    ? "PASS"
+    : "FAIL",
+  "liquid glass ships all three levels (real / soft / frosted)",
+)
+report(source.includes("tianlight-role") ? "PASS" : "FAIL", "role settings page registers the tianlight-role section")
+report(
+  source.includes('type: "deferred"') && source.includes("publicApi") && source.includes("replay")
+    ? "PASS"
+    : "FAIL",
+  "duty channel v1.1 reports deferred reminders and exposes replay",
+)
+report(
+  source.includes("tianlight:pet-media") ? "PASS" : "FAIL",
+  "pet media changes are broadcast as tianlight:pet-media",
+)
+
 console.log(issues === 0 ? 'AUDIT: no blocking issues' : `AUDIT: ${issues} blocking issue(s)`)
 process.exitCode = issues === 0 ? 0 : 1
 

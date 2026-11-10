@@ -18,11 +18,20 @@ const TARGETS = {
   upload: join(ROOT, 'lib', 'upload.js'),
   scene: join(ROOT, 'lib', 'scene-project.js'),
   frame: join(ROOT, 'lib', 'scene-frame.html'),
+  paths: join(ROOT, 'lib', 'host-paths.js'),
+  settings: join(ROOT, 'lib', 'settings-store.js'),
+  bundle: join(ROOT, 'lib', 'bundle.js'),
+  cache: join(ROOT, 'lib', 'media-cache.js'),
+  transcode: join(ROOT, 'lib', 'transcode.js'),
+  webproject: join(ROOT, 'lib', 'web-project.js'),
+  wehost: join(ROOT, 'lib', 'we-wallpaper', 'host.mjs'),
 }
-const extFor = (dest) => (dest.endsWith('.json') ? 'json' : dest.endsWith('.html') ? 'html' : 'js')
+const extFor = (dest) =>
+  dest.endsWith('.json') ? 'json' : dest.endsWith('.html') ? 'html' : dest.endsWith('.mjs') ? 'mjs' : 'js'
 
+const KINDS = Object.keys(TARGETS).join('|')
 const listing = readdirSync(BACKUP).filter((name) =>
-  /^(client|index|package|skin|media|http|upload|scene|frame)\.\d{8}-\d{6}\.(js|json|html)$/.test(name),
+  new RegExp(`^(${KINDS})\\.\\d{8}-\\d{6}\\.(js|json|html|mjs)$`).test(name),
 )
 const srcListing = readdirSync(BACKUP).filter((name) => /^src\.\d{8}-\d{6}$/.test(name))
 if (process.argv.includes('--list') || listing.length === 0) {

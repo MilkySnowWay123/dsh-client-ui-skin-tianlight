@@ -9,6 +9,15 @@
 		const PLUGIN_ID = "@dsh-external/dsh-client-ui-skin-tianlight";
 		const CSS_TAG_ID = "ui-skin-tianlight/tianlight.css";
 		const STORAGE_KEY = "dsh-tianlight:cat:v1";
+		/**
+		 * Host/client build handshake. The browser half is cached independently from the
+		 * host half (Ctrl+F5 reloads the page, not the process), so after updating the
+		 * plugin the page can run the new client against an old host whose routes are
+		 * missing. The host compares this value and reports `stale: true`, which the
+		 * panel turns into a visible "restart DSH" hint instead of a mystery network
+		 * error. Keep in sync with `BUILD` in lib/index.js.
+		 */
+		const HOST_BUILD = "1.0.0";
 
 		/**
 		 * Render budget tiers, shared by the shader wallpaper, the rail mirror and the

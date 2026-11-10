@@ -16,7 +16,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { ADVISORY_HOOKS, BRIDGE_SOURCE_HINTS, DATA_HOOKS, SUFFIX_HOOKS, findSuffixToken } from './hooks.mjs'
+import { ADVISORY_HOOKS, BRIDGE_SOURCE_HINTS, DATA_HOOKS, SLOT_HOOKS, STATE_HOOKS, SUFFIX_HOOKS, findSuffixToken } from './hooks.mjs'
 
 const args = process.argv.slice(2)
 const explicit = args.includes('--dsh') ? args[args.indexOf('--dsh') + 1] : null
@@ -108,6 +108,10 @@ for (const hook of DATA_HOOKS) {
   const owners = searchLiteral(hook)
   rows.push({ kind: 'data', hook, ok: owners.length > 0, sample: hook, owners })
 }
+for (const hook of SLOT_HOOKS) {
+  const owners = searchLiteral(hook)
+  rows.push({ kind: 'slot-name', hook, ok: owners.length > 0, sample: hook, owners })
+}
 for (const hook of SUFFIX_HOOKS) {
   const found = searchSuffix(hook)
   rows.push({ kind: 'class-suffix', hook, ok: found !== null, sample: found?.token ?? null, owners: found?.owners ?? [] })
@@ -115,6 +119,10 @@ for (const hook of SUFFIX_HOOKS) {
 for (const hook of ADVISORY_HOOKS) {
   const owners = searchLiteral(hook)
   rows.push({ kind: 'advisory', hook, ok: owners.length > 0, advisory: true, sample: hook, owners })
+}
+for (const hook of STATE_HOOKS) {
+  const owners = searchLiteral(hook)
+  rows.push({ kind: 'state', hook, ok: owners.length > 0, advisory: true, sample: hook, owners })
 }
 
 let bridgeMismatch = []
@@ -133,13 +141,13 @@ if (asJson) {
   let missing = 0
   for (const row of rows) {
     if (row.advisory) {
-      console.log(
-        '  [' + (row.ok ? 'OK' : '--') + ']   advisory   ' + row.hook.padEnd(28) +
-          (row.ok ? '  present (forward hook active)' : '  not in this build; 0.2.1 fallback in use'),
-      )
+      const note = row.kind === 'state'
+        ? row.ok ? '  present (focus link observes it)' : '  not in this build; focus link stays inert'
+        : row.ok ? '  present (forward hook active)' : '  not in this build; 0.2.1 fallback in use'
+      console.log('  [' + (row.ok ? 'OK' : '--') + ']   ' + (row.kind === 'state' ? 'state      ' : 'advisory   ') + row.hook.padEnd(28) + note)
       continue
     }
-    const label = (row.kind === 'data' ? 'data attr  ' : 'class suffix') + ' ' + row.hook.padEnd(30)
+    const label = (row.kind === 'data' ? 'data attr  ' : row.kind === 'slot-name' ? 'slot name  ' : 'class suffix') + ' ' + row.hook.padEnd(30)
     if (row.ok) {
       console.log('  [OK]   ' + label + '  sample: ' + row.sample + '  (' + row.owners.slice(0, 2).join(', ') + ')')
     } else {

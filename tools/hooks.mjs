@@ -14,6 +14,17 @@ export const DATA_HOOKS = [
   'data-composer-card',
   'data-sidebar-collapsed',
   'data-trigger-menu',
+  // Every Slot host carries `data-slot="<name>"`; the bridge uses the model slot as a
+  // precise scope so the permission selector and the mic button are not styled as
+  // model pills. The bare attribute is enough to verify the mechanism exists.
+  'data-slot',
+]
+
+// Exact Slot names the bridge scopes itself with. These are the public Slot contract
+// (`Slots.listSubTree` reports them), so a rename is a real compatibility break.
+export const SLOT_HOOKS = [
+  'conversation.input.model',
+  'sidebar',
 ]
 
 // Forward-compatibility hooks: present in DSH 0.2.2-alpha builds, absent on
@@ -29,9 +40,18 @@ export const ADVISORY_HOOKS = [
   'data-message-bubble', // 0.2.2-alpha: chat bubbles moved to primitives
 ]
 
+// Runtime STATE hooks (v0.5.0): product attributes the skin OBSERVES but does not
+// style through the bridge. A missing one degrades exactly one feature (C2 focus
+// link) instead of the whole skin, so it is never a fatal upgrade blocker.
+// `data-chat-running` is present on 0.2.0-rc.2 / 0.2.1-rc.5 / 0.2.2-rc.1 (all
+// verified by the multi-version lab); if a future build renames it, only the
+// focus-link feature goes inert and the panel says so.
+export const STATE_HOOKS = [
+  'data-chat-running',
+]
+
 export const SUFFIX_HOOKS = [
   '_sidebarCol',
-  '_sidebar',
   '_card',
   '_trigger',
   '_triggerLabel',
@@ -53,9 +73,17 @@ export function findSuffixToken(text, suffix) {
 }
 
 // Keep this list and src/65-bridge.js in sync; hook-scan --self-check verifies the
-// bridge source mentions every hook.
+// bridge source mentions every hook. The bridge matches classes by underscore
+// SEGMENT name, so `_triggerLabel` is mentioned as `triggerLabel` in its source;
+// the mapping below keeps the self-check honest without weakening the scan token.
+const SOURCE_HINT_FOR_SUFFIX = {
+  _triggerLabel: 'triggerLabel',
+  _triggerEffort: 'triggerEffort',
+}
+
 export const BRIDGE_SOURCE_HINTS = [
   ...DATA_HOOKS,
+  ...SLOT_HOOKS,
   ...ADVISORY_HOOKS,
-  ...SUFFIX_HOOKS,
+  ...SUFFIX_HOOKS.map((hook) => SOURCE_HINT_FOR_SUFFIX[hook] ?? hook),
 ]

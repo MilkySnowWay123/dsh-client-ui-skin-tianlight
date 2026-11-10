@@ -1,4 +1,50 @@
 		//#region reasoning rheostat
+		// v0.5.0：滑杆的所有可见文案走 i18n；组件内用 useTl5I18n()，语言变化即时重渲染。
+		registerTl5Strings({
+			zh: {
+				"rheo.label": "推理等级",
+				"rheo.slider": "推理等级",
+				"rheo.titleValue": "推理等级：{label}",
+				"rheo.empty": "推理 · 未就绪",
+				"rheo.emptyTitle": "推理等级：未读取到当前会话的模型选择",
+				"rheo.faultTitle": "推理等级：{reason}",
+				"rheo.emptyReason": "推理 · {reason}",
+				"rheo.fault.noEfforts": "无档位",
+				"rheo.fault.loading": "读取中",
+				"rheo.fault.noRemote": "未连接",
+				"rheo.fault.error": "读取失败",
+				"rheo.fault.rejected": "被拒绝",
+				"rheo.level.minimal": "极简",
+				"rheo.level.low": "低",
+				"rheo.level.medium": "中",
+				"rheo.level.high": "高",
+				"rheo.level.max": "最高",
+				"rheo.level.none": "关闭",
+				"rheo.error.notMounted": "remote.session.modelCatalog 尚未挂载",
+			},
+			en: {
+				"rheo.label": "Reasoning level",
+				"rheo.slider": "Reasoning level",
+				"rheo.titleValue": "Reasoning level: {label}",
+				"rheo.empty": "Reasoning · not ready",
+				"rheo.emptyTitle": "Reasoning level: no model selection for this session",
+				"rheo.faultTitle": "Reasoning level: {reason}",
+				"rheo.emptyReason": "Reasoning · {reason}",
+				"rheo.fault.noEfforts": "No levels",
+				"rheo.fault.loading": "Loading",
+				"rheo.fault.noRemote": "Not connected",
+				"rheo.fault.error": "Read failed",
+				"rheo.fault.rejected": "Rejected",
+				"rheo.level.minimal": "Minimal",
+				"rheo.level.low": "Low",
+				"rheo.level.medium": "Medium",
+				"rheo.level.high": "High",
+				"rheo.level.max": "Max",
+				"rheo.level.none": "Off",
+				"rheo.error.notMounted": "remote.session.modelCatalog is not mounted yet",
+			},
+		});
+
 		/**
 		 * A draggable detent rail for the session's reasoning effort, mounted beside
 		 * the composer's existing controls.
@@ -10,11 +56,11 @@
 		 */
 		function installEffortRheostat(ctx) {
 			if (React === null) {
-				note("rheostat:react-missing", {});
+				note("rheostat:react-missing");
 				return () => {};
 			}
 			if (typeof ctx.inject !== "function") {
-				note("rheostat:no-inject", {});
+				note("rheostat:no-inject");
 				return () => {};
 			}
 			// `slots` is published by a plugin that activates AFTER this one, so an eager
@@ -23,7 +69,7 @@
 			return ctx.inject(["slots"], (scoped) => {
 				const slots = scoped.get("slots");
 				if (slots === undefined) {
-					note("rheostat:slots-missing", {});
+					note("rheostat:slots-missing");
 					return () => {};
 				}
 				return registerRheostat(scoped, slots);
@@ -82,21 +128,21 @@
 			/** Rail insets in px; must match [data-tl-rheo-track] in the stylesheet. */
 			const RAIL_LEFT = 12;
 			const RAIL_RIGHT = 40;
-			let warnedRender = false;
-			const FAULT_LABELS = {
-				loading: "读取中",
-				"no-remote": "未连接",
-				error: "读取失败",
-				rejected: "被拒绝",
-				"no-efforts": "无档位",
+			// 失败原因 / 档位标签都存 key，渲染时再翻译（语言切换无需重建组件）。
+			const FAULT_KEYS = {
+				loading: "rheo.fault.loading",
+				"no-remote": "rheo.fault.noRemote",
+				error: "rheo.fault.error",
+				rejected: "rheo.fault.rejected",
+				"no-efforts": "rheo.fault.noEfforts",
 			};
-			const LABELS = {
-				minimal: "极简",
-				low: "低",
-				medium: "中",
-				high: "高",
-				max: "最高",
-				none: "关闭",
+			const LABEL_KEYS = {
+				minimal: "rheo.level.minimal",
+				low: "rheo.level.low",
+				medium: "rheo.level.medium",
+				high: "rheo.level.high",
+				max: "rheo.level.max",
+				none: "rheo.level.none",
 			};
 
 			/**
@@ -151,19 +197,11 @@
 			};
 
 			function Rheostat(props) {
+				const { t } = useTl5I18n();
 				const sessionId = props.sessionId;
 				const useProjection = props.useProjection;
 				const snapshot = typeof useProjection === "function" ? useProjection("modelSelection") : null;
 				const selection = snapshot?.next ?? snapshot?.lastUsed ?? null;
-				if (!warnedRender) {
-					warnedRender = true;
-					note("rheostat:render", {
-						hookPresent: typeof useProjection === "function",
-						snapshotKeys: snapshot === null ? null : Object.keys(snapshot).slice(0, 8),
-						hasSelection: selection !== null,
-						sessionId: typeof sessionId === "string",
-					});
-				}
 
 				// Empty until the host catalog answers. Sending guessed effort ids was exactly
 				// what made the control look alive while the level never changed.
@@ -230,7 +268,7 @@
 							// `remote.session` is mounted asynchronously by the api-remotes plugin:
 							// running once was a race that always lost, and the failure looked final.
 							if (session === undefined || typeof session.modelCatalog !== "function") {
-								throw new Error("remote.session.modelCatalog 尚未挂载");
+								throw new Error(TL_T("rheo.error.notMounted"));
 							}
 							const response = await session.modelCatalog();
 							if (!alive) return;
@@ -334,20 +372,24 @@
 				// Every non-working state renders something legible: a hairline at low
 				// opacity is invisible on a bright wallpaper, which is how the control
 				// appeared to "not exist" instead of reporting why.
+				const faultReason = () => {
+					if (typeof fault === "string" && fault.startsWith("err:")) return fault.slice(4);
+					const key = fault === null || fault === undefined ? undefined : FAULT_KEYS[fault];
+					return key === undefined ? t("rheo.fault.noEfforts") : t(key);
+				};
 				if (active === null || sessionId === undefined) {
 					return React.createElement(
 						"div",
-						{ "data-tl-rheo": "", "data-tl-rheo-empty": "", title: "推理等级：未读取到当前会话的模型选择" },
-						React.createElement("span", { "data-tl-rheo-empty-text": "" }, "推理 · 未就绪"),
+						{ "data-tl-rheo": "", "data-tl-rheo-empty": "", title: t("rheo.emptyTitle") },
+						React.createElement("span", { "data-tl-rheo-empty-text": "" }, t("rheo.empty")),
 					);
 				}
 				if (levels.length < 2) {
-					const raw = FAULT_LABELS[fault] ?? (typeof fault === "string" && fault.startsWith("err:") ? fault.slice(4) : fault);
-					const reason = typeof raw === "string" && raw.startsWith("err:") ? raw.slice(4) : (raw ?? "无档位");
+					const reason = faultReason();
 					return React.createElement(
 						"div",
-						{ "data-tl-rheo": "", "data-tl-rheo-empty": "", title: "推理等级：" + reason },
-						React.createElement("span", { "data-tl-rheo-empty-text": "" }, "推理 · " + reason),
+						{ "data-tl-rheo": "", "data-tl-rheo-empty": "", title: t("rheo.faultTitle", { reason }) },
+						React.createElement("span", { "data-tl-rheo-empty-text": "" }, t("rheo.emptyReason", { reason })),
 					);
 				}
 
@@ -355,7 +397,7 @@
 					if (busy || target === currentIndex) return;
 					const session = resolveRemoteSession();
 					if (typeof session?.selectModel !== "function") {
-						note("rheostat:write-unavailable", {});
+						note("rheostat:write-unavailable");
 						return;
 					}
 					setBusy(true);
@@ -417,8 +459,14 @@
 					if (target !== currentIndex) commit(target);
 				};
 
-				const label = labels[levels[currentIndex]] ?? LABELS[levels[currentIndex]] ?? levels[currentIndex];
-				const activeLabel = labels[levels[nearest]] ?? LABELS[levels[nearest]] ?? levels[nearest];
+				const effortLabel = (id) => {
+					const name = labels[id];
+					if (typeof name === "string" && name !== "") return name;
+					const key = LABEL_KEYS[id];
+					return key === undefined ? String(id) : t(key);
+				};
+				const label = effortLabel(levels[currentIndex]);
+				const activeLabel = effortLabel(levels[nearest]);
 				return React.createElement(
 					"div",
 					{
@@ -428,12 +476,12 @@
 						"data-tl-drag": dragging ? "" : undefined,
 						role: "slider",
 						tabIndex: 0,
-						"aria-label": "推理等级",
+						"aria-label": t("rheo.slider"),
 						"aria-valuemin": 0,
 						"aria-valuemax": steps,
 						"aria-valuenow": nearest,
 						"aria-valuetext": activeLabel,
-						title: "推理等级：" + label,
+						title: t("rheo.titleValue", { label }),
 						onPointerDown,
 						onPointerMove,
 						onPointerUp,

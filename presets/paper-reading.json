@@ -1,0 +1,52 @@
+{
+  "format": "tianlight-preset",
+  "version": 2,
+  "effects": {
+    "enabled": true,
+    "parallax": false,
+    "parallaxStrength": 0.4,
+    "click": false,
+    "clickStyle": "ripple",
+    "ambience": "none",
+    "ambienceDensity": 0.5,
+    "transition": "fade",
+    "transitionMs": 600,
+    "budget": "auto"
+  },
+  "context": {
+    "enabled": true,
+    "timeOfDay": false,
+    "manualPeriod": "auto",
+    "focusLink": false,
+    "focusDim": 30,
+    "focusBlur": 4,
+    "adaptive": true,
+    "adaptiveLocked": false
+  },
+  "legibility": {
+    "enabled": true,
+    "threshold": 4.5,
+    "boost": 0.1
+  },
+  "typography": {
+    "size": 15,
+    "ui": "serif",
+    "code": "mono",
+    "weight": "normal",
+    "lead": "loose",
+    "track": "normal",
+    "width": 980,
+    "para": 0.7,
+    "codeSize": 14,
+    "serif": "serif"
+  },
+  "layers": {
+    "version": 2,
+    "slots": [
+      { "kind": "preset", "preset": "vignette", "url": "", "fit": "cover", "opacity": 0.28, "blend": "multiply" },
+      { "kind": "none", "preset": "none", "url": "", "fit": "cover", "opacity": 0.55, "blend": "normal" }
+    ]
+  },
+  "glass": 1.05,
+  "lowPower": "auto"
+}

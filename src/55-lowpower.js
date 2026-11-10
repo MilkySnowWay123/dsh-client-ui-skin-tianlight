@@ -6,7 +6,28 @@
 		 *   saveData / battery <= 20% and discharging
 		 * Active mode pauses the wallpaper video on its current frame — a video element
 		 * freezes for free — and stops the rail mirror from drawing.
+		 *
+		 * i18n (v0.5.2): `lowPowerController.state()` keeps its v0.4 fields and adds two
+		 * structured ones, so the panel can localize at RENDER time instead of showing a
+		 * string frozen in the language that happened to be active when the battery event
+		 * fired:
+		 *   { mode, active, reason, detail, detailKey, detailParams }
+		 *   - detail:       language-neutral numeric percent, e.g. "15%";
+		 *   - detailKey:    i18n key for the explanation ("lowpower.batteryDetail");
+		 *   - detailParams: TL_T params, e.g. { pct: 15 }.
+		 * A consumer that has not been updated yet can always show `detail` (no CJK leak);
+		 * `lowpower.batteryDetail` holds the localized explanation for that percent.
 		 */
+		registerTl5Strings({
+			zh: {
+				"lowpower.batteryDetail": "{pct}% 电量且未充电",
+				"lowpower.audioStopped": "省电模式，已停止音频",
+			},
+			en: {
+				"lowpower.batteryDetail": "{pct}% battery, not charging",
+				"lowpower.audioStopped": "Low-power mode: audio analysis stopped",
+			},
+		});
 		const LOWPOWER_KEY = "tianlight.lowpower";
 		let lowPowerController = null;
 
@@ -27,13 +48,19 @@
 			let active = false;
 			let reason = "";
 			let detail = "";
+			// Structured companions of `detail` (see the region doc above). Always
+			// present so the snapshot shape does not change between states.
+			let detailKey = "";
+			let detailParams = null;
 			let subscriber = null;
-			const snapshot = () => ({ mode, active, reason, detail });
+			const snapshot = () => ({ mode, active, reason, detail, detailKey, detailParams });
 
 			const apply = () => {
 				let nextActive = mode === "on";
 				let nextReason = mode === "on" ? "manual" : "";
 				let nextDetail = "";
+				let nextDetailKey = "";
+				let nextDetailParams = null;
 				if (mode === "auto") {
 					const reduced = query !== null && query.matches === true;
 					const saveData = globalThis.navigator?.connection?.saveData === true;
@@ -47,13 +74,23 @@
 					} else if (low) {
 						nextActive = true;
 						nextReason = "battery";
-						nextDetail = Math.round((battery.level ?? 0) * 100) + "% 电量且未充电";
+						const pct = Math.round((battery.level ?? 0) * 100);
+						// Language-neutral on purpose: no CJK reaches the panel in en mode.
+						nextDetail = pct + "%";
+						nextDetailKey = "lowpower.batteryDetail";
+						nextDetailParams = { pct };
 					}
 				}
-				const changed = nextActive !== active || nextReason !== reason || nextDetail !== detail;
+				const changed =
+					nextActive !== active ||
+					nextReason !== reason ||
+					nextDetail !== detail ||
+					nextDetailKey !== detailKey;
 				active = nextActive;
 				reason = nextReason;
 				detail = nextDetail;
+				detailKey = nextDetailKey;
+				detailParams = nextDetailParams;
 				const body = document.body;
 				if (body === null) return;
 				if (active) {
@@ -66,7 +103,7 @@
 				if (active) {
 					if (scenePlayback !== null) scenePlayback.pause();
 					if (railPlayback !== null) railPlayback.pause();
-					if (typeof audioController !== "undefined") audioController.stop("省电模式，已停止音频");
+					if (typeof audioController !== "undefined") audioController.stop(TL_T("lowpower.audioStopped"));
 				} else {
 					if (scenePlayback !== null) scenePlayback.resume();
 					if (railPlayback !== null) railPlayback.resume();

@@ -9,7 +9,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { ADVISORY_HOOKS, DATA_HOOKS, SUFFIX_HOOKS, findSuffixToken } from './hooks.mjs'
+import { ADVISORY_HOOKS, DATA_HOOKS, SLOT_HOOKS, STATE_HOOKS, SUFFIX_HOOKS, findSuffixToken } from './hooks.mjs'
 
 const args = process.argv.slice(2)
 const explicit = args[args.indexOf('--dsh') + 1]
@@ -103,11 +103,18 @@ const clientText = () => {
 for (const hook of DATA_HOOKS) {
   check('bridge data hook ' + hook, false, () => (clientText().includes(hook) ? true : 'not found in any bundle'))
 }
+for (const hook of SLOT_HOOKS) {
+  check('bridge slot name ' + hook, false, () => (clientText().includes(hook) ? true : 'not found in any bundle'))
+}
 for (const suffix of SUFFIX_HOOKS) {
   check('bridge class suffix ' + suffix, false, () => {
     const token = findSuffixToken(clientText(), suffix)
     return token === null ? 'no class like *' + suffix + ' in any bundle' : true
   })
+}
+// v0.5.0 runtime state hooks: observed, never styled; a miss disables one feature.
+for (const hook of STATE_HOOKS) {
+  check('runtime state hook ' + hook, false, () => (clientText().includes(hook) ? true : 'not found — focus link will stay inert on this build'))
 }
 // Advisory hooks only exist on newer alpha builds; their absence is not a defect.
 for (const hook of ADVISORY_HOOKS) {
@@ -131,6 +138,10 @@ check('slots service is a client package', true, () =>
   existsSync(join(ROOT, 'dsh-client-ui-renderer', 'package.json')) || existsSync(join(ROOT, 'dsh-client-ui-slots', 'package.json')),
 )
 check('theme service is a client package', true, () => existsSync(join(ROOT, 'dsh-client-ui-theme', 'package.json')))
+// v0.5.0 i18n follows the host locale service when present; absent is a graceful
+// degradation to the skin's own zh/en dictionaries, so not fatal.
+check('locale service package (v0.5.0 D7)', false, () =>
+  existsSync(join(ROOT, 'dsh-client-locale', 'package.json')) ? true : 'dsh-client-locale missing; skin falls back to its own zh/en dictionaries')
 
 const version = (() => {
   try {

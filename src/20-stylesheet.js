@@ -21,8 +21,11 @@ body[data-dsh-tianlight] {
 	/* Modal-grade surface: a settings panel has to stay readable over the chat, so
 	   it needs its own fill instead of the zeroed bg-layer tokens. The value is high
 	   on purpose: the panel carries NO backdrop blur (see below), so its opacity is
-	   what does the legibility work. */
-	--tl-panel-fill: rgba(250, 252, 255, calc(0.84 * var(--tl-glass-m, 1)));
+	   what does the legibility work.
+	   The glass slider may lower it, but only down to a legibility floor: at 0.30 the
+	   panel was so transparent that the sidebar text behind it showed through, which
+	   reads as "duplicate stacked UI". Data surfaces keep a hard floor. */
+	--tl-panel-fill: rgba(250, 252, 255, max(0.9, calc(0.84 * var(--tl-glass-m, 1))));
 	--tl-ink: #0f2438;
 	--tl-ink-soft: #3a5a78;
 	--tl-ink-faint: #5d7d99;
@@ -98,7 +101,7 @@ body[data-dsh-tianlight][data-ds-dark-theme] {
 	--tl-glass-fill: rgba(16, 26, 42, calc(0.38 * var(--tl-glass-m, 1)));
 	--tl-glass-line: rgba(150, 195, 250, 0.28);
 	--tl-glass-blur: 14px;
-	--tl-panel-fill: rgba(10, 18, 32, calc(0.88 * var(--tl-glass-m, 1)));
+	--tl-panel-fill: rgba(10, 18, 32, max(0.96, calc(0.88 * var(--tl-glass-m, 1))));
 	--tl-ink: #eaf3ff;
 	--tl-ink-soft: #a9c2dc;
 	--tl-ink-faint: #7f9bb8;
@@ -530,7 +533,7 @@ body[data-dsh-tianlight] [data-tl-wall-handle] {
 	left: 0;
 	top: 50%;
 	transform: translateY(-50%);
-	z-index: 59;
+	z-index: 1310;
 	writing-mode: vertical-rl;
 	letter-spacing: 0.22em;
 	padding: 14px 7px;
@@ -567,7 +570,14 @@ body[data-dsh-tianlight] [data-tl-wall] {
 	border-right: 0.5px solid var(--tl-glass-line);
 	box-shadow: 18px 0 48px rgba(8, 26, 48, 0.28);
 	will-change: transform;
-	z-index: 58;
+	/* v0.5.3 hardening: the DSH product can leave a full-viewport modal mask
+	   (position:fixed, z-index:1000, pointer-events:auto) mounted while it is visually
+	   gone (first-run / stale popover). Such a mask swallows every real mouse click
+	   while keyboard shortcuts still reach the page - the reported "the wallpaper
+	   panel does not react". Skin surfaces therefore sit above the product mask and
+	   below nothing else that matters; the panel starts below the title strip, so the
+	   z-index gap does not cover the app menu. */
+	z-index: 1300;
 	overflow-y: auto;
 	/* Reserve the scrollbar lane: sections and the live quality line change height,
 	   and a scrollbar appearing/disappearing used to shift the whole panel. */
@@ -603,6 +613,27 @@ body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-wall] {
 body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-wall][data-tl-side="right"] {
 	box-shadow: -18px 0 48px rgba(0, 0, 0, 0.55);
 }
+/* ---- desktop window chrome clearance (Windows) ----
+   DSH Desktop's preload marks <html data-windows-titlebar> and exposes the measured
+   native title strip as --dsh-windows-titlebar-height (40px on 0.2.1). Its own app
+   menu is a fixed host at z-index 1100 covering that strip. A skin surface pinned to
+   the very top therefore had its header painted UNDER the menu and its top row
+   outside the clickable page area (the reported "panel does nothing" bug).
+   Fixed surfaces that touch the top edge start below the strip instead; when the
+   window is fullscreen the preload sets data-fullscreen and the clearance is gone. */
+html[data-windows-titlebar]:not([data-fullscreen]) body[data-dsh-tianlight] [data-tl-wall] {
+	top: var(--dsh-windows-titlebar-height, 40px);
+}
+html[data-windows-titlebar]:not([data-fullscreen]) body[data-dsh-tianlight] [data-tl-wall-scrim] {
+	top: var(--dsh-windows-titlebar-height, 40px);
+}
+html[data-windows-titlebar]:not([data-fullscreen]) body[data-dsh-tianlight] [data-tl-wall-handle] {
+	/* Optically centre the edge tab in the *content* area, not the whole window. */
+	top: calc(50% + var(--dsh-windows-titlebar-height, 40px) / 2);
+}
+html[data-windows-titlebar]:not([data-fullscreen]) body[data-dsh-tianlight] [data-tl-font-panel] {
+	top: max(12vh, calc(var(--dsh-windows-titlebar-height, 40px) + 12px));
+}
 body[data-dsh-tianlight] [data-tl-wall] [data-tl-wall-drag] {
 	cursor: grab;
 	user-select: none;
@@ -617,7 +648,7 @@ body[data-dsh-tianlight] [data-tl-wall][data-tl-dragging] [data-tl-wall-drag] {
 body[data-dsh-tianlight] [data-tl-wall-scrim] {
 	position: fixed;
 	inset: 0;
-	z-index: 57;
+	z-index: 1290;
 	background: rgba(10, 22, 38, 0.18);
 	opacity: 0;
 	pointer-events: none;
@@ -632,7 +663,9 @@ body[data-dsh-tianlight] .tl-wall-inner {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-	padding: 14px;
+	/* Bottom padding is a safe area: the panel is full-height and the last card used
+	   to end flush against the window edge. */
+	padding: 14px 14px calc(18px + env(safe-area-inset-bottom, 0px));
 }
 body[data-dsh-tianlight] .tl-wall-glow {
 	position: absolute;
@@ -685,9 +718,16 @@ body[data-dsh-tianlight] [data-tl-wall] [data-tl-view="pick"] [data-tl-group="so
 body[data-dsh-tianlight] [data-tl-wall] [data-tl-view="pick"] [data-tl-group="advanced"] {
 	display: none;
 }
-/* In the simple view the list is just upload + search + grid. Favourites, tags,
-   hidden management and the tag editor are library administration: advanced. */
-body[data-dsh-tianlight] [data-tl-view="pick"] .tl-wall-filters,
+/* v0.5.0 extension sections (⑦ 工程 / ⑧ 特效 / ⑨ 情境 / ⑩ 音频 / ⑪ 引擎 …)
+   are advanced surfaces too: the simple "pick a wallpaper" view stays short.
+   They are one click away under 高级, in registration order. */
+body[data-dsh-tianlight] [data-tl-wall] [data-tl-view="pick"] [data-tl-group]:not([data-tl-group="sources"]):not([data-tl-group="advanced"]) {
+	display: none;
+}
+/* In the simple view the list is just upload + search + filters + grid. The filter
+   row stays visible: it owns the only "显示隐藏 N" recovery entry, and hiding it
+   made the small "隐" button on a card a one-way door (the card vanished with no
+   way back until the user found 高级). Tag editing stays an advanced action. */
 body[data-dsh-tianlight] [data-tl-view="pick"] .tl-wall-tag-editor {
 	display: none;
 }
@@ -696,6 +736,15 @@ body[data-dsh-tianlight] .tl-wall-hint {
 	font-size: 11px;
 	line-height: 1.5;
 	color: var(--tl-ink-faint);
+}
+/* A filtered-empty list needs a way back to the full library, not just a line of
+   grey text — the empty state is a small column: sentence, then the exit button. */
+body[data-dsh-tianlight] .tl-wall-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 8px;
+	margin: 2px 0 4px;
 }
 body[data-dsh-tianlight] .tl-wall-guide {
 	display: flex;
@@ -1328,7 +1377,7 @@ body[data-dsh-tianlight] [data-tl-font-panel] {
 	position: fixed;
 	right: 16px;
 	top: 12vh;
-	z-index: 60;
+	z-index: 1320;
 	width: 300px;
 	max-width: calc(100vw - 32px);
 	max-height: min(82vh, 660px);
@@ -1614,48 +1663,27 @@ body[data-dsh-tianlight] .tl-font-trigger:hover {
 	color: var(--tl-ink);
 }
 
-/* ---- upgrade-proof equivalents, stamped by installSelectorBridge ----
-   The hashed selectors above stay the primary path. These repeat the same intent on
-   attributes the skin owns, so a DSH build that renames a module hash only loses the
-   primary selector — the surface stays styled. */
-body[data-dsh-tianlight] [data-tl-composer] {
-	background: var(--tl-glass-fill) !important;
-	border: 0.5px solid var(--tl-glass-line) !important;
-	box-shadow: 0 10px 34px rgba(8, 28, 52, 0.22) !important;
-	position: relative;
-	isolation: isolate;
-}
-body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-composer] {
-	box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45) !important;
-}
-body[data-dsh-tianlight] [data-tl-settings] {
-	background: var(--tl-panel-fill) !important;
-	border: 0.5px solid var(--tl-glass-line);
-	box-shadow:
-		0 18px 60px rgba(8, 26, 48, 0.28),
-		inset 0 1px 0 var(--tl-glass-line);
-}
-body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-settings] {
-	box-shadow:
-		0 18px 60px rgba(0, 0, 0, 0.55),
-		inset 0 1px 0 var(--tl-glass-line);
-}
-body[data-dsh-tianlight] [data-tl-sidebar] {
-	background: transparent !important;
-	background-image: none !important;
-}
-body[data-dsh-tianlight] [data-tl-bubble],
-body[data-dsh-tianlight] [data-tl-menu] {
+/* ---- bridge-stamped surfaces ----
+   The selector bridge stamps a SMALL, semantic set of product nodes: the composer
+   card, the legacy settings panel and the outermost message bubble / floating
+   menu. The full visual recipes for composer/settings/sidebar live in the sections
+   above; only surfaces that need a different treatment than those recipes are
+   listed here. Never add a rule that relies on a build hash here. */
+
+/* Message bubbles: fill + hairline only, no live blur. A transcript can hold dozens
+   of bubbles stacked over the playing video; a backdrop-filter per bubble would
+   re-composite the wallpaper behind every one of them on each frame. */
+body[data-dsh-tianlight] [data-tl-bubble] {
 	background: var(--tl-glass-fill) !important;
 	border: 0.5px solid var(--tl-glass-line);
 }
 
-/* ---- the remaining surfaces, frosted ----
-   Same glass treatment for the components whose background used to be an opaque
-   token: message bubbles, popovers/menus. The selector bridge stamps
-   [data-tl-bubble] / [data-tl-menu] from the stable class suffixes
-   (_bubble, _menu, data-trigger-menu), so no build hash appears here. */
-body[data-dsh-tianlight] :is([data-tl-bubble], [data-tl-menu]) {
+/* Floating menus / popovers: one translucent panel fill is enough. The bridge stamps
+   only the outermost menu surface (the menu anchor root is deliberately excluded),
+   so this costs one compositor layer per open menu, not one per menu row. */
+body[data-dsh-tianlight] [data-tl-menu] {
+	background: var(--tl-panel-fill) !important;
+	border: 0.5px solid var(--tl-glass-line);
 	-webkit-backdrop-filter: blur(var(--tl-glass-blur)) saturate(1.2);
 	backdrop-filter: blur(var(--tl-glass-blur)) saturate(1.2);
 }
@@ -1750,7 +1778,7 @@ body[data-dsh-tianlight] [data-tl-cat][data-tl-near]::before {
 	opacity: 0.5;
 	filter: blur(6px);
 }
-body[data-dsh-tianlight] [data-tl-cat] > [data-tl-bubble] {
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-say] {
 	position: absolute;
 	bottom: calc(100% + 10px);
 	left: 50%;
@@ -1770,11 +1798,67 @@ body[data-dsh-tianlight] [data-tl-cat] > [data-tl-bubble] {
 	pointer-events: none;
 	transition: opacity 180ms ease, transform 180ms ease;
 }
-body[data-dsh-tianlight] [data-tl-cat] > [data-tl-bubble][data-tl-show] {
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-say][data-tl-show] {
 	opacity: 1;
 	transform: translateX(-50%) translateY(0);
 }
-body[data-dsh-tianlight] [data-tl-cat] > [data-tl-menu] {
+/* v0.7.0 duty bubble: an action-capable sibling of the say bubble. It is owned by
+   the duty channel (role pack adapter) and never overwrites ordinary pet speech. */
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-duty] {
+	position: absolute;
+	bottom: calc(100% + 12px);
+	left: 50%;
+	transform: translateX(-50%) translateY(4px);
+	width: max-content;
+	max-width: 240px;
+	padding: 9px 11px 8px;
+	border-radius: 14px;
+	background: var(--tl-overlay);
+	color: var(--tl-ink);
+	font: 500 12px/1.45 var(--ds-font-family, system-ui);
+	box-shadow: 0 10px 28px rgba(8, 26, 44, 0.24);
+	border: 0.5px solid var(--tl-line);
+	opacity: 0;
+	pointer-events: none;
+	z-index: 2;
+	transition: opacity 180ms ease, transform 180ms ease;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-duty][data-tl-show] {
+	opacity: 1;
+	transform: translateX(-50%) translateY(0);
+	pointer-events: auto;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-duty] > [data-tl-duty-text] {
+	white-space: pre-wrap;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-duty] > [data-tl-duty-choices] {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-top: 7px;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-duty] > [data-tl-duty-choices][hidden] {
+	display: none;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-duty] button {
+	appearance: none;
+	border: 0.5px solid var(--tl-line);
+	background: var(--tl-accent-soft);
+	color: var(--tl-ink);
+	font: 600 11px/1 var(--ds-font-family, system-ui);
+	padding: 6px 9px;
+	border-radius: 999px;
+	cursor: pointer;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-duty] button:hover {
+	background: var(--tl-accent);
+	color: #fff;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-duty] button:focus-visible {
+	outline: 2px solid var(--tl-accent);
+	outline-offset: 2px;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catmenu] {
 	position: absolute;
 	top: calc(100% + 8px);
 	left: 50%;
@@ -1790,12 +1874,12 @@ body[data-dsh-tianlight] [data-tl-cat] > [data-tl-menu] {
 	pointer-events: none;
 	transition: opacity 160ms ease, transform 160ms ease;
 }
-body[data-dsh-tianlight] [data-tl-cat] > [data-tl-menu][data-tl-show] {
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catmenu][data-tl-show] {
 	opacity: 1;
 	transform: translateX(-50%) translateY(0);
 	pointer-events: auto;
 }
-body[data-dsh-tianlight] [data-tl-cat] > [data-tl-menu] > button {
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catmenu] > button {
 	appearance: none;
 	border: 0;
 	background: transparent;
@@ -1806,7 +1890,7 @@ body[data-dsh-tianlight] [data-tl-cat] > [data-tl-menu] > button {
 	cursor: pointer;
 	white-space: nowrap;
 }
-body[data-dsh-tianlight] [data-tl-cat] > [data-tl-menu] > button:hover {
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catmenu] > button:hover {
 	background: var(--tl-accent-soft);
 	color: var(--tl-ink);
 }
@@ -1842,6 +1926,193 @@ body[data-dsh-tianlight][data-tl-lowpower] [data-tl-cat][data-tl-sleeping] > [da
 body[data-dsh-tianlight][data-tl-lowpower] [data-tl-cat][data-tl-sleeping]::after {
 	animation: none;
 }
+
+/* ---- v1.0.0 replaceable pet media: still image OR muted looping video ---- */
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cat-body] > video {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	pointer-events: none;
+	background: transparent;
+	-webkit-user-drag: none;
+}
+body[data-dsh-tianlight] [data-tl-cat][data-tl-cat-media="video"] > [data-tl-cat-body] {
+	animation: none;
+	transform-origin: 50% 92%;
+}
+body[data-dsh-tianlight] [data-tl-cat][data-tl-cat-media="video"][data-tl-near] > [data-tl-cat-body] {
+	transform: translateY(-2px) scale(1.04);
+}
+/* 6 menu entries since v1.0.0 (mute / focus added): allow a second row instead of
+   clipping, while keeping the single-row pill shape for the original four. */
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catmenu] {
+	flex-wrap: wrap;
+	width: max-content;
+	max-width: 320px;
+	border-radius: 16px;
+	justify-content: center;
+}
+
+/* ---- v1.0.0 liquid glass depth: off / frosted / soft / real ----
+   The treatment lives on the scene layer (behind the product UI): a specular
+   gradient + backdrop blur/saturation over the wallpaper. "off" adds nothing, so
+   the v0.7 look and the energy profile are unchanged by default. */
+body[data-dsh-tianlight] {
+	--tl-liquid-blur: 0px;
+	--tl-liquid-sat: 1;
+	--tl-liquid-hi: 0;
+	--tl-liquid-lo: 0;
+	--tl-liquid-noise: 0;
+	--tl-liquid-sheen: 0;
+}
+body[data-dsh-tianlight][data-tl-glass-effective="soft"] {
+	--tl-liquid-blur: 3px;
+	--tl-liquid-sat: 1.18;
+	--tl-liquid-hi: 0.14;
+	--tl-liquid-lo: 0.08;
+	--tl-liquid-noise: 0;
+	--tl-liquid-sheen: 0.35;
+}
+body[data-dsh-tianlight][data-tl-glass-effective="real"] {
+	--tl-liquid-blur: 6px;
+	--tl-liquid-sat: 1.42;
+	--tl-liquid-hi: 0.28;
+	--tl-liquid-lo: 0.16;
+	--tl-liquid-noise: 0;
+	--tl-liquid-sheen: 1;
+}
+body[data-dsh-tianlight][data-tl-glass-effective="frosted"] {
+	--tl-liquid-blur: 14px;
+	--tl-liquid-sat: 0.92;
+	--tl-liquid-hi: 0.34;
+	--tl-liquid-lo: 0.05;
+	--tl-liquid-noise: 0.12;
+	--tl-liquid-sheen: 0.1;
+}
+body[data-dsh-tianlight] [data-tl-scene]::after {
+	content: "";
+	position: absolute;
+	inset: -2%;
+	pointer-events: none;
+	z-index: 2;
+	opacity: 1;
+	background-image:
+		linear-gradient(115deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 34%, rgba(255, 255, 255, 0) 64%, rgba(255, 255, 255, var(--tl-liquid-lo)) 100%),
+		radial-gradient(120% 80% at 16% 6%, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 58%);
+	-webkit-backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
+	backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
+}
+body[data-dsh-tianlight][data-tl-glass-effective="off"] [data-tl-scene]::after {
+	display: none;
+}
+body[data-dsh-tianlight][data-tl-lowpower] [data-tl-scene]::after {
+	animation: none !important;
+	-webkit-backdrop-filter: blur(2px) saturate(1.04);
+	backdrop-filter: blur(2px) saturate(1.04);
+}
+@keyframes tl-liquid-sheen {
+	0% { transform: translate3d(-1.5%, 0, 0); }
+	100% { transform: translate3d(1.5%, 0, 0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+	body[data-dsh-tianlight][data-tl-glass-effective="real"] [data-tl-scene]::after {
+		animation: tl-liquid-sheen 22s ease-in-out infinite alternate;
+	}
+}
+
+/* ---- v1.0.0 role settings page (slots: settings.section "tianlight-role") ---- */
+body[data-dsh-tianlight] .tl-role-page {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding: 4px 2px 24px;
+	color: var(--tl-ink);
+}
+body[data-dsh-tianlight] .tl-role-page h3 {
+	margin: 0;
+	font: 600 15px/1.35 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] .tl-role-page p {
+	margin: 0;
+	font: 400 12px/1.5 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-soft);
+}
+body[data-dsh-tianlight] .tl-role-card {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 14px 16px;
+	border-radius: 16px;
+	background: var(--tl-panel-fill, var(--tl-glass-fill));
+	border: 0.5px solid var(--tl-glass-line);
+}
+body[data-dsh-tianlight] .tl-role-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	font: 500 12px/1.4 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] .tl-role-row > label {
+	min-width: 110px;
+	color: var(--tl-ink-soft);
+}
+body[data-dsh-tianlight] .tl-role-page select,
+body[data-dsh-tianlight] .tl-role-page input[type="number"],
+body[data-dsh-tianlight] .tl-role-page input[type="time"] {
+	appearance: auto;
+	background: var(--tl-glass-fill);
+	color: var(--tl-ink);
+	border: 0.5px solid var(--tl-line-strong);
+	border-radius: 9px;
+	padding: 5px 8px;
+	font: 500 12px/1.4 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] .tl-role-page input[type="number"] {
+	width: 66px;
+}
+body[data-dsh-tianlight] .tl-role-page button {
+	appearance: none;
+	cursor: pointer;
+	border: 0.5px solid var(--tl-line-strong);
+	border-radius: 999px;
+	padding: 6px 12px;
+	background: var(--tl-accent-soft);
+	color: var(--tl-ink);
+	font: 600 12px/1 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] .tl-role-page button:hover {
+	background: var(--tl-accent);
+	color: #fff;
+}
+body[data-dsh-tianlight] .tl-role-page button[data-active] {
+	background: var(--tl-accent);
+	color: #fff;
+}
+body[data-dsh-tianlight] .tl-role-page button:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+body[data-dsh-tianlight] .tl-role-choices {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+body[data-dsh-tianlight] .tl-role-note {
+	font: 400 11px/1.5 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-faint);
+}
+body[data-dsh-tianlight] .tl-role-stats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 14px;
+	font: 500 12px/1.4 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-soft);
+}
+body[data-dsh-tianlight] .tl-role-stats b {
+	color: var(--tl-ink);
+	font-weight: 600;
+}
 `;
 
 		/** Injected once per page; every rule is scoped to the skin's body attribute. */
@@ -1854,7 +2125,9 @@ body[data-dsh-tianlight][data-tl-lowpower] [data-tl-cat][data-tl-sleeping]::afte
 			const tag = document.createElement("style");
 			tag.dataset.plugin = PLUGIN_ID;
 			tag.dataset.pluginCss = CSS_TAG_ID;
-			tag.textContent = CSS;
+			// The base sheet plus every feature fragment's registered block (v0.5.0).
+			// One <style> keeps teardown and the audit's scope checks unambiguous.
+			tag.textContent = CSS + "\n" + tl5CssText();
 			document.head.appendChild(tag);
 			return () => {
 				tag.remove();

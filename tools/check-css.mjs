@@ -1,14 +1,17 @@
-// Static sanity check on the stylesheet embedded in the client module: a broken
-// template string fails silently in the browser, so it is checked here instead.
+// Static sanity check on every stylesheet embedded in the client module. Since v0.5.0
+// the main sheet (20-stylesheet.js) is joined with each feature fragment's
+// `registerTl5Css(String.raw`...`)` block at install time; one broken template string
+// fails silently in the browser, so all blocks are checked here instead.
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const source = readFileSync(fileURLToPath(new URL('../lib/client.js', import.meta.url)), 'utf8')
-const start = source.indexOf('String.raw`')
-if (start < 0) throw new Error('CSS template not found')
-const open = source.indexOf('`', start)
-const close = source.indexOf('`', open + 1)
-const css = source.slice(open + 1, close)
+
+// Every String.raw template in the product is a CSS block by convention (no feature
+// uses String.raw for anything else). Extract them all, in product order.
+const blocks = [...source.matchAll(/String\.raw`([^`]*)`/g)].map((match) => match[1])
+if (blocks.length === 0) throw new Error('CSS templates not found')
+const css = blocks.join('\n')
 /** Comments may contain braces and prose; strip them before structural checks. */
 const blanked = css.replace(/\/\*[\s\S]*?\*\//g, '')
 
@@ -18,15 +21,27 @@ const expect = (label, condition, detail = '') => {
   else { failures += 1; console.log('FAIL  ' + label + (detail ? ' :: ' + detail : '')) }
 }
 
-// Brace balance
-let depth = 0
-let minDepth = 0
-for (const char of blanked) {
-  if (char === '{') depth += 1
-  else if (char === '}') { depth -= 1; minDepth = Math.min(minDepth, depth) }
+// Brace balance across each block independently: a block is a complete string.
+for (let index = 0; index < blocks.length; index += 1) {
+  const block = blocks[index].replace(/\/\*[\s\S]*?\*\//g, '')
+  let depth = 0
+  let minDepth = 0
+  for (const char of block) {
+    if (char === '{') depth += 1
+    else if (char === '}') { depth -= 1; minDepth = Math.min(minDepth, depth) }
+  }
+  expect(`block ${index + 1}/${blocks.length} braces balance`, depth === 0, 'unbalanced depth=' + depth)
+  expect(`block ${index + 1}/${blocks.length} never closes below zero`, minDepth === 0)
 }
-expect('braces balance', depth === 0, 'unbalanced depth=' + depth)
-expect('never closes below zero', minDepth === 0)
+expect('never closes below zero', (() => {
+  let depth = 0
+  let minDepth = 0
+  for (const char of blanked) {
+    if (char === '{') depth += 1
+    else if (char === '}') { depth -= 1; minDepth = Math.min(minDepth, depth) }
+  }
+  return minDepth === 0
+})())
 
 // Every rule outside an at-rule must be scoped to the skin body attribute.
 const scopeViolations = []
@@ -39,9 +54,15 @@ for (const char of blanked) {
     const head = buffer.trim().replace(/:is\([^)]*\)/g, ':is(*)').replace(/:where\([^)]*\)/g, ':where(*)')
     const isAtRule = head.startsWith('@')
     if (!isAtRule && stack.every((s) => s.startsWith('@media'))) {
+      // A rule is scoped when it is gated by the skin body attribute. Desktop chrome
+      // clearance rules additionally start with the preload's `<html data-windows-titlebar>`
+      // and are still gated by body[data-dsh-tianlight] further on.
+      const scoped = (one) =>
+        one.startsWith('body[data-dsh-tianlight]') ||
+        (one.startsWith('html[data-windows-titlebar]') && one.includes('body[data-dsh-tianlight]'))
       for (const selector of head.split(',')) {
         const one = selector.trim()
-        if (one !== '' && !one.startsWith('body[data-dsh-tianlight]')) scopeViolations.push(one)
+        if (one !== '' && scoped(one) === false) scopeViolations.push(one)
       }
     }
     stack.push(head)
@@ -77,9 +98,11 @@ expect('overrides all 13 alias tokens', missing.length === 0, missing.join(', ')
 expect('overrides use !important (inline tokens are otherwise unopposed)', /--dsw-alias-bg-base:\s*var\([^)]+\)\s*!important/.test(css))
 expect('dark theme block exists', css.includes('body[data-dsh-tianlight][data-ds-dark-theme]'))
 expect('reduced-motion guard exists', css.includes('prefers-reduced-motion: reduce'))
+expect('desktop titlebar clearance present', css.includes('--dsh-windows-titlebar-height'))
+expect('panel fill has a legibility floor', css.includes('max(0.96, calc(0.88 * var(--tl-glass-m, 1)))'))
 expect('no unresolved template placeholder', !css.includes('${'))
 expect('no stray backtick', !css.includes('`'))
 
-console.log('\nCSS length: ' + css.length + ' chars')
+console.log('\nCSS blocks: ' + blocks.length + ', total ' + css.length + ' chars')
 console.log(failures === 0 ? 'ALL CSS CHECKS PASSED' : failures + ' CSS CHECK(S) FAILED')
 process.exitCode = failures === 0 ? 0 : 1
