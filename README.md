@@ -6,6 +6,14 @@
 >
 > 包名 `@dsh-external/dsh-client-ui-skin-tianlight` · 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
 
+## v1.3.0 · 角色入口收进桌宠（不再单独列出）
+
+`1.3.0`（`lib/client.js` **26 片段**；`BUILD`/`HOST_BUILD` = `1.3.0`）。细节见 [docs/RELEASE-1.3.0.md](docs/RELEASE-1.3.0.md)：
+
+- **不再单独列出「角色」**：删除设置页「角色 / 生活」独立一项（`src/74-life-settings.js` 移除），删除侧栏 footer「角色」按钮；唯一入口是桌宠本身——**右键桌宠**，或点桌宠 → 菜单「角色中枢」（第 7 项）。
+- **功能不丢**：原设置页内容并入角色中枢，新增「生活节奏设置」卡片（静默起止、每日额度、作息、虚拟时钟偏移、记忆统计）；玻璃/形象上传/AI 对话/AI Agent/权限/审计等全部保留。
+- 静态链 build 26/26、test 67/67、structure/audit/css/verify/i18n 全绿；Node 冒烟在 v1.2 378/378 基础上更新入口断言（无独立设置页/无侧栏按钮/菜单第 7 项）。
+
 ## v1.2.0 · 右键桌宠进中枢 · 接入 DSH Agent（受控）
 
 `1.2.0`（`lib/client.js` **27 片段**；`BUILD`/`HOST_BUILD` = `1.2.0`）。细节见 [docs/RELEASE-1.2.0.md](docs/RELEASE-1.2.0.md)、权限 [docs/AI-PET-PERMISSIONS.md](docs/AI-PET-PERMISSIONS.md)：
@@ -203,6 +211,7 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 
 ## 版本历史
 
+- **v1.3.0（2026-11-10）**：角色入口收进桌宠——删除设置页「角色 / 生活」与侧栏「角色」按钮，右键桌宠 / 桌宠菜单「角色中枢」为唯一入口；生活节奏设置并入中枢（26 片段）。详见 [docs/RELEASE-1.3.0.md](docs/RELEASE-1.3.0.md)。
 - **v1.2.0（2026-11-10）**：右键桌宠直达角色中枢；接入真实 DSH Agent（受控 `agentChat`：默认关、显式授权、仅用户手动提问、目标会话由用户选择、日≤10/≤500 字/60s/单飞、只 list/create/prompt/follow、审计+可断开、`agent` 自主执行仍永久禁止）。详见 [docs/RELEASE-1.2.0.md](docs/RELEASE-1.2.0.md)。
 - **v1.1.0（2026-11-10）**：角色中枢（侧栏入口 + 全屏面板：生活/专注/静音/玻璃/形象/记忆/AI/权限/审计）、AI 桌宠（本地大脑 + 可选用户授权 LLM 适配器 + 严格能力白名单与 7 项永久禁止 + 硬上限 + 审计 + 暂停开关）、形象支持本机直接上传图片/视频（≤32MiB）；无宿主路由改动。详见 [docs/RELEASE-1.1.0.md](docs/RELEASE-1.1.0.md) 与 [docs/AI-PET-PERMISSIONS.md](docs/AI-PET-PERMISSIONS.md)。
 - **v1.0.0（2026-11-10）**：正式版——桌宠升级为多功能角色智能体（虚拟时钟/每日作息/主动开口预算/跨会话记忆/职责提醒闸门与延迟回放）、可替换形象（图片或 ≤32 MiB 视频）、可选液态玻璃三档（真实/柔和/磨砂，自动降级）、角色设置页、专注计时、互动记忆；节能与稳定性优化；无宿主路由改动。详见 [docs/RELEASE-1.0.0.md](docs/RELEASE-1.0.0.md)。

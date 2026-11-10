@@ -2020,100 +2020,6 @@ body[data-dsh-tianlight][data-tl-lowpower] [data-tl-scene]::after {
 	}
 }
 
-/* ---- v1.0.0 role settings page (slots: settings.section "tianlight-role") ---- */
-body[data-dsh-tianlight] .tl-role-page {
-	display: flex;
-	flex-direction: column;
-	gap: 14px;
-	padding: 4px 2px 24px;
-	color: var(--tl-ink);
-}
-body[data-dsh-tianlight] .tl-role-page h3 {
-	margin: 0;
-	font: 600 15px/1.35 var(--ds-font-family, system-ui);
-}
-body[data-dsh-tianlight] .tl-role-page p {
-	margin: 0;
-	font: 400 12px/1.5 var(--ds-font-family, system-ui);
-	color: var(--tl-ink-soft);
-}
-body[data-dsh-tianlight] .tl-role-card {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	padding: 14px 16px;
-	border-radius: 16px;
-	background: var(--tl-panel-fill, var(--tl-glass-fill));
-	border: 0.5px solid var(--tl-glass-line);
-}
-body[data-dsh-tianlight] .tl-role-row {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 8px;
-	font: 500 12px/1.4 var(--ds-font-family, system-ui);
-}
-body[data-dsh-tianlight] .tl-role-row > label {
-	min-width: 110px;
-	color: var(--tl-ink-soft);
-}
-body[data-dsh-tianlight] .tl-role-page select,
-body[data-dsh-tianlight] .tl-role-page input[type="number"],
-body[data-dsh-tianlight] .tl-role-page input[type="time"] {
-	appearance: auto;
-	background: var(--tl-glass-fill);
-	color: var(--tl-ink);
-	border: 0.5px solid var(--tl-line-strong);
-	border-radius: 9px;
-	padding: 5px 8px;
-	font: 500 12px/1.4 var(--ds-font-family, system-ui);
-}
-body[data-dsh-tianlight] .tl-role-page input[type="number"] {
-	width: 66px;
-}
-body[data-dsh-tianlight] .tl-role-page button {
-	appearance: none;
-	cursor: pointer;
-	border: 0.5px solid var(--tl-line-strong);
-	border-radius: 999px;
-	padding: 6px 12px;
-	background: var(--tl-accent-soft);
-	color: var(--tl-ink);
-	font: 600 12px/1 var(--ds-font-family, system-ui);
-}
-body[data-dsh-tianlight] .tl-role-page button:hover {
-	background: var(--tl-accent);
-	color: #fff;
-}
-body[data-dsh-tianlight] .tl-role-page button[data-active] {
-	background: var(--tl-accent);
-	color: #fff;
-}
-body[data-dsh-tianlight] .tl-role-page button:disabled {
-	opacity: 0.5;
-	cursor: default;
-}
-body[data-dsh-tianlight] .tl-role-choices {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
-}
-body[data-dsh-tianlight] .tl-role-note {
-	font: 400 11px/1.5 var(--ds-font-family, system-ui);
-	color: var(--tl-ink-faint);
-}
-body[data-dsh-tianlight] .tl-role-stats {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px 14px;
-	font: 500 12px/1.4 var(--ds-font-family, system-ui);
-	color: var(--tl-ink-soft);
-}
-body[data-dsh-tianlight] .tl-role-stats b {
-	color: var(--tl-ink);
-	font-weight: 600;
-}
-
 /* ---- v1.1.0 role hub: sidebar entry + full-screen "role control" overlay ---- */
 body[data-dsh-tianlight] {
 	--tl-ok: #2f8f4e;
@@ -2232,6 +2138,35 @@ body[data-dsh-tianlight] [data-tl-hub] button:focus-visible {
 body[data-dsh-tianlight] [data-tl-hub] button[data-active] {
 	background: var(--tl-accent);
 	color: #fff;
+}
+/* v1.3.0 merged life-rhythm settings (formerly the removed settings page). */
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-life input[type="time"],
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-life input[type="number"] {
+	appearance: auto;
+	padding: 6px 9px;
+	border-radius: 9px;
+	border: 0.5px solid var(--tl-line-strong, rgba(255, 255, 255, 0.3));
+	background: var(--tl-glass-fill, rgba(255, 255, 255, 0.12));
+	color: var(--tl-ink);
+	font: 500 12px/1.3 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-life input[type="number"] {
+	width: 64px;
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-life input[type="checkbox"] {
+	appearance: auto;
+	width: 14px;
+	height: 14px;
+	accent-color: var(--tl-accent);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-status-key {
+	color: var(--tl-ink-soft, var(--tl-ink));
+	font: 500 12px/1.4 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-life-note] {
+	margin: 0;
+	font: 400 11px/1.5 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-faint, var(--tl-ink-soft, var(--tl-ink)));
 }
 body[data-dsh-tianlight] [data-tl-hub] button:disabled {
 	opacity: 0.45;

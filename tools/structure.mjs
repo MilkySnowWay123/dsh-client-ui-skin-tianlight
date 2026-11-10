@@ -46,7 +46,6 @@ const EXPECTED = [
   'selector bridge',
   'wallpaper sidebar',
   'we library',
-  'life settings',
   'role hub',
   'font panel',
   'accessibility',

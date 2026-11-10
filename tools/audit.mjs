@@ -189,7 +189,7 @@ report(
     : "FAIL",
   "liquid glass ships all three levels (real / soft / frosted)",
 )
-report(source.includes("tianlight-role") ? "PASS" : "FAIL", "role settings page registers the tianlight-role section")
+report(!source.includes('"tianlight-role"') ? "PASS" : "FAIL", "no separate role settings section (role lives in the pet)")
 report(
   source.includes('type: "deferred"') && source.includes("publicApi") && source.includes("replay")
     ? "PASS"
@@ -219,8 +219,8 @@ report(
   "LLM adapter usage is budgeted and persisted",
 )
 report(
-  source.includes('tianlight-role-hub') && source.includes('"sidebar.footer.action"') ? "PASS" : "FAIL",
-  "role hub registers a sidebar footer entry",
+  !source.includes("HUB_SLOT_NAME") && !source.includes("HUB_SLOT_ID") ? "PASS" : "FAIL",
+  "role hub has no separate sidebar entry (pet-only access)",
 )
 report(
   source.includes('_upload?name=') && source.includes("/ 1024 / 1024") ? "PASS" : "FAIL",

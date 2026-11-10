@@ -1,32 +1,29 @@
 		//#region role hub
 		/**
-		 * v1.1.0「角色中枢」：把 v1.0 备好的能力显现出来的唯一控制面。
+		 * v1.3.0「角色中枢」：角色能力的唯一控制面，入口只有桌宠本身。
 		 *
-		 * 入口：
-		 *   - 侧栏 footer 的「角色」按钮（slots `sidebar.footer.action`，React 小组件；
-		 *     窄栏只显示 ◐ 图标，宽栏显示「◐ 角色」）
+		 * 入口（v1.3.0 起不再有侧栏按钮/设置页）：
+		 *   - 右键桌宠（src/40-companion.js 的 contextmenu）
+		 *   - 桌宠菜单第 7 项「角色中枢」
 		 *   - globalThis.tianlightRoleHub = { version:1, open(), close(), status() }
-		 *   - 事件 `tianlight:open-role-hub`（供皮肤面板/控制台触发）
 		 *
-		 * 浮层是**普通 DOM**（打开时创建、关闭时整体移除）：生活状态、专注/静音、
-		 * 液态玻璃、可替换形象（列表 + 本机上传）、AI 对话与权限/暂停、审计。所有
-		 * 能力都通过既有运行时 API 调用，这里不持有第二个事实源：
+		 * 浮层是**普通 DOM**（打开时创建、关闭时整体移除）：生活状态、生活节奏设置、
+		 * 专注/静音、液态玻璃、可替换形象（列表 + 本机上传）、AI 对话与权限/暂停、
+		 * 实验 Agent、审计。所有能力都通过既有运行时 API 调用，这里不持有第二个事实源：
 		 *   - globalThis.tianlightLife   生活节奏/专注/静音/形象（src/42-life.js）
 		 *   - globalThis.tianlightPet    AI 大脑/权限/审计（src/44-pet-brain.js）
+		 *   - globalThis.tianlightPetAgent 受控 DSH Agent 通道（src/48-pet-agent.js）
 		 *   - glassDepthController       液态玻璃三档（src/57-glass.js）
 		 *   - POST ASSET_BASE/_upload    本机图片/视频上传（宿主已有路由，≤32 MiB）
 		 *
-		 * 任依赖缺失 → 对应卡片显示「不可用」，其它卡片照常；slots/React 缺失只
-		 * 影响侧栏按钮，控制台/全局 API 仍然可用。不写 CSS：Lead 的样式表按
-		 * data-tl-hub-* 属性与 .tl-hub-* 类名统一落样式。
+		 * 任依赖缺失 → 对应卡片显示「不可用」，其它卡片照常。不写 CSS：Lead 的样式表
+		 * 按 data-tl-hub-* 属性与 .tl-hub-* 类名统一落样式。
 		 */
 		registerTl5Strings({
 			zh: {
-				"hub.sidebar.label": "角色",
-				"hub.open": "打开角色中枢",
 				"hub.title": "角色中枢",
 				"hub.close": "关闭",
-				"hub.settingsHint": "完整设置仍在「设置 → 角色 / 生活」。",
+				"hub.settingsHint": "生活节奏设置已并入本页，不再单独列出。",
 				"hub.loading": "载入中…",
 				"hub.unavailable": "不可用",
 				"hub.status.title": "生活状态",
@@ -37,6 +34,21 @@
 				"hub.status.streak": "连续天数",
 				"hub.status.ai": "AI 状态",
 				"hub.status.unavailable": "生活引擎未就绪，状态暂不可用。",
+				"hub.life.title": "生活节奏设置",
+				"hub.life.quiet": "静默时段",
+				"hub.life.quietOn": "启用静默",
+				"hub.life.quietStart": "静默开始",
+				"hub.life.quietEnd": "静默结束",
+				"hub.life.budget": "每日主动开口上限",
+				"hub.life.wake": "起床",
+				"hub.life.sleep": "睡觉",
+				"hub.life.virtual": "虚拟时钟偏移（分钟）",
+				"hub.life.apply": "保存生活节奏",
+				"hub.life.saved": "生活节奏已保存。",
+				"hub.life.invalid": "部分输入无效，已忽略；有效项已保存。",
+				"hub.life.memory": "记忆：互动 {interactions} · 摸摸 {pats} · 喂食 {feeds} · 逗猫棒 {plays} · 连续 {streak} 天",
+				"hub.life.lastSeen": "上次见面：{time}",
+				"hub.life.unavailable": "生活引擎未就绪，生活设置不可用。",
 				"hub.period.dawn": "黎明",
 				"hub.period.morning": "上午",
 				"hub.period.noon": "正午",
@@ -209,11 +221,9 @@
 				"hub.agent.reason.default": "暂时不能发送",
 			},
 			en: {
-				"hub.sidebar.label": "Role",
-				"hub.open": "Open the character hub",
 				"hub.title": "Character hub",
 				"hub.close": "Close",
-				"hub.settingsHint": "Full settings live under Settings → Role / Life.",
+				"hub.settingsHint": "Life-rhythm settings now live on this page; there is no separate page anymore.",
 				"hub.loading": "Loading…",
 				"hub.unavailable": "Unavailable",
 				"hub.status.title": "Life now",
@@ -224,6 +234,21 @@
 				"hub.status.streak": "Streak",
 				"hub.status.ai": "AI state",
 				"hub.status.unavailable": "Life engine is not ready; status is unavailable.",
+				"hub.life.title": "Life rhythm settings",
+				"hub.life.quiet": "Quiet hours",
+				"hub.life.quietOn": "Enable quiet hours",
+				"hub.life.quietStart": "Quiet starts",
+				"hub.life.quietEnd": "Quiet ends",
+				"hub.life.budget": "Proactive bubbles per day",
+				"hub.life.wake": "Wake",
+				"hub.life.sleep": "Sleep",
+				"hub.life.virtual": "Virtual clock offset (minutes)",
+				"hub.life.apply": "Save rhythm",
+				"hub.life.saved": "Life rhythm saved.",
+				"hub.life.invalid": "Some inputs were invalid and ignored; the valid ones were saved.",
+				"hub.life.memory": "Memory: interactions {interactions} · pats {pats} · feeds {feeds} · play {plays} · streak {streak}d",
+				"hub.life.lastSeen": "Last seen: {time}",
+				"hub.life.unavailable": "Life engine unavailable; rhythm settings are off.",
 				"hub.period.dawn": "Dawn",
 				"hub.period.morning": "Morning",
 				"hub.period.noon": "Noon",
@@ -406,8 +431,8 @@
 		const HUB_LOG_MAX = 50;
 		const HUB_AUDIT_LIMIT = 8;
 		const HUB_GLASS_LEVELS = ["off", "frosted", "soft", "real"];
-		const HUB_SLOT_NAME = "sidebar.footer.action";
-		const HUB_SLOT_ID = "tianlight-role-hub";
+		/** Overlay root id (the hub itself; there is no sidebar/settings entry anymore). */
+		const HUB_DOM_ID = "tianlight-role-hub";
 		const HUB_PERIOD_KEYS = {
 			dawn: "hub.period.dawn",
 			morning: "hub.period.morning",
@@ -497,8 +522,6 @@
 			"consent-required": "hub.agent.reason.consent",
 			"internal-error": "hub.agent.reason.internal",
 		};
-		/** Set by installRoleHub; the React sidebar button and console API call it. */
-		let roleHubOpenImpl = null;
 
 		function hubLifeEngine() {
 			try {
@@ -608,6 +631,16 @@
 			}
 		}
 
+		function hubDateTime(at) {
+			const value = Number(at);
+			if (!Number.isFinite(value) || value <= 0) return "—";
+			try {
+				return new Date(value).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+			} catch {
+				return "—";
+			}
+		}
+
 		/**
 		 * Normalize chat() results from the parallel pet-brain implementation. The
 		 * documented contract is `chat(text)`, and the UI accepts both a plain string
@@ -654,53 +687,20 @@
 			return node;
 		}
 
-		/** Sidebar footer button: label + ◐ when wide, icon only in the 56px rail. */
-		function RoleHubButton(props) {
-			const wide = props !== null && props !== undefined && props.wide === true;
-			const { t } = useTl5I18n();
-			const label = t("hub.sidebar.label");
-			return React.createElement(
-				"button",
-				{
-					type: "button",
-					className: "tl-hub-nav-btn",
-					"data-tl-hub-nav": "",
-					"data-tl-hub-nav-wide": wide === true ? "true" : "false",
-					title: label,
-					"aria-label": label,
-					onClick: () => {
-						if (roleHubOpenImpl !== null) {
-							roleHubOpenImpl();
-							return;
-						}
-						try {
-							if (typeof globalThis.dispatchEvent === "function" && typeof globalThis.CustomEvent === "function") {
-								globalThis.dispatchEvent(new globalThis.CustomEvent("tianlight:open-role-hub"));
-							}
-						} catch {
-							// no overlay path available; the global API still works
-						}
-					},
-				},
-				React.createElement("span", { className: "tl-hub-nav-icon", "aria-hidden": "true" }, "◐"),
-				wide === true ? React.createElement("span", { className: "tl-hub-nav-label" }, label) : null,
-			);
-		}
-
 		/**
-		 * Install the sidebar entry + the full-screen role hub. Returns a disposer that
-		 * unregisters the slot, closes (and fully removes) an open overlay and restores
+		 * Install the full-screen role hub (pet menu / right-click are the entry points).
+		 * Returns a disposer that closes (and fully removes) an open overlay and restores
 		 * the previous `globalThis.tianlightRoleHub`.
 		 */
 		function installRoleHub(ctx) {
+			// The hub has no DSH slots/settings entries since v1.3.0; the pet is the entry.
+			void ctx;
 			let disposed = false;
 			let openState = false;
 			let rootEl = null;
 			let ui = null;
 			let timer = 0;
 			let triggerEl = null;
-			let slotService = null;
-			let disposeSlots = () => {};
 			let mediaCache = null;
 			let mediaBusy = false;
 			let chatBusy = false;
@@ -849,6 +849,108 @@
 				ui.aiValue.textContent = aiState;
 				refreshFocusButton(status);
 				refreshMuteButton(status);
+			};
+
+			// ---- life rhythm settings (absorbed from the deleted settings page) ----
+			const setLifeNote = (text) => {
+				if (ui !== null && ui.lifeNote !== null && ui.lifeNote !== undefined) ui.lifeNote.textContent = text;
+			};
+			const lifeConfigInputs = () => {
+				if (ui === null) return [];
+				return [ui.lifeQuietEnabled, ui.lifeQuietStart, ui.lifeQuietEnd, ui.lifeBudget, ui.lifeWake, ui.lifeSleep, ui.lifeVirtual, ui.lifeApply].filter(
+					(input) => input !== null && input !== undefined,
+				);
+			};
+			/** True while the user is typing in one of the rhythm inputs (4s tick skips it). */
+			const isLifeConfigEditing = () => {
+				try {
+					if (ui === null) return false;
+					const active = typeof document !== "undefined" && document !== null ? document.activeElement : null;
+					if (active === null || active === undefined) return false;
+					return lifeConfigInputs().some((input) => input === active);
+				} catch {
+					return false;
+				}
+			};
+			const refreshLifeConfig = (force) => {
+				if (ui === null) return;
+				const life = hubLifeEngine();
+				const inputs = lifeConfigInputs();
+				if (life === null) {
+					for (const input of inputs) input.disabled = true;
+					if (ui.lifeMemory !== null && ui.lifeMemory !== undefined) ui.lifeMemory.textContent = "";
+					setLifeNote(TL_T("hub.life.unavailable"));
+					return;
+				}
+				if (force !== true && isLifeConfigEditing()) return;
+				const status = hubTry(() => life.status?.(), null, "life-config-status");
+				const config = status !== null && typeof status === "object" && status.config !== null && typeof status.config === "object" ? status.config : null;
+				if (config === null) {
+					for (const input of inputs) input.disabled = true;
+					setLifeNote(TL_T("hub.life.unavailable"));
+					return;
+				}
+				for (const input of inputs) input.disabled = false;
+				const quiet = config.quiet !== null && typeof config.quiet === "object" ? config.quiet : {};
+				ui.lifeQuietEnabled.checked = quiet.enabled !== false;
+				ui.lifeQuietStart.value = typeof quiet.start === "string" ? quiet.start : "23:00";
+				ui.lifeQuietEnd.value = typeof quiet.end === "string" ? quiet.end : "08:00";
+				ui.lifeBudget.value = String(Number.isFinite(config.cap) ? Math.max(0, Math.min(20, Math.round(config.cap))) : 6);
+				ui.lifeWake.value = typeof config.wake === "string" ? config.wake : "08:00";
+				ui.lifeSleep.value = typeof config.sleep === "string" ? config.sleep : "23:00";
+				ui.lifeVirtual.value = String(Number.isFinite(config.virtualOffsetMinutes) ? Math.max(-720, Math.min(720, Math.round(config.virtualOffsetMinutes))) : 0);
+				const memory = status.memory !== null && typeof status.memory === "object" ? status.memory : {};
+				const numberOrZero = (value) => (Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0);
+				ui.lifeMemory.textContent =
+					TL_T("hub.life.memory", {
+						interactions: numberOrZero(memory.interactions),
+						pats: numberOrZero(memory.pats),
+						feeds: numberOrZero(memory.feeds),
+						plays: numberOrZero(memory.plays),
+						streak: numberOrZero(memory.streakDays),
+					}) +
+					" · " +
+					TL_T("hub.life.lastSeen", { time: hubDateTime(memory.lastSeenAt) });
+			};
+			const applyLifeConfig = () => {
+				const life = hubLifeEngine();
+				if (ui === null) return;
+				if (life === null || typeof life.configure !== "function") {
+					setLifeNote(TL_T("hub.life.unavailable"));
+					return;
+				}
+				const timeOk = (value) => typeof value === "string" && /^\d{2}:\d{2}$/.test(value);
+				let invalid = false;
+				const patch = { quiet: { enabled: ui.lifeQuietEnabled.checked === true } };
+				const quietStart = String(ui.lifeQuietStart.value ?? "");
+				if (timeOk(quietStart)) patch.quiet.start = quietStart;
+				else invalid = true;
+				const quietEnd = String(ui.lifeQuietEnd.value ?? "");
+				if (timeOk(quietEnd)) patch.quiet.end = quietEnd;
+				else invalid = true;
+				const budget = Number(ui.lifeBudget.value);
+				if (Number.isFinite(budget) && budget >= 0 && budget <= 20) patch.budgetDaily = Math.round(budget);
+				else invalid = true;
+				const wake = String(ui.lifeWake.value ?? "");
+				if (timeOk(wake)) patch.wake = wake;
+				else invalid = true;
+				const sleep = String(ui.lifeSleep.value ?? "");
+				if (timeOk(sleep)) patch.sleep = sleep;
+				else invalid = true;
+				const virtual = Number(ui.lifeVirtual.value);
+				if (Number.isFinite(virtual) && virtual >= -720 && virtual <= 720) patch.virtualOffsetMinutes = Math.round(virtual);
+				else invalid = true;
+				try {
+					life.configure(patch);
+				} catch (error) {
+					setLastError("life-configure", error);
+					setLifeNote(TL_T("hub.life.invalid"));
+					return;
+				}
+				setLifeNote(invalid === true ? TL_T("hub.life.invalid") : TL_T("hub.life.saved"));
+				refreshStatus();
+				refreshLifeConfig(true);
+				refreshAi();
 			};
 
 			// ---- glass card ---------------------------------------------------------
@@ -1537,6 +1639,7 @@
 				const state = { glassButtons: {} };
 				const root = hubCreate("div", {
 					"data-tl-hub": "",
+					id: HUB_DOM_ID,
 					className: "tl-hub",
 					role: "dialog",
 					"aria-modal": "true",
@@ -1601,6 +1704,86 @@
 				quickRow.appendChild(state.muteButton);
 				statusCard.appendChild(quickRow);
 				body.appendChild(statusCard);
+
+				// a2) life rhythm settings (v1.3.0: moved out of the deleted settings page)
+				const lifeCard = hubCreate("section", { "data-tl-hub-life-config": "", className: "tl-hub-card tl-hub-life" }, [
+					hubCreate("h3", { className: "tl-hub-card-title" }, TL_T("hub.life.title")),
+				]);
+				const lifeQuietRow = hubCreate("div", { className: "tl-hub-row" });
+				lifeQuietRow.appendChild(hubCreate("span", { className: "tl-hub-status-key" }, TL_T("hub.life.quiet") + "："));
+				state.lifeQuietEnabled = hubCreate("input", {
+					type: "checkbox",
+					"data-tl-hub-quiet-enabled": "",
+					className: "tl-hub-check",
+					"aria-label": TL_T("hub.life.quietOn"),
+				});
+				lifeQuietRow.appendChild(state.lifeQuietEnabled);
+				state.lifeQuietStart = hubCreate("input", {
+					type: "time",
+					"data-tl-hub-quiet-start": "",
+					className: "tl-hub-input tl-hub-time",
+					"aria-label": TL_T("hub.life.quietStart"),
+				});
+				lifeQuietRow.appendChild(state.lifeQuietStart);
+				lifeQuietRow.appendChild(hubCreate("span", { className: "tl-hub-status-key" }, "→"));
+				state.lifeQuietEnd = hubCreate("input", {
+					type: "time",
+					"data-tl-hub-quiet-end": "",
+					className: "tl-hub-input tl-hub-time",
+					"aria-label": TL_T("hub.life.quietEnd"),
+				});
+				lifeQuietRow.appendChild(state.lifeQuietEnd);
+				lifeCard.appendChild(lifeQuietRow);
+				const lifeRhythmRow = hubCreate("div", { className: "tl-hub-row" });
+				lifeRhythmRow.appendChild(hubCreate("span", { className: "tl-hub-status-key" }, TL_T("hub.life.budget") + "："));
+				state.lifeBudget = hubCreate("input", {
+					type: "number",
+					min: "0",
+					max: "20",
+					step: "1",
+					"data-tl-hub-budget": "",
+					className: "tl-hub-input tl-hub-num",
+					"aria-label": TL_T("hub.life.budget"),
+				});
+				lifeRhythmRow.appendChild(state.lifeBudget);
+				lifeRhythmRow.appendChild(hubCreate("span", { className: "tl-hub-status-key" }, TL_T("hub.life.wake") + "："));
+				state.lifeWake = hubCreate("input", {
+					type: "time",
+					"data-tl-hub-wake": "",
+					className: "tl-hub-input tl-hub-time",
+					"aria-label": TL_T("hub.life.wake"),
+				});
+				lifeRhythmRow.appendChild(state.lifeWake);
+				lifeRhythmRow.appendChild(hubCreate("span", { className: "tl-hub-status-key" }, TL_T("hub.life.sleep") + "："));
+				state.lifeSleep = hubCreate("input", {
+					type: "time",
+					"data-tl-hub-sleep": "",
+					className: "tl-hub-input tl-hub-time",
+					"aria-label": TL_T("hub.life.sleep"),
+				});
+				lifeRhythmRow.appendChild(state.lifeSleep);
+				lifeCard.appendChild(lifeRhythmRow);
+				const lifeApplyRow = hubCreate("div", { className: "tl-hub-row" });
+				lifeApplyRow.appendChild(hubCreate("span", { className: "tl-hub-status-key" }, TL_T("hub.life.virtual") + "："));
+				state.lifeVirtual = hubCreate("input", {
+					type: "number",
+					min: "-720",
+					max: "720",
+					step: "15",
+					"data-tl-hub-virtual-offset": "",
+					className: "tl-hub-input tl-hub-num",
+					"aria-label": TL_T("hub.life.virtual"),
+				});
+				lifeApplyRow.appendChild(state.lifeVirtual);
+				state.lifeApply = hubCreate("button", { type: "button", "data-tl-hub-life-apply": "", className: "tl-hub-btn" }, TL_T("hub.life.apply"));
+				state.lifeApply.addEventListener("click", () => runAsync(applyLifeConfig));
+				lifeApplyRow.appendChild(state.lifeApply);
+				lifeCard.appendChild(lifeApplyRow);
+				state.lifeMemory = hubCreate("p", { className: "tl-hub-hint", "data-tl-hub-memory": "" }, "");
+				lifeCard.appendChild(state.lifeMemory);
+				state.lifeNote = hubCreate("p", { className: "tl-hub-hint", "data-tl-hub-life-note": "", role: "status" }, "");
+				lifeCard.appendChild(state.lifeNote);
+				body.appendChild(lifeCard);
 
 				// b) liquid glass
 				const glassCard = hubCreate("section", { "data-tl-hub-glass-card": "", className: "tl-hub-card" }, [
@@ -1759,6 +1942,7 @@
 			const refreshAll = () => {
 				if (openState !== true || ui === null) return;
 				hubTry(refreshStatus, null, "refresh-status");
+				hubTry(() => refreshLifeConfig(false), null, "refresh-life-config");
 				hubTry(refreshGlass, null, "refresh-glass");
 				hubTry(refreshAi, null, "refresh-ai");
 				hubTry(refreshAgent, null, "refresh-agent");
@@ -1786,6 +1970,7 @@
 						}
 					}
 					refreshStatus();
+					refreshLifeConfig(true);
 					refreshGlass();
 					refreshAi();
 					refreshAgent();
@@ -1812,9 +1997,8 @@
 					document: typeof document !== "undefined" && document !== null && document.body !== null && document.body !== undefined,
 					life: hubLifeEngine() !== null,
 					pet: hubPetBrain() !== null,
+					agent: hubPetAgent() !== null,
 					glass: hubGlassDepthController() !== null,
-					slots: slotService !== null,
-					react: React !== null,
 				},
 				logCount: logEntries.length,
 				lastError: lastError,
@@ -1832,74 +2016,13 @@
 			} catch (error) {
 				setLastError("api-publish", error);
 			}
-			const openBridge = () => api.open();
-			roleHubOpenImpl = openBridge;
-
-			// ---- sidebar slot registration -----------------------------------------
-			if (React !== null && typeof ctx !== "undefined" && ctx !== null && typeof ctx.inject === "function") {
-				try {
-					const injected = ctx.inject(["slots"], (scoped) => {
-						if (disposed === true) return () => {};
-						const scopedSlots = scoped !== null && scoped !== undefined && typeof scoped.get === "function" ? scoped.get("slots") : undefined;
-						const slots = scopedSlots !== undefined && scopedSlots !== null ? scopedSlots : scoped !== null && scoped !== undefined ? scoped.slots : undefined;
-						if (slots === undefined || slots === null || typeof slots.inject !== "function" || typeof slots.register !== "function") {
-							setLastError("no-slots", new Error("slots service is unavailable"));
-							return () => {};
-						}
-						slotService = slots;
-						let slotHandle = null;
-						let slotDispose = () => {};
-						try {
-							const injectedSlot = slots.inject(HUB_SLOT_NAME, () => {
-								try {
-									slotHandle = slots.register(
-										{ name: HUB_SLOT_NAME, id: HUB_SLOT_ID, order: 130, label: () => TL_T("hub.sidebar.label") },
-										RoleHubButton,
-									);
-								} catch (error) {
-									slotHandle = null;
-									setLastError("slot-register", error);
-								}
-								return () => {
-									if (slotHandle === null) return;
-									const handle = slotHandle;
-									slotHandle = null;
-									try {
-										handle();
-									} catch (error) {
-										setLastError("slot-release", error);
-									}
-								};
-							});
-							if (typeof injectedSlot === "function") slotDispose = injectedSlot;
-						} catch (error) {
-							setLastError("slot-inject", error);
-						}
-						return () => {
-							try {
-								slotDispose();
-							} catch (error) {
-								setLastError("slot-dispose", error);
-							}
-							slotService = null;
-						};
-					});
-					if (typeof injected === "function") disposeSlots = injected;
-				} catch (error) {
-					setLastError("slots-inject", error);
-				}
-			} else if (React === null) {
-				note("role-hub:no-react", {});
-			} else {
-				note("role-hub:no-ctx", {});
-			}
+			// v1.3.0: no DSH slots / settings-page registration. The pet menu and the pet
+			// context menu call this global directly.
 
 			return () => {
 				if (disposed === true) return;
 				disposed = true;
 				hubTry(() => close(), null, "dispose-close");
-				hubTry(() => disposeSlots(), null, "dispose-slots");
-				if (roleHubOpenImpl === openBridge) roleHubOpenImpl = null;
 				try {
 					if (globalThis.tianlightRoleHub === api) {
 						if (previousGlobal === undefined) delete globalThis.tianlightRoleHub;

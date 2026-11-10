@@ -1,6 +1,6 @@
 # AI 桌宠权限规范（v1.2.0）
 
-> 角色：天光桌宠的「大脑」。目标：**真的能对话、有生活感、有主动性、并能接入 DSH Agent**，但它的**权利被严格限定在皮肤内**——不能自主驱动 DSH、不能联网、不能读写文件、不能执行命令、不能替你审批或发消息。v1.2.0 新增 `agentChat`：只允许“用户主动提问 → 发给选定的 DSH Agent 会话 → 显示回复”。本文是实现与验收依据；对应代码 `src/44-pet-brain.js` + `src/48-pet-agent.js`，UI 在「角色中枢 / 设置 → 角色 · 生活」。
+> 角色：天光桌宠的「大脑」。目标：**真的能对话、有生活感、有主动性、并能接入 DSH Agent**，但它的**权利被严格限定在皮肤内**——不能自主驱动 DSH、不能联网、不能读写文件、不能执行命令、不能替你审批或发消息。v1.2.0 新增 `agentChat`：只允许“用户主动提问 → 发给选定的 DSH Agent 会话 → 显示回复”。本文是实现与验收依据；对应代码 `src/44-pet-brain.js` + `src/48-pet-agent.js`，UI 在**角色中枢**（v1.3.0 起唯一入口：右键桌宠 / 桌宠菜单「角色中枢」）。
 
 ## 1. 设计原则
 
@@ -88,9 +88,10 @@ window.tianlightPet.grant("llm", { consent: "user-explicit" })
 
 ## 6. 用户控制面
 
-- **角色中枢**（侧栏「角色」按钮）：AI 区可暂停/恢复、授权/撤销 LLM、看适配器、看对话、看权限表（7 项永久禁止只读）、看审计。
-- **控制台**：`window.tianlightPet.status() / permissions() / grant() / revoke() / chat("…") / pause() / audit()`。
-- **设置页**：DSH 设置 →「角色 / 生活」（完整设置）。
+- **桌宠是唯一入口**（v1.3.0 起不再有独立设置页/侧栏按钮）：**右键桌宠**，或点桌宠 → 菜单「角色中枢」，打开全屏角色中枢。
+- **角色中枢**：生活状态、生活节奏设置（静默/额度/作息/虚拟时钟）、AI 区（暂停/恢复、授权/撤销 LLM、看适配器、看对话）、**AI Agent 区**（`agentChat` 授权两步确认、选择目标会话、连接/断开/打开、预算/状态/风险提示）、权限总览（7 项永久禁止只读）、审计。
+- **控制台**：`window.tianlightPet.status() / permissions() / grant() / revoke() / chat("…") / pause() / audit()`，以及 `window.tianlightPetAgent.*`、`window.tianlightRoleHub.open()`。
+- 实例诊断：`__dshTianlightInstance.life() / pet() / agent() / hub() / glass() / duty()`。
 
 ## 7. 明确不做（当前边界）
 

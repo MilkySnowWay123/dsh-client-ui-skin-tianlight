@@ -2,6 +2,15 @@
 
 本文件由 `node tools/release.mjs --note "…"` 维护；条目按版本倒序，格式参考 Keep a Changelog。
 
+## [1.3.0] - 2026-11-10
+
+### 发布说明
+
+- **角色入口收进桌宠**：删除设置页「角色 / 生活」独立页（移除 `src/74-life-settings.js`，26 片段）与侧栏 footer「角色」按钮（`sidebar.footer.action` 注册移除）；唯一入口是桌宠——右键桌宠直接打开角色中枢，或点桌宠 → 菜单新增第 7 项「角色中枢」。
+- **功能不丢**：原设置页内容并入中枢新增「生活节奏设置」卡片（静默开关/起止、每日主动额度、起床/睡觉、虚拟时钟偏移、记忆统计），玻璃/形象/上传/AI/Agent/权限/审计全部保留。
+- 文档：新增 [docs/RELEASE-1.3.0.md](docs/RELEASE-1.3.0.md)，更新 AI-PET-PERMISSIONS 控制面说明；`BUILD`/`HOST_BUILD`/`package.json`/`skin.json` = 1.3.0。
+- 静态链：build 26/26、test 67/67、structure/audit/check-css/verify/i18n 全绿；Node 冒烟 = v1.2 378/378 回归（入口断言更新）+ v1.3 入口段。
+
 ## [1.2.0] - 2026-11-10
 
 ### 发布说明

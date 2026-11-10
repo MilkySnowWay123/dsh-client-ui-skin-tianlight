@@ -88,6 +88,7 @@
 				"pet.action.nap": "小睡",
 				"pet.action.mute": "静音 1 小时",
 				"pet.action.focus": "专注 25 分钟",
+				"pet.action.hub": "角色中枢",
 				"pet.act.mute": "好，安静一小时",
 				"pet.act.focusStart": "专注 25 分钟，开始",
 				"pet.act.focusStop": "专注结束，歇口气吧",
@@ -128,6 +129,7 @@
 				"pet.action.nap": "Nap",
 				"pet.action.mute": "Mute 1h",
 				"pet.action.focus": "Focus 25m",
+				"pet.action.hub": "Role hub",
 				"pet.act.mute": "Okay, quiet for an hour",
 				"pet.act.focusStart": "Focusing for 25 minutes",
 				"pet.act.focusStop": "Focus done. Take a breather",
@@ -403,6 +405,10 @@
 				// two carry no mood delta; doAction() routes them to the life engine.
 				{ id: "mute", labelKey: "pet.action.mute" },
 				{ id: "focus", labelKey: "pet.action.focus" },
+				// v1.3.0: the role hub lives on the pet itself. There is no separate
+				// sidebar/settings entry anymore; this menu item and the right-click
+				// context menu are the only ways in.
+				{ id: "hub", labelKey: "pet.action.hub" },
 			];
 			for (const action of ACTIONS) {
 				const button = document.createElement("button");
@@ -593,6 +599,17 @@
 			const doAction = (id) => {
 				const action = ACTIONS.find((candidate) => candidate.id === id);
 				if (action === undefined) return;
+				// v1.3.0: the pet is the only role-hub entry point. Opening is silent when
+				// the hub is absent: no mood change, no speech, no error.
+				if (id === "hub") {
+					closeMenu();
+					try {
+						globalThis.tianlightRoleHub?.open?.();
+					} catch {
+						// the hub is optional infrastructure; the menu stays usable
+					}
+					return;
+				}
 				// v1.0.0 life-rhythm controls: the pet menu and the role settings page
 				// share one state, so these only delegate and echo the outcome.
 				if (id === "mute") {

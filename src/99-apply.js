@@ -311,7 +311,6 @@
 				// cross-session memory. It installs after the module runtime so a disabled
 				// companion degrades cleanly, and the settings page only needs `slots`.
 				install("ui-skin-tianlight: life rhythm", () => installLifeRhythm());
-				install("ui-skin-tianlight: life settings", () => installLifeSettings(ctx));
 
 				// ---- v1.1.0 AI companion layer ----
 				// The brain is the single owner of proactive rights: a strict capability
