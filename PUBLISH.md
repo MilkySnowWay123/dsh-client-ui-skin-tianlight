@@ -119,3 +119,10 @@ node tools/public-release.mjs --dir <镜像目录> --version 1.0.2 --internal-ve
 
 - CI 的 tag/version 契约保证"发出去的 tag 一定能打包、包版本和 tag 一致"，用户从 tag 安装不会拿到版本错位的包。
 - 内部迭代仍用 v1.6.x 连续编号，公开版本用 v1.0.x 独立编号，两者通过 `INTERNAL-BUILD.json` 与 release notes 互相映射。
+### 公开 Release 自动创建
+
+.github/workflows/release.yml 会在每次 push 到 main 时运行（也可手动 workflow_dispatch）：它扫描仓库根目录的 RELEASE-NOTES-v*.md，对每个已存在的 tag 用仓库自带的 GITHUB_TOKEN 调用 gh release create 创建 GitHub Release（标题取文件第一行、正文用文件内容），已存在的 Release 自动跳过。
+
+- 发布新公开版本时：把 diag/tmp/github-release-v<公开版本>.md 复制到镜像仓库根目录并命名为 RELEASE-NOTES-v<公开版本>.md，随本次 push 一起提交，Release 会自动建好。
+- 补建历史 Release：把对应 RELEASE-NOTES-*.md 放进镜像根目录后 push 一次 main（或手动 dispatch）即可，幂等。
+- 该流程只需要仓库自身的 Actions token，不需要维护者提供个人 token。

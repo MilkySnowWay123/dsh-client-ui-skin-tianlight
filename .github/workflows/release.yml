@@ -1,0 +1,55 @@
+name: release
+
+# Creates the public GitHub Releases for the pushed tags from the release-note
+# files that ship in the repository root (RELEASE-NOTES-v1.0.x.md). Runs on every
+# push to main (idempotent: existing releases are left alone) and can also be
+# dispatched manually. The workflow uses the repository's own GITHUB_TOKEN, so no
+# personal token is needed to publish a release after a push.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  releases:
+    name: publish tag releases
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: create releases from RELEASE-NOTES-v*.md (idempotent)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          found=0
+          for notes in RELEASE-NOTES-v*.md; do
+            if [ ! -e "$notes" ]; then
+              continue
+            fi
+            found=1
+            tag="${notes#RELEASE-NOTES-}"
+            tag="${tag%.md}"
+            if ! git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+              echo "skip $tag: tag not present in this checkout"
+              continue
+            fi
+            if gh release view "$tag" >/dev/null 2>&1; then
+              echo "skip $tag: release already exists"
+              continue
+            fi
+            title="$(head -n 1 "$notes" | sed -e 's/^# *//' -e 's/\r$//')"
+            echo "creating release $tag: $title"
+            gh release create "$tag" --title "$title" --notes-file "$notes" --verify-tag
+          done
+          if [ "$found" = "0" ]; then
+            echo "no RELEASE-NOTES-v*.md files in this checkout"
+          fi
