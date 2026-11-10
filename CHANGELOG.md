@@ -2,6 +2,16 @@
 
 本文件由 `node tools/release.mjs --note "…"` 维护；条目按版本倒序，格式参考 Keep a Changelog。
 
+## [1.4.0] - 2026-11-10
+
+### 发布说明
+
+- **权限模型调整（用户要求）**：`agent`（驱动 DSH 任务/工具）**保持强烈永久禁止**；`network/files/shell/approve/message/install` 六项从 hard-denied 改为 **high risk、默认关闭、可显式授权/撤销**（`grant(cap,{consent:"user-explicit"})`；中枢两步确认 + 高风险警告），不再硬性否决。
+- **能力适配器**：新增 `setCapabilityAdapter(cap,{id,run})` / `clearCapabilityAdapter(cap)` / `invokeCapability(cap,input)`——皮肤不内置危险实现；high 权限只有在“已授权 + 未暂停 + 适配器存在”时才会调用你注册的适配器，异常返回 `adapter-error`，全程审计 `action:"capability"`（不记录输入原文）。
+- 权限总览 UI 按 safe/medium/high/forbidden 分组着色；6 个 high 行可两步确认授权/撤销；`agent` 行只读“永久禁止（驱动 DSH）”。
+- 文档：更新 [docs/AI-PET-PERMISSIONS.md](docs/AI-PET-PERMISSIONS.md)（新矩阵/适配器契约/风险）、新增 [docs/RELEASE-1.4.0.md](docs/RELEASE-1.4.0.md)；`BUILD`/`HOST_BUILD`/`package.json`/`skin.json` = 1.4.0。
+- 静态链：build 26/26、test 67/67、structure/audit（高风险可授权适配器 / 仅 agent 硬禁）/check-css/verify/i18n 全绿；Node 冒烟 = v1.3 410 条回归更新 + 高风险授权/适配器段。
+
 ## [1.3.0] - 2026-11-10
 
 ### 发布说明

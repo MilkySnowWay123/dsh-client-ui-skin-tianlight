@@ -1,12 +1,24 @@
 		//#region pet brain
 		/**
-		 * v1.1.0 AI pet brain + strict permission model.
+		 * AI pet brain + permission model (v1.1.0 → v1.4.0).
 		 *
 		 * The companion may talk, remember small things, toggle focus/quiet, read the
-		 * replaceable look and ask the life engine whether it may speak first. It may
-		 * NOT drive DSH, browse the network, read or write files, run commands, approve
-		 * requests, send messages as the user or install anything — those seven
-		 * capabilities are hard-denied in code and can never be granted.
+		 * replaceable look and ask the life engine whether it may speak first.
+		 *
+		 * Permission model:
+		 *   - safe capabilities (chat/memory/focus/media/remind/proactive) are on by
+		 *     default and freely revocable;
+		 *   - medium capabilities (`llm`, `agentChat`) start OFF and need the user's
+		 *     explicit consent token to grant;
+		 *   - six HIGH-risk capabilities (network/files/shell/approve/message/install)
+		 *     also start OFF and need explicit consent. They are deliberately NOT
+		 *     implemented by this skin: the user/host registers an adapter with
+		 *     `setCapabilityAdapter(cap, adapter)`, and `invokeCapability` refuses
+		 *     unless the capability is granted, the brain is not paused and an adapter
+		 *     exists. Every invocation is audited (`action:"capability"`);
+		 *   - `agent` (the pet AUTONOMOUSLY driving DSH tasks/tools/approvals) is the
+		 *     ONLY permanently forbidden capability: hard-denied in code, never
+		 *     grantable.
 		 *
 		 * HARD BOUNDARY (enforced by construction, not convention):
 		 *   - this fragment performs no network I/O at all (no HTTP client, no socket,
@@ -41,22 +53,35 @@
 		const PET_AI_KEY = "tianlight.pet.ai.v1";
 		const PET_SAFE_CAPS = ["chat", "memory", "focus", "media", "remind", "proactive"];
 		/**
-		 * `llm` lets the user-provided adapter answer local chat; `agentChat` lets the
+		 * `llm` lets a user-provided adapter answer local chat; `agentChat` lets the
 		 * separate src/48-pet-agent.js bridge forward a user-typed prompt to a
 		 * user-selected DSH session through the injected client `remote.session`.
-		 * Both are medium risk, start OFF and need explicit user consent. The
-		 * forbidden `agent` capability means the pet driving tasks/tools on its own —
-		 * that is a different thing and stays permanently denied.
+		 * Both are medium risk, start OFF and need explicit user consent.
 		 */
 		const PET_MEDIUM_CAPS = ["llm", "agentChat"];
-		/** Capabilities that additionally need `{ consent: "user-explicit" }` to grant. */
-		const PET_CONSENT_CAPS = ["llm", "agentChat"];
-		/** Permanent denials: not "off by default", but impossible to grant. */
-		const PET_FORBIDDEN_CAPS = ["agent", "network", "files", "shell", "approve", "message", "install"];
+		/**
+		 * v1.4.0: six dangerous-but-user-grantable capabilities. They are HIGH risk,
+		 * start OFF, need explicit consent to grant, and are NOT implemented by this
+		 * skin — a user/host supplied adapter registered with
+		 * `setCapabilityAdapter(cap, adapter)` is required before
+		 * `invokeCapability(cap, input)` can do anything. The skin itself stays free of
+		 * network/file/shell/approval/message/install implementations.
+		 */
+		const PET_HIGH_CAPS = ["network", "files", "shell", "approve", "message", "install"];
+		/** Every capability the user may toggle (all except the hard-denied one). */
+		const PET_GRANTABLE_CAPS = [...PET_SAFE_CAPS, ...PET_MEDIUM_CAPS, ...PET_HIGH_CAPS];
+		/** Medium + high risk capabilities additionally need explicit user consent. */
+		const PET_CONSENT_CAPS = ["llm", "agentChat", ...PET_HIGH_CAPS];
+		/**
+		 * The ONLY permanently forbidden capability: the pet AUTONOMOUSLY driving DSH
+		 * tasks/tools/approvals. It is different from `agentChat` (user-typed prompt
+		 * relay) and from the six high-risk capabilities (user-grantable + adapter).
+		 */
+		const PET_FORBIDDEN_CAPS = ["agent"];
 		/** Valid capability ids for external audit records: the full 15-row matrix. */
-		const PET_AUDIT_CAPS = [...PET_SAFE_CAPS, ...PET_MEDIUM_CAPS, ...PET_FORBIDDEN_CAPS];
+		const PET_AUDIT_CAPS = [...PET_SAFE_CAPS, ...PET_MEDIUM_CAPS, ...PET_HIGH_CAPS, ...PET_FORBIDDEN_CAPS];
 		/** Valid actions for audit records (internal ring and external agent records). */
-		const PET_AUDIT_ACTIONS = ["chat", "say", "grant", "revoke", "llm", "pause", "resume", "proactive-check", "agent"];
+		const PET_AUDIT_ACTIONS = ["chat", "say", "grant", "revoke", "llm", "pause", "resume", "proactive-check", "agent", "capability"];
 		const PET_DAILY_LIMIT_DEFAULT = 20;
 		const PET_DAILY_LIMIT_MAX = 50;
 		const PET_MINUTE_CALL_LIMIT = 3;
@@ -126,7 +151,7 @@
 				"pet.brain.memory": "我们互动过 {interactions} 次，聊了 {turns} 句，连续 {streak} 天。",
 				"pet.brain.memoryDenied": "我不保留记忆。",
 				"pet.brain.rhythm": "作息：{wake} 起床，{sleep} 睡觉；静默 {start}–{end}。",
-				"pet.brain.permissions": "我能聊天、记一点互动、开关专注和静音。联网、执行、文件都不行。",
+				"pet.brain.permissions": "高风险能力默认关闭，只由你在中枢逐个授权；未授权我不用。驱动 DSH 永远禁止。",
 				"pet.brain.denied": "我没有这个权限。",
 				"pet.brain.fallback": "我没太听懂。可以问状态、专注、静默或权限。",
 			},
@@ -157,7 +182,7 @@
 				"pet.brain.memory": "We've interacted {interactions} times, {turns} turns, streak {streak}d.",
 				"pet.brain.memoryDenied": "I don't keep memory.",
 				"pet.brain.rhythm": "Rhythm: wake {wake}, sleep {sleep}; quiet {start}-{end}.",
-				"pet.brain.permissions": "Chat, memory, focus, media are allowed; network, execution and files are not.",
+				"pet.brain.permissions": "High-risk ones start off; only you can grant them. Driving DSH is forbidden.",
 				"pet.brain.denied": "I don't have that permission.",
 				"pet.brain.fallback": "I didn't catch that. Ask about status, focus, quiet or permissions.",
 			},
@@ -171,6 +196,11 @@
 		let petPauseAt = 0;
 		let petGrants = {};
 		let petAdapter = null;
+		// Adapters for the six HIGH-risk capabilities (network/files/shell/approve/
+		// message/install), registered by the user/host at runtime. Functions are kept
+		// in memory only and are never persisted; a reload clears the adapters while
+		// the granted permission bits stay as the user left them.
+		let petCapabilityAdapters = {};
 		let petAi = { dayKey: "", usedToday: 0, dailyLimit: PET_DAILY_LIMIT_DEFAULT };
 		let petTurns = 0;
 		let petTodayTurns = 0;
@@ -272,6 +302,7 @@
 			const grants = {};
 			for (const cap of PET_SAFE_CAPS) grants[cap] = true;
 			for (const cap of PET_MEDIUM_CAPS) grants[cap] = false;
+			for (const cap of PET_HIGH_CAPS) grants[cap] = false;
 			for (const cap of PET_FORBIDDEN_CAPS) grants[cap] = false;
 			return grants;
 		}
@@ -284,7 +315,7 @@
 				// Accept both the nested shape this build writes and a flat map.
 				const source = raw.granted !== null && typeof raw.granted === "object" ? raw.granted : raw;
 				if (source === null || typeof source !== "object") return grants;
-				for (const cap of PET_SAFE_CAPS.concat(PET_MEDIUM_CAPS)) {
+				for (const cap of PET_GRANTABLE_CAPS) {
 					if (typeof source[cap] === "boolean") grants[cap] = source[cap];
 				}
 			} catch (error) {
@@ -295,9 +326,10 @@
 
 		function petSavePermissions() {
 			const persisted = {};
-			for (const cap of PET_SAFE_CAPS.concat(PET_MEDIUM_CAPS)) persisted[cap] = petGrants[cap] === true;
-			// Forbidden capabilities are never written: the code path that could grant
-			// them does not exist, so persisting them would only create false state.
+			for (const cap of PET_GRANTABLE_CAPS) persisted[cap] = petGrants[cap] === true;
+			// The permanently forbidden capability is never written: the code path that
+			// could grant it does not exist, so persisting it would only create false
+			// state.
 			petWriteJson(PET_PERMISSIONS_KEY, { version: PET_VERSION, granted: persisted });
 		}
 
@@ -305,6 +337,7 @@
 			const map = {};
 			for (const cap of PET_SAFE_CAPS) map[cap] = petGrants[cap] === true;
 			for (const cap of PET_MEDIUM_CAPS) map[cap] = petGrants[cap] === true;
+			for (const cap of PET_HIGH_CAPS) map[cap] = petGrants[cap] === true;
 			for (const cap of PET_FORBIDDEN_CAPS) map[cap] = false;
 			return map;
 		}
@@ -317,6 +350,9 @@
 			for (const cap of PET_MEDIUM_CAPS) {
 				rows.push({ id: cap, granted: petGrants[cap] === true, grantable: true, risk: "medium" });
 			}
+			for (const cap of PET_HIGH_CAPS) {
+				rows.push({ id: cap, granted: petGrants[cap] === true, grantable: true, risk: "high" });
+			}
 			for (const cap of PET_FORBIDDEN_CAPS) {
 				rows.push({ id: cap, granted: false, grantable: false, risk: "forbidden" });
 			}
@@ -327,7 +363,7 @@
 			try {
 				if (typeof cap !== "string") return false;
 				if (PET_FORBIDDEN_CAPS.indexOf(cap) >= 0) return false;
-				if (PET_SAFE_CAPS.indexOf(cap) < 0 && PET_MEDIUM_CAPS.indexOf(cap) < 0) return false;
+				if (PET_GRANTABLE_CAPS.indexOf(cap) < 0) return false;
 				return petGrants[cap] === true;
 			} catch (error) {
 				return false;
@@ -339,13 +375,13 @@
 		}
 
 		/**
-		 * Grant a capability. Forbidden capabilities and unknown ids are rejected
-		 * before any state is touched. `llm` and `agentChat` additionally require the
-		 * UI's explicit consent token — this is deliberately not something code can
-		 * infer from context. The consent token is a UI contract (defence against
-		 * accidental self-granting flows), not a cryptographic secret: the real
-		 * boundary is that both capabilities start OFF and no code path grants them
-		 * without this call.
+		 * Grant a capability. The permanently forbidden `agent` capability and unknown
+		 * ids are rejected before any state is touched. Safe capabilities toggle
+		 * freely; medium + high risk capabilities additionally require the UI's
+		 * explicit consent token — this is deliberately not something code can infer
+		 * from context. The consent token is a UI contract (defence against accidental
+		 * self-granting flows), not a cryptographic secret: the real boundary is that
+		 * those capabilities start OFF and no code path grants them without this call.
 		 */
 		function petGrant(cap, options) {
 			try {
@@ -354,7 +390,7 @@
 					petAudit("grant", id, false, { reason: "hard-denied" });
 					return { ok: false, reason: "hard-denied" };
 				}
-				if (PET_SAFE_CAPS.indexOf(id) < 0 && PET_MEDIUM_CAPS.indexOf(id) < 0) {
+				if (PET_GRANTABLE_CAPS.indexOf(id) < 0) {
 					petAudit("grant", id, false, { reason: "unknown-capability" });
 					return { ok: false, reason: "unknown-capability" };
 				}
@@ -387,7 +423,7 @@
 					petAudit("revoke", id, false, { reason: "hard-denied" });
 					return { ok: false, reason: "hard-denied" };
 				}
-				if (PET_SAFE_CAPS.indexOf(id) < 0 && PET_MEDIUM_CAPS.indexOf(id) < 0) {
+				if (PET_GRANTABLE_CAPS.indexOf(id) < 0) {
 					petAudit("revoke", id, false, { reason: "unknown-capability" });
 					return { ok: false, reason: "unknown-capability" };
 				}
@@ -863,6 +899,97 @@
 			}
 		}
 
+		// ---- user-supplied capability adapters (high risk only) -----------------
+		function petIsHighCapability(cap) {
+			return typeof cap === "string" && PET_HIGH_CAPS.indexOf(cap) >= 0;
+		}
+
+		function petNormalizeCapabilityAdapter(candidate) {
+			try {
+				if (candidate === null || typeof candidate !== "object") return null;
+				const id = typeof candidate.id === "string" ? candidate.id.trim().slice(0, 64) : "";
+				if (id === "" || typeof candidate.run !== "function") return null;
+				return { id, run: candidate.run };
+			} catch (error) {
+				return null;
+			}
+		}
+
+		/**
+		 * Register (or replace) the adapter for one HIGH-risk capability. Granting the
+		 * capability is a separate user action, so registering an adapter alone never
+		 * makes anything callable. Adapters are memory-only by design: this skin does
+		 * not persist executable functions, and a reload clears them (the granted
+		 * permission bits persist separately).
+		 */
+		function petSetCapabilityAdapter(cap, adapter) {
+			try {
+				const id = typeof cap === "string" ? cap : "";
+				if (petIsHighCapability(id) === false) return { ok: false, reason: "not-adapter-capability" };
+				const normalized = petNormalizeCapabilityAdapter(adapter);
+				if (normalized === null) return { ok: false, reason: "invalid-adapter" };
+				petCapabilityAdapters[id] = normalized;
+				return { ok: true, cap: id, adapterId: normalized.id };
+			} catch (error) {
+				note("pet-brain:set-capability-adapter", error);
+				return { ok: false, reason: "internal-error" };
+			}
+		}
+
+		function petClearCapabilityAdapter(cap) {
+			try {
+				const id = typeof cap === "string" ? cap : "";
+				if (petIsHighCapability(id) === false) return { ok: false, reason: "not-adapter-capability" };
+				if (Object.prototype.hasOwnProperty.call(petCapabilityAdapters, id)) delete petCapabilityAdapters[id];
+				return { ok: true, cap: id };
+			} catch (error) {
+				note("pet-brain:clear-capability-adapter", error);
+				return { ok: false, reason: "internal-error" };
+			}
+		}
+
+		/**
+		 * Invoke one HIGH-risk capability through its user-supplied adapter. Gate order
+		 * is the permission model in code: capability granted → brain not paused →
+		 * adapter registered. Failure reasons are explicit (`permission`, `paused`,
+		 * `adapter-missing`, `adapter-error`) and every gated attempt writes one audit
+		 * record with `action:"capability"` (metadata only, never the payload text).
+		 * Success returns `{ ok:true, adapterId, result }` with `result` unchanged.
+		 */
+		async function petInvokeCapability(cap, input) {
+			const id = typeof cap === "string" ? cap : "";
+			try {
+				if (petIsHighCapability(id) === false) return { ok: false, reason: "not-adapter-capability" };
+				const chars = typeof input === "string" ? input.length : undefined;
+				if (petInstalled !== true || petGranted(id) !== true) {
+					petAudit("capability", id, false, { reason: "permission", chars });
+					return { ok: false, reason: "permission" };
+				}
+				if (petPaused === true) {
+					petAudit("capability", id, false, { reason: "paused", chars });
+					return { ok: false, reason: "paused" };
+				}
+				const adapter = Object.prototype.hasOwnProperty.call(petCapabilityAdapters, id) ? petCapabilityAdapters[id] : null;
+				if (adapter === null) {
+					petAudit("capability", id, false, { reason: "adapter-missing", chars });
+					return { ok: false, reason: "adapter-missing" };
+				}
+				try {
+					let result = adapter.run(input);
+					if (result !== null && typeof result === "object" && typeof result.then === "function") result = await result;
+					petAudit("capability", id, true, { source: "adapter", chars });
+					return { ok: true, adapterId: adapter.id, result };
+				} catch (error) {
+					note("pet-brain:capability-run", error);
+					petAudit("capability", id, false, { reason: "adapter-error", source: "adapter", chars });
+					return { ok: false, reason: "adapter-error" };
+				}
+			} catch (error) {
+				note("pet-brain:capability", error);
+				return { ok: false, reason: "internal-error" };
+			}
+		}
+
 		// ---- chat / say ---------------------------------------------------------
 		function petChatDenied(reason) {
 			petAudit("chat", "chat", false, { reason, source: "local" });
@@ -1132,6 +1259,7 @@
 				petPaused = petLoadPause();
 				petAi = petLoadAi();
 				petAdapter = null;
+				petCapabilityAdapters = {};
 				petTurns = 0;
 				petTodayTurns = 0;
 				petTodayKey = petDayKey(Date.now());
@@ -1150,6 +1278,9 @@
 					say: (text) => petSay(text),
 					setLLM: (adapter) => petSetLLM(adapter),
 					clearLLM: () => petClearLLM(),
+					setCapabilityAdapter: (cap, adapter) => petSetCapabilityAdapter(cap, adapter),
+					clearCapabilityAdapter: (cap) => petClearCapabilityAdapter(cap),
+					invokeCapability: (cap, input) => petInvokeCapability(cap, input),
 					pause: () => petPause(),
 					resume: () => petResume(),
 					audit: (limit) => petAuditRead(limit),

@@ -137,14 +137,24 @@
 				"hub.ai.reason.internal": "内部错误",
 				"hub.ai.reason.default": "暂时不能聊",
 				"hub.perm.title": "权限总览",
-				"hub.perm.hint": "只有白名单内的能力可用；7 项高风险能力永久禁止，不可授权。",
+				"hub.perm.hint": "安全与需确认能力可直接管理；6 项高风险能力默认关闭、可显式授权（皮肤不内置实现，需你另行提供适配器）；驱动 DSH 永远禁止。",
 				"hub.perm.risk.safe": "安全",
-				"hub.perm.risk.medium": "敏感",
+				"hub.perm.risk.medium": "需确认",
+				"hub.perm.risk.high": "高风险",
 				"hub.perm.risk.forbidden": "永久禁止",
 				"hub.perm.granted": "已授权",
 				"hub.perm.notGranted": "未授权",
 				"hub.perm.grant": "授权",
+				"hub.perm.grantHigh": "授权（需确认）",
+				"hub.perm.confirmHigh": "再次点击确认",
+				"hub.perm.highWarning": "高风险能力本身不内置实现：只有你在控制台/扩展里注册了对应能力适配器后，桌宠才可能在已授权时调用；每次调用都会审计，可随时撤销。驱动 DSH 永远禁止。",
+				"hub.perm.mediumNote": "该能力需要显式同意；再次点击确认后生效。",
 				"hub.perm.revoke": "撤销",
+				"hub.perm.revoked": "已撤销。",
+				"hub.perm.grantedNote": "已授权。",
+				"hub.perm.grantFailed": "授权失败：{reason}",
+				"hub.perm.revokeFailed": "撤销失败：{reason}",
+				"hub.perm.agentForbidden": "永久禁止（驱动 DSH）",
 				"hub.perm.unavailable": "权限模型未接入。",
 				"hub.perm.unknown": "未知能力",
 				"hub.cap.chat": "对话",
@@ -337,14 +347,24 @@
 				"hub.ai.reason.internal": "Internal error",
 				"hub.ai.reason.default": "Not available right now",
 				"hub.perm.title": "Permissions",
-				"hub.perm.hint": "Only allowlisted capabilities work; seven high-risk ones are permanently denied.",
+				"hub.perm.hint": "Safe and confirm-only capabilities can be managed here; the six high-risk capabilities are off by default and can be explicitly allowed (the skin ships no implementation; you must provide an adapter); driving DSH stays permanently denied.",
 				"hub.perm.risk.safe": "Safe",
-				"hub.perm.risk.medium": "Sensitive",
+				"hub.perm.risk.medium": "Needs confirmation",
+				"hub.perm.risk.high": "High risk",
 				"hub.perm.risk.forbidden": "Permanently denied",
 				"hub.perm.granted": "Allowed",
 				"hub.perm.notGranted": "Not allowed",
 				"hub.perm.grant": "Allow",
+				"hub.perm.grantHigh": "Allow (confirm)",
+				"hub.perm.confirmHigh": "Click again to confirm",
+				"hub.perm.highWarning": "High-risk capabilities have no built-in implementation: the companion can only use them once you register an adapter in the console or an extension; every call is audited and you can revoke anytime. Driving DSH stays permanently denied.",
+				"hub.perm.mediumNote": "This capability needs explicit consent; click again to confirm.",
 				"hub.perm.revoke": "Revoke",
+				"hub.perm.revoked": "Revoked.",
+				"hub.perm.grantedNote": "Allowed.",
+				"hub.perm.grantFailed": "Could not allow: {reason}",
+				"hub.perm.revokeFailed": "Could not revoke: {reason}",
+				"hub.perm.agentForbidden": "Permanently denied (drives DSH)",
 				"hub.perm.unavailable": "Permission model unavailable.",
 				"hub.perm.unknown": "Unknown capability",
 				"hub.cap.chat": "Chat",
@@ -451,6 +471,7 @@
 		const HUB_RISK_KEYS = {
 			safe: "hub.perm.risk.safe",
 			medium: "hub.perm.risk.medium",
+			high: "hub.perm.risk.high",
 			forbidden: "hub.perm.risk.forbidden",
 		};
 		const HUB_CAP_KEYS = {
@@ -714,6 +735,8 @@
 			// The bridge returns the session catalog from refreshSessions() (status keeps
 			// only the connected session), so cache the last successful listing here.
 			let agentSessionsCache = [];
+			// v1.4.0 permission rows that are armed for their second consent click.
+			const permConfirmPending = new Map();
 			const logEntries = [];
 
 			const setLastError = (stage, error) => {
@@ -746,6 +769,7 @@
 				agentPermPending = false;
 				agentBusy = false;
 				chatBusy = false;
+				permConfirmPending.clear();
 				const win = hubBrowserWindow();
 				if (timer !== 0) {
 					if (win !== null) win.clearInterval(timer);
@@ -1212,57 +1236,119 @@
 				setAiNote(TL_T("hub.ai.llm.confirm"));
 				return false;
 			};
+			const setPermStatus = (text) => {
+				if (ui !== null && ui.permStatus !== null && ui.permStatus !== undefined) ui.permStatus.textContent = text;
+			};
+			/**
+			 * v1.4.0 permission board: safe rows toggle directly, medium/high rows arm on
+			 * the first click and only grant with the explicit consent token on the second
+			 * click; `agent` (driving DSH) stays permanently denied and read-only.
+			 */
 			const refreshPermissions = (rows) => {
 				if (ui === null) return;
 				const box = ui.permRows;
 				box.textContent = "";
+				let hasHigh = false;
 				if (!Array.isArray(rows) || rows.length === 0) {
 					box.appendChild(hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-perm-empty": "" }, TL_T("hub.perm.unavailable")));
+					if (ui.permHighWarning !== null && ui.permHighWarning !== undefined) ui.permHighWarning.hidden = true;
 					return;
 				}
 				const seen = new Set();
 				for (const row of rows) {
 					if (row === null || typeof row !== "object" || typeof row.id !== "string" || seen.has(row.id)) continue;
 					seen.add(row.id);
-					const risk = row.risk === "forbidden" ? "forbidden" : row.risk === "medium" ? "medium" : "safe";
+					const risk = row.risk === "forbidden" ? "forbidden" : row.risk === "high" ? "high" : row.risk === "medium" ? "medium" : "safe";
+					if (risk === "high") hasHigh = true;
 					const line = hubCreate("div", { className: "tl-hub-perm-row", "data-tl-hub-perm-row": row.id, "data-risk": risk });
 					line.appendChild(hubCreate("span", { className: "tl-hub-perm-name" }, TL_T(HUB_CAP_KEYS[row.id] ?? "hub.perm.unknown")));
 					line.appendChild(hubCreate("span", { className: "tl-hub-perm-risk", "data-risk": risk }, TL_T(HUB_RISK_KEYS[risk])));
 					if (risk === "forbidden") {
-						line.appendChild(hubCreate("span", { className: "tl-hub-perm-state", "data-tl-hub-perm-state": "forbidden" }, TL_T("hub.perm.risk.forbidden")));
-					} else {
-						line.appendChild(hubCreate("span", { className: "tl-hub-perm-state" }, row.granted === true ? TL_T("hub.perm.granted") : TL_T("hub.perm.notGranted")));
-						const granted = row.granted === true;
-						const button = hubCreate(
-							"button",
-							{
-								type: "button",
-								className: "tl-hub-btn tl-hub-perm-btn",
-								"data-tl-hub-perm-toggle": row.id,
-								disabled: row.grantable === false,
-							},
-							granted ? TL_T("hub.perm.revoke") : TL_T("hub.perm.grant"),
-						);
-						if (row.grantable !== false) button.addEventListener("click", () => runAsync(() => togglePermission(row.id, granted)));
+						// v1.4.0: driving DSH is the only permanently denied capability.
+						const denied = row.id === "agent" ? TL_T("hub.perm.agentForbidden") : TL_T("hub.perm.risk.forbidden");
+						line.appendChild(hubCreate("span", { className: "tl-hub-perm-state", "data-tl-hub-perm-state": "forbidden" }, denied));
+						box.appendChild(line);
+						continue;
+					}
+					const granted = row.granted === true;
+					if (granted === true) permConfirmPending.delete(row.id);
+					line.appendChild(hubCreate("span", { className: "tl-hub-perm-state" }, granted ? TL_T("hub.perm.granted") : TL_T("hub.perm.notGranted")));
+					const grantable = row.grantable !== false;
+					const pending = permConfirmPending.get(row.id) === true;
+					if (granted === true) {
+						const button = hubCreate("button", { type: "button", className: "tl-hub-btn tl-hub-perm-btn", "data-tl-hub-perm-revoke": row.id }, TL_T("hub.perm.revoke"));
+						if (grantable) button.addEventListener("click", () => runAsync(() => revokePermission(row.id)));
+						else button.disabled = true;
 						line.appendChild(button);
+					} else if (grantable) {
+						const label = pending === true ? TL_T("hub.perm.confirmHigh") : risk === "safe" ? TL_T("hub.perm.grant") : TL_T("hub.perm.grantHigh");
+						const button = hubCreate("button", { type: "button", className: "tl-hub-btn tl-hub-perm-btn", "data-tl-hub-perm-grant": row.id }, label);
+						button.addEventListener("click", () => runAsync(() => requestPermissionGrant(row.id, risk)));
+						line.appendChild(button);
+						if (pending === true && (risk === "medium" || risk === "high")) {
+							line.appendChild(
+								hubCreate(
+									"span",
+									{ className: "tl-hub-perm-note", "data-tl-hub-perm-note": row.id },
+									risk === "high" ? TL_T("hub.perm.highWarning") : TL_T("hub.perm.mediumNote"),
+								),
+							);
+						}
 					}
 					box.appendChild(line);
 				}
+				if (ui.permHighWarning !== null && ui.permHighWarning !== undefined) ui.permHighWarning.hidden = hasHigh !== true;
 			};
-			const togglePermission = async (id, granted) => {
+			const requestPermissionGrant = async (id, risk) => {
 				const pet = hubPetBrain();
-				if (pet === null) return;
-				if (granted === true) {
-					await hubTry(async () => pet.revoke?.(id), null, "perm-revoke");
+				if (pet === null || typeof pet.grant !== "function") return;
+				if (risk !== "safe" && permConfirmPending.get(id) !== true) {
+					// First click only arms the confirmation; nothing is granted yet.
+					permConfirmPending.set(id, true);
+					setPermStatus(risk === "high" ? TL_T("hub.perm.highWarning") : TL_T("hub.perm.mediumNote"));
 					refreshAi();
 					return;
 				}
-				if (id === "llm" && confirmLlmGrant() !== true) {
+				permConfirmPending.delete(id);
+				const options = risk === "safe" ? undefined : { consent: "user-explicit" };
+				let result = null;
+				try {
+					result = await pet.grant(id, options);
+				} catch (error) {
+					setLastError("perm-grant", error);
+					setPermStatus(TL_T("hub.perm.grantFailed", { reason: String(error?.message ?? error) }));
 					refreshAi();
 					return;
 				}
-				const options = id === "llm" ? { consent: "user-explicit" } : undefined;
-				await hubTry(async () => pet.grant?.(id, options), null, "perm-grant");
+				if (result !== null && typeof result === "object" && result.ok === false) {
+					setPermStatus(
+						TL_T("hub.perm.grantFailed", { reason: hubReasonLabel(result.reason, HUB_AGENT_GRANT_REASON_KEYS, "hub.agent.reason.default") }),
+					);
+				} else {
+					setPermStatus(TL_T("hub.perm.grantedNote"));
+				}
+				refreshAi();
+			};
+			const revokePermission = async (id) => {
+				const pet = hubPetBrain();
+				if (pet === null || typeof pet.revoke !== "function") return;
+				permConfirmPending.delete(id);
+				let result = null;
+				try {
+					result = await pet.revoke(id);
+				} catch (error) {
+					setLastError("perm-revoke", error);
+					setPermStatus(TL_T("hub.perm.revokeFailed", { reason: String(error?.message ?? error) }));
+					refreshAi();
+					return;
+				}
+				if (result !== null && typeof result === "object" && result.ok === false) {
+					setPermStatus(
+						TL_T("hub.perm.revokeFailed", { reason: hubReasonLabel(result.reason, HUB_AGENT_GRANT_REASON_KEYS, "hub.agent.reason.default") }),
+					);
+				} else {
+					setPermStatus(TL_T("hub.perm.revoked"));
+				}
 				refreshAi();
 			};
 			const onLlmClick = async () => {
@@ -1912,13 +1998,18 @@
 				agentCard.appendChild(state.agentHint);
 				body.appendChild(agentCard);
 
-				// e) permission overview (safe / medium / 7 permanently denied)
+				// e) permission overview (v1.4.0: safe / medium / 6 grantable high / agent denied)
 				const permCard = hubCreate("section", { "data-tl-hub-perms": "", className: "tl-hub-card" }, [
 					hubCreate("h3", { className: "tl-hub-card-title" }, TL_T("hub.perm.title")),
 					hubCreate("p", { className: "tl-hub-note tl-hub-hint" }, TL_T("hub.perm.hint")),
 				]);
+				state.permHighWarning = hubCreate("p", { className: "tl-hub-perm-note", "data-tl-hub-perm-high-warning": "" }, TL_T("hub.perm.highWarning"));
+				state.permHighWarning.hidden = true;
+				permCard.appendChild(state.permHighWarning);
 				state.permRows = hubCreate("div", { className: "tl-hub-perm", "data-tl-hub-perm-list": "" });
 				permCard.appendChild(state.permRows);
+				state.permStatus = hubCreate("p", { className: "tl-hub-perm-note", "data-tl-hub-perm-status": "", role: "status" }, "");
+				permCard.appendChild(state.permStatus);
 				body.appendChild(permCard);
 
 				// f) audit + settings hint

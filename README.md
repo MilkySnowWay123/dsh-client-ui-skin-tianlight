@@ -6,6 +6,16 @@
 >
 > 包名 `@dsh-external/dsh-client-ui-skin-tianlight` · 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
 
+## v1.4.0 · 权限模型调整：驱动 DSH 仍永久禁止，其余高风险可授权
+
+`1.4.0`（26 片段；`BUILD`/`HOST_BUILD` = `1.4.0`）。细节见 [docs/RELEASE-1.4.0.md](docs/RELEASE-1.4.0.md)、权限规范 [docs/AI-PET-PERMISSIONS.md](docs/AI-PET-PERMISSIONS.md)：
+
+- **`agent`（驱动 DSH）保持强烈永久禁止**，代码层不可授予。
+- **network / files / shell / approve / message / install 六项改为 high risk、默认关闭、用户可显式授权/撤销**（中枢两步确认 + 高风险警告），不再硬性否决。
+- **皮肤仍零危险实现**：授权只是闸门；`setCapabilityAdapter(cap,{id,run})` 由你注册适配器后，`invokeCapability(cap,input)` 才会在“已授权 + 未暂停”时调用你的代码，并写审计 `action:"capability"`；不注册适配器则没有执行路径。
+- 权限总览按 safe/medium/high/forbidden 着色（6 个 high 行可授权，`agent` 行只读永久禁止）。
+- 静态链 build 26/26、test 67/67、audit 新守卫（高风险可授权适配器 / 仅 agent 硬禁）、css/verify/i18n 全绿；Node 冒烟在 v1.3 410 条基础上更新 + 新增高风险/适配器段。
+
 ## v1.3.0 · 角色入口收进桌宠（不再单独列出）
 
 `1.3.0`（`lib/client.js` **26 片段**；`BUILD`/`HOST_BUILD` = `1.3.0`）。细节见 [docs/RELEASE-1.3.0.md](docs/RELEASE-1.3.0.md)：
@@ -211,6 +221,7 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 
 ## 版本历史
 
+- **v1.4.0（2026-11-10）**：权限模型调整——「驱动 DSH」永久禁止；联网/文件/命令/代审批/代发消息/安装改为用户可显式授予的高风险权限（默认关、二次确认、可撤销、审计；皮肤不内置实现，需注册能力适配器才可调用）。详见 [docs/RELEASE-1.4.0.md](docs/RELEASE-1.4.0.md)。
 - **v1.3.0（2026-11-10）**：角色入口收进桌宠——删除设置页「角色 / 生活」与侧栏「角色」按钮，右键桌宠 / 桌宠菜单「角色中枢」为唯一入口；生活节奏设置并入中枢（26 片段）。详见 [docs/RELEASE-1.3.0.md](docs/RELEASE-1.3.0.md)。
 - **v1.2.0（2026-11-10）**：右键桌宠直达角色中枢；接入真实 DSH Agent（受控 `agentChat`：默认关、显式授权、仅用户手动提问、目标会话由用户选择、日≤10/≤500 字/60s/单飞、只 list/create/prompt/follow、审计+可断开、`agent` 自主执行仍永久禁止）。详见 [docs/RELEASE-1.2.0.md](docs/RELEASE-1.2.0.md)。
 - **v1.1.0（2026-11-10）**：角色中枢（侧栏入口 + 全屏面板：生活/专注/静音/玻璃/形象/记忆/AI/权限/审计）、AI 桌宠（本地大脑 + 可选用户授权 LLM 适配器 + 严格能力白名单与 7 项永久禁止 + 硬上限 + 审计 + 暂停开关）、形象支持本机直接上传图片/视频（≤32MiB）；无宿主路由改动。详见 [docs/RELEASE-1.1.0.md](docs/RELEASE-1.1.0.md) 与 [docs/AI-PET-PERMISSIONS.md](docs/AI-PET-PERMISSIONS.md)。

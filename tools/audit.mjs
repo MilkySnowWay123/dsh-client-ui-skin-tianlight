@@ -208,11 +208,26 @@ report(
   "pet permissions persist and LLM grants require explicit consent",
 )
 report(
-  ["agent", "network", "files", "shell", "approve", "message", "install"].every((cap) => source.includes(`"${cap}"`)) &&
-    source.includes("hard-denied")
+  source.includes("PET_HIGH_CAPS") &&
+    ["network", "files", "shell", "approve", "message", "install"].every((cap) => source.includes(`"${cap}"`)) &&
+    source.includes("setCapabilityAdapter")
     ? "PASS"
     : "FAIL",
-  "pet brain ships the seven hard-denied capabilities",
+  "six high-risk capabilities are user-grantable through adapters (not hard-denied)",
+)
+report(
+  (() => {
+    const match = source.match(/PET_FORBIDDEN_CAPS\s*=\s*\[([^\]]*)\]/)
+    const list = match === null ? "" : match[1]
+    return list.includes('"agent"') && !["network", "files", "shell", "approve", "message", "install"].some((cap) => list.includes(`"${cap}"`))
+      ? "PASS"
+      : "FAIL"
+  })(),
+  "driving DSH (agent) remains the only permanently forbidden capability",
+)
+report(
+  source.includes("invokeCapability") && source.includes("capability") ? "PASS" : "FAIL",
+  "capability adapters are permission-gated and audited",
 )
 report(
   source.includes('tianlight.pet.ai.v1') && source.includes("dailyLimit") ? "PASS" : "FAIL",

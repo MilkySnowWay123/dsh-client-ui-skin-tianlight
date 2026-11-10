@@ -2232,8 +2232,17 @@ body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-perm-row][data-risk="safe"] 
 body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-perm-row][data-risk="medium"] span:first-child {
 	color: var(--tl-warn, #e6a23c);
 }
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-perm-row][data-risk="high"] span:first-child {
+	color: var(--tl-bad, #c94f4f);
+	font-weight: 700;
+}
 body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-perm-row][data-risk="forbidden"] span:first-child {
 	color: var(--tl-bad, #f56c6c);
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-perm-note] {
+	margin: 0;
+	font: 400 11px/1.5 var(--ds-font-family, system-ui);
+	color: var(--tl-warn, #c78117);
 }
 body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-audit] {
 	display: flex;
