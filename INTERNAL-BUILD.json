@@ -1,7 +1,7 @@
 {
-  "publicVersion": "v1.0.2",
-  "internalVersion": "v1.6.3",
-  "internalTag": "v1.6.3",
-  "internalClientSha256": "926f6f173cf1d31afe41735a83d04bc1e0fdf3c4d82e31eb16349603c4f73d45",
+  "publicVersion": "v1.0.3",
+  "internalVersion": "v1.6.4",
+  "internalTag": "v1.6.4",
+  "internalClientSha256": "2bd062c1bd978b2c6fff3d246524b23c8d847c6123ce41dc9acbe76a740367bc",
   "note": "The public repository is versioned by its public release label. The same code was built internally as internalVersion; its verifier evidence and RELEASE docs are kept under docs/."
 }
