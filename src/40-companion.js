@@ -716,6 +716,41 @@
 				if (menuOpen) closeMenu();
 				else openMenu();
 			});
+			/**
+			 * v1.2.0: right-clicking the cat is the fast path into the role hub. The
+			 * event is consumed so the host page context menu never appears; when the
+			 * hub is not installed (or refuses to open) the original interaction menu
+			 * opens instead, so the gesture is never a silent no-op. This path never
+			 * touches the left-button drag/click state.
+			 */
+			const onContextMenu = (event) => {
+				if (event !== null && event !== undefined) {
+					try {
+						if (typeof event.preventDefault === "function") event.preventDefault();
+						if (typeof event.stopPropagation === "function") event.stopPropagation();
+					} catch (error) {
+						note("companion:contextmenu-event", error);
+					}
+				}
+				let opened = false;
+				try {
+					const hub = globalThis.tianlightRoleHub;
+					if (hub !== null && hub !== undefined && typeof hub.open === "function") {
+						opened = hub.open() !== false;
+					}
+				} catch (error) {
+					opened = false;
+					note("companion:contextmenu-hub", error);
+				}
+				if (opened === true) return;
+				try {
+					openMenu();
+					wake();
+				} catch (error) {
+					note("companion:contextmenu-menu", error);
+				}
+			};
+			root.addEventListener("contextmenu", onContextMenu);
 
 			menu.addEventListener("click", (event) => {
 				const target = event.target;
@@ -832,6 +867,7 @@
 				window.removeEventListener("resize", onResize);
 				document.removeEventListener("pointerdown", onDocumentPointerDown, true);
 				document.removeEventListener("tianlight:pet-media", onPetMedia);
+				root.removeEventListener("contextmenu", onContextMenu);
 				try {
 					stopVideo();
 				} catch (error) {

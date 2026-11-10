@@ -212,6 +212,13 @@
 							return null;
 						}
 					},
+					agent: () => {
+						try {
+							return globalThis.tianlightPetAgent?.status?.() ?? null;
+						} catch {
+							return null;
+						}
+					},
 					hub: () => {
 						try {
 							return globalThis.tianlightRoleHub?.status?.() ?? null;
@@ -311,6 +318,7 @@
 				// allowlist, an optional user-granted LLM adapter with hard budgets, an
 				// audit log and a kill switch. The hub is the visible control plane.
 				install("ui-skin-tianlight: pet brain", () => installPetBrain());
+				install("ui-skin-tianlight: pet agent", () => installPetAgent(ctx));
 				install("ui-skin-tianlight: role hub", () => installRoleHub(ctx));
 
 				// ---- keyboard/a11y is always on and installs AFTER the panel host exists ----

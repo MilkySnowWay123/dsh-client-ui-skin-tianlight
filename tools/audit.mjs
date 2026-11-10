@@ -231,6 +231,31 @@ report(
   "role hub exposes the full-screen control overlay",
 )
 
+// ---- 10. v1.2.0 controlled DSH Agent bridge ----
+report(source.includes("globalThis.tianlightPetAgent") ? "PASS" : "FAIL", "pet agent exposes globalThis.tianlightPetAgent")
+report(
+  source.includes('"remote.session"') && source.includes(".prompt(") ? "PASS" : "FAIL",
+  "pet agent talks to the DSH agent through remote.session prompt",
+)
+report(
+  source.includes("agentChat") && source.includes("PET_AGENT_DAILY_CAP") ? "PASS" : "FAIL",
+  "agent bridge is gated by the agentChat capability and a daily cap",
+)
+report(
+  source.includes("PET_AGENT_MAX_CHARS") && source.includes("PET_AGENT_TIMEOUT_MS") ? "PASS" : "FAIL",
+  "agent bridge bounds prompt length and reply time",
+)
+report(
+  !source.includes("session.cancel") && !source.includes("session.approve") && !source.includes("session.attachment")
+    ? "PASS"
+    : "FAIL",
+  "agent bridge never cancels, approves, or attaches by itself",
+)
+report(
+  source.includes("recordExternal") && source.includes("tianlight.pet.agent.v1") ? "PASS" : "FAIL",
+  "agent prompts are audited and budgeted in localStorage",
+)
+
 console.log(issues === 0 ? 'AUDIT: no blocking issues' : `AUDIT: ${issues} blocking issue(s)`)
 process.exitCode = issues === 0 ? 0 : 1
 

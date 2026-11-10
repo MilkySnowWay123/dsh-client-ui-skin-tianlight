@@ -2319,6 +2319,21 @@ body[data-dsh-tianlight] [data-tl-hub] .tl-hub-badge {
 	font: 600 10px/1.4 var(--ds-font-family, system-ui);
 	background: var(--tl-accent-soft, rgba(255, 255, 255, 0.14));
 }
+/* v1.2.0 controlled DSH Agent card inside the role hub. */
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-agent] {
+	border-color: var(--tl-line-strong, rgba(255, 255, 255, 0.28));
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-agent-status] {
+	font: 500 12px/1.5 var(--ds-font-family, system-ui);
+	white-space: pre-wrap;
+	color: var(--tl-ink-soft, var(--tl-ink));
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-agent-hint] {
+	color: var(--tl-warn, #c78117);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-log > p[data-source="agent"] {
+	color: var(--tl-ok, #2f8f4e);
+}
 `;
 
 		/** Injected once per page; every rule is scoped to the skin's body attribute. */

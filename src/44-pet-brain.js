@@ -23,6 +23,12 @@
 		 *     current user sentence (never DSH data/history), output is sanitized, the
 		 *     call is bounded by 12s/600 chars and daily/minute quotas. Any failure
 		 *     falls back to the local brain and is audited as `llm-fallback`;
+		 *   - `agentChat` is only a permission bit plus an audit source for the
+		 *     separate src/48-pet-agent.js bridge (that bridge owns the injected
+		 *     client `remote.session` call and sends only user-typed prompts to a
+		 *     user-selected session). The brain itself still has no DSH access, and
+		 *     the forbidden `agent` capability — the pet driving tasks/tools by
+		 *     itself — remains permanently denied;
 		 *   - there are no DOM listeners and no persistent timers. The only timer is
 		 *     the per-call LLM timeout, which is cleared in a `finally` block.
 		 *
@@ -34,9 +40,23 @@
 		const PET_PAUSE_KEY = "tianlight.pet.pause.v1";
 		const PET_AI_KEY = "tianlight.pet.ai.v1";
 		const PET_SAFE_CAPS = ["chat", "memory", "focus", "media", "remind", "proactive"];
-		const PET_MEDIUM_CAPS = ["llm"];
+		/**
+		 * `llm` lets the user-provided adapter answer local chat; `agentChat` lets the
+		 * separate src/48-pet-agent.js bridge forward a user-typed prompt to a
+		 * user-selected DSH session through the injected client `remote.session`.
+		 * Both are medium risk, start OFF and need explicit user consent. The
+		 * forbidden `agent` capability means the pet driving tasks/tools on its own —
+		 * that is a different thing and stays permanently denied.
+		 */
+		const PET_MEDIUM_CAPS = ["llm", "agentChat"];
+		/** Capabilities that additionally need `{ consent: "user-explicit" }` to grant. */
+		const PET_CONSENT_CAPS = ["llm", "agentChat"];
 		/** Permanent denials: not "off by default", but impossible to grant. */
 		const PET_FORBIDDEN_CAPS = ["agent", "network", "files", "shell", "approve", "message", "install"];
+		/** Valid capability ids for external audit records: the full 15-row matrix. */
+		const PET_AUDIT_CAPS = [...PET_SAFE_CAPS, ...PET_MEDIUM_CAPS, ...PET_FORBIDDEN_CAPS];
+		/** Valid actions for audit records (internal ring and external agent records). */
+		const PET_AUDIT_ACTIONS = ["chat", "say", "grant", "revoke", "llm", "pause", "resume", "proactive-check", "agent"];
 		const PET_DAILY_LIMIT_DEFAULT = 20;
 		const PET_DAILY_LIMIT_MAX = 50;
 		const PET_MINUTE_CALL_LIMIT = 3;
@@ -320,11 +340,12 @@
 
 		/**
 		 * Grant a capability. Forbidden capabilities and unknown ids are rejected
-		 * before any state is touched. `llm` additionally requires the UI's explicit
-		 * consent token — this is deliberately not something code can infer from
-		 * context. The consent token is a UI contract (defence against accidental
-		 * self-granting flows), not a cryptographic secret: the real boundary is that
-		 * `llm` starts OFF and no code path grants it without this call.
+		 * before any state is touched. `llm` and `agentChat` additionally require the
+		 * UI's explicit consent token — this is deliberately not something code can
+		 * infer from context. The consent token is a UI contract (defence against
+		 * accidental self-granting flows), not a cryptographic secret: the real
+		 * boundary is that both capabilities start OFF and no code path grants them
+		 * without this call.
 		 */
 		function petGrant(cap, options) {
 			try {
@@ -337,7 +358,7 @@
 					petAudit("grant", id, false, { reason: "unknown-capability" });
 					return { ok: false, reason: "unknown-capability" };
 				}
-				if (id === "llm") {
+				if (PET_CONSENT_CAPS.indexOf(id) >= 0) {
 					const consent =
 						options !== null && typeof options === "object"
 							? options.consent
@@ -515,6 +536,46 @@
 					.map((entry) => ({ ...entry }));
 			} catch (error) {
 				return [];
+			}
+		}
+
+		/**
+		 * External audit write path for the skin's own agent bridge
+		 * (src/48-pet-agent.js). Internal modules / audit use ONLY: this is the single
+		 * way the agent fragment can append its allow/deny decisions to the same ring
+		 * the brain and the role hub display. The record shape is validated strictly
+		 * (documented action set + the 15 capability ids) so a malformed or accidental
+		 * entry can never corrupt the ring or smuggle arbitrary payloads into it.
+		 * Invalid input returns `{ ok:false, reason:"invalid-audit" }` and writes
+		 * nothing; the ring keeps its 60-entry cap and newest-first read order.
+		 */
+		function petRecordExternal(entry) {
+			try {
+				if (entry === null || typeof entry !== "object" || Array.isArray(entry)) return { ok: false, reason: "invalid-audit" };
+				for (const key of Object.keys(entry)) {
+					if (key !== "action" && key !== "cap" && key !== "ok" && key !== "reason" && key !== "source" && key !== "chars") {
+						return { ok: false, reason: "invalid-audit" };
+					}
+				}
+				const action = typeof entry.action === "string" ? entry.action : "";
+				if (PET_AUDIT_ACTIONS.indexOf(action) < 0) return { ok: false, reason: "invalid-audit" };
+				const cap = typeof entry.cap === "string" ? entry.cap : "";
+				if (PET_AUDIT_CAPS.indexOf(cap) < 0) return { ok: false, reason: "invalid-audit" };
+				if (typeof entry.ok !== "boolean") return { ok: false, reason: "invalid-audit" };
+				if (entry.reason !== undefined && typeof entry.reason !== "string") return { ok: false, reason: "invalid-audit" };
+				if (entry.source !== undefined && typeof entry.source !== "string") return { ok: false, reason: "invalid-audit" };
+				if (entry.chars !== undefined && (typeof entry.chars !== "number" || Number.isFinite(entry.chars) === false || entry.chars < 0)) {
+					return { ok: false, reason: "invalid-audit" };
+				}
+				petAudit(action, cap, entry.ok === true, {
+					reason: typeof entry.reason === "string" && entry.reason !== "" ? entry.reason : undefined,
+					source: typeof entry.source === "string" && entry.source !== "" ? entry.source : undefined,
+					chars: typeof entry.chars === "number" ? entry.chars : undefined,
+				});
+				return { ok: true };
+			} catch (error) {
+				note("pet-brain:record-external", error);
+				return { ok: false, reason: "invalid-audit" };
 			}
 		}
 
@@ -1092,6 +1153,7 @@
 					pause: () => petPause(),
 					resume: () => petResume(),
 					audit: (limit) => petAuditRead(limit),
+					recordExternal: (entry) => petRecordExternal(entry),
 					maybeProactive: (context) => petMaybeProactive(context),
 				};
 				globalThis.tianlightPet = api;

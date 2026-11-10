@@ -154,6 +154,59 @@
 				"hub.audit.unavailable": "审计未接入。",
 				"hub.audit.ok": "放行",
 				"hub.audit.deny": "拒绝",
+				"hub.cap.agentChat": "Agent 会话",
+				"hub.agent.title": "AI Agent（实验）",
+				"hub.agent.hint": "实验功能：只把你手动输入的这句话发到你选择的 DSH 会话；不会自动触发、不会代审批、不驱动工具。默认关闭，需显式授权。",
+				"hub.agent.status.unavailable": "Agent 通道不可用（未挂载或 remote.session 不可用）。",
+				"hub.agent.status.unauthorized": "未授权：先允许「Agent 会话」。",
+				"hub.agent.status.unconnected": "未连接会话",
+				"hub.agent.status.connected": "已连接：{title}",
+				"hub.agent.status.budget": "今日预算 {used}/{cap}",
+				"hub.agent.status.pending": "等待回复…",
+				"hub.agent.perm.grant": "授权 Agent 会话",
+				"hub.agent.perm.revoke": "撤销 Agent 授权",
+				"hub.agent.perm.confirm": "允许桌宠把你手动输入的这句话发送到 DSH 会话？只发送你输入的文本，不会自动触发，可随时撤销。",
+				"hub.agent.perm.confirmShort": "再次点击确认",
+				"hub.agent.perm.granted": "已授权 Agent 会话。",
+				"hub.agent.perm.revoked": "已撤销 Agent 授权。",
+				"hub.agent.perm.denied": "授权失败：{reason}",
+				"hub.agent.target.label": "目标会话",
+				"hub.agent.target.new": "新建桌宠会话",
+				"hub.agent.target.running": "运行中",
+				"hub.agent.connect": "连接",
+				"hub.agent.disconnect": "断开",
+				"hub.agent.open": "打开会话",
+				"hub.agent.connect.ok": "已连接：{title}",
+				"hub.agent.connect.failed": "连接失败：{reason}",
+				"hub.agent.disconnected": "已断开。",
+				"hub.agent.open.failed": "打开失败：{reason}",
+				"hub.agent.sent": "已发送到会话，点「打开会话」查看。",
+				"hub.agent.source": "Agent 会话",
+				"hub.agent.chat.failed": "Agent 发送失败：{reason}",
+				"hub.agent.busy": "处理中…",
+				"hub.agent.reason.unavailable": "通道不可用",
+				"hub.agent.reason.permission": "未授权 Agent 会话",
+				"hub.agent.reason.notConnected": "未连接会话",
+				"hub.agent.reason.paused": "AI 已暂停",
+				"hub.agent.reason.budget": "今日 Agent 预算已用完",
+				"hub.agent.reason.rateLimited": "太快了，稍后再试",
+				"hub.agent.reason.invalidInput": "输入不合法",
+				"hub.agent.reason.sendFailed": "发送失败",
+				"hub.agent.reason.unknownCap": "大脑版本不支持该权限",
+				"hub.agent.reason.hardDenied": "该权限被永久禁止",
+				"hub.agent.reason.consent": "需要显式同意",
+				"hub.agent.reason.sessionRequired": "先选择一个会话",
+				"hub.agent.reason.unknownSession": "会话不存在或不在此列表",
+				"hub.agent.reason.createFailed": "创建会话失败",
+				"hub.agent.reason.connectFailed": "连接失败",
+				"hub.agent.reason.dailyQuota": "今日 Agent 预算已用完",
+				"hub.agent.reason.busy": "上一条还在发送中",
+				"hub.agent.reason.promptRejected": "会话拒绝了这条发送",
+				"hub.agent.reason.promptFailed": "发送到会话失败",
+				"hub.agent.reason.listFailed": "会话列表不可用",
+				"hub.agent.reason.workspaceUnavailable": "当前没有可用工作区",
+				"hub.agent.reason.internal": "内部错误",
+				"hub.agent.reason.default": "暂时不能发送",
 			},
 			en: {
 				"hub.sidebar.label": "Role",
@@ -288,6 +341,59 @@
 				"hub.audit.unavailable": "Audit unavailable.",
 				"hub.audit.ok": "ok",
 				"hub.audit.deny": "denied",
+				"hub.cap.agentChat": "Agent chat",
+				"hub.agent.title": "AI Agent (experimental)",
+				"hub.agent.hint": "Experimental: only the sentence you type here is sent to the DSH session you pick; nothing is triggered automatically, nothing approves, no tools are driven. Off by default; explicit consent required.",
+				"hub.agent.status.unavailable": "Agent channel unavailable (not mounted or remote.session is unavailable).",
+				"hub.agent.status.unauthorized": "Not allowed yet: allow Agent chat first.",
+				"hub.agent.status.unconnected": "No session connected",
+				"hub.agent.status.connected": "Connected: {title}",
+				"hub.agent.status.budget": "Daily budget {used}/{cap}",
+				"hub.agent.status.pending": "Waiting for a reply…",
+				"hub.agent.perm.grant": "Allow agent chat",
+				"hub.agent.perm.revoke": "Revoke agent access",
+				"hub.agent.perm.confirm": "Allow the companion to send the sentence you type to a DSH session? Only your typed text is sent, nothing is triggered automatically, and you can revoke anytime.",
+				"hub.agent.perm.confirmShort": "Click again to confirm",
+				"hub.agent.perm.granted": "Agent chat allowed.",
+				"hub.agent.perm.revoked": "Agent access revoked.",
+				"hub.agent.perm.denied": "Could not allow: {reason}",
+				"hub.agent.target.label": "Target session",
+				"hub.agent.target.new": "New pet session",
+				"hub.agent.target.running": "running",
+				"hub.agent.connect": "Connect",
+				"hub.agent.disconnect": "Disconnect",
+				"hub.agent.open": "Open session",
+				"hub.agent.connect.ok": "Connected: {title}",
+				"hub.agent.connect.failed": "Could not connect: {reason}",
+				"hub.agent.disconnected": "Disconnected.",
+				"hub.agent.open.failed": "Could not open: {reason}",
+				"hub.agent.sent": "Sent to the session; use Open session to read the reply.",
+				"hub.agent.source": "Agent session",
+				"hub.agent.chat.failed": "Agent send failed: {reason}",
+				"hub.agent.busy": "Working…",
+				"hub.agent.reason.unavailable": "Channel unavailable",
+				"hub.agent.reason.permission": "Agent chat not allowed",
+				"hub.agent.reason.notConnected": "No session connected",
+				"hub.agent.reason.paused": "AI is paused",
+				"hub.agent.reason.budget": "Daily agent budget reached",
+				"hub.agent.reason.rateLimited": "Too fast; try later",
+				"hub.agent.reason.invalidInput": "Invalid input",
+				"hub.agent.reason.sendFailed": "Send failed",
+				"hub.agent.reason.unknownCap": "This brain build does not know the capability",
+				"hub.agent.reason.hardDenied": "This capability is permanently denied",
+				"hub.agent.reason.consent": "Explicit consent required",
+				"hub.agent.reason.sessionRequired": "Pick a session first",
+				"hub.agent.reason.unknownSession": "Session missing or not in the list",
+				"hub.agent.reason.createFailed": "Could not create the session",
+				"hub.agent.reason.connectFailed": "Connection failed",
+				"hub.agent.reason.dailyQuota": "Daily agent budget reached",
+				"hub.agent.reason.busy": "The previous message is still sending",
+				"hub.agent.reason.promptRejected": "The session rejected this prompt",
+				"hub.agent.reason.promptFailed": "Could not send to the session",
+				"hub.agent.reason.listFailed": "Session list unavailable",
+				"hub.agent.reason.workspaceUnavailable": "No workspace is available",
+				"hub.agent.reason.internal": "Internal error",
+				"hub.agent.reason.default": "Not available right now",
 			},
 		});
 
@@ -330,6 +436,7 @@
 			remind: "hub.cap.remind",
 			proactive: "hub.cap.proactive",
 			llm: "hub.cap.llm",
+			agentChat: "hub.cap.agentChat",
 			agent: "hub.cap.agent",
 			network: "hub.cap.network",
 			files: "hub.cap.files",
@@ -354,6 +461,42 @@
 			"companion-off": "hub.ai.reason.companionOff",
 			"internal-error": "hub.ai.reason.internal",
 		};
+		/** `[data-tl-hub-agent-target]` value for "create a new pet session". */
+		const HUB_AGENT_TARGET_NEW = "__new__";
+		const HUB_AGENT_REASON_KEYS = {
+			unavailable: "hub.agent.reason.unavailable",
+			"agent-unavailable": "hub.agent.reason.unavailable",
+			"not-authorized": "hub.agent.reason.permission",
+			"agent-permission": "hub.agent.reason.permission",
+			permission: "hub.agent.reason.permission",
+			"not-connected": "hub.agent.reason.notConnected",
+			"no-session": "hub.agent.reason.notConnected",
+			"session-required": "hub.agent.reason.sessionRequired",
+			"unknown-session": "hub.agent.reason.unknownSession",
+			"create-failed": "hub.agent.reason.createFailed",
+			"connect-failed": "hub.agent.reason.connectFailed",
+			"list-failed": "hub.agent.reason.listFailed",
+			"workspace-unavailable": "hub.agent.reason.workspaceUnavailable",
+			"daily-quota": "hub.agent.reason.dailyQuota",
+			budget: "hub.agent.reason.budget",
+			quota: "hub.agent.reason.budget",
+			busy: "hub.agent.reason.busy",
+			paused: "hub.agent.reason.paused",
+			"rate-limit": "hub.agent.reason.rateLimited",
+			"rate-limited": "hub.agent.reason.rateLimited",
+			"invalid-input": "hub.agent.reason.invalidInput",
+			empty: "hub.agent.reason.invalidInput",
+			"prompt-rejected": "hub.agent.reason.promptRejected",
+			"prompt-failed": "hub.agent.reason.promptFailed",
+			"send-failed": "hub.agent.reason.sendFailed",
+			"internal-error": "hub.agent.reason.internal",
+		};
+		const HUB_AGENT_GRANT_REASON_KEYS = {
+			"unknown-capability": "hub.agent.reason.unknownCap",
+			"hard-denied": "hub.agent.reason.hardDenied",
+			"consent-required": "hub.agent.reason.consent",
+			"internal-error": "hub.agent.reason.internal",
+		};
 		/** Set by installRoleHub; the React sidebar button and console API call it. */
 		let roleHubOpenImpl = null;
 
@@ -368,6 +511,15 @@
 		function hubPetBrain() {
 			try {
 				return globalThis.tianlightPet !== null && globalThis.tianlightPet !== undefined ? globalThis.tianlightPet : null;
+			} catch {
+				return null;
+			}
+		}
+
+		/** The v1.2.0 experimental DSH Agent bridge (src/48-pet-agent.js); optional. */
+		function hubPetAgent() {
+			try {
+				return globalThis.tianlightPetAgent !== null && globalThis.tianlightPetAgent !== undefined ? globalThis.tianlightPetAgent : null;
 			} catch {
 				return null;
 			}
@@ -399,6 +551,17 @@
 				if (stage !== undefined) note(stage, error);
 				return fallback;
 			}
+		}
+
+		/** Is the medium `agentChat` capability granted? Agent status is authoritative. */
+		function hubAgentPermission(status) {
+			if (status !== null && typeof status === "object" && typeof status.permission === "boolean") return status.permission;
+			const pet = hubPetBrain();
+			if (pet === null || typeof pet.permissions !== "function") return false;
+			const rows = hubTry(() => pet.permissions(), null, "agent-permission");
+			if (!Array.isArray(rows)) return false;
+			const row = rows.find((entry) => entry !== null && typeof entry === "object" && entry.id === "agentChat");
+			return row !== null && row !== undefined && row.granted === true;
 		}
 
 		function hubPeriodLabel(period) {
@@ -543,6 +706,14 @@
 			let chatBusy = false;
 			let llmPending = false;
 			let lastError = "";
+			// v1.2.0 experimental agent card state (all read-through, no second source).
+			let agentStatusCache = null;
+			let agentPermPending = false;
+			let agentBusy = false;
+			let agentTargetSignature = "";
+			// The bridge returns the session catalog from refreshSessions() (status keeps
+			// only the connected session), so cache the last successful listing here.
+			let agentSessionsCache = [];
 			const logEntries = [];
 
 			const setLastError = (stage, error) => {
@@ -572,6 +743,8 @@
 			};
 			const close = () => {
 				llmPending = false;
+				agentPermPending = false;
+				agentBusy = false;
 				chatBusy = false;
 				const win = hubBrowserWindow();
 				if (timer !== 0) {
@@ -597,6 +770,9 @@
 				}
 				ui = null;
 				openState = false;
+				// Reopening the hub builds a fresh <select>; the cached render signature
+				// must not suppress the first fill (v1.2 A73 regression guard).
+				agentTargetSignature = "";
 				try {
 					if (typeof document !== "undefined" && document !== null && document.body !== null && document.body !== undefined) {
 						document.body.removeAttribute("data-tl-hub-open");
@@ -902,17 +1078,21 @@
 				for (const entry of logEntries) {
 					let text = "";
 					let role = "pet";
+					let source = "local";
 					if (entry.role === "user") {
 						role = "user";
+						source = "user";
 						text = TL_T("hub.ai.you") + ": " + String(entry.text ?? "");
 					} else if (entry.ok === true) {
-						const sourceKey = entry.source === "llm" ? "hub.ai.source.llm" : "hub.ai.source.local";
+						source = entry.source === "llm" ? "llm" : entry.source === "agent" ? "agent" : "local";
+						const sourceKey = source === "llm" ? "hub.ai.source.llm" : source === "agent" ? "hub.agent.source" : "hub.ai.source.local";
 						text = TL_T("hub.ai.pet") + " · " + TL_T(sourceKey) + ": " + String(entry.text ?? "");
 					} else {
 						role = "denied";
+						source = "denied";
 						text = TL_T("hub.ai.pet") + " · " + TL_T("hub.ai.source.denied") + ": " + hubReasonLabel(entry.reason, HUB_AI_REASON_KEYS, "hub.ai.reason.default");
 					}
-					box.appendChild(hubCreate("p", { className: "tl-hub-log-row", "data-tl-hub-log-row": role, "data-role": role }, text));
+					box.appendChild(hubCreate("p", { className: "tl-hub-log-row", "data-tl-hub-log-row": role, "data-role": role, "data-source": source }, text));
 				}
 			};
 			/**
@@ -1064,6 +1244,241 @@
 				refreshPermissions(rows);
 				renderAudit();
 			};
+			// ---- AI Agent card (experimental DSH session bridge, v1.2.0) -------------
+			const setAgentNote = (text) => {
+				if (ui !== null && ui.agentNote !== null && ui.agentNote !== undefined) ui.agentNote.textContent = text;
+			};
+			const renderAgentTargets = (sessions, status) => {
+				if (ui === null) return;
+				const select = ui.agentTarget;
+				const list = Array.isArray(sessions) ? sessions : [];
+				const signature = list
+					.map((session) =>
+						session !== null && typeof session === "object"
+							? String(session.id ?? "") + ":" + (session.running === true ? "1" : "0") + ":" + String(session.title ?? "")
+							: "",
+					)
+					.join("|");
+				if (signature === agentTargetSignature && select.children.length > 0) return;
+				agentTargetSignature = signature;
+				const previous = typeof select.value === "string" ? select.value : "";
+				select.textContent = "";
+				select.appendChild(hubCreate("option", { value: HUB_AGENT_TARGET_NEW }, TL_T("hub.agent.target.new")));
+				for (const session of list) {
+					if (session === null || typeof session !== "object" || typeof session.id !== "string" || session.id === "") continue;
+					const title = typeof session.title === "string" && session.title !== "" ? session.title : session.id.slice(0, 8);
+					const label = session.running === true ? title + " · " + TL_T("hub.agent.target.running") : title;
+					select.appendChild(hubCreate("option", { value: session.id }, label));
+				}
+				let next = HUB_AGENT_TARGET_NEW;
+				for (const option of select.children) {
+					if (previous !== "" && option.value === previous) {
+						next = previous;
+						break;
+					}
+				}
+				if (next === HUB_AGENT_TARGET_NEW && status !== null && typeof status === "object" && status.connected === true && typeof status.sessionId === "string") {
+					for (const option of select.children) {
+						if (option.value === status.sessionId) {
+							next = status.sessionId;
+							break;
+						}
+					}
+				}
+				select.value = next;
+			};
+			const cacheAgentSessions = (result) => {
+				if (result !== null && typeof result === "object" && result.ok === true && Array.isArray(result.sessions)) {
+					agentSessionsCache = result.sessions;
+				}
+			};
+			const refreshAgent = () => {
+				if (ui === null) return;
+				const agent = hubPetAgent();
+				const status = agent !== null && typeof agent.status === "function" ? hubTry(() => agent.status(), null, "agent-status") : null;
+				agentStatusCache = status !== null && typeof status === "object" ? status : null;
+				const available = agent !== null && agentStatusCache !== null && agentStatusCache.available === true;
+				const permission = available === true && hubAgentPermission(agentStatusCache) === true;
+				const connected = permission === true && agentStatusCache.connected === true;
+				let text = TL_T("hub.agent.status.unavailable");
+				if (available === true) {
+					if (permission !== true) text = TL_T("hub.agent.status.unauthorized");
+					else if (connected !== true) text = TL_T("hub.agent.status.unconnected");
+					else {
+						const title =
+							typeof agentStatusCache.sessionTitle === "string" && agentStatusCache.sessionTitle !== ""
+								? agentStatusCache.sessionTitle
+								: typeof agentStatusCache.sessionId === "string" && agentStatusCache.sessionId !== ""
+									? agentStatusCache.sessionId.slice(0, 8)
+									: TL_T("hub.agent.target.new");
+						text = TL_T("hub.agent.status.connected", { title });
+					}
+					const budget = agentStatusCache.budget !== null && typeof agentStatusCache.budget === "object" ? agentStatusCache.budget : {};
+					const used = Number.isFinite(budget.used) ? Math.max(0, Math.floor(budget.used)) : 0;
+					const cap = Number.isFinite(budget.cap) ? Math.max(0, Math.floor(budget.cap)) : 0;
+					text += " · " + TL_T("hub.agent.status.budget", { used, cap });
+					if (agentStatusCache.pending === true) text += " · " + TL_T("hub.agent.status.pending");
+				}
+				if (ui.agentStatus !== null && ui.agentStatus !== undefined) {
+					ui.agentStatus.textContent = text;
+					ui.agentStatus.setAttribute("data-tl-hub-agent-available", available === true ? "true" : "false");
+				}
+				ui.agentPerm.disabled = available !== true;
+				ui.agentPerm.textContent =
+					agentPermPending === true ? TL_T("hub.agent.perm.confirmShort") : permission === true ? TL_T("hub.agent.perm.revoke") : TL_T("hub.agent.perm.grant");
+				ui.agentPerm.setAttribute("data-tl-hub-agent-granted", permission === true ? "true" : "false");
+				ui.agentTarget.disabled = available !== true || agentBusy === true;
+				const statusSessions = agentStatusCache !== null && Array.isArray(agentStatusCache.sessions) ? agentStatusCache.sessions : [];
+				renderAgentTargets(statusSessions.length > 0 ? statusSessions : agentSessionsCache, agentStatusCache);
+				ui.agentConnect.disabled = available !== true || permission !== true || agentBusy === true;
+				ui.agentDisconnect.disabled = connected !== true || agentBusy === true;
+				ui.agentOpen.disabled = connected !== true;
+			};
+			/** True when the next chat turn must go to the DSH session instead of the brain. */
+			const agentRouteReady = () => {
+				const agent = hubPetAgent();
+				return (
+					agent !== null &&
+					agentStatusCache !== null &&
+					agentStatusCache.available === true &&
+					hubAgentPermission(agentStatusCache) === true &&
+					agentStatusCache.connected === true &&
+					typeof agent.chat === "function"
+				);
+			};
+			const refreshAgentSessions = async () => {
+				const agent = hubPetAgent();
+				if (agent === null || typeof agent.refreshSessions !== "function") return;
+				try {
+					cacheAgentSessions(await agent.refreshSessions());
+				} catch (error) {
+					note("role-hub:agent-sessions", error);
+				}
+				refreshAgent();
+			};
+			/**
+			 * Two-step consent for taking the experimental agent route (same safe pattern
+			 * as the LLM switch): the first click arms, the second grants with the
+			 * explicit consent token the brain requires; revoke is direct.
+			 */
+			const confirmAgentGrant = () => {
+				if (agentPermPending === true) {
+					agentPermPending = false;
+					return true;
+				}
+				agentPermPending = true;
+				setAgentNote(TL_T("hub.agent.perm.confirm"));
+				return false;
+			};
+			const onAgentPermClick = async () => {
+				const pet = hubPetBrain();
+				const granted = hubAgentPermission(agentStatusCache) === true;
+				if (granted === true) {
+					if (pet !== null && typeof pet.revoke === "function") {
+						try {
+							await pet.revoke("agentChat");
+						} catch (error) {
+							note("role-hub:agent-revoke", error);
+						}
+					}
+					setAgentNote(TL_T("hub.agent.perm.revoked"));
+					refreshAgent();
+					refreshAi();
+					return;
+				}
+				if (confirmAgentGrant() !== true) {
+					refreshAgent();
+					return;
+				}
+				if (pet === null || typeof pet.grant !== "function") {
+					setAgentNote(TL_T("hub.agent.status.unavailable"));
+					refreshAgent();
+					return;
+				}
+				let message = TL_T("hub.agent.perm.granted");
+				try {
+					const result = await pet.grant("agentChat", { consent: "user-explicit" });
+					if (result !== null && typeof result === "object" && result.ok === false) {
+						message = TL_T("hub.agent.perm.denied", {
+							reason: hubReasonLabel(result.reason, HUB_AGENT_GRANT_REASON_KEYS, "hub.agent.reason.default"),
+						});
+					}
+				} catch (error) {
+					note("role-hub:agent-grant", error);
+					message = TL_T("hub.agent.perm.denied", { reason: String(error?.message ?? error) });
+				}
+				setAgentNote(message);
+				refreshAgent();
+				refreshAi();
+			};
+			const onAgentConnect = async () => {
+				const agent = hubPetAgent();
+				if (ui === null) return;
+				if (agent === null || typeof agent.connect !== "function") {
+					setAgentNote(TL_T("hub.agent.status.unavailable"));
+					return;
+				}
+				const target = typeof ui.agentTarget.value === "string" ? ui.agentTarget.value : HUB_AGENT_TARGET_NEW;
+				const options = target === HUB_AGENT_TARGET_NEW || target === "" ? { mode: "new" } : { mode: "existing", sessionId: target };
+				agentBusy = true;
+				refreshAgent();
+				setAgentNote(TL_T("hub.agent.busy"));
+				try {
+					const result = await agent.connect(options);
+					if (result !== null && typeof result === "object" && result.ok === true) {
+						const sessionId = typeof result.sessionId === "string" ? result.sessionId : "";
+						setAgentNote(TL_T("hub.agent.connect.ok", { title: sessionId === "" ? TL_T("hub.agent.target.new") : sessionId.slice(0, 8) }));
+						if (typeof agent.refreshSessions === "function") {
+							try {
+								cacheAgentSessions(await agent.refreshSessions());
+							} catch (error) {
+								note("role-hub:agent-sessions", error);
+							}
+						}
+					} else {
+						const reason = result !== null && typeof result === "object" && typeof result.reason === "string" ? result.reason : "";
+						setAgentNote(TL_T("hub.agent.connect.failed", { reason: hubReasonLabel(reason, HUB_AGENT_REASON_KEYS, "hub.agent.reason.default") }));
+					}
+				} catch (error) {
+					note("role-hub:agent-connect", error);
+					setAgentNote(TL_T("hub.agent.connect.failed", { reason: String(error?.message ?? error) }));
+				} finally {
+					agentBusy = false;
+					refreshAgent();
+					refreshAi();
+				}
+			};
+			const onAgentDisconnect = async () => {
+				const agent = hubPetAgent();
+				if (agent === null || typeof agent.disconnect !== "function") return;
+				agentBusy = true;
+				refreshAgent();
+				try {
+					await agent.disconnect();
+					setAgentNote(TL_T("hub.agent.disconnected"));
+				} catch (error) {
+					note("role-hub:agent-disconnect", error);
+				} finally {
+					agentBusy = false;
+					refreshAgent();
+				}
+			};
+			const onAgentOpen = async () => {
+				const agent = hubPetAgent();
+				if (agent === null || typeof agent.openSession !== "function") {
+					setAgentNote(TL_T("hub.agent.status.unavailable"));
+					return;
+				}
+				try {
+					const result = await agent.openSession();
+					if (result !== null && typeof result === "object" && result.ok === false) {
+						setAgentNote(TL_T("hub.agent.open.failed", { reason: hubReasonLabel(result.reason, HUB_AGENT_REASON_KEYS, "hub.agent.reason.default") }));
+					}
+				} catch (error) {
+					note("role-hub:agent-open", error);
+					setAgentNote(TL_T("hub.agent.open.failed", { reason: String(error?.message ?? error) }));
+				}
+			};
 			const sendChat = async () => {
 				const pet = hubPetBrain();
 				if (ui === null || pet === null || typeof pet.chat !== "function" || chatBusy === true) return;
@@ -1073,26 +1488,47 @@
 					setAiNote(TL_T("hub.ai.empty"));
 					return;
 				}
+				// v1.2.0: an explicitly granted + connected DSH session takes the turn;
+				// otherwise the turn stays on the local/LLM brain (unchanged v1.1 path).
+				const useAgent = agentRouteReady();
+				const agent = hubPetAgent();
 				chatBusy = true;
 				ui.chatSend.disabled = true;
 				setAiNote(TL_T("hub.ai.thinking"));
 				appendLog({ role: "user", at: Date.now(), text });
 				try {
-					const result = await pet.chat(text);
-					const parsed = hubChatResult(result);
-					appendLog({ role: "pet", at: Date.now(), source: parsed.source, ok: parsed.ok, text: parsed.text, reason: parsed.reason });
-					if (parsed.ok === true) setAiNote("");
-					else setAiNote(TL_T("hub.ai.denied", { reason: hubReasonLabel(parsed.reason, HUB_AI_REASON_KEYS, "hub.ai.reason.default") }));
-					ui.chatInput.value = "";
+					if (useAgent === true && agent !== null) {
+						const result = await agent.chat(text);
+						const ok = result !== null && typeof result === "object" ? result.ok === true : false;
+						const reply = result !== null && typeof result === "object" && typeof result.reply === "string" ? result.reply : "";
+						if (ok === true) {
+							if (reply !== "") appendLog({ role: "pet", at: Date.now(), source: "agent", ok: true, text: reply });
+							else appendLog({ role: "pet", at: Date.now(), source: "agent", ok: true, text: TL_T("hub.agent.sent") });
+							setAiNote("");
+							ui.chatInput.value = "";
+						} else {
+							const reason = result !== null && typeof result === "object" && typeof result.reason === "string" ? result.reason : "";
+							appendLog({ role: "pet", at: Date.now(), source: "agent", ok: false, reason });
+							setAiNote(TL_T("hub.agent.chat.failed", { reason: hubReasonLabel(reason, HUB_AGENT_REASON_KEYS, "hub.agent.reason.default") }));
+						}
+					} else {
+						const result = await pet.chat(text);
+						const parsed = hubChatResult(result);
+						appendLog({ role: "pet", at: Date.now(), source: parsed.source, ok: parsed.ok, text: parsed.text, reason: parsed.reason });
+						if (parsed.ok === true) setAiNote("");
+						else setAiNote(TL_T("hub.ai.denied", { reason: hubReasonLabel(parsed.reason, HUB_AI_REASON_KEYS, "hub.ai.reason.default") }));
+						ui.chatInput.value = "";
+					}
 				} catch (error) {
 					setLastError("chat", error);
-					appendLog({ role: "pet", at: Date.now(), source: "error", ok: false, reason: String(error?.message ?? error) });
+					appendLog({ role: "pet", at: Date.now(), source: useAgent === true ? "agent" : "error", ok: false, reason: String(error?.message ?? error) });
 					setAiNote(TL_T("hub.ai.failed", { reason: String(error?.message ?? error) }));
 				} finally {
 					chatBusy = false;
 					if (ui !== null) ui.chatSend.disabled = ui.chatInput.disabled;
 					renderLog();
 					refreshAi();
+					refreshAgent();
 				}
 			};
 
@@ -1262,6 +1698,37 @@
 				aiCard.appendChild(state.logBox);
 				body.appendChild(aiCard);
 
+				// d2) experimental DSH Agent bridge (v1.2.0): permissioned hand-off of the
+				// user's typed sentence to a user-selected DSH session. Never auto-triggers.
+				const agentCard = hubCreate("section", { "data-tl-hub-agent": "", className: "tl-hub-card tl-hub-agent" }, [
+					hubCreate("h3", { className: "tl-hub-card-title" }, TL_T("hub.agent.title")),
+				]);
+				state.agentStatus = hubCreate("p", { className: "tl-hub-hint", "data-tl-hub-agent-status": "", role: "status" }, TL_T("hub.agent.status.unavailable"));
+				agentCard.appendChild(state.agentStatus);
+				const agentPermRow = hubCreate("div", { className: "tl-hub-row" });
+				state.agentPerm = hubCreate("button", { type: "button", "data-tl-hub-agent-perm": "", className: "tl-hub-btn", "data-tl-hub-agent-granted": "false" }, TL_T("hub.agent.perm.grant"));
+				state.agentPerm.addEventListener("click", () => runAsync(onAgentPermClick));
+				agentPermRow.appendChild(state.agentPerm);
+				agentCard.appendChild(agentPermRow);
+				const agentTargetRow = hubCreate("div", { className: "tl-hub-row" });
+				state.agentTarget = hubCreate("select", { "data-tl-hub-agent-target": "", className: "tl-hub-select", "aria-label": TL_T("hub.agent.target.label") });
+				state.agentConnect = hubCreate("button", { type: "button", "data-tl-hub-agent-connect": "", className: "tl-hub-btn" }, TL_T("hub.agent.connect"));
+				state.agentConnect.addEventListener("click", () => runAsync(onAgentConnect));
+				state.agentDisconnect = hubCreate("button", { type: "button", "data-tl-hub-agent-disconnect": "", className: "tl-hub-btn" }, TL_T("hub.agent.disconnect"));
+				state.agentDisconnect.addEventListener("click", () => runAsync(onAgentDisconnect));
+				state.agentOpen = hubCreate("button", { type: "button", "data-tl-hub-agent-open": "", className: "tl-hub-btn" }, TL_T("hub.agent.open"));
+				state.agentOpen.addEventListener("click", () => runAsync(onAgentOpen));
+				agentTargetRow.appendChild(state.agentTarget);
+				agentTargetRow.appendChild(state.agentConnect);
+				agentTargetRow.appendChild(state.agentDisconnect);
+				agentTargetRow.appendChild(state.agentOpen);
+				agentCard.appendChild(agentTargetRow);
+				state.agentNote = hubCreate("p", { className: "tl-hub-hint", "data-tl-hub-agent-note": "", role: "status" }, "");
+				agentCard.appendChild(state.agentNote);
+				state.agentHint = hubCreate("p", { className: "tl-hub-hint", "data-tl-hub-agent-hint": "" }, TL_T("hub.agent.hint"));
+				agentCard.appendChild(state.agentHint);
+				body.appendChild(agentCard);
+
 				// e) permission overview (safe / medium / 7 permanently denied)
 				const permCard = hubCreate("section", { "data-tl-hub-perms": "", className: "tl-hub-card" }, [
 					hubCreate("h3", { className: "tl-hub-card-title" }, TL_T("hub.perm.title")),
@@ -1294,6 +1761,7 @@
 				hubTry(refreshStatus, null, "refresh-status");
 				hubTry(refreshGlass, null, "refresh-glass");
 				hubTry(refreshAi, null, "refresh-ai");
+				hubTry(refreshAgent, null, "refresh-agent");
 			};
 			const open = () => {
 				if (disposed === true) return false;
@@ -1320,7 +1788,9 @@
 					refreshStatus();
 					refreshGlass();
 					refreshAi();
+					refreshAgent();
 					runAsync(refreshMedia);
+					runAsync(refreshAgentSessions);
 					if (win !== null) timer = win.setInterval(refreshAll, HUB_REFRESH_MS);
 					try {
 						ui.closeButton.focus();
@@ -1441,6 +1911,9 @@
 				rootEl = null;
 				ui = null;
 				triggerEl = null;
+				agentStatusCache = null;
+				agentTargetSignature = "";
+				agentSessionsCache = [];
 				logEntries.length = 0;
 			};
 		}

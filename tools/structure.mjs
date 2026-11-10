@@ -37,6 +37,7 @@ const EXPECTED = [
   'companion',
   'life rhythm',
   'pet brain',
+  'pet agent',
   'reasoning rheostat',
   'low power',
   'glass opacity',

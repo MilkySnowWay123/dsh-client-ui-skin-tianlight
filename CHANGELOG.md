@@ -2,6 +2,16 @@
 
 本文件由 `node tools/release.mjs --note "…"` 维护；条目按版本倒序，格式参考 Keep a Changelog。
 
+## [1.2.0] - 2026-11-10
+
+### 发布说明
+
+- **右键桌宠 → 角色中枢**：`contextmenu` 直接打开（preventDefault，不干扰左键菜单/拖拽），中枢不可用时回退原菜单。
+- **接入真实 DSH Agent（受控）**：新增第 27 片段 `src/48-pet-agent.js`（region `pet agent`），走客户端 `remote.session`（list/create/prompt/follow）。大脑新增 medium 权限 `agentChat`（默认关；`grant` 需 `{consent:"user-explicit"}`，可 revoke；`status()`/`permissions()` 同步为 15 行）。中枢新增「AI Agent（实验）」卡片：授权两步确认、新建桌宠会话/选现有会话、连接/断开/打开会话、预算与状态、风险提示；聊天在已连接时走 Agent（回复解析失败→“已发送，打开会话查看”），未连接/未授权回落本地大脑/LLM。
+- **严格规范**：仅用户手动触发（无定时器/生活/职责钩子）；每日 ≤10（1..30）、单次 ≤500 字、回复 ≤60s、同时 1 条；只调用 list/create/prompt/follow，**绝不** cancel/approve/attachment；固定“只回答”引导语；发送/失败/连接写审计并镜像 `tianlightPet.audit`；断开/撤销立即回落。`agent`（自主驱动任务/工具）仍永久禁止，7 项 forbidden 不变。
+- **文档**：更新 [docs/AI-PET-PERMISSIONS.md](docs/AI-PET-PERMISSIONS.md)（agentChat 规范与风险）、新增 [docs/RELEASE-1.2.0.md](docs/RELEASE-1.2.0.md)；`BUILD`/`HOST_BUILD`/`package.json`/`skin.json` = 1.2.0。
+- 静态链：build 27/27、test 67/67、structure/audit/check-css/verify/i18n 全绿；Node 冒烟 = v1.1 283/283 回归 + AGENT 段。
+
 ## [1.1.0] - 2026-11-10
 
 ### 发布说明

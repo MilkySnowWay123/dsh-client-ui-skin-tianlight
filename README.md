@@ -6,6 +6,15 @@
 >
 > 包名 `@dsh-external/dsh-client-ui-skin-tianlight` · 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
 
+## v1.2.0 · 右键桌宠进中枢 · 接入 DSH Agent（受控）
+
+`1.2.0`（`lib/client.js` **27 片段**；`BUILD`/`HOST_BUILD` = `1.2.0`）。细节见 [docs/RELEASE-1.2.0.md](docs/RELEASE-1.2.0.md)、权限 [docs/AI-PET-PERMISSIONS.md](docs/AI-PET-PERMISSIONS.md)：
+
+- **右键桌宠直接打开角色中枢**（preventDefault，不干扰左键菜单/拖拽；中枢不可用时回退菜单）。
+- **接入真实 DSH Agent**：新增第 27 片段 `src/48-pet-agent.js`，走客户端 `remote.session`（list/create/prompt/follow）；中枢新增「AI Agent（实验）」卡片：显式授权 `agentChat`（默认关、两步确认）、新建桌宠会话或选现有会话、连接/断开/打开会话、预算/状态/风险提示；聊天输入在已连接时走真实 Agent，回复显示在中枢（解析失败提示到会话查看）。
+- **严格规范**：仅用户手动触发、无定时/生活/职责钩子；日 ≤10（1..30）、≤500 字、≤60s、同时 1 条；只调用 list/create/prompt/follow，**绝不** cancel/approve/attachment；固定“只回答”引导语；发送与失败写审计并镜像大脑；断开/撤销即回落本地大脑。`agent`（自主驱动任务）仍永久禁止，7 项 forbidden 不变。
+- 静态链 build 27/27、test 67/67、structure/audit/css/verify/i18n 全绿；Node 冒烟（v1.0+v1.1 回归 + AGENT 段）。
+
 ## v1.1.0 · 角色中枢 · AI 桌宠（严格权限）· 形象上传
 
 `1.1.0`（`lib/client.js` **26 片段**；`BUILD`/`HOST_BUILD` = `1.1.0`）。细节见 [docs/RELEASE-1.1.0.md](docs/RELEASE-1.1.0.md)、权限规范 [docs/AI-PET-PERMISSIONS.md](docs/AI-PET-PERMISSIONS.md)：
@@ -194,6 +203,7 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 
 ## 版本历史
 
+- **v1.2.0（2026-11-10）**：右键桌宠直达角色中枢；接入真实 DSH Agent（受控 `agentChat`：默认关、显式授权、仅用户手动提问、目标会话由用户选择、日≤10/≤500 字/60s/单飞、只 list/create/prompt/follow、审计+可断开、`agent` 自主执行仍永久禁止）。详见 [docs/RELEASE-1.2.0.md](docs/RELEASE-1.2.0.md)。
 - **v1.1.0（2026-11-10）**：角色中枢（侧栏入口 + 全屏面板：生活/专注/静音/玻璃/形象/记忆/AI/权限/审计）、AI 桌宠（本地大脑 + 可选用户授权 LLM 适配器 + 严格能力白名单与 7 项永久禁止 + 硬上限 + 审计 + 暂停开关）、形象支持本机直接上传图片/视频（≤32MiB）；无宿主路由改动。详见 [docs/RELEASE-1.1.0.md](docs/RELEASE-1.1.0.md) 与 [docs/AI-PET-PERMISSIONS.md](docs/AI-PET-PERMISSIONS.md)。
 - **v1.0.0（2026-11-10）**：正式版——桌宠升级为多功能角色智能体（虚拟时钟/每日作息/主动开口预算/跨会话记忆/职责提醒闸门与延迟回放）、可替换形象（图片或 ≤32 MiB 视频）、可选液态玻璃三档（真实/柔和/磨砂，自动降级）、角色设置页、专注计时、互动记忆；节能与稳定性优化；无宿主路由改动。详见 [docs/RELEASE-1.0.0.md](docs/RELEASE-1.0.0.md)。
 - **v0.7.0（2026-11-10）**：职责通道——浏览器半新增 `globalThis.tianlightDuty`（`send/subscribe/status/clear`）与 `tianlight:duty` / `tianlight:duty-action` 事件；桌宠新增带选项按钮的职责气泡（`interrupt`）、普通短句（`speak`）、清理（`clear`），回传 `choice`/`timeout`；fail-closed、`companion-off` 降级、键盘可达、与普通台词隔离。**只改浏览器半，无需重启 DSH**。详见 [docs/DUTY-CHANNEL.md](docs/DUTY-CHANNEL.md)。
