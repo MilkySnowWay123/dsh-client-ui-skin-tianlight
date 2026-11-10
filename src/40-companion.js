@@ -767,6 +767,9 @@
 			// pointerdown outside the pet root, and a plain click on the pet itself — the
 			// menu hangs below the pet and can be clipped off-screen near a screen edge, so
 			// the menu must never be the only way to close the composer.
+			// v1.6.6: the panel is clamped horizontally inside the viewport when it opens
+			// (and after a resize or drag), so the × close button and the send button stay
+			// reachable even when the pet sits near a screen edge.
 			const chat = document.createElement("div");
 			chat.dataset.tlCatchat = "";
 			chat.setAttribute("aria-hidden", "true");
@@ -1034,15 +1037,39 @@
 					note("companion:chat-focus", error);
 				}
 			};
+			// v1.6.6: keep the composer inside the viewport. The pet's default position is
+			// near the right edge (x = innerWidth - 182) while the composer is 278px wide and
+			// centred over the 150px pet, so its right edge lands ~32px past the viewport —
+			// the new × close button (and the send button) were clipped almost entirely off
+			// screen. Anchor it over the pet but clamp the left edge into [8, width-8], the
+			// same way the interaction menu is clamped. Zero-layout environments (the Node
+			// fake DOM) keep the stylesheet default.
+			const clampChat = () => {
+				chat.style.left = "50%";
+				chat.style.right = "auto";
+				chat.style.transform = "translateX(-50%)";
+				const rect = chat.getBoundingClientRect();
+				if (!(rect.width > 0)) return;
+				const viewportLeft = Math.min(
+					Math.max(8, state.x + PET_WIDTH / 2 - rect.width / 2),
+					Math.max(8, window.innerWidth - rect.width - 8),
+				);
+				chat.style.left = Math.round(viewportLeft - state.x) + "px";
+				chat.style.transform = "none";
+			};
 			const openChat = () => {
 				chatOpen = true;
 				root.dataset.tlChatOpen = "";
-				// Not enough viewport above the pet: flip the composer below it (the
-				// stylesheet keys on data-tl-chat-flip) instead of pushing it off-screen.
-				if (state.y < 96) root.dataset.tlChatFlip = "";
-				else delete root.dataset.tlChatFlip;
 				chat.hidden = false;
 				chat.setAttribute("aria-hidden", "false");
+				// v1.6.6: flip below when there is no room above. Measure the real panel
+				// height (the close-button header row made the panel taller than the old
+				// fixed 96px check) with a conservative fallback for zero-layout environments.
+				const panelHeight = chat.getBoundingClientRect().height;
+				const flipThreshold = panelHeight > 0 ? panelHeight + 18 : 118;
+				if (state.y < flipThreshold) root.dataset.tlChatFlip = "";
+				else delete root.dataset.tlChatFlip;
+				clampChat();
 				chatInput.tabIndex = 0;
 				chatSend.tabIndex = 0;
 				chatClose.tabIndex = 0;
@@ -1357,6 +1384,9 @@
 				if (moved) {
 					saveState(state);
 					wake();
+					// v1.6.6: the composer follows the pet; re-clamp it after dragging the pet
+					// towards a screen edge (a drag never closes the composer by itself).
+					if (chatOpen === true) clampChat();
 					return;
 				}
 				// v1.6.5: a plain click on the pet while the composer is open is the
@@ -1501,6 +1531,8 @@
 			const onResize = () => {
 				clamp();
 				place();
+				// v1.6.6: keep an open composer inside the resized viewport.
+				if (chatOpen === true) clampChat();
 			};
 			window.addEventListener("resize", onResize);
 

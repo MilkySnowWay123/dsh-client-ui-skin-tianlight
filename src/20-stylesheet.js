@@ -3042,8 +3042,13 @@ body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat] [data-tl-catchat-clos
 	border: 0;
 	background: transparent;
 	color: var(--tl-ink-soft, var(--tl-ink));
-	font: 600 14px/1 var(--ds-font-family, system-ui);
-	padding: 2px 6px;
+	font: 600 15px/1 var(--ds-font-family, system-ui);
+	padding: 3px 8px;
+	min-width: 24px;
+	min-height: 24px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	border-radius: 999px;
 	cursor: pointer;
 	flex: 0 0 auto;
