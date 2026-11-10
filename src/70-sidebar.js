@@ -256,6 +256,11 @@
 				"lib.url.checkingShort": "检查中…",
 				"lib.url.apply": "应用地址",
 				"lib.url.autoHint": "自动会先按扩展名判断，无扩展名时实际探测图片/视频；不确定就保持自动。",
+				"lib.quick.label": "快捷来源",
+				"lib.quick.url": "URL 地址",
+				"lib.quick.urlHint": "粘贴图片或视频直链",
+				"lib.quick.shader": "ShaderToy 代码",
+				"lib.quick.shaderHint": "选预设或贴 GLSL",
 				"lib.shader.intro": "ShaderToy 风格：不需要网站账号，也不抓取 shadertoy.com。① 选预设或贴 GLSL → ② 调速度/强度/色相 → ③ 点「应用着色器」。",
 				"lib.shader.uniforms": "可用 uniform：iTime / iResolution / iMouse / u_speed / u_intensity / u_hue / u_audio。",
 				"lib.audio.hint": "音频响应：把麦克风实时电平送给 u_audio；只分析，不录音、不上传。",
@@ -615,6 +620,11 @@
 				"lib.url.checkingShort": "Checking…",
 				"lib.url.apply": "Apply URL",
 				"lib.url.autoHint": "Auto checks the extension first and probes the media when there is none; keep Auto if unsure.",
+				"lib.quick.label": "Quick sources",
+				"lib.quick.url": "URL",
+				"lib.quick.urlHint": "Direct image or video link",
+				"lib.quick.shader": "ShaderToy",
+				"lib.quick.shaderHint": "Preset or your own GLSL",
 				"lib.shader.intro": "ShaderToy style: no account and no scraping. ① pick a preset or paste GLSL → ② tune speed/intensity/hue → ③ click Apply shader.",
 				"lib.shader.uniforms": "Available uniforms: iTime / iResolution / iMouse / u_speed / u_intensity / u_hue / u_audio.",
 				"lib.audio.hint": "Audio response: sends the live microphone level to u_audio; analysis only, never recorded or uploaded.",
@@ -1496,12 +1506,22 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 					};
 				}, [listAttempt]);
 				const pick = (choice) => {
-					if (wallpaperController !== null) wallpaperController.apply(choice);
+					// The URL and ShaderToy editors call this from an async handler: report the
+					// outcome instead of silently doing nothing (wallpaper module disabled) or
+					// letting a scene exception strand the editor in its "applied" state.
+					if (wallpaperController === null) return { ok: false, reason: null };
+					try {
+						wallpaperController.apply(choice);
+					} catch (error) {
+						note("wallpaper:pick", error);
+						return { ok: false, reason: String(error?.message ?? error) };
+					}
 					setActive(choice === null ? "" : choice.url);
 					setActiveChoice(choice);
 					// v0.5.0: an explicit pick feeds the "最近使用" sort. Automatic
 					// rotation deliberately does not, so the order stays the user's.
 					if (choice !== null) rememberWallpaper(choice.url);
+					return { ok: true };
 				};
 				/**
 				 * v0.5.3: card click path. The ring is optimistic (state is set before the
@@ -1530,6 +1550,38 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 						setActiveChoice(previousChoice);
 						setPickError(t("lib.pick.failed", { reason: String(error?.message ?? error) }));
 					}
+				};
+				/**
+				 * v1.6.7: URL and ShaderToy are first-class sources in the DEFAULT picker.
+				 * Both editors live in the advanced view, so a quick-source click switches
+				 * views, opens the matching composer and scrolls its editor into view. The
+				 * editor is mounted one render later: the lookup runs in a timeout and a
+				 * missing node (panel closed meanwhile) is a silent no-op.
+				 */
+				const openQuickSource = (id) => {
+					setView("advanced");
+					setComposer(id);
+					setSourceTab("all");
+					setNote("");
+					setPickError("");
+					if (id === "url") setDraftNote("");
+					else setShaderStatus("");
+					globalThis.setTimeout(() => {
+						try {
+							if (typeof document === "undefined") return;
+							// The editors live inside the collapsible ② group: if the user collapsed
+							// it earlier, scrolling to a hidden input does nothing. Opening it here
+							// matches what the filter chips already do for the same group.
+							const list = document.querySelector("[data-tl-wall-list]");
+							if (list !== null) list.open = true;
+							const target = document.querySelector(
+								id === "url" ? "[data-tl-wall-url-input]" : "[data-tl-wall-shader-input]",
+							);
+							if (target !== null) target.scrollIntoView?.({ block: "nearest" });
+						} catch {
+							// scrolling is a convenience; a closed panel must not throw
+						}
+					}, 0);
 				};
 				// ---- the only zone question that matters: separate or continuous ----
 				const [zones, setZones] = React.useState(() => readZones());
@@ -2041,10 +2093,19 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 						setDraftNote(t("lib.url.notMedia"));
 						return;
 					}
-					setComposer("url");
 					setNote("");
-					pick({ kind, url });
+					// Applying can legitimately fail (wallpaper module off, scene threw): only
+					// claim success when the scene really took the choice.
+					const result = pick({ kind, url });
 					setDraftBusy(false);
+					if (result.ok === false) {
+						setDraftNote(
+							result.reason === null
+								? t("lib.pick.noScene")
+								: t("lib.pick.failed", { reason: result.reason }),
+						);
+						return;
+					}
 					setDraftNote(t("lib.url.applied") + (kind === "image" ? t("lib.kind.image") : t("lib.kind.video")) + " · " + (parsed.hostname || t("lib.url.remoteHost")));
 				};
 				const applyShader = () => {
@@ -2054,8 +2115,18 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 						return;
 					}
 					shaderController.save(shader);
+					// The shader settings are only half the switch: the composition kind must
+					// reach the saved choice too, or a reload falls back to the old wallpaper.
+					const result = pick({ kind: "shader", url: "shader://live" });
+					if (result.ok === false) {
+						setShaderStatus(
+							result.reason === null
+								? t("lib.pick.noScene")
+								: t("lib.pick.failed", { reason: result.reason }),
+						);
+						return;
+					}
 					setShaderStatus(t("lib.shader.applied"));
-					pick({ kind: "shader", url: "shader://live" });
 				};
 				const resetShader = () => {
 					setShader({ ...SHADER_DEFAULTS });
@@ -2789,13 +2860,42 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 										),
 										React.createElement("p", { className: "tl-wall-hint" }, t("lib.shareHint")),
 									),
-							// The pick view is one library: all sources are already in the grid,
-							// so the default action is simply "click a thumbnail". These chips
-							// only filter it; URL/GLSL/WE config are secondary import actions.
+							// v1.6.7: URL address and ShaderToy code are first-class routes in the
+							// default view. They used to live only in 高级 → ① 来源, which the pick
+							// view hides; this row sits OUTSIDE every [data-tl-group] container so
+							// the pick-view hiding rules can never remove it.
+							// The chips below only filter the library.
 							view === "pick"
 								? React.createElement(
 										React.Fragment,
 										null,
+										React.createElement(
+											"div",
+											{
+												className: "tl-wall-quick-source",
+												"data-tl-quick-source": "",
+												role: "group",
+												"aria-label": t("lib.quick.label"),
+											},
+											[
+												["url", t("lib.quick.url"), t("lib.quick.urlHint")],
+												["shader", t("lib.quick.shader"), t("lib.quick.shaderHint")],
+											].map(([id, label, hint]) =>
+												React.createElement(
+													"button",
+													{
+														key: id,
+														type: "button",
+														className: "tl-source-card tl-wall-quick-source-btn",
+														"data-tl-quick-source": id,
+														title: hint,
+														onClick: () => openQuickSource(id),
+													},
+													React.createElement("span", { className: "tl-source-name" }, label),
+													React.createElement("span", { className: "tl-source-note" }, hint),
+												),
+											),
+										),
 										React.createElement(
 											"div",
 											{ className: "tl-wall-filter-row" },
@@ -3627,6 +3727,9 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 										rows: 8,
 										spellCheck: false,
 										"aria-label": t("lib.shader.sourceAria"),
+										// v1.6.7: the quick-source shader entry scrolls this editor into
+										// view once the advanced view has mounted it.
+										"data-tl-wall-shader-input": "",
 										value: shader.source,
 										onChange: (event) => {
 											setShader((current) => ({ ...current, preset: "custom", source: event.target.value }));

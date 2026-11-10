@@ -6,6 +6,15 @@
 >
 > 包名 `@dsh-external/dsh-client-ui-skin-tianlight` · 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
 
+## v1.6.7 · 正式版：URL/ShaderToy 壁纸入口 · 回复即收面板 · 对话历史（☰）
+
+`1.6.7`（26 片段；`BUILD`/`HOST_BUILD` = `1.6.7`）。细节见 [docs/RELEASE-1.6.7.md](docs/RELEASE-1.6.7.md)：
+
+- **壁纸「URL 地址」「ShaderToy 代码」正式化**：默认壁纸视图新增一等快捷来源（`[data-tl-quick-source]`），点击直达编辑器并滚动可见；复用原有 URL（直链/自动识别/持久化）与 ShaderToy（预设/源码≤12000/编译校验/参数）链路，修复 3 个应用假成功/卡死 bug。
+- **AI 对话回复即收面板**：桌宠气泡给出回复后输入面板自动关闭（只留气泡）；拒绝类回复同样收起；空输入/未就绪/失败保持面板。
+- **对话历史（☰）**：桌宠菜单在「AI 对话」旁新增「☰」，可查看历史、开启新对话、编辑已发消息、删除对话；本机 localStorage 存储（20 会话 / 120 条/会话上限），关闭路径与输入面板一致且两面板互斥。
+- **公开上传命名**：公开版本名 **v1.0.6（正式版）**（内部构建 `1.6.7`）。仅浏览器半逻辑改动；因 `BUILD`/`HOST_BUILD` bump，建议 **Ctrl+F5 后重启 DSH 一次**以消除宿主半 stale 提示。
+
 ## v1.6.6 · 正式版：修复「×」被视口裁掉 · 面板水平夹取 + 自适应翻转
 
 `1.6.6`（26 片段；`BUILD`/`HOST_BUILD` = `1.6.6`）。细节见 [docs/RELEASE-1.6.6.md](docs/RELEASE-1.6.6.md)：

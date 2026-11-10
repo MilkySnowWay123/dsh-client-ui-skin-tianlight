@@ -2,6 +2,16 @@
 
 本文件由 `node tools/release.mjs --note "…"` 维护；条目按版本倒序，格式参考 Keep a Changelog。
 
+## [1.6.7] - 2026-11-10
+
+### 发布说明
+
+- **壁纸「URL 地址」「ShaderToy 代码」正式化（用户要求）**：壁纸面板默认（pick）视图新增 `[data-tl-quick-source]` 快捷来源行（`url` / `shader` 两个按钮，i18n `lib.quick.*`），点击切到高级视图、打开对应编辑器并滚动到输入区；「高级 → ① 来源」原卡片保留。URL 链路：http(s) 校验、HTTPS 页面 http 拦截提示、扩展名/实际探测图片或视频、应用后 `pick → wallpaperController.apply → saveWallpaperChoice` 持久化 `{kind,url}`；ShaderToy 链路：预设/源码（≤12000，编译与链接校验）/速度/强度/色相、持久化 `tianlight.shader` 与 `kind="shader"`、恢复默认。自检发现并修复 3 个真实 bug：壁纸模块关闭时 URL「假成功」、URL 应用抛错后按钮卡在「检查中…」、Shader 在保存前就提示「已应用着色器」。
+- **桌宠 AI 对话回复即收面板（用户要求）**：成功收到回复后清空输入 → 记录本轮 → **立即关闭输入面板**，只保留气泡回复（`data-tl-chat` 加宽）；拒绝类回复同样关闭并记录；空输入/AI 未就绪/失败/处理中保持面板并显示状态。
+- **对话历史（用户要求）**：桌宠菜单在「AI 对话」之后新增「☰」（9 项菜单，按钮显示三个横线、aria-label 走 i18n）。数据 `localStorage["tianlight.petChats.v1"]`（version 1，20 会话 / 120 条/会话 / 用户 500 字 / 回复 1200 字，损坏或异版本静默重置），共享 API `globalThis.tianlightPetChats`（list/get/create/remove/active/setActive/append/editUserMessage/subscribe，dispose 恢复先前 global）。面板 `[data-tl-cathist]`：会话列表（当前高亮）、「新对话」「删除对话」「×」、消息按角色分行、用户消息可内联编辑（首条编辑同步标题）、空态引导；关闭路径与输入面板一致（× / 全局 Esc / 点空白 / 点桌宠），两个面板互斥。
+- **版本与发布**：`BUILD`/`HOST_BUILD`/`package.json`/`skin.json` = **1.6.7**（feedback 模板示例同步）；新增 [docs/RELEASE-1.6.7.md](docs/RELEASE-1.6.7.md)；i18n 新增 20 键（14 `pet.history.*` + `pet.action.history` + 5 `lib.quick.*`，1246 → **1266**）；内部 tag `v1.6.7`，公开命名 **v1.0.6（正式版）**。
+- **验证**：静态链 build/build --check 26/26、test 67/67、structure --strict、audit（含 v1.6.7 新守卫 3 条，无阻断）、check-css、verify、i18n-audit（zh=en 1266，referenced 958）全绿；Node 冒烟 **706/706 PASS**（v1.6.6 的 698 条回归 + 新增 8 条：T29–T33 自动关闭/历史面板/编辑/删除/关闭路径，S96 快捷来源、S97 历史静态契约、S98 新 audit 守卫；S 95→98、T 28→33），构建 sha `a6b6ffb0…`（`lib/client.js` 1,406,164 B / 1,362,843 字符）；证据见 `diag/skinlab/runs/*-v167-v167-node-smoke/`。
+
 ## [1.6.6] - 2026-11-10
 
 ### 发布说明

@@ -90,6 +90,7 @@
 				"pet.action.focus": "专注 25 分钟",
 				"pet.action.hub": "角色中枢",
 				"pet.action.chat": "AI 对话",
+				"pet.action.history": "对话历史",
 				"pet.chat.placeholder": "和我说点什么…",
 				"pet.chat.send": "发送",
 				"pet.chat.close": "关闭",
@@ -106,6 +107,21 @@
 				"pet.chat.reason.disabled": "AI 还没有启用。",
 				"pet.chat.reason.internal": "我这边出了点小问题。",
 				"pet.chat.reason.default": "暂时没法回复。",
+				// v1.6.7 conversation history panel (the ☰ entry in the pet menu).
+				"pet.history.title": "对话历史",
+				"pet.history.new": "新对话",
+				"pet.history.delete": "删除对话",
+				"pet.history.close": "关闭",
+				"pet.history.empty": "还没有对话",
+				"pet.history.emptyHint": "从桌宠的「AI 对话」聊一句，这里会自动收好。",
+				"pet.history.edit": "编辑",
+				"pet.history.save": "保存",
+				"pet.history.cancel": "取消",
+				"pet.history.user": "你",
+				"pet.history.pet": "小猫",
+				"pet.history.defaultTitle": "未命名对话",
+				"pet.history.deleted": "已删除这个对话",
+				"pet.history.count": "{n} 条",
 				"pet.act.mute": "好，安静一小时",
 				"pet.act.focusStart": "专注 25 分钟，开始",
 				"pet.act.focusStop": "专注结束，歇口气吧",
@@ -148,6 +164,7 @@
 				"pet.action.focus": "Focus 25m",
 				"pet.action.hub": "Role hub",
 				"pet.action.chat": "AI chat",
+				"pet.action.history": "Chat history",
 				"pet.chat.placeholder": "Say something to me…",
 				"pet.chat.send": "Send",
 				"pet.chat.close": "Close",
@@ -164,6 +181,21 @@
 				"pet.chat.reason.disabled": "AI isn't enabled.",
 				"pet.chat.reason.internal": "Something went wrong on my side.",
 				"pet.chat.reason.default": "Can't reply right now.",
+				// v1.6.7 conversation history panel (the ☰ entry in the pet menu).
+				"pet.history.title": "Chat history",
+				"pet.history.new": "New chat",
+				"pet.history.delete": "Delete chat",
+				"pet.history.close": "Close",
+				"pet.history.empty": "No conversations yet",
+				"pet.history.emptyHint": "Say one line in AI chat and it will be kept here.",
+				"pet.history.edit": "Edit",
+				"pet.history.save": "Save",
+				"pet.history.cancel": "Cancel",
+				"pet.history.user": "You",
+				"pet.history.pet": "Cat",
+				"pet.history.defaultTitle": "Untitled chat",
+				"pet.history.deleted": "Conversation deleted",
+				"pet.history.count": "{n} msgs",
 				"pet.act.mute": "Okay, quiet for an hour",
 				"pet.act.focusStart": "Focusing for 25 minutes",
 				"pet.act.focusStop": "Focus done. Take a breather",
@@ -468,6 +500,378 @@
 		const previousPetActionsGlobal = globalThis.tianlightPetActions;
 		globalThis.tianlightPetActions = petActionsApi;
 
+		// ---- v1.6.7 pet chat history (localStorage store + global API) ----
+		// Every chat turn that actually landed (a bubble reply, or a deliberate denial)
+		// is appended to the active conversation; the AI chat composer closes right
+		// away, so the speech bubble is the single visible answer. The store is plain
+		// JSON with one version tag, a bounded conversation list, bounded messages and
+		// best-effort persistence: a storage failure must never break the chat itself.
+		const PET_CHATS_KEY = "tianlight.petChats.v1";
+		const PET_CHATS_VERSION = 1;
+		const PET_CHATS_MAX_CONVERSATIONS = 20;
+		const PET_CHATS_MAX_MESSAGES = 120;
+		const PET_CHATS_USER_MAX = 500;
+		const PET_CHATS_PET_MAX = 1200;
+		const PET_CHATS_TITLE_MAX = 24;
+		const PET_CHATS_ID_MAX = 80;
+		const petChatSubscribers = new Set();
+
+		/** Conversation / message ids: `conv-<base36 time>-<random>`, unique per turn. */
+		function petChatsNewId(prefix) {
+			let salt = "";
+			try {
+				salt = Math.random().toString(36).slice(2, 8);
+			} catch (error) {
+				salt = "";
+			}
+			if (salt === "") salt = "0";
+			return prefix + "-" + Date.now().toString(36) + "-" + salt;
+		}
+
+		/**
+		 * Message text is normalized, never trusted: CR/LF become \n, control
+		 * characters are dropped, and the role-specific cap counts characters (not
+		 * UTF-16 units) so a clip never splits an emoji.
+		 */
+		function petChatsCleanText(value, max) {
+			try {
+				if (typeof value !== "string") return "";
+				const text = value
+					.replace(/\r\n?/g, "\n")
+					.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
+					.trim();
+				const chars = Array.from(text);
+				if (chars.length <= max) return text;
+				return chars.slice(0, Math.max(0, max)).join("");
+			} catch (error) {
+				return "";
+			}
+		}
+
+		/** Conversation title: first user line, whitespace-collapsed, ≤ 24 characters. */
+		function petChatsTitleFrom(value) {
+			try {
+				const flat = petChatsCleanText(value, PET_CHATS_TITLE_MAX * 8).replace(/\s+/g, " ");
+				const chars = Array.from(flat);
+				if (chars.length <= PET_CHATS_TITLE_MAX) return flat;
+				return chars.slice(0, PET_CHATS_TITLE_MAX).join("").trim();
+			} catch (error) {
+				return "";
+			}
+		}
+
+		/** Validate + normalize one stored message; null drops it silently. */
+		function petChatsMessage(raw) {
+			try {
+				if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return null;
+				const role = raw.role === "user" || raw.role === "pet" ? raw.role : "";
+				if (role === "") return null;
+				const text = petChatsCleanText(raw.text, role === "user" ? PET_CHATS_USER_MAX : PET_CHATS_PET_MAX);
+				if (text === "") return null;
+				const id =
+					typeof raw.id === "string" && raw.id !== ""
+						? petActionsClip(raw.id, PET_CHATS_ID_MAX)
+						: petChatsNewId("msg");
+				const at = Number.isFinite(raw.at) ? raw.at : Date.now();
+				return { id, role, text, at };
+			} catch (error) {
+				return null;
+			}
+		}
+
+		/** Validate + normalize one stored conversation; null drops it silently. */
+		function petChatsConversation(raw) {
+			try {
+				if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return null;
+				const id = typeof raw.id === "string" ? petActionsClip(raw.id, PET_CHATS_ID_MAX) : "";
+				if (id === "") return null;
+				const createdAt = Number.isFinite(raw.createdAt) ? raw.createdAt : Date.now();
+				const updatedAt = Number.isFinite(raw.updatedAt) ? raw.updatedAt : createdAt;
+				const messages = [];
+				if (Array.isArray(raw.messages)) {
+					for (const item of raw.messages) {
+						const message = petChatsMessage(item);
+						if (message !== null) messages.push(message);
+					}
+				}
+				const bounded =
+					messages.length > PET_CHATS_MAX_MESSAGES
+						? messages.slice(messages.length - PET_CHATS_MAX_MESSAGES)
+						: messages;
+				// The title mirrors the first user line unless an explicit title exists.
+				const firstUser = bounded.find((message) => message.role === "user") ?? null;
+				const title =
+					typeof raw.title === "string" && raw.title.trim() !== ""
+						? petChatsTitleFrom(raw.title)
+						: firstUser === null
+							? ""
+							: petChatsTitleFrom(firstUser.text);
+				return { id, title, createdAt, updatedAt, messages: bounded };
+			} catch (error) {
+				return null;
+			}
+		}
+
+		/**
+		 * Read the whole store. Corrupt JSON, a foreign version tag or an unusable
+		 * shape silently reset to the empty structure (never throws, never prompts).
+		 */
+		function petChatsRead() {
+			const empty = { version: PET_CHATS_VERSION, activeId: "", conversations: [] };
+			try {
+				const storage = petActionsStorage();
+				if (storage === null) return empty;
+				const raw = storage.getItem(PET_CHATS_KEY);
+				if (typeof raw !== "string" || raw === "") return empty;
+				const value = JSON.parse(raw);
+				if (value === null || typeof value !== "object" || Array.isArray(value)) return empty;
+				if (value.version !== PET_CHATS_VERSION) return empty;
+				const conversations = [];
+				if (Array.isArray(value.conversations)) {
+					for (const item of value.conversations) {
+						const conversation = petChatsConversation(item);
+						if (conversation !== null) conversations.push(conversation);
+					}
+				}
+				conversations.sort((a, b) => b.updatedAt - a.updatedAt);
+				const bounded =
+					conversations.length > PET_CHATS_MAX_CONVERSATIONS
+						? conversations.slice(0, PET_CHATS_MAX_CONVERSATIONS)
+						: conversations;
+				let activeId = typeof value.activeId === "string" ? value.activeId : "";
+				if (bounded.every((conversation) => conversation.id !== activeId)) {
+					activeId = bounded.length > 0 ? bounded[0].id : "";
+				}
+				return { version: PET_CHATS_VERSION, activeId, conversations: bounded };
+			} catch (error) {
+				return empty;
+			}
+		}
+
+		function petChatsWrite(state) {
+			try {
+				const storage = petActionsStorage();
+				if (storage === null) return false;
+				storage.setItem(
+					PET_CHATS_KEY,
+					JSON.stringify({
+						version: PET_CHATS_VERSION,
+						activeId: state.activeId,
+						conversations: state.conversations,
+					}),
+				);
+				return true;
+			} catch (error) {
+				note("companion:chats-store", error);
+				return false;
+			}
+		}
+
+		function petChatsNotify() {
+			for (const listener of [...petChatSubscribers]) {
+				try {
+					listener();
+				} catch (error) {
+					note("companion:chats-subscriber", error);
+				}
+			}
+		}
+
+		/** Bounds + active-id repair, persist, then tell subscribers (panel re-render). */
+		function petChatsCommit(state) {
+			state.conversations.sort((a, b) => b.updatedAt - a.updatedAt);
+			if (state.conversations.length > PET_CHATS_MAX_CONVERSATIONS) {
+				state.conversations = state.conversations.slice(0, PET_CHATS_MAX_CONVERSATIONS);
+			}
+			if (state.conversations.every((conversation) => conversation.id !== state.activeId)) {
+				state.activeId = state.conversations.length > 0 ? state.conversations[0].id : "";
+			}
+			petChatsWrite(state);
+			petChatsNotify();
+			return state;
+		}
+
+		/** All conversations, most recently updated first. */
+		function petChatsList() {
+			return petChatsRead().conversations;
+		}
+
+		function petChatsGet(id) {
+			try {
+				if (typeof id !== "string" || id === "") return null;
+				for (const conversation of petChatsRead().conversations) {
+					if (conversation.id === id) return conversation;
+				}
+				return null;
+			} catch (error) {
+				return null;
+			}
+		}
+
+		/** The active conversation (null only when the store is empty). */
+		function petChatsActive() {
+			try {
+				const state = petChatsRead();
+				for (const conversation of state.conversations) {
+					if (conversation.id === state.activeId) return conversation;
+				}
+				return null;
+			} catch (error) {
+				return null;
+			}
+		}
+
+		function petChatsCreate() {
+			try {
+				const state = petChatsRead();
+				const now = Date.now();
+				const conversation = {
+					id: petChatsNewId("conv"),
+					title: "",
+					createdAt: now,
+					updatedAt: now,
+					messages: [],
+				};
+				state.conversations.unshift(conversation);
+				state.activeId = conversation.id;
+				petChatsCommit(state);
+				return petChatsGet(conversation.id);
+			} catch (error) {
+				note("companion:chats-create", error);
+				return null;
+			}
+		}
+
+		function petChatsRemove(id) {
+			try {
+				if (typeof id !== "string" || id === "") return { ok: false, reason: "invalid" };
+				const state = petChatsRead();
+				const index = state.conversations.findIndex((conversation) => conversation.id === id);
+				if (index < 0) return { ok: false, reason: "missing" };
+				state.conversations.splice(index, 1);
+				if (state.activeId === id) {
+					state.activeId = state.conversations.length > 0 ? state.conversations[0].id : "";
+				}
+				petChatsCommit(state);
+				return { ok: true, removed: id, activeId: state.activeId };
+			} catch (error) {
+				note("companion:chats-remove", error);
+				return { ok: false, reason: "internal" };
+			}
+		}
+
+		function petChatsSetActive(id) {
+			try {
+				if (typeof id !== "string") return { ok: false, reason: "invalid" };
+				const state = petChatsRead();
+				const exists = state.conversations.some((conversation) => conversation.id === id);
+				if (exists === false) return { ok: false, reason: "missing" };
+				state.activeId = id;
+				petChatsCommit(state);
+				return { ok: true, conversation: petChatsGet(id) };
+			} catch (error) {
+				note("companion:chats-active", error);
+				return { ok: false, reason: "internal" };
+			}
+		}
+
+		/**
+		 * Append one turn. A missing/expired conversation id falls back to the active
+		 * conversation (or creates one): the chat path never loses a turn it showed.
+		 */
+		function petChatsAppend(convIdInput, entry) {
+			try {
+				if (entry === null || typeof entry !== "object" || Array.isArray(entry)) {
+					return { ok: false, reason: "invalid" };
+				}
+				const role = entry.role === "user" || entry.role === "pet" ? entry.role : "";
+				if (role === "") return { ok: false, reason: "invalid" };
+				const text = petChatsCleanText(entry.text, role === "user" ? PET_CHATS_USER_MAX : PET_CHATS_PET_MAX);
+				if (text === "") return { ok: false, reason: "invalid" };
+				const state = petChatsRead();
+				const wanted = typeof convIdInput === "string" ? convIdInput : "";
+				let target = null;
+				if (wanted !== "") {
+					target = state.conversations.find((conversation) => conversation.id === wanted) ?? null;
+				}
+				if (target === null) {
+					target = state.conversations.find((conversation) => conversation.id === state.activeId) ?? null;
+				}
+				const now = Date.now();
+				if (target === null) {
+					target = { id: petChatsNewId("conv"), title: "", createdAt: now, updatedAt: now, messages: [] };
+					state.conversations.unshift(target);
+				}
+				const message = { id: petChatsNewId("msg"), role, text, at: now };
+				target.messages.push(message);
+				if (target.messages.length > PET_CHATS_MAX_MESSAGES) {
+					target.messages = target.messages.slice(target.messages.length - PET_CHATS_MAX_MESSAGES);
+				}
+				target.updatedAt = now;
+				state.activeId = target.id;
+				if (role === "user") {
+					const firstUser = target.messages.find((item) => item.role === "user") ?? null;
+					if (firstUser !== null && firstUser.id === message.id) target.title = petChatsTitleFrom(text);
+				}
+				petChatsCommit(state);
+				return { ok: true, conversation: petChatsGet(target.id), message };
+			} catch (error) {
+				note("companion:chats-append", error);
+				return { ok: false, reason: "internal" };
+			}
+		}
+
+		/** Edit one user message in place; the conversation title follows a first-line edit. */
+		function petChatsEditUserMessage(convId, msgId, textInput) {
+			try {
+				if (typeof convId !== "string" || convId === "" || typeof msgId !== "string" || msgId === "") {
+					return { ok: false, reason: "invalid" };
+				}
+				const text = petChatsCleanText(textInput, PET_CHATS_USER_MAX);
+				if (text === "") return { ok: false, reason: "invalid" };
+				const state = petChatsRead();
+				const conversation = state.conversations.find((item) => item.id === convId) ?? null;
+				if (conversation === null) return { ok: false, reason: "missing" };
+				const message =
+					conversation.messages.find((item) => item.id === msgId && item.role === "user") ?? null;
+				if (message === null) return { ok: false, reason: "missing" };
+				message.text = text;
+				conversation.updatedAt = Date.now();
+				const firstUser = conversation.messages.find((item) => item.role === "user") ?? null;
+				if (firstUser !== null && firstUser.id === message.id) conversation.title = petChatsTitleFrom(text);
+				petChatsCommit(state);
+				return { ok: true, conversation: petChatsGet(convId), message };
+			} catch (error) {
+				note("companion:chats-edit", error);
+				return { ok: false, reason: "internal" };
+			}
+		}
+
+		function petChatsSubscribe(listener) {
+			if (typeof listener !== "function") return () => {};
+			petChatSubscribers.add(listener);
+			return () => petChatSubscribers.delete(listener);
+		}
+
+		/** Shared API (contract: version 1). The panel reads the same functions directly. */
+		const petChatsApi = {
+			version: PET_CHATS_VERSION,
+			list: petChatsList,
+			get: petChatsGet,
+			create: petChatsCreate,
+			remove: petChatsRemove,
+			active: petChatsActive,
+			setActive: petChatsSetActive,
+			append: petChatsAppend,
+			editUserMessage: petChatsEditUserMessage,
+			subscribe: petChatsSubscribe,
+		};
+		// Same lifecycle rule as the action-pack API: installed at factory scope so other
+		// modules can read history even before the switchable companion mounts, and
+		// restored by the companion disposer to whatever global existed before.
+		const previousPetChatsGlobal = globalThis.tianlightPetChats;
+		globalThis.tianlightPetChats = petChatsApi;
+
 		function loadState() {
 			try {
 				const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -515,6 +919,7 @@
 			// A previous companion instance restored the pre-skin global on dispose; every
 			// (re)install owns the shared action API again while the pet module is on.
 			globalThis.tianlightPetActions = petActionsApi;
+			globalThis.tianlightPetChats = petChatsApi;
 			const saved = loadState();
 			// Matches the installed artwork (1130x569, about 2:1); keep in sync with the
 			// `[data-tl-cat]` box in the stylesheet.
@@ -730,6 +1135,9 @@
 				// v1.6.4: AI chat is the first item of the same interaction row. It carries
 				// no mood delta; doAction() toggles the composer instead of a line.
 				{ id: "chat", labelKey: "pet.action.chat" },
+				// v1.6.7: conversation history sits right next to AI chat. It uses the fixed
+				// glyph "☰" (the menu is a compact pill) and an i18n accessible name.
+				{ id: "history", labelKey: "pet.action.history" },
 				{ id: "pet", labelKey: "pet.action.pet", mood: 8 },
 				{ id: "feed", labelKey: "pet.action.feed", mood: 12 },
 				{ id: "play", labelKey: "pet.action.play", mood: 6 },
@@ -747,7 +1155,14 @@
 				const button = document.createElement("button");
 				button.type = "button";
 				button.dataset.tlAction = action.id;
-				button.textContent = TL_T(action.labelKey);
+				if (action.id === "history") {
+					// v1.6.7: a fixed glyph keeps the now-9-item pill compact; the English
+					// and Chinese names both reach screen readers through aria-label.
+					button.textContent = "☰";
+					button.setAttribute("aria-label", TL_T(action.labelKey));
+				} else {
+					button.textContent = TL_T(action.labelKey);
+				}
 				menu.appendChild(button);
 			}
 			root.appendChild(menu);
@@ -814,6 +1229,74 @@
 			chatSend.tabIndex = -1;
 			chat.append(chatHead, chatInput, chatSend);
 			root.appendChild(chat);
+
+			// ---- v1.6.7 conversation history panel (the ☰ menu item toggles it) ----
+			// DOM contract (inside the pet root, directly after the composer):
+			//   div[data-tl-cathist] (hidden by default; aria-hidden mirrors it)
+			//     div[data-tl-cathist-head]
+			//       div[data-tl-cathist-title] + button[data-tl-cathist-new]
+			//                                  + button[data-tl-cathist-delete]
+			//                                  + button[data-tl-cathist-close]
+			//     div[data-tl-cathist-status] (transient action feedback, aria-live)
+			//     div[data-tl-cathist-conv-list] > button[data-tl-cathist-conv][data-conv-id][data-active?]
+			//     div[data-tl-cathist-messages]
+			//       > div[data-tl-cathist-msg][data-role][data-msg-id]
+			//           > span[data-tl-cathist-role] + div[data-tl-cathist-text]
+			//           + button[data-tl-cathist-edit] (user rows only)
+			//         inline edit: input[data-tl-cathist-edit-input]
+			//                      + button[data-tl-cathist-edit-save] / [data-tl-cathist-edit-cancel]
+			//     div[data-tl-cathist-empty] (no conversation) / div[data-tl-cathist-hint] (no messages)
+			// The panel and the composer are mutually exclusive surfaces above the pet.
+			const hist = document.createElement("div");
+			hist.dataset.tlCathist = "";
+			hist.setAttribute("role", "group");
+			hist.setAttribute("aria-label", TL_T("pet.history.title"));
+			hist.setAttribute("aria-hidden", "true");
+			// Like the composer: `hidden` keeps the panel out of the layout even before
+			// CSS loads, and the stylesheet pins [hidden] because the base rule is flex.
+			hist.hidden = true;
+			hist.tabIndex = -1;
+			const histHead = document.createElement("div");
+			histHead.dataset.tlCathistHead = "";
+			const histTitle = document.createElement("div");
+			histTitle.dataset.tlCathistTitle = "";
+			histTitle.textContent = TL_T("pet.history.title");
+			const histNew = document.createElement("button");
+			histNew.type = "button";
+			histNew.dataset.tlCathistNew = "";
+			histNew.textContent = TL_T("pet.history.new");
+			histNew.tabIndex = -1;
+			const histDelete = document.createElement("button");
+			histDelete.type = "button";
+			histDelete.dataset.tlCathistDelete = "";
+			histDelete.textContent = TL_T("pet.history.delete");
+			histDelete.tabIndex = -1;
+			// No conversation exists before the first render: deleting is a no-op then.
+			histDelete.disabled = true;
+			const histClose = document.createElement("button");
+			histClose.type = "button";
+			histClose.dataset.tlCathistClose = "";
+			histClose.textContent = "×";
+			histClose.setAttribute("aria-label", TL_T("pet.history.close"));
+			histClose.tabIndex = -1;
+			histHead.append(histTitle, histNew, histDelete, histClose);
+			const histStatus = document.createElement("div");
+			histStatus.dataset.tlCathistStatus = "";
+			histStatus.setAttribute("role", "status");
+			histStatus.setAttribute("aria-live", "polite");
+			histStatus.hidden = true;
+			const histConvList = document.createElement("div");
+			histConvList.dataset.tlCathistConvList = "";
+			const histMessages = document.createElement("div");
+			histMessages.dataset.tlCathistMessages = "";
+			const histEmpty = document.createElement("div");
+			histEmpty.dataset.tlCathistEmpty = "";
+			histEmpty.hidden = true;
+			const histHint = document.createElement("div");
+			histHint.dataset.tlCathistHint = "";
+			histHint.hidden = true;
+			hist.append(histHead, histStatus, histConvList, histMessages, histEmpty, histHint);
+			root.appendChild(hist);
 
 			const clamp = () => {
 				const maxX = Math.max(8, window.innerWidth - PET_WIDTH - 8);
@@ -987,6 +1470,10 @@
 			let chatOpen = false;
 			let chatBusy = false;
 			let chatStatusKey = "";
+			// v1.6.7: the history panel is the composer's sibling surface; both are
+			// mutually exclusive and own a single transient edit row.
+			let historyOpen = false;
+			let histEditMsgId = "";
 			let disposed = false;
 
 			/** Effective pack of the look currently painted (null when the API is missing). */
@@ -1058,6 +1545,8 @@
 				chat.style.transform = "none";
 			};
 			const openChat = () => {
+				// The two panels share the space above the pet: opening one closes the other.
+				if (historyOpen === true) closeHistory();
 				chatOpen = true;
 				root.dataset.tlChatOpen = "";
 				chat.hidden = false;
@@ -1104,6 +1593,285 @@
 				if (chatOpen === true) closeChat();
 				else openChat();
 			};
+			// ---- v1.6.7 conversation history: panel state, rendering, inline edit ----
+			const focusHistPanel = () => {
+				try {
+					hist.focus?.();
+				} catch (error) {
+					note("companion:chats-focus", error);
+				}
+			};
+			const applyHistTabIndex = () => {
+				// Closed panels must not keep a tab stop: tabbing through the page would
+				// otherwise land inside a hidden conversation list.
+				const tabIndex = historyOpen === true ? 0 : -1;
+				for (const node of hist.querySelectorAll("button, input")) node.tabIndex = tabIndex;
+			};
+			const showHistStatus = (key) => {
+				histStatus.textContent = TL_T(key);
+				histStatus.hidden = false;
+				later(() => {
+					if (historyOpen !== true) return;
+					histStatus.textContent = "";
+					histStatus.hidden = true;
+				}, 2000);
+			};
+			// Same clamp as the composer (v1.6.6): a 320px panel centred over a 150px pet
+			// near the right edge would otherwise lose its close button off-screen.
+			const clampHistory = () => {
+				hist.style.left = "50%";
+				hist.style.right = "auto";
+				hist.style.transform = "translateX(-50%)";
+				const rect = hist.getBoundingClientRect();
+				if (!(rect.width > 0)) return;
+				const viewportLeft = Math.min(
+					Math.max(8, state.x + PET_WIDTH / 2 - rect.width / 2),
+					Math.max(8, window.innerWidth - rect.width - 8),
+				);
+				hist.style.left = Math.round(viewportLeft - state.x) + "px";
+				hist.style.transform = "none";
+			};
+			const buildHistRow = (message) => {
+				const row = document.createElement("div");
+				row.dataset.tlCathistMsg = "";
+				row.dataset.role = message.role;
+				row.dataset.msgId = message.id;
+				const head = document.createElement("div");
+				head.dataset.tlCathistMsgHead = "";
+				const roleLabel = document.createElement("span");
+				roleLabel.dataset.tlCathistRole = "";
+				roleLabel.textContent = TL_T(message.role === "user" ? "pet.history.user" : "pet.history.pet");
+				head.appendChild(roleLabel);
+				row.appendChild(head);
+				if (message.role === "user" && histEditMsgId === message.id) {
+					// Inline edit replaces the text of exactly one user row; saving writes the
+					// store (and the title when this is the conversation's first user line).
+					const input = document.createElement("input");
+					input.type = "text";
+					input.dataset.tlCathistEditInput = "";
+					input.value = message.text;
+					input.maxLength = PET_CHATS_USER_MAX;
+					input.setAttribute("maxlength", String(PET_CHATS_USER_MAX));
+					input.autocomplete = "off";
+					input.spellcheck = false;
+					input.addEventListener("keydown", (event) => {
+						if (event === null || event === undefined) return;
+						if (event.key !== "Enter") return;
+						if (typeof event.preventDefault === "function") event.preventDefault();
+						saveHistEdit();
+					});
+					const actions = document.createElement("div");
+					actions.dataset.tlCathistEditActions = "";
+					const saveButton = document.createElement("button");
+					saveButton.type = "button";
+					saveButton.dataset.tlCathistEditSave = "";
+					saveButton.textContent = TL_T("pet.history.save");
+					const cancelButton = document.createElement("button");
+					cancelButton.type = "button";
+					cancelButton.dataset.tlCathistEditCancel = "";
+					cancelButton.textContent = TL_T("pet.history.cancel");
+					actions.append(saveButton, cancelButton);
+					row.append(input, actions);
+					later(() => {
+						if (historyOpen !== true || histEditMsgId !== message.id) return;
+						try {
+							input.focus?.();
+						} catch (error) {
+							note("companion:chats-edit-focus", error);
+						}
+					}, 0);
+				} else {
+					const text = document.createElement("div");
+					text.dataset.tlCathistText = "";
+					text.textContent = message.text;
+					row.appendChild(text);
+					if (message.role === "user") {
+						const editButton = document.createElement("button");
+						editButton.type = "button";
+						editButton.dataset.tlCathistEdit = "";
+						editButton.textContent = TL_T("pet.history.edit");
+						editButton.setAttribute("aria-label", TL_T("pet.history.edit"));
+						head.appendChild(editButton);
+					}
+				}
+				return row;
+			};
+			const renderHistory = () => {
+				try {
+					const state = petChatsRead();
+					const activeId = state.activeId;
+					const active = state.conversations.find((conversation) => conversation.id === activeId) ?? null;
+					const keepEdit =
+						active === null
+							? false
+							: active.messages.some((message) => message.id === histEditMsgId && message.role === "user");
+					if (keepEdit === false) histEditMsgId = "";
+					histConvList.textContent = "";
+					for (const conversation of state.conversations) {
+						const button = document.createElement("button");
+						button.type = "button";
+						button.dataset.tlCathistConv = "";
+						button.dataset.convId = conversation.id;
+						const title =
+							typeof conversation.title === "string" && conversation.title !== ""
+								? conversation.title
+								: TL_T("pet.history.defaultTitle");
+						button.textContent = title + " · " + TL_T("pet.history.count", { n: conversation.messages.length });
+						button.title = title;
+						if (conversation.id === activeId) button.dataset.active = "";
+						histConvList.appendChild(button);
+					}
+					histEmpty.textContent = TL_T("pet.history.empty");
+					histEmpty.hidden = state.conversations.length > 0;
+					histMessages.textContent = "";
+					if (active === null || active.messages.length === 0) {
+						histHint.textContent = TL_T("pet.history.emptyHint");
+						histHint.hidden = false;
+					} else {
+						histHint.hidden = true;
+						for (const message of active.messages) histMessages.appendChild(buildHistRow(message));
+					}
+					histDelete.disabled = active === null;
+					applyHistTabIndex();
+					histMessages.scrollTop = histMessages.scrollHeight;
+					histConvList.scrollTop = 0;
+				} catch (error) {
+					note("companion:chats-render", error);
+				}
+			};
+			const saveHistEdit = () => {
+				try {
+					const active = petChatsActive();
+					const input = histMessages.querySelector("[data-tl-cathist-edit-input]");
+					if (active === null || histEditMsgId === "" || input === null) {
+						histEditMsgId = "";
+						renderHistory();
+						return;
+					}
+					const value = typeof input.value === "string" ? input.value : "";
+					const result = petChatsEditUserMessage(active.id, histEditMsgId, value);
+					if (result !== null && result.ok === true) histEditMsgId = "";
+					renderHistory();
+				} catch (error) {
+					histEditMsgId = "";
+					note("companion:chats-edit-save", error);
+				}
+			};
+			const openHistory = () => {
+				// Mutual exclusion with the composer keeps one readable surface above the pet.
+				if (chatOpen === true) closeChat();
+				historyOpen = true;
+				histEditMsgId = "";
+				root.dataset.tlHistOpen = "";
+				hist.hidden = false;
+				hist.setAttribute("aria-hidden", "false");
+				renderHistory();
+				// Same flip rule as the composer: no room above the pet -> open below it.
+				const panelHeight = hist.getBoundingClientRect().height;
+				const flipThreshold = panelHeight > 0 ? panelHeight + 18 : 380;
+				if (state.y < flipThreshold) root.dataset.tlHistFlip = "";
+				else delete root.dataset.tlHistFlip;
+				clampHistory();
+				applyHistTabIndex();
+				wake();
+				later(() => {
+					if (historyOpen === true) focusHistPanel();
+				}, 0);
+			};
+			const closeHistory = () => {
+				historyOpen = false;
+				histEditMsgId = "";
+				delete root.dataset.tlHistOpen;
+				delete root.dataset.tlHistFlip;
+				hist.hidden = true;
+				hist.setAttribute("aria-hidden", "true");
+				applyHistTabIndex();
+				histStatus.textContent = "";
+				histStatus.hidden = true;
+				try {
+					hist.blur?.();
+					for (const node of hist.querySelectorAll("button, input")) node.blur?.();
+				} catch (error) {
+					note("companion:chats-blur", error);
+				}
+			};
+			const toggleHistory = () => {
+				if (historyOpen === true) closeHistory();
+				else openHistory();
+			};
+			/** Persist one shown turn (user + pet) into the active conversation, creating it. */
+			const recordChatTurn = (userText, petText) => {
+				try {
+					let conversation = petChatsActive();
+					if (conversation === null) conversation = petChatsCreate();
+					if (conversation === null) return;
+					petChatsAppend(conversation.id, { role: "user", text: userText });
+					petChatsAppend(conversation.id, { role: "pet", text: petText });
+				} catch (error) {
+					note("companion:chats-record", error);
+				}
+			};
+			// Panel interactions are delegated: rows and conversation buttons are rebuilt
+			// on every render while the panel and its header buttons are long-lived.
+			const onHistClick = (event) => {
+				const target = event === null || event === undefined ? null : event.target;
+				if (!(target instanceof HTMLElement)) return;
+				if (target.closest("[data-tl-cathist-close]") !== null) {
+					closeHistory();
+					return;
+				}
+				if (target.closest("[data-tl-cathist-new]") !== null) {
+					histEditMsgId = "";
+					petChatsCreate();
+					renderHistory();
+					return;
+				}
+				if (target.closest("[data-tl-cathist-delete]") !== null) {
+					const active = petChatsActive();
+					if (active === null) return;
+					petChatsRemove(active.id);
+					histEditMsgId = "";
+					showHistStatus("pet.history.deleted");
+					renderHistory();
+					return;
+				}
+				const convButton = target.closest("[data-tl-cathist-conv]");
+				if (convButton !== null) {
+					const convId = convButton.dataset.convId;
+					if (typeof convId === "string" && convId !== "") {
+						petChatsSetActive(convId);
+						histEditMsgId = "";
+						renderHistory();
+					}
+					return;
+				}
+				const editButton = target.closest("[data-tl-cathist-edit]");
+				if (editButton !== null) {
+					const row = editButton.closest("[data-tl-cathist-msg]");
+					if (row !== null && typeof row.dataset.msgId === "string" && row.dataset.msgId !== "") {
+						histEditMsgId = row.dataset.msgId;
+						renderHistory();
+					}
+					return;
+				}
+				if (target.closest("[data-tl-cathist-edit-save]") !== null) {
+					saveHistEdit();
+					return;
+				}
+				if (target.closest("[data-tl-cathist-edit-cancel]") !== null) {
+					histEditMsgId = "";
+					renderHistory();
+				}
+			};
+			hist.addEventListener("click", onHistClick);
+			// The panel consumes its own key events so the cat root's Enter/Space menu
+			// shortcut cannot fire while a history button or the edit input has focus.
+			hist.addEventListener("keydown", (event) => {
+				if (event !== null && event !== undefined && typeof event.stopPropagation === "function") event.stopPropagation();
+			});
+			hist.addEventListener("pointerdown", (event) => {
+				if (event !== null && event !== undefined && typeof event.stopPropagation === "function") event.stopPropagation();
+			});
 			/** Show a chat answer in the say bubble: longer hold + the wide-bubble marker. */
 			const sayChat = (reply) => {
 				const text = typeof reply === "string" ? reply.trim() : "";
@@ -1149,17 +1917,22 @@
 							return;
 						}
 						chatInput.value = "";
-						setChatStatus("pet.chat.you");
-						later(() => {
-							if (chatBusy === false && chatStatusKey === "pet.chat.you") setChatStatus("");
-						}, 2200);
+						// v1.6.7: the answered turn is history now; close the composer at once so
+						// the speech bubble (already wide + scrollable) is the only reply surface.
+						recordChatTurn(text, reply);
+						closeChat();
 						wake();
 						noteInteraction("talk");
 					} else {
 						const reason = result !== null && typeof result === "object" && typeof result.reason === "string" ? result.reason : "";
 						if (reason === "") setChatStatus("pet.chat.failed");
 						else setChatStatus(Object.prototype.hasOwnProperty.call(CHAT_REASON_KEYS, reason) ? CHAT_REASON_KEYS[reason] : "pet.chat.reason.default");
+						const deniedLine = TL_T("pet.chat.deniedSay");
 						say("pet.chat.deniedSay", 3200);
+						// v1.6.7: a deliberate refusal is still a completed turn, so it lands in
+						// the history with the same denial line the bubble just showed.
+						recordChatTurn(text, deniedLine);
+						closeChat();
 					}
 				} catch (error) {
 					note("companion:chat", error);
@@ -1215,13 +1988,28 @@
 				root.setAttribute("aria-label", TL_T("pet.aria"));
 				for (const button of menu.querySelectorAll("[data-tl-action]")) {
 					const action = ACTIONS.find((candidate) => candidate.id === button.dataset.tlAction);
-					if (action !== undefined) button.textContent = actionLabel(action);
+					if (action === undefined) continue;
+					if (action.id === "history") {
+						// v1.6.7: fixed glyph, localized accessible name.
+						button.textContent = "☰";
+						button.setAttribute("aria-label", TL_T(action.labelKey));
+					} else {
+						button.textContent = actionLabel(action);
+					}
 				}
 				chatInput.placeholder = TL_T("pet.chat.placeholder");
 				chatInput.setAttribute("aria-label", TL_T("pet.chat.placeholder"));
 				chatSend.textContent = TL_T("pet.chat.send");
 				chatClose.setAttribute("aria-label", TL_T("pet.chat.close"));
 				if (chatStatusKey !== "") chatStatus.textContent = TL_T(chatStatusKey);
+				histTitle.textContent = TL_T("pet.history.title");
+				hist.setAttribute("aria-label", TL_T("pet.history.title"));
+				histNew.textContent = TL_T("pet.history.new");
+				histDelete.textContent = TL_T("pet.history.delete");
+				histClose.setAttribute("aria-label", TL_T("pet.history.close"));
+				// Dynamic rows are rebuilt in the new language; a running inline edit is
+				// intentionally dropped (its text lives in the store until saved).
+				if (historyOpen === true) renderHistory();
 				if (bubbleTimer !== 0 && bubbleKey !== "") bubble.textContent = TL_T(bubbleKey);
 			};
 			const unsubscribeI18n = subscribeTl5I18n(refreshCompanionLabels);
@@ -1274,6 +2062,13 @@
 				if (id === "chat") {
 					closeMenu();
 					toggleChat();
+					return;
+				}
+				// v1.6.7: conversation history toggles the list panel; the two panels are
+				// mutually exclusive (each open path closes the other surface first).
+				if (id === "history") {
+					closeMenu();
+					toggleHistory();
 					return;
 				}
 				// v1.0.0 life-rhythm controls: the pet menu and the role settings page
@@ -1356,7 +2151,14 @@
 
 			const onPointerDown = (event) => {
 				if (event.button !== undefined && event.button !== 0) return;
-				if (event.target instanceof HTMLElement && event.target.closest("[data-tl-catmenu], [data-tl-catchat]") !== null) return;
+				// Every floating surface owned by the pet is excluded from drag start, so a
+				// press on a panel button can never move the pet or steal pointer capture.
+				if (
+					event.target instanceof HTMLElement &&
+					event.target.closest("[data-tl-catmenu], [data-tl-catchat], [data-tl-cathist]") !== null
+				) {
+					return;
+				}
 				dragging = true;
 				moved = false;
 				pointerId = event.pointerId;
@@ -1387,14 +2189,18 @@
 					// v1.6.6: the composer follows the pet; re-clamp it after dragging the pet
 					// towards a screen edge (a drag never closes the composer by itself).
 					if (chatOpen === true) clampChat();
+					// v1.6.7: the history panel tracks the pet the same way.
+					if (historyOpen === true) clampHistory();
 					return;
 				}
 				// v1.6.5: a plain click on the pet while the composer is open is the
 				// always-reachable way out. The menu hangs below the pet and may be clipped
 				// off-screen near a screen edge, so the close path must not depend on it;
 				// the click closes the composer and does not open the menu in the same go.
-				if (chatOpen === true) {
-					closeChat();
+				// v1.6.7: the history panel closes through the very same path.
+				if (chatOpen === true || historyOpen === true) {
+					if (chatOpen === true) closeChat();
+					if (historyOpen === true) closeHistory();
 					closeMenu();
 					wake();
 					return;
@@ -1492,7 +2298,7 @@
 					if (nearTimer !== 0) window.clearTimeout(nearTimer);
 					nearTimer = window.setTimeout(() => {
 						nearTimer = 0;
-						if (!sleeping && !menuOpen && Math.random() < 0.34) say(pick(LINES.near), 2200);
+						if (!sleeping && !menuOpen && historyOpen !== true && Math.random() < 0.34) say(pick(LINES.near), 2200);
 					}, 420);
 				} else {
 					delete root.dataset.tlNear;
@@ -1511,7 +2317,7 @@
 					idleTick += 1;
 					if (idleTick % 2 !== 0) return;
 				}
-				if (dragging || menuOpen) return;
+				if (dragging || menuOpen || historyOpen) return;
 				if (state.mood > 0) state.mood = Math.max(0, state.mood - 1);
 				if (sleeping) return;
 				if (state.mood < 30 && Math.random() < 0.5) {
@@ -1533,30 +2339,37 @@
 				place();
 				// v1.6.6: keep an open composer inside the resized viewport.
 				if (chatOpen === true) clampChat();
+				// v1.6.7: same for the history panel.
+				if (historyOpen === true) clampHistory();
 			};
 			window.addEventListener("resize", onResize);
 
 			// Clicking anywhere outside the pet closes both transient surfaces. v1.6.5:
 			// the composer joins the menu here, so a click on the page (or on another
 			// dialog) leaves the chat instead of trapping the user in it.
+			// v1.6.7: the history panel joins the same dismissal path.
 			const onDocumentPointerDown = (event) => {
-				if (!menuOpen && chatOpen !== true) return;
+				if (!menuOpen && chatOpen !== true && historyOpen !== true) return;
 				const target = event.target;
 				const inside = target instanceof Node && root.contains(target);
 				if (inside === true) return;
 				if (menuOpen) closeMenu();
 				if (chatOpen === true) closeChat();
+				if (historyOpen === true) closeHistory();
 			};
 			document.addEventListener("pointerdown", onDocumentPointerDown, true);
 
 			// v1.6.5: global Escape. The composer's own handlers only fire while the focus
 			// stays on it (and the panel stops propagation), so a document-level capture
 			// listener is the reliable path — pressing Escape anywhere closes the chat.
+			// v1.6.7: the same capture path closes an open history panel.
 			const onDocumentKeyDown = (event) => {
 				if (event === null || event === undefined) return;
-				if (event.key !== "Escape" || chatOpen !== true) return;
+				if (event.key !== "Escape") return;
+				if (chatOpen !== true && historyOpen !== true) return;
 				if (typeof event.preventDefault === "function") event.preventDefault();
-				closeChat();
+				if (chatOpen === true) closeChat();
+				if (historyOpen === true) closeHistory();
 			};
 			document.addEventListener("keydown", onDocumentKeyDown, true);
 
@@ -1589,6 +2402,12 @@
 				if (globalThis.tianlightPetActions === petActionsApi) {
 					if (previousPetActionsGlobal === undefined) delete globalThis.tianlightPetActions;
 					else globalThis.tianlightPetActions = previousPetActionsGlobal;
+				}
+				// The conversation store API follows the same rule: restore the pre-skin
+				// global (delete when none existed) instead of leaking a dead instance.
+				if (globalThis.tianlightPetChats === petChatsApi) {
+					if (previousPetChatsGlobal === undefined) delete globalThis.tianlightPetChats;
+					else globalThis.tianlightPetChats = previousPetChatsGlobal;
 				}
 				hideDuty("dispose");
 				if (typeof unsubscribeI18n === "function") unsubscribeI18n();

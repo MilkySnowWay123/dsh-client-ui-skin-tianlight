@@ -1159,6 +1159,30 @@ body[data-dsh-tianlight] .tl-wall-code {
 	white-space: pre;
 	tab-size: 2;
 }
+/* v1.6.7: URL address and ShaderToy code are first-class sources of the default
+   wallpaper picker, not advanced-only entries any more. Two compact cards sit
+   above the filter chips; the cards reuse the .tl-source-card base look, so only
+   the layout and the text wrapping are new. */
+body[data-dsh-tianlight] .tl-wall-quick-source {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 6px;
+	margin: 2px 0 3px;
+}
+body[data-dsh-tianlight] .tl-wall-quick-source .tl-source-card {
+	min-width: 0;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+body[data-dsh-tianlight] .tl-wall-quick-source .tl-source-card:hover,
+body[data-dsh-tianlight] .tl-wall-quick-source .tl-source-card:focus-visible {
+	border-color: var(--tl-accent);
+	color: var(--tl-ink);
+}
+body[data-dsh-tianlight] .tl-wall-quick-source .tl-source-note {
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
 body[data-dsh-tianlight] .tl-wall-group {
 	display: flex;
 	flex-direction: column;
@@ -3079,6 +3103,196 @@ body[data-dsh-tianlight] [data-tl-cat][data-tl-chat-flip] > [data-tl-say] {
 	body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat] {
 		transition: none;
 	}
+}
+/* v1.6.7 conversation history: a glass browser for past AI chat turns. The panel
+   and the composer never open together, so both anchor above the pet; the panel
+   is taller, so its conversation list and message area scroll instead of pushing
+   the head or the close button off-screen. */
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] {
+	position: absolute;
+	bottom: calc(100% + 10px);
+	left: 50%;
+	transform: translateX(-50%);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	box-sizing: border-box;
+	width: min(320px, calc(100vw - 24px));
+	max-height: 360px;
+	padding: 9px 10px;
+	border-radius: 14px;
+	background: var(--tl-overlay);
+	color: var(--tl-ink);
+	border: 0.5px solid var(--tl-line);
+	box-shadow: 0 12px 30px rgba(8, 26, 44, 0.26);
+	z-index: 4;
+}
+/* Same [hidden] pin as the composer: the flex rule outranks the UA [hidden] rule,
+   so without it the closed panel would keep occupying layout/pointer space. */
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist][hidden] {
+	display: none !important;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-head] {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	flex: 0 0 auto;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-title] {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font: 600 11px/1.4 var(--ds-font-family, system-ui);
+	color: var(--tl-ink);
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] button {
+	appearance: none;
+	border: 0;
+	border-radius: 999px;
+	background: var(--tl-glass-fill, rgba(255, 255, 255, 0.12));
+	color: var(--tl-ink);
+	font: 600 10px/1 var(--ds-font-family, system-ui);
+	padding: 5px 8px;
+	cursor: pointer;
+	flex: 0 0 auto;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] button:hover,
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] button:focus-visible {
+	background: var(--tl-accent-soft);
+	color: var(--tl-ink);
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] button:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-new] {
+	background: var(--tl-accent-soft);
+	color: var(--tl-ink);
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-delete] {
+	color: var(--tl-ink-soft, var(--tl-ink));
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-close] {
+	min-width: 24px;
+	min-height: 24px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 3px 8px;
+	font: 600 15px/1 var(--ds-font-family, system-ui);
+	background: transparent;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-status] {
+	flex: 0 0 auto;
+	font: 500 10px/1.4 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-soft, var(--tl-ink));
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-conv-list] {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	flex: 0 1 auto;
+	max-height: 96px;
+	overflow: auto;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-conv-list]:empty {
+	display: none;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-conv] {
+	width: 100%;
+	box-sizing: border-box;
+	text-align: left;
+	padding: 5px 8px;
+	border-radius: 9px;
+	background: transparent;
+	color: var(--tl-ink-soft, var(--tl-ink));
+	font: 500 10px/1.35 var(--ds-font-family, system-ui);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-conv][data-active] {
+	background: var(--tl-accent-soft);
+	color: var(--tl-ink);
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-messages] {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow: auto;
+	padding-right: 2px;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-messages]:empty {
+	display: none;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-msg] {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	box-sizing: border-box;
+	max-width: 100%;
+	padding: 5px 8px;
+	border-radius: 10px;
+	background: rgba(8, 18, 30, 0.1);
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-msg][data-role="user"] {
+	align-self: flex-end;
+	background: var(--tl-accent-soft);
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-msg][data-role="pet"] {
+	align-self: flex-start;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-msg-head] {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-role] {
+	flex: 1 1 auto;
+	min-width: 0;
+	font: 600 9px/1.3 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-faint, var(--tl-ink-soft, var(--tl-ink)));
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-edit] {
+	padding: 2px 7px;
+	font: 600 9px/1 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-text] {
+	white-space: pre-wrap;
+	word-break: break-word;
+	font: 400 10.5px/1.5 var(--ds-font-family, system-ui);
+	color: var(--tl-ink);
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-edit-input] {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 5px 8px;
+	border-radius: 8px;
+	border: 0.5px solid var(--tl-line-strong, rgba(255, 255, 255, 0.3));
+	background: var(--tl-glass-fill, rgba(255, 255, 255, 0.12));
+	color: var(--tl-ink);
+	font: 500 10.5px/1.4 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-edit-actions] {
+	display: flex;
+	gap: 5px;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-empty],
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-cathist] [data-tl-cathist-hint] {
+	padding: 6px 2px;
+	font: 400 10.5px/1.5 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-faint, var(--tl-ink-soft, var(--tl-ink)));
+	text-align: center;
+}
+/* Near the top of the viewport there is no room above the pet: the panel flips
+   below it, mirroring the composer's v1.6.6 data-tl-chat-flip behaviour. */
+body[data-dsh-tianlight] [data-tl-cat][data-tl-hist-flip] > [data-tl-cathist] {
+	top: calc(100% + 10px);
+	bottom: auto;
 }
 `;
 

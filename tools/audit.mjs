@@ -468,6 +468,35 @@ report(
   'v1.6.4 localizes the chat thinking / unavailable / failed states in both dictionaries',
 )
 
+// ---- 17. v1.6.7: first-class URL/ShaderToy wallpaper sources + pet chat history ----
+report(
+  source.includes('data-tl-quick-source') &&
+    source.includes('openQuickSource') &&
+    source.includes('lib.quick.url') &&
+    source.includes('lib.quick.shader')
+    ? 'PASS'
+    : 'FAIL',
+  'v1.6.7 makes URL and ShaderToy first-class wallpaper sources in the default picker',
+)
+report(
+  source.includes('recordChatTurn(text, reply)') &&
+    source.includes('recordChatTurn(text, deniedLine)') &&
+    source.includes('recordChatTurn')
+    ? 'PASS'
+    : 'FAIL',
+  'v1.6.7 closes the AI chat composer as soon as the pet replies (the bubble carries the answer)',
+)
+report(
+  source.includes('tianlight.petChats.v1') &&
+    source.includes('tianlightPetChats') &&
+    source.includes('data-tl-cathist') &&
+    source.includes('petChatsEditUserMessage') &&
+    source.includes('petChatsRemove')
+    ? 'PASS'
+    : 'FAIL',
+  'v1.6.7 keeps a queryable pet chat history (new chat, edit a sent message, delete a chat)',
+)
+
 console.log(issues === 0 ? 'AUDIT: no blocking issues' : `AUDIT: ${issues} blocking issue(s)`)
 process.exitCode = issues === 0 ? 0 : 1
 
