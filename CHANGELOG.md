@@ -2,6 +2,27 @@
 
 本文件由 `node tools/release.mjs --note "…"` 维护；条目按版本倒序，格式参考 Keep a Changelog。
 
+## [1.1.0] - 2026-11-10
+
+### 发布说明
+
+- **角色中枢**：侧栏 footer「角色」按钮 + 全屏面板，一屏管生活状态、专注/静音、液态玻璃、形象、AI 对话、权限、审计；×/Esc/遮罩关闭、焦点还原；`globalThis.tianlightRoleHub`；实例诊断 `hub()`。
+- **AI 桌宠（严格权限）**：新增第 25 片段 `src/44-pet-brain.js`（region `pet brain`）。本地大脑（12 类意图、中英双语、短句安静语气）+ 可选 `window.tianlightPetLLM` 适配器；能力白名单：safe 六项默认授予、`llm` 需用户显式 `{consent:"user-explicit"}`、**7 项永久禁止**（`agent/network/files/shell/approve/message/install`，代码层不可授予）；LLM 硬上限（日 20≤50、分钟 3、输入 280、输出 600 字、12s 超时、固定安全系统提示、只发当前一句、无 DSH 会话/文件/凭据）；HTML 清理；失败回退本地；审计环形 60；暂停/击杀开关；`globalThis.tianlightPet`；实例诊断 `pet()`。
+- **形象替换补完**：角色中枢支持本机直接上传图片/视频（≤32MiB，客户端前置校验 + host `_upload` 服务端校验），上传后即时切换。
+- **文档**：新增 [docs/AI-PET-PERMISSIONS.md](docs/AI-PET-PERMISSIONS.md)（权限矩阵/硬上限/适配器契约/审计）、[docs/RELEASE-1.1.0.md](docs/RELEASE-1.1.0.md)。
+- 第 26 片段 `src/76-role-hub.js`（region `role hub`）；`src/99-apply.js` 安装 pet brain / role hub；`src/20-stylesheet.js` 中枢样式；`BUILD`/`HOST_BUILD`/`package.json`/`skin.json` = 1.1.0。
+- 静态链：build 26/26、test 67/67、structure/audit/check-css/verify/i18n 全绿；Node 冒烟在 v1.0 169/169 基础上新增 BRAIN/HUB 段；真浏览器级仍受本会话沙箱限制。
+
+### 新增
+
+- 角色中枢 overlay + 侧栏入口；玻璃实时切换；专注/静音快捷键；形象列表 + 上传；AI 对话；权限表（含永久禁止只读行）；审计列表。
+- `globalThis.tianlightPet` v1 API：`status/permissions/grant/revoke/chat/say/setLLM/clearLLM/pause/resume/audit/maybeProactive`。
+- `globalThis.tianlightRoleHub` v1 API：`open/close/status`。
+
+### 变更
+
+- `src/99-apply.js`：新增 pet brain / role hub 安装与诊断；`src/20-stylesheet.js`：中枢样式；`tools/build.mjs`/`structure.mjs`：26 片段 + 两个新 region；`tools/audit.mjs`：v1.1 权限/中枢/上传守卫。
+
 ## [1.0.0] - 2026-11-10
 
 ### 发布说明

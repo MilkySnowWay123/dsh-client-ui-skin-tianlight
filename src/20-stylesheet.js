@@ -2113,6 +2113,212 @@ body[data-dsh-tianlight] .tl-role-stats b {
 	color: var(--tl-ink);
 	font-weight: 600;
 }
+
+/* ---- v1.1.0 role hub: sidebar entry + full-screen "role control" overlay ---- */
+body[data-dsh-tianlight] {
+	--tl-ok: #2f8f4e;
+	--tl-warn: #c78117;
+	--tl-bad: #c94f4f;
+}
+body[data-dsh-tianlight][data-tl-hub-open] {
+	overflow: hidden;
+}
+body[data-dsh-tianlight] [data-tl-hub] {
+	position: fixed;
+	inset: 0;
+	z-index: 2601;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+	color: var(--tl-ink);
+	font: 500 13px/1.5 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-hub-mask] {
+	position: absolute;
+	inset: 0;
+	background: rgba(6, 16, 28, 0.42);
+	-webkit-backdrop-filter: blur(3px);
+	backdrop-filter: blur(3px);
+}
+body[data-dsh-tianlight] [data-tl-hub-panel] {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	width: min(760px, 94vw);
+	max-height: 88vh;
+	border-radius: 20px;
+	background: var(--tl-overlay, rgba(18, 30, 48, 0.94));
+	border: 0.5px solid var(--tl-glass-line, rgba(255, 255, 255, 0.3));
+	box-shadow: 0 28px 80px rgba(4, 14, 26, 0.45);
+	overflow: hidden;
+}
+body[data-dsh-tianlight] [data-tl-hub-head] {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 14px 18px;
+	border-bottom: 0.5px solid var(--tl-glass-line, rgba(255, 255, 255, 0.22));
+}
+body[data-dsh-tianlight] [data-tl-hub-head] h2 {
+	flex: 1;
+	margin: 0;
+	font: 600 15px/1.3 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-hub-close] {
+	appearance: none;
+	width: 30px;
+	height: 30px;
+	border-radius: 999px;
+	border: 0.5px solid var(--tl-line-strong, rgba(255, 255, 255, 0.3));
+	background: var(--tl-accent-soft, rgba(255, 255, 255, 0.12));
+	color: var(--tl-ink);
+	font: 600 15px/1 var(--ds-font-family, system-ui);
+	cursor: pointer;
+}
+body[data-dsh-tianlight] [data-tl-hub-close]:hover,
+body[data-dsh-tianlight] [data-tl-hub-close]:focus-visible {
+	background: var(--tl-accent);
+	color: #fff;
+	outline: none;
+}
+body[data-dsh-tianlight] [data-tl-hub-body] {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 16px 18px 20px;
+	overflow: auto;
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-card {
+	display: flex;
+	flex-direction: column;
+	gap: 9px;
+	padding: 13px 14px;
+	border-radius: 14px;
+	background: var(--tl-glass-fill, rgba(255, 255, 255, 0.10));
+	border: 0.5px solid var(--tl-glass-line, rgba(255, 255, 255, 0.2));
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-card > h3 {
+	margin: 0;
+	font: 600 13px/1.35 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+body[data-dsh-tianlight] [data-tl-hub] button,
+body[data-dsh-tianlight] [data-tl-hub] select {
+	appearance: none;
+	cursor: pointer;
+	font: 600 12px/1.2 var(--ds-font-family, system-ui);
+	color: var(--tl-ink);
+	background: var(--tl-accent-soft, rgba(255, 255, 255, 0.12));
+	border: 0.5px solid var(--tl-line-strong, rgba(255, 255, 255, 0.3));
+	border-radius: 999px;
+	padding: 7px 12px;
+}
+body[data-dsh-tianlight] [data-tl-hub] select {
+	border-radius: 10px;
+	max-width: 100%;
+}
+body[data-dsh-tianlight] [data-tl-hub] button:hover,
+body[data-dsh-tianlight] [data-tl-hub] button:focus-visible {
+	background: var(--tl-accent);
+	color: #fff;
+	outline: none;
+}
+body[data-dsh-tianlight] [data-tl-hub] button[data-active] {
+	background: var(--tl-accent);
+	color: #fff;
+}
+body[data-dsh-tianlight] [data-tl-hub] button:disabled {
+	opacity: 0.45;
+	cursor: default;
+}
+body[data-dsh-tianlight] [data-tl-hub-status] {
+	font: 500 12px/1.55 var(--ds-font-family, system-ui);
+	white-space: pre-wrap;
+	color: var(--tl-ink-soft, var(--tl-ink));
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-log {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	max-height: 200px;
+	overflow: auto;
+	padding: 8px 10px;
+	border-radius: 10px;
+	background: rgba(8, 18, 30, 0.22);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-log > p {
+	margin: 0;
+	font: 400 12px/1.45 var(--ds-font-family, system-ui);
+	white-space: pre-wrap;
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-log > p[data-role="pet"] {
+	color: var(--tl-ink);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-log > p[data-role="user"] {
+	color: var(--tl-ink-soft, var(--tl-ink));
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-log > p[data-role="denied"] {
+	color: var(--tl-warn, #e6a23c);
+}
+body[data-dsh-tianlight] [data-tl-hub-chat-input] {
+	flex: 1;
+	min-width: 160px;
+	padding: 8px 11px;
+	border-radius: 10px;
+	border: 0.5px solid var(--tl-line-strong, rgba(255, 255, 255, 0.3));
+	background: var(--tl-glass-fill, rgba(255, 255, 255, 0.12));
+	color: var(--tl-ink);
+	font: 500 12px/1.4 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-hub-chat-input]:focus {
+	outline: 2px solid var(--tl-accent);
+	outline-offset: 1px;
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-perm {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-perm-row] {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font: 500 12px/1.4 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-perm-row][data-risk="safe"] span:first-child {
+	color: var(--tl-ok, #67c23a);
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-perm-row][data-risk="medium"] span:first-child {
+	color: var(--tl-warn, #e6a23c);
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-perm-row][data-risk="forbidden"] span:first-child {
+	color: var(--tl-bad, #f56c6c);
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-audit] {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	font: 400 11px/1.5 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-faint, var(--tl-ink-soft, var(--tl-ink)));
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-hint {
+	margin: 0;
+	font: 400 11px/1.5 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-faint, var(--tl-ink-soft, var(--tl-ink)));
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-badge {
+	display: inline-block;
+	padding: 2px 7px;
+	border-radius: 999px;
+	font: 600 10px/1.4 var(--ds-font-family, system-ui);
+	background: var(--tl-accent-soft, rgba(255, 255, 255, 0.14));
+}
 `;
 
 		/** Injected once per page; every rule is scoped to the skin's body attribute. */

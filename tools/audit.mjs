@@ -201,6 +201,36 @@ report(
   "pet media changes are broadcast as tianlight:pet-media",
 )
 
+// ---- 9. v1.1.0 AI companion: strict permission model / hub / upload / audit ----
+report(source.includes("globalThis.tianlightPet") ? "PASS" : "FAIL", "pet brain exposes globalThis.tianlightPet")
+report(
+  source.includes("tianlight.pet.permissions.v1") && source.includes('consent') ? "PASS" : "FAIL",
+  "pet permissions persist and LLM grants require explicit consent",
+)
+report(
+  ["agent", "network", "files", "shell", "approve", "message", "install"].every((cap) => source.includes(`"${cap}"`)) &&
+    source.includes("hard-denied")
+    ? "PASS"
+    : "FAIL",
+  "pet brain ships the seven hard-denied capabilities",
+)
+report(
+  source.includes('tianlight.pet.ai.v1') && source.includes("dailyLimit") ? "PASS" : "FAIL",
+  "LLM adapter usage is budgeted and persisted",
+)
+report(
+  source.includes('tianlight-role-hub') && source.includes('"sidebar.footer.action"') ? "PASS" : "FAIL",
+  "role hub registers a sidebar footer entry",
+)
+report(
+  source.includes('_upload?name=') && source.includes("/ 1024 / 1024") ? "PASS" : "FAIL",
+  "role hub uploads pet media through the host upload route with a client-side size check",
+)
+report(
+  source.includes('data-tl-hub') && source.includes('tianlight-role-hub') ? "PASS" : "FAIL",
+  "role hub exposes the full-screen control overlay",
+)
+
 console.log(issues === 0 ? 'AUDIT: no blocking issues' : `AUDIT: ${issues} blocking issue(s)`)
 process.exitCode = issues === 0 ? 0 : 1
 

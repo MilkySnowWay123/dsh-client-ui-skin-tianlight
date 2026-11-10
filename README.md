@@ -6,6 +6,16 @@
 >
 > 包名 `@dsh-external/dsh-client-ui-skin-tianlight` · 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
 
+## v1.1.0 · 角色中枢 · AI 桌宠（严格权限）· 形象上传
+
+`1.1.0`（`lib/client.js` **26 片段**；`BUILD`/`HOST_BUILD` = `1.1.0`）。细节见 [docs/RELEASE-1.1.0.md](docs/RELEASE-1.1.0.md)、权限规范 [docs/AI-PET-PERMISSIONS.md](docs/AI-PET-PERMISSIONS.md)：
+
+- **角色中枢**：侧栏 footer「角色」按钮 + 全屏面板，一屏管生活状态/专注/静音/液态玻璃/形象/记忆/AI 对话/权限/审计；×、Esc、遮罩关闭，焦点还原；`globalThis.tianlightRoleHub`。
+- **AI 桌宠（严格权限）**：`src/44-pet-brain.js` 本地大脑（12 类意图、中英双语、短句安静语气）+ 可选 `window.tianlightPetLLM` 适配器；**能力白名单**：safe 六项默认、`llm` 需显式同意、**7 项永久禁止**（agent/network/files/shell/approve/message/install 不可授予）；LLM 硬上限（日 20≤50/分钟 3/输入 280/输出 600 字/12s/固定安全系统提示/只发当前一句/无会话内容）；审计环形 60 + 暂停开关；`globalThis.tianlightPet`。
+- **形象替换补完**：角色中枢可**直接上传本机图片/视频**（≤32MiB，客户端+服务端双校验），上传后即时切换；默认仍回退 `cat.png`/内联 SVG。
+- **未完成项**：真实浏览器级验收（沙箱受限，harness 就绪）与 GitHub 推送（本会话无凭据，镜像/脚本已备）仍在进行；真实 DSH 任务/审批信号源未做（需新权限，另行规范）。
+- 静态链 build 26/26、test 67/67、structure/audit/css/verify/i18n 全绿；Node 冒烟在 v1.0 169/169 基础上新增权限/中枢段。
+
 ## v1.0.0 · 角色生活节奏 · 可替换形象 · 液态玻璃（正式版）
 
 `1.0.0`（`lib/client.js` **24 片段**；`BUILD`/`HOST_BUILD` = `1.0.0`）。**正式版**，细节见 [docs/RELEASE-1.0.0.md](docs/RELEASE-1.0.0.md)：
@@ -184,6 +194,7 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 
 ## 版本历史
 
+- **v1.1.0（2026-11-10）**：角色中枢（侧栏入口 + 全屏面板：生活/专注/静音/玻璃/形象/记忆/AI/权限/审计）、AI 桌宠（本地大脑 + 可选用户授权 LLM 适配器 + 严格能力白名单与 7 项永久禁止 + 硬上限 + 审计 + 暂停开关）、形象支持本机直接上传图片/视频（≤32MiB）；无宿主路由改动。详见 [docs/RELEASE-1.1.0.md](docs/RELEASE-1.1.0.md) 与 [docs/AI-PET-PERMISSIONS.md](docs/AI-PET-PERMISSIONS.md)。
 - **v1.0.0（2026-11-10）**：正式版——桌宠升级为多功能角色智能体（虚拟时钟/每日作息/主动开口预算/跨会话记忆/职责提醒闸门与延迟回放）、可替换形象（图片或 ≤32 MiB 视频）、可选液态玻璃三档（真实/柔和/磨砂，自动降级）、角色设置页、专注计时、互动记忆；节能与稳定性优化；无宿主路由改动。详见 [docs/RELEASE-1.0.0.md](docs/RELEASE-1.0.0.md)。
 - **v0.7.0（2026-11-10）**：职责通道——浏览器半新增 `globalThis.tianlightDuty`（`send/subscribe/status/clear`）与 `tianlight:duty` / `tianlight:duty-action` 事件；桌宠新增带选项按钮的职责气泡（`interrupt`）、普通短句（`speak`）、清理（`clear`），回传 `choice`/`timeout`；fail-closed、`companion-off` 降级、键盘可达、与普通台词隔离。**只改浏览器半，无需重启 DSH**。详见 [docs/DUTY-CHANNEL.md](docs/DUTY-CHANNEL.md)。
 - **v0.6.0（2026-11-10）**：Wallpaper Engine 库集成——宿主半自动发现/扫描本机 WE 工坊与 projects（本机 35 条），纯 JS `scene.pkg`/TEX 解 4K 静态图，新增 `/api/we-wallpaper/*` 路由；客户端第 22 片段 `72-we-library` 提供设置导航页 + 侧栏按钮 + 全屏浮层，快捷选择器自动显示 WE 卡片，高级 ① 自动检测；可选场景动态缓存（Windows-only）。详见 [docs/RELEASE-0.6.0.md](docs/RELEASE-0.6.0.md)。

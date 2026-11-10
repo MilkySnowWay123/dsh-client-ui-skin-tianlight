@@ -205,6 +205,20 @@
 							return null;
 						}
 					},
+					pet: () => {
+						try {
+							return globalThis.tianlightPet?.status?.() ?? null;
+						} catch {
+							return null;
+						}
+					},
+					hub: () => {
+						try {
+							return globalThis.tianlightRoleHub?.status?.() ?? null;
+						} catch {
+							return null;
+						}
+					},
 				};
 				// Support diagnostics: which hook layer does this DSH build render?
 				// Lazy on purpose — plugin apply runs before the shell mounts the product UI,
@@ -291,6 +305,13 @@
 				// companion degrades cleanly, and the settings page only needs `slots`.
 				install("ui-skin-tianlight: life rhythm", () => installLifeRhythm());
 				install("ui-skin-tianlight: life settings", () => installLifeSettings(ctx));
+
+				// ---- v1.1.0 AI companion layer ----
+				// The brain is the single owner of proactive rights: a strict capability
+				// allowlist, an optional user-granted LLM adapter with hard budgets, an
+				// audit log and a kill switch. The hub is the visible control plane.
+				install("ui-skin-tianlight: pet brain", () => installPetBrain());
+				install("ui-skin-tianlight: role hub", () => installRoleHub(ctx));
 
 				// ---- keyboard/a11y is always on and installs AFTER the panel host exists ----
 				install("ui-skin-tianlight: accessibility", () => installAccessibility(ctx));
