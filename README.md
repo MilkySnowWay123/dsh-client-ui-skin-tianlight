@@ -6,6 +6,17 @@
 >
 > 包名 `@dsh-external/dsh-client-ui-skin-tianlight` · 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
 
+## v1.6.5 · 正式版：修好桌宠「AI 对话」关不掉 · 四个随手可退的关闭路径
+
+`1.6.5`（26 片段；`BUILD`/`HOST_BUILD` = `1.6.5`）。细节见 [docs/RELEASE-1.6.5.md](docs/RELEASE-1.6.5.md)：
+
+- **显式关闭按钮**：对话面板顶部新增状态行 +「×」关闭按钮（`[data-tl-catchat-head]` / `[data-tl-catchat-close]`，`aria-label` 走新增 i18n 键 `pet.chat.close`，zh/en）。
+- **点空白关闭**：点击桌宠以外的页面区域即关闭（`document` capture pointerdown；点桌宠自身/输入框/发送/关闭按钮不关闭）。
+- **全局 Esc**：任意焦点位置按 Esc 都能关闭（`document` capture keydown，dispose 时移除）。
+- **桌宠贴近底部也能退出**：互动菜单挂在桌宠下方、贴屏幕底部时可能被裁到视口外——现在**点一下桌宠本身**就会关闭对话（不会再顺手打开菜单），不再依赖菜单可见。
+- **`[hidden]` 真正生效**：面板 `display:flex` 曾覆盖 UA `[hidden]`、关闭后仍隐占位；现在 `[data-tl-catchat][hidden] { display:none!important }`，并同步收起键盘焦点。
+- **公开上传命名**：公开版本名 **v1.0.4（正式版）**（内部构建 `1.6.5`）。仅浏览器半逻辑改动；因 `BUILD`/`HOST_BUILD` bump，建议 **Ctrl+F5 后重启 DSH 一次**以消除宿主半 stale 提示。
+
 ## v1.6.4 · 正式版：桌宠 AI 对话 · 每个形象的动作包 · 全代码审查修复
 
 `1.6.4`（26 片段；`BUILD`/`HOST_BUILD` = `1.6.4`）。细节见 [docs/RELEASE-1.6.4.md](docs/RELEASE-1.6.4.md) 与审查报告 [docs/REVIEW-1.6.4.md](docs/REVIEW-1.6.4.md)：

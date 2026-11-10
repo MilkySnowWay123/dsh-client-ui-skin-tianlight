@@ -92,6 +92,7 @@
 				"pet.action.chat": "AI 对话",
 				"pet.chat.placeholder": "和我说点什么…",
 				"pet.chat.send": "发送",
+				"pet.chat.close": "关闭",
 				"pet.chat.thinking": "想想…",
 				"pet.chat.empty": "先说点什么吧。",
 				"pet.chat.unavailable": "AI 大脑还没就绪。",
@@ -149,6 +150,7 @@
 				"pet.action.chat": "AI chat",
 				"pet.chat.placeholder": "Say something to me…",
 				"pet.chat.send": "Send",
+				"pet.chat.close": "Close",
 				"pet.chat.thinking": "Thinking…",
 				"pet.chat.empty": "Say something first.",
 				"pet.chat.unavailable": "The AI brain isn't ready.",
@@ -752,23 +754,43 @@
 
 			// ---- v1.6.4 AI chat composer (the menu item「AI 对话」toggles it) ----
 			// DOM contract (all inside the pet root, after the menu):
-			//   div[data-tl-catchat] > div[data-tl-catchat-status]
+			//   div[data-tl-catchat] > div[data-tl-catchat-head] > div[data-tl-catchat-status]
+			//                                                   + button[data-tl-catchat-close]
 			//                        + input[data-tl-catchat-input]
 			//                        + button[data-tl-catchat-send]
 			// Mounted after the menu inside the same root: the stylesheet floats it above
 			// the art (a looping video keeps playing), and pointerdown inside it must never
 			// start a drag. Closed by default: the root carries data-tl-chat-open to show it,
 			// and the busy state is exposed as data-tl-busy on the panel.
+			// v1.6.5 dismissal paths (the reported bug: the composer could not be left):
+			// explicit × button, Escape (document-level capture, works from anywhere),
+			// pointerdown outside the pet root, and a plain click on the pet itself — the
+			// menu hangs below the pet and can be clipped off-screen near a screen edge, so
+			// the menu must never be the only way to close the composer.
 			const chat = document.createElement("div");
 			chat.dataset.tlCatchat = "";
 			chat.setAttribute("aria-hidden", "true");
 			// The stylesheet owns the transition, but `hidden` keeps the composer out of
-			// the layout even before/without CSS, and is lifted by openChat().
+			// the layout even before/without CSS, and is lifted by openChat(). v1.6.5: the
+			// stylesheet also pins `[data-tl-catchat][hidden] { display: none !important; }`
+			// because the composer's own `display: flex` rule would override the UA [hidden]
+			// rule and leave an invisible panel occupying layout/pointer space.
 			chat.hidden = true;
+			const chatHead = document.createElement("div");
+			chatHead.dataset.tlCatchatHead = "";
 			const chatStatus = document.createElement("div");
 			chatStatus.dataset.tlCatchatStatus = "";
 			chatStatus.setAttribute("role", "status");
 			chatStatus.setAttribute("aria-live", "polite");
+			// v1.6.5: the always-visible, always-clickable way out of the composer.
+			const chatClose = document.createElement("button");
+			chatClose.type = "button";
+			chatClose.setAttribute("type", "button");
+			chatClose.dataset.tlCatchatClose = "";
+			chatClose.textContent = "×";
+			chatClose.setAttribute("aria-label", TL_T("pet.chat.close"));
+			chatClose.tabIndex = -1;
+			chatHead.append(chatStatus, chatClose);
 			const chatInput = document.createElement("input");
 			chatInput.type = "text";
 			chatInput.setAttribute("type", "text");
@@ -787,7 +809,7 @@
 			chatSend.dataset.tlCatchatSend = "";
 			chatSend.textContent = TL_T("pet.chat.send");
 			chatSend.tabIndex = -1;
-			chat.append(chatStatus, chatInput, chatSend);
+			chat.append(chatHead, chatInput, chatSend);
 			root.appendChild(chat);
 
 			const clamp = () => {
@@ -1023,6 +1045,7 @@
 				chat.setAttribute("aria-hidden", "false");
 				chatInput.tabIndex = 0;
 				chatSend.tabIndex = 0;
+				chatClose.tabIndex = 0;
 				setChatStatus("");
 				wake();
 				later(() => {
@@ -1039,11 +1062,13 @@
 				chat.setAttribute("aria-hidden", "true");
 				chatInput.tabIndex = -1;
 				chatSend.tabIndex = -1;
+				chatClose.tabIndex = -1;
 				setChatStatus("");
 				// Never leave the keyboard on a closed composer: Enter would keep sending.
 				try {
 					chatInput.blur?.();
 					chatSend.blur?.();
+					chatClose.blur?.();
 				} catch (error) {
 					note("companion:chat-blur", error);
 				}
@@ -1144,6 +1169,19 @@
 				if (event !== null && event !== undefined && typeof event.stopPropagation === "function") event.stopPropagation();
 				void sendChat();
 			});
+			// v1.6.5: the explicit close button. pointerdown is consumed too so pressing
+			// the button never starts a pet drag (the root pointerdown handler ignores the
+			// composer, this keeps the guarantee even if that check changes).
+			chatClose.addEventListener("pointerdown", (event) => {
+				if (event !== null && event !== undefined && typeof event.stopPropagation === "function") event.stopPropagation();
+			});
+			chatClose.addEventListener("click", (event) => {
+				if (event !== null && event !== undefined) {
+					if (typeof event.preventDefault === "function") event.preventDefault();
+					if (typeof event.stopPropagation === "function") event.stopPropagation();
+				}
+				closeChat();
+			});
 
 			// 语言切换（跟随 DSH 或手动）时刷新可读文案与正在显示的台词，不重建 DOM。
 			const refreshCompanionLabels = () => {
@@ -1155,6 +1193,7 @@
 				chatInput.placeholder = TL_T("pet.chat.placeholder");
 				chatInput.setAttribute("aria-label", TL_T("pet.chat.placeholder"));
 				chatSend.textContent = TL_T("pet.chat.send");
+				chatClose.setAttribute("aria-label", TL_T("pet.chat.close"));
 				if (chatStatusKey !== "") chatStatus.textContent = TL_T(chatStatusKey);
 				if (bubbleTimer !== 0 && bubbleKey !== "") bubble.textContent = TL_T(bubbleKey);
 			};
@@ -1320,6 +1359,16 @@
 					wake();
 					return;
 				}
+				// v1.6.5: a plain click on the pet while the composer is open is the
+				// always-reachable way out. The menu hangs below the pet and may be clipped
+				// off-screen near a screen edge, so the close path must not depend on it;
+				// the click closes the composer and does not open the menu in the same go.
+				if (chatOpen === true) {
+					closeChat();
+					closeMenu();
+					wake();
+					return;
+				}
 				// A click (not a drag) toggles the interaction menu.
 				if (menuOpen) closeMenu();
 				else openMenu();
@@ -1455,13 +1504,29 @@
 			};
 			window.addEventListener("resize", onResize);
 
+			// Clicking anywhere outside the pet closes both transient surfaces. v1.6.5:
+			// the composer joins the menu here, so a click on the page (or on another
+			// dialog) leaves the chat instead of trapping the user in it.
 			const onDocumentPointerDown = (event) => {
-				if (!menuOpen) return;
+				if (!menuOpen && chatOpen !== true) return;
 				const target = event.target;
-				if (target instanceof Node && root.contains(target)) return;
-				closeMenu();
+				const inside = target instanceof Node && root.contains(target);
+				if (inside === true) return;
+				if (menuOpen) closeMenu();
+				if (chatOpen === true) closeChat();
 			};
 			document.addEventListener("pointerdown", onDocumentPointerDown, true);
+
+			// v1.6.5: global Escape. The composer's own handlers only fire while the focus
+			// stays on it (and the panel stops propagation), so a document-level capture
+			// listener is the reliable path — pressing Escape anywhere closes the chat.
+			const onDocumentKeyDown = (event) => {
+				if (event === null || event === undefined) return;
+				if (event.key !== "Escape" || chatOpen !== true) return;
+				if (typeof event.preventDefault === "function") event.preventDefault();
+				closeChat();
+			};
+			document.addEventListener("keydown", onDocumentKeyDown, true);
 
 			later(() => say("pet.hello", 2600), 700);
 			// v1.0.0 media ordering: apply() installs the life layer AFTER this switchable
@@ -1503,6 +1568,7 @@
 				window.removeEventListener("pointermove", onProximity);
 				window.removeEventListener("resize", onResize);
 				document.removeEventListener("pointerdown", onDocumentPointerDown, true);
+				document.removeEventListener("keydown", onDocumentKeyDown, true);
 				document.removeEventListener("tianlight:pet-actions", onPetPackChanged);
 				document.removeEventListener("tianlight:pet-media", onPetPackChanged);
 				document.removeEventListener("tianlight:pet-media", onPetMedia);

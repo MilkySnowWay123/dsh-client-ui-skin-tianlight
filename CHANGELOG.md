@@ -2,6 +2,14 @@
 
 本文件由 `node tools/release.mjs --note "…"` 维护；条目按版本倒序，格式参考 Keep a Changelog。
 
+## [1.6.5] - 2026-11-10
+
+### 发布说明
+
+- **修复桌宠「AI 对话」关不掉（用户反馈）**：面板新增状态行 +「×」关闭按钮（`[data-tl-catchat-head]`、`[data-tl-catchat-close]`、新增 i18n 键 `pet.chat.close`，zh/en）；`document` 级 capture `pointerdown` 点空白关闭（点桌宠/输入框/按钮不误关）；`document` 级 capture `keydown` 全局 Esc 关闭（不再要求焦点在面板内）；桌宠靠近屏幕底部、菜单被裁到视口外时，**点桌宠本身**即关闭对话且不打开菜单；修复 `[data-tl-catchat]` 的 `display:flex` 覆盖 UA `[hidden]`、`chat.hidden` 无效的问题（新增 `[data-tl-catchat][hidden]{display:none!important}`）；关闭时同步收起 tabIndex 并 blur，避免 Enter 继续发送/焦点留在隐藏控件。**仅浏览器半逻辑改动，无新增权限/网络通道/宿主路由**；因 `BUILD`/`HOST_BUILD` = 1.6.5，升级请 **Ctrl+F5 + 重启 DSH 一次**。
+- **版本与发布**：`BUILD`/`HOST_BUILD`/`package.json`/`skin.json` = **1.6.5**（`.github/ISSUE_TEMPLATE/feedback.yml` 示例同步）；新增 [docs/RELEASE-1.6.5.md](docs/RELEASE-1.6.5.md)；i18n 新增 1 键（`pet.chat.close`，1245 → **1246**）；内部 tag `v1.6.5`，公开命名 **v1.0.4（正式版）**。
+- **验证**：静态链 build/build --check 26/26、test 67/67、structure --strict、audit（无阻断）、check-css、verify、i18n-audit（zh=en 1246，referenced 941）全绿；Node 冒烟 **695/695 PASS**（v1.6.4 的 688 条回归 + 新增 7 条：T21–T26 关闭路径 + S94 hidden/close CSS；S 段 93→94、T 段 20→26），构建 sha `9d23f5a0…`（`lib/client.js` 1,359,807 B / 1,316,692 字符）；证据见 `diag/skinlab/runs/*-v165-v165-node-smoke/`。
+
 ## [1.6.4] - 2026-11-10
 
 ### 发布说明

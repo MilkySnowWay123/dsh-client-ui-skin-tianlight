@@ -3028,6 +3028,38 @@ body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat] [data-tl-catchat-send
 body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat][data-tl-busy] [data-tl-catchat-status] {
 	opacity: 0.75;
 }
+/* v1.6.5: the composer header row pairs the status line with an explicit close
+   button. Without it the panel looked like a dead end (it is opened from the pet
+   menu, and that menu can sit off-screen when the pet is near a screen edge). */
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat] [data-tl-catchat-head] {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat] [data-tl-catchat-close] {
+	appearance: none;
+	border: 0;
+	background: transparent;
+	color: var(--tl-ink-soft, var(--tl-ink));
+	font: 600 14px/1 var(--ds-font-family, system-ui);
+	padding: 2px 6px;
+	border-radius: 999px;
+	cursor: pointer;
+	flex: 0 0 auto;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat] [data-tl-catchat-close]:hover,
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat] [data-tl-catchat-close]:focus-visible {
+	background: var(--tl-accent-soft);
+	color: var(--tl-ink);
+}
+/* The closed composer must be truly out of layout: the base rule above sets
+   display:flex, which outranks the UA [hidden] rule, so without this the panel
+   kept occupying layout/pointer space while invisible (the original hidden-attribute
+   toggle was effectively a no-op). */
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat][hidden] {
+	display: none !important;
+}
 /* Near the top of the viewport there is no room above the pet: the composer and
    the reply bubble flip below the pet instead of being clipped off-screen. */
 body[data-dsh-tianlight] [data-tl-cat][data-tl-chat-flip] > [data-tl-catchat] {

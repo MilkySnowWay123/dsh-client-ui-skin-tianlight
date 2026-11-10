@@ -17,7 +17,7 @@
 		 * panel turns into a visible "restart DSH" hint instead of a mystery network
 		 * error. Keep in sync with `BUILD` in lib/index.js.
 		 */
-		const HOST_BUILD = "1.0.3";
+		const HOST_BUILD = "1.6.5";
 
 		/**
 		 * Render budget tiers, shared by the shader wallpaper, the rail mirror and the
