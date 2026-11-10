@@ -12,7 +12,7 @@ v0.6.0 新增 **Wallpaper Engine 库集成**：宿主扫描本机 WE 库 + `scen
 最终构建 **`acb17a6` / 896,889 字符 / 930,994 字节 / 22 片段**；静态链 build 22/22、test 67/67 全绿；
 W 自检 web/Desktop 各 23/23（见 [docs/RELEASE-0.6.0.md](docs/RELEASE-0.6.0.md) §6）。
 
-**当前（v1.6.3）**：浏览器半 **26 个片段 / 25 个 region**、宿主半 12 个模块；`lib/client.js` 由 `tools/build.mjs` 按显式顺序拼装（v1.6.0 基线 1,231,576 字符 / 1,272,497 字节）。片段数演变：v1.0.0 新增 `42-life.js`，v1.1.0 新增 `44-pet-brain.js` / `76-role-hub.js`，v1.2.0 新增 `48-pet-agent.js`，v1.3.0 移除 `74-life-settings.js` 后稳定在 26 片段。v1.6.0：安全上限整体上调 + 液态玻璃覆盖全部界面（分组 A/B + 场景缺失 fallback）；v1.6.1：液态玻璃 v2（OriginOS 风）+ 侧栏「新会话」按钮全档皮肤化 + DSH 主界面天气胶囊；v1.6.2：移除壁纸左上角固定晨光装饰（`CREST_SVG` / `[data-tl-crest]`，veil 保留）；v1.6.3：显示名统一为「天光」+ DSH 0.2.0/0.2.1/0.2.2 三线兼容实证（见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) §6.1）。
+**当前（v1.6.4）**：浏览器半 **26 个片段 / 25 个 region**、宿主半 12 个模块；`lib/client.js` 由 `tools/build.mjs` 按显式顺序拼装（v1.6.0 基线 1,231,576 字符 / 1,272,497 字节）。片段数演变：v1.0.0 新增 `42-life.js`，v1.1.0 新增 `44-pet-brain.js` / `76-role-hub.js`，v1.2.0 新增 `48-pet-agent.js`，v1.3.0 移除 `74-life-settings.js` 后稳定在 26 片段。v1.6.0：安全上限整体上调 + 液态玻璃覆盖全部界面（分组 A/B + 场景缺失 fallback）；v1.6.1：液态玻璃 v2（OriginOS 风）+ 侧栏「新会话」按钮全档皮肤化 + DSH 主界面天气胶囊；v1.6.2：移除壁纸左上角固定晨光装饰（`CREST_SVG` / `[data-tl-crest]`，veil 保留）；v1.6.3：显示名统一为「天光」+ DSH 0.2.0/0.2.1/0.2.2 三线兼容实证（见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) §6.1）；v1.6.4（公开 v1.0.3 正式版）：桌宠 AI 对话 + 每个形象的动作包 + 全代码审查修复（见 [docs/REVIEW-1.6.4.md](docs/REVIEW-1.6.4.md)）。
 
 **v0.5.3 行为变更**：皮肤显式语言只切皮肤文案，**不再调用 `locale.setLocale()`**（不联动 DSH 界面语言）；
 「跟随 DSH」仍走 locale 订阅。C1/C2/C3/C4 默认 OFF（已持久化选择保留）。
@@ -113,7 +113,7 @@ id 经扫描结果映射、逐段路径 containment（遍历 400/403），从不
 | `31-engine-extra.js` | wallpaper engine extras | wallpaper-engine | A 期客户端扩展：系统音频回环、Now Playing、转码 UI、转场状态；音频（audio, 820）与引擎（engine, 830）面板分区；v0.5.1：A2 用真实音频电平（~10Hz）驱动节拍点、引擎摘要紧凑化 + 网页壁纸暂停提示；v0.5.2：自适应原因补 en；v0.5.3：自适应冻结提示 + 锁定按钮、控制台告警只在自动降档 armed/用户触发时出现 |
 | `32-effects.js` | ambient effects | effects-context | B1 视差 / B2 点击 / B3 氛围 + 特效面板（effects, 800） |
 | `35-context.js` | smart context | effects-context | C1 时段自适应 / C2 专注联动 + 情境面板（context, 810）；v0.5.1：C4 天气联动（独立 `tianlight.weather` 模型 + opt-in 网络 runtime + ⑨ 内天气块，只驱动 `effectsController.ambience`，默认关）；v0.5.2：时段文案改完整字面量 key；**v0.5.3 安全默认**：`timeOfDay`/`focusLink`/`adaptive`/`weather` 默认 OFF（迁移保留已存选择）、C1 仅 \|亮度影响\|≤6% + 影响显示 + 关闭按钮、C4 折叠进「实验性」、⑨「恢复默认」；v1.5.0：暴露 `globalThis.tianlightWeather`（`summary/isReady/enable/disable`）供角色中枢天气卡消费；**v1.6.1**：`installWeatherChip()` 在 DSH 主界面右上创建常驻天气胶囊（`[data-tl-weather-chip]`，五状态 off/no-location/waiting/error/ready、订阅 summary、点击开角色中枢、不自动 enable、不新增网络/权限） |
-| `40-companion.js` | companion | type-i18n（仅文案） | 薄荷小猫：拖拽、呼吸、互动菜单、台词；v0.5.1：台词持 i18n key、显示时翻译，语言切换时当前气泡即时重译 |
+| `40-companion.js` | companion | type-i18n（仅文案） | 薄荷小猫：拖拽、呼吸、互动菜单、台词；v0.5.1：台词持 i18n key、显示时翻译，语言切换时当前气泡即时重译；**v1.6.4**：互动菜单首位「AI 对话」（`div[data-tl-catchat]` 输入条 + 气泡回复 `data-tl-chat`，走 `globalThis.tianlightPet.chat`；视频形象悬浮、`y<96` 加 `data-tl-chat-flip` 翻转）+ 每个形象的动作包 API `globalThis.tianlightPetActions`（`localStorage["tianlight.petActions.v1"]`；get/set/clear/current，按 mediaId 生效，`set` 支持部分提交、`tianlight:pet-actions` 事件） |
 | `42-life.js` | life rhythm | Lead | **v1.0.0 新增**：生活节奏引擎——虚拟时钟/每日作息/静默时段/主动开口预算（v1.6.0：默认 12、可调 0..50）/跨会话互动记忆/职责闸门与延迟队列回放/可替换形象解析（图片或 ≤32MiB 视频、`tianlight:pet-media`） |
 | `44-pet-brain.js` | pet brain | Lead | **v1.1.0 新增**：AI 桌宠本地大脑（12 类意图、zh/en）+ 可选 `window.tianlightPetLLM` 适配器 + 能力白名单与硬上限 + 审计环形 60/暂停开关；v1.4.0：高风险能力可授权 + 适配器（`setCapabilityAdapter`/`invokeCapability`），`agent`（驱动 DSH）永久禁止；v1.6.0：本地 chat 20/分 1200/天、LLM 日 60/上限 120、分钟 6、输入/输出 1000/1200 字、20s 超时 |
 | `48-pet-agent.js` | pet agent | Lead | **v1.2.0 新增**：受控 DSH Agent 接入（`agentChat`，走客户端 `remote.session` 的 list/create/prompt/follow；仅用户手动提问、无自动触发、无审批/取消/附件；v1.6.0：日 30/上限 100、输入 1000 字、超时 120s、审计 30） |
@@ -125,7 +125,7 @@ id 经扫描结果映射、逐段路径 containment（遍历 400/403），从不
 | `65-bridge.js` | selector bridge | Lead | 结构发现 + 自盖章（Slot 契约 → 产品 `data-*` → 类名分段名）；**v1.6.1**：识别 `newSession` 分段按钮（`[class*='_newSession']`，侧栏与 titlebar 变体）并打 `data-tl-new-chat`，dispose 清除 |
 | `70-sidebar.js` | wallpaper sidebar | panel-library | 壁纸面板 ①–⑥ + 扩展分区挂载（仅在高级视图显示）、库 v2、导入导出包、分享链接、配方 v2；**v0.5.2** 清单加载态（失败 1.2s 静默重试 + 行内重试按钮）、pick 视图「更多设置在高级」提示、英文长标签换行兜底；**v0.5.3 快捷选择**：pick 视图=纯视觉缩略图网格（2 列大卡片/使用中高亮/点击切换+toast）、移除 pick 内上传/URL/WE/GLSL 导入、「更多设置↔返回快捷选择」互切、手柄/Alt+W 默认打开 pick、卡片点击乐观高亮+错误回退；**v0.6.0** WE 卡片（「壁纸引擎 N」chip/预览优先/徽标/静态高清提示）与高级 ① 自动检测行 +「打开壁纸库」 |
 | `72-we-library.js` | we library | we-library | **v0.6.0 新增第 22 片段**：WE 库客户端——设置导航页（`settings.section` id `tianlight-wallpaper`）、侧栏按钮（`sidebar.footer.action`）、全屏浮层（`z-index:2600`、×/Esc/mask、`tianlight:open-wallpaper-library` 事件）；预览网格/搜索/类型筛选/刷新/使用中/toast；点卡应用（media/web/pkg + diagnostics/preview 回退）；可选场景动态缓存轮询（`{ok,status{phase,progress,error}}`，503 可读）；slots 缺失时降级为事件/诊断 |
-| `76-role-hub.js` | role hub | Lead | **v1.1.0 新增**：全屏角色中枢——生活状态/节奏设置、液态玻璃（含 v1.5.0 预览条）、桌宠形象（含本机上传 ≤32MiB 与恢复默认）、AI 对话/LLM 授权、AI Agent、权限总览、审计、v1.5.0 天气卡/自检/反馈面板；唯一入口：右键桌宠 / 菜单「角色中枢」（v1.3.0 起无独立设置页/侧栏按钮）；v1.6.0：生活预算 0..50、AI 输入 1000；v1.6.1：玻璃 v2 预览 |
+| `76-role-hub.js` | role hub | Lead | **v1.1.0 新增**：全屏角色中枢——生活状态/节奏设置、液态玻璃（含 v1.5.0 预览条）、桌宠形象（含本机上传 ≤32MiB 与恢复默认）、AI 对话/LLM 授权、AI Agent、权限总览、审计、v1.5.0 天气卡/自检/反馈面板；唯一入口：右键桌宠 / 菜单「角色中枢」（v1.3.0 起无独立设置页/侧栏按钮）；v1.6.0：生活预算 0..50、AI 输入 1000；v1.6.1：玻璃 v2 预览；**v1.6.4**：形象文件名常显列表（`[data-tl-hub-media-list]`，点击切换、option 可读性修复）+ 动作包编辑器（`[data-tl-hub-media-pack]`，只提交与默认显示值不同的动作，空动作删除 override） |
 | `90-font.js` | font panel | type-i18n | 排版面板：预览、字号/字族/行宽/段距/代码字体 |
 | `95-a11y.js` | accessibility | type-i18n | D6 焦点陷阱/aria/直播区/快捷键注册表 + 无障碍帮助分区（a11y, 860） |
 | `99-apply.js` | apply | Lead | `apply(ctx)` effect 注册、单例 teardown、模块运行时、信封收尾；**v1.6.1**：常驻安装天气胶囊（`installWeatherChip`，不依赖 context 模块开关） |
@@ -319,5 +319,6 @@ additive 入口，不需要新的 DSH 钩子：旧宿主缺前缀时客户端按
 - [x] v1.6.0：安全上限整体上调（主动开口 12/50、本地 chat 20/分 1200/天、LLM 日 60/上限 120、Agent 日 30/上限 100 等）+ 液态玻璃覆盖全部界面（分组 A/B + 场景缺失 fallback）
 - [x] v1.6.1：液态玻璃 v2（OriginOS 风多层 specular/亮暗边/细噪点/外柔光/回弹）+ 侧栏「新会话」按钮全档皮肤化 + DSH 主界面天气胶囊
 - [x] v1.6.2：移除壁纸左上角固定晨光装饰（`CREST_SVG` / `[data-tl-crest]`；场景层顺序与 veil 保留）；v1.6.3：显示名统一「天光」+ DSH 0.2.0-rc.2 / 0.2.1-rc.5 / 0.2.2-rc.1 三线 compat-matrix / hook-scan / upgrade-check 实证全绿
+- [x] v1.6.4（公开 v1.0.3 正式版）：桌宠「AI 对话」（输入条/气泡回复/视频形象/视口翻转）+ 每个形象的动作包（`tianlightPetActions`，mediaId 生效、部分提交）+ 中枢形象文件名常显列表 + 全代码审查修复（H1/H2/M1/M2/M3/M4/M5，报告 `docs/REVIEW-1.6.4.md`）
 - [ ] 客户端纯逻辑（取色数学、弹簧积分、轮播选片、配方归一化、天气码映射）抽成可单测模块
 - [ ] 给 CI 加一条：DSH 新版本发布时自动跑 `compat-matrix.mjs` + `upgrade-check.mjs`（CI 没有 DSH 安装，需自托管 runner）

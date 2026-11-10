@@ -45,6 +45,10 @@
 			let mode = readLowPowerMode();
 			let battery = null;
 			let query = null;
+			// The battery probe is async; a dispose (module reinstall / HMR) can land
+			// before it resolves, so every late callback must check this flag before
+			// attaching listeners or writing the page attribute.
+			let disposed = false;
 			let active = false;
 			let reason = "";
 			let detail = "";
@@ -131,6 +135,7 @@
 					void globalThis.navigator
 						.getBattery()
 						.then((value) => {
+							if (disposed) return;
 							battery = value;
 							battery.addEventListener?.("levelchange", onSignal);
 							battery.addEventListener?.("chargingchange", onSignal);
@@ -171,6 +176,7 @@
 			};
 
 			return () => {
+				disposed = true;
 				lowPowerController = null;
 				subscriber = null;
 				query?.removeEventListener?.("change", onSignal);

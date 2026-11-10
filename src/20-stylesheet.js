@@ -2841,6 +2841,208 @@ body[data-dsh-tianlight] [data-tl-weather-chip]:focus-visible {
 	outline: 2px solid var(--tl-accent) !important;
 	outline-offset: 2px;
 }
+
+/* ---- v1.6.4: hub media filenames, per-look action packs, companion AI chat ---- */
+/* Native select popups on Windows draw option rows with the page colours; without
+   this an option row can be white text on the default white popup. */
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-select option {
+	color: #16283c;
+	background-color: #f6fbff;
+}
+body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-hub] .tl-hub-select option {
+	color: #eaf4ff;
+	background-color: #16233a;
+}
+/* A way to read every filename without opening the select: one row per file, the
+   active row marked, click to switch. */
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-media-list {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	max-height: 190px;
+	overflow: auto;
+	padding: 4px;
+	border-radius: 10px;
+	background: rgba(8, 18, 30, 0.10);
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-media-row] {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	width: 100%;
+	text-align: left;
+	padding: 6px 9px;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--tl-ink-soft, var(--tl-ink));
+	cursor: pointer;
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-media-row]:hover {
+	background: var(--tl-accent-soft);
+	color: var(--tl-ink);
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-media-row][data-selected] {
+	background: var(--tl-accent-soft);
+	color: var(--tl-ink);
+	box-shadow: inset 0 0 0 1px var(--tl-accent);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-media-name {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font: 500 12px/1.4 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-media-meta {
+	flex: none;
+	font: 500 10px/1.4 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-faint, var(--tl-ink-soft, var(--tl-ink)));
+}
+/* Per-look action pack editor. Labels are the cat-menu button text; lines are one
+   reply per line and replace that look's canned replies. */
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-media-pack] {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 10px;
+	padding: 10px;
+	border-radius: 12px;
+	background: rgba(8, 18, 30, 0.12);
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-pack-title] {
+	margin: 0;
+	font: 600 12px/1.4 var(--ds-font-family, system-ui);
+	color: var(--tl-ink);
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-pack-row] {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-pack-label],
+body[data-dsh-tianlight] [data-tl-hub] textarea[data-tl-hub-pack-lines] {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 6px 9px;
+	border-radius: 9px;
+	border: 0.5px solid var(--tl-line-strong, rgba(255, 255, 255, 0.3));
+	background: var(--tl-glass-fill, rgba(255, 255, 255, 0.12));
+	color: var(--tl-ink);
+	font: 500 12px/1.4 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-hub] textarea[data-tl-hub-pack-lines] {
+	resize: vertical;
+	min-height: 38px;
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-pack-actions] {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-pack-status] {
+	margin: 0;
+	font: 400 11px/1.5 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-faint, var(--tl-ink-soft, var(--tl-ink)));
+}
+/* The cat menu grew from 7 to 8 actions: wrap instead of pushing buttons off the
+   screen edge, and round the pill accordingly. */
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catmenu] {
+	flex-wrap: wrap;
+	justify-content: center;
+	max-width: 238px;
+	border-radius: 16px;
+}
+/* Chat replies can be longer than a casual line: wider, scrollable speech bubble. */
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-say][data-tl-chat] {
+	max-width: 300px;
+	max-height: 190px;
+	overflow: auto;
+	text-align: left;
+}
+/* While the chat composer is open the speech bubble moves above it. */
+body[data-dsh-tianlight] [data-tl-cat][data-tl-chat-open] > [data-tl-say] {
+	bottom: calc(100% + 96px);
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat] {
+	position: absolute;
+	bottom: calc(100% + 10px);
+	left: 50%;
+	transform: translateX(-50%) translateY(4px);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	box-sizing: border-box;
+	width: min(278px, calc(100vw - 24px));
+	padding: 9px 10px;
+	border-radius: 14px;
+	background: var(--tl-overlay);
+	color: var(--tl-ink);
+	border: 0.5px solid var(--tl-line);
+	box-shadow: 0 12px 30px rgba(8, 26, 44, 0.26);
+	opacity: 0;
+	pointer-events: none;
+	z-index: 3;
+	transition: opacity 160ms ease, transform 160ms ease;
+}
+body[data-dsh-tianlight] [data-tl-cat][data-tl-chat-open] > [data-tl-catchat] {
+	opacity: 1;
+	pointer-events: auto;
+	transform: translateX(-50%) translateY(0);
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat] [data-tl-catchat-status] {
+	min-height: 14px;
+	font: 500 11px/1.4 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-soft, var(--tl-ink));
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat] [data-tl-catchat-input] {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 7px 10px;
+	border-radius: 10px;
+	border: 0.5px solid var(--tl-line-strong, rgba(255, 255, 255, 0.3));
+	background: var(--tl-glass-fill, rgba(255, 255, 255, 0.12));
+	color: var(--tl-ink);
+	font: 500 12px/1.4 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat] [data-tl-catchat-input]::placeholder {
+	color: var(--tl-ink-faint, var(--tl-ink-soft, var(--tl-ink)));
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat] [data-tl-catchat-send] {
+	align-self: flex-end;
+	appearance: none;
+	border: 0;
+	padding: 6px 12px;
+	border-radius: 999px;
+	background: var(--tl-accent);
+	color: #fff;
+	font: 600 11px/1 var(--ds-font-family, system-ui);
+	cursor: pointer;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat] [data-tl-catchat-send]:disabled {
+	opacity: 0.45;
+	cursor: default;
+}
+body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat][data-tl-busy] [data-tl-catchat-status] {
+	opacity: 0.75;
+}
+/* Near the top of the viewport there is no room above the pet: the composer and
+   the reply bubble flip below the pet instead of being clipped off-screen. */
+body[data-dsh-tianlight] [data-tl-cat][data-tl-chat-flip] > [data-tl-catchat] {
+	top: calc(100% + 10px);
+	bottom: auto;
+}
+body[data-dsh-tianlight] [data-tl-cat][data-tl-chat-flip] > [data-tl-say] {
+	top: calc(100% + 96px);
+	bottom: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+	body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catchat] {
+		transition: none;
+	}
+}
 `;
 
 		/** Injected once per page; every rule is scoped to the skin's body attribute. */

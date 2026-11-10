@@ -442,6 +442,32 @@ report(
   'v1.6.3 declares DSH 0.2.0 / 0.2.1 / 0.2.2 compatibility (checked in the multi-version matrix)',
 )
 
+// ---- 16. v1.6.4: AI chat in the pet menu + per-look action packs + visible media filenames ----
+report(
+  source.includes('pet.action.chat') &&
+    source.includes('data-tl-catchat') &&
+    source.includes('tianlight.petActions.v1') &&
+    source.includes('tianlightPetActions')
+    ? 'PASS'
+    : 'FAIL',
+  'v1.6.4 puts AI chat in the pet interaction menu (composer, bubble reply, per-look action packs)',
+)
+report(
+  source.includes('data-tl-hub-media-list') &&
+    source.includes('data-tl-hub-media-row') &&
+    source.includes('data-tl-hub-media-pack') &&
+    source.includes('data-tl-hub-pack-label')
+    ? 'PASS'
+    : 'FAIL',
+  'v1.6.4 lists every pet-media filename and edits the action pack of the selected look',
+)
+report(
+  source.includes('pet.chat.thinking') && source.includes('pet.chat.unavailable') && source.includes('pet.chat.failed')
+    ? 'PASS'
+    : 'FAIL',
+  'v1.6.4 localizes the chat thinking / unavailable / failed states in both dictionaries',
+)
+
 console.log(issues === 0 ? 'AUDIT: no blocking issues' : `AUDIT: ${issues} blocking issue(s)`)
 process.exitCode = issues === 0 ? 0 : 1
 

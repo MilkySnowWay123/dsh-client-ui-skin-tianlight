@@ -6,6 +6,17 @@
 >
 > 包名 `@dsh-external/dsh-client-ui-skin-tianlight` · 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
 
+## v1.6.4 · 正式版：桌宠 AI 对话 · 每个形象的动作包 · 全代码审查修复
+
+`1.6.4`（26 片段；`BUILD`/`HOST_BUILD` = `1.6.4`）。细节见 [docs/RELEASE-1.6.4.md](docs/RELEASE-1.6.4.md) 与审查报告 [docs/REVIEW-1.6.4.md](docs/REVIEW-1.6.4.md)：
+
+- **桌宠「AI 对话」**：互动菜单首位新增 AI 对话；输入条 + 气泡回复，走既有 `tianlightPet.chat()`（权限/暂停/配额/审计语义不变）；识别当前图片/视频形象，视频上方悬浮、顶部空间不足自动翻转。
+- **每个形象一套动作包**：`globalThis.tianlightPetActions`（get/set/clear/current，`localStorage["tianlight.petActions.v1"]`，按 mediaId 生效）；中枢可编辑摸摸/喂食/逗猫棒的动作名与回复，保存只提交改动项——未改动跟随语言默认、清空旧自定义会删除 override、切语言不冻结；新增 i18n 29 键（1216→1245）。
+- **中枢形象文件名常显列表**：文件名/类型/大小一行一个，点击即切换（修复下拉 option 文字不可见）。
+- **全代码审查修复**：H1 默认文案冻结、H2 WE 宿主流式 error 崩溃、M1 低电量异步泄漏、M2 bridge 节点清理、M3 聊天视口翻转、M4 转码超时兜底、M5 宿主同源栅栏收紧 + 契约测试；已知限制不阻塞发布（见 REVIEW 文档）。
+- **公开上传命名**：上传物与发布说明使用公开版本名 **v1.0.3（正式版）**（内部构建 `1.6.4`）。
+- 本版含宿主半/内核改动，升级请 **Ctrl+F5 + 重启 DSH 一次**。
+
 ## v1.6.3 · 更名「天光」· DSH 0.2.0/0.2.1/0.2.2 兼容性实证
 
 `1.6.3`（26 片段；`BUILD`/`HOST_BUILD` = `1.6.3`）。细节见 [docs/RELEASE-1.6.3.md](docs/RELEASE-1.6.3.md)：
@@ -265,6 +276,7 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 
 ## 版本历史
 
+- **v1.6.4（2026-11-10）**：正式版（公开 v1.0.3）——桌宠「AI 对话」（输入条+气泡回复、识别图片/视频形象、顶部自动翻转、权限/配额不变）；每个自定义形象一套动作名+回复（按 mediaId 生效、只提交改动项、切语言不冻结）；中枢形象文件名常显列表 + 下拉选项可读性修复；全代码审查修复 H1/H2/M1/M2/M3/M4/M5。详见 [docs/RELEASE-1.6.4.md](docs/RELEASE-1.6.4.md) 与 [docs/REVIEW-1.6.4.md](docs/REVIEW-1.6.4.md)。
 - **v1.6.3（2026-11-10）**：显示名统一为「天光」（`skin.json.name` + README 标题；skin id/包名/data 属性/设置键不变，无迁移成本）；完成 DSH 0.2.0-rc.2 / 0.2.1-rc.5 / 0.2.2-rc.1 三线兼容性实证（bundles 72/77/86、三行 verdict COMPATIBLE、hook-scan 与 upgrade-check 全绿，桥分层发现无需版本分支）；公开上传版本命名为 **v1.0.2**（内部构建 1.6.3）。详见 [docs/RELEASE-1.6.3.md](docs/RELEASE-1.6.3.md)。
 - **v1.6.2（2026-11-10）**：移除壁纸左上角固定「晨光/太阳」装饰（`src/30-wallpaper.js` 的 `CREST_SVG` + `[data-tl-crest]`，每张壁纸重建场景都会出现、固定在 top:-120/left:-140、opacity .42）；场景层顺序与 veil 天空光渐变保留，纯视觉修复；公开上传版本命名为 **v1.0.1**（内部构建 1.6.2）。详见 [docs/RELEASE-1.6.2.md](docs/RELEASE-1.6.2.md)。
 - **v1.6.1（2026-11-10）**：液态玻璃 v2（OriginOS 风：更厚磨砂、多层 specular、1px 亮暗边、外柔光、细噪点、柔和回弹）；修复侧栏「新会话」按钮深色块并玻璃化（全档位，off 也修复）；DSH 主界面右上新增常驻天气胶囊（五状态、点击打开角色中枢天气卡，不新增网络/权限）；公开上传版本命名为 **v1.0.0**（内部构建 1.6.1）。详见 [docs/RELEASE-1.6.1.md](docs/RELEASE-1.6.1.md)。

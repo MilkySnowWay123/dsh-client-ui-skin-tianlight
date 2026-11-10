@@ -1362,9 +1362,16 @@ await testAsync('WE route family: list, same-origin fence, state and method gate
       assert.equal(body.wallpapers.length, 9)
       assert.ok(body.wallpapers.some((entry) => entry.type === 'scene' && entry.title === '工坊场景 HD'))
       assert.equal(
-        (await callMounted(routes, 'GET', '/api/we-wallpaper/list', { origin: 'http://127.0.0.1:51199' })).status,
+        (await callMounted(routes, 'GET', '/api/we-wallpaper/list', { origin: 'http://127.0.0.1:51199', host: '127.0.0.1:51199' })).status,
         200,
-        'localhost origin is not fenced out',
+        'same-host localhost origin is not fenced out',
+      )
+      // v1.6.4 security hardening: only the host that served the page may call the
+      // caches/routes; another localhost app on a different port is a different origin.
+      assert.equal(
+        (await callMounted(routes, 'GET', '/api/we-wallpaper/list', { origin: 'http://127.0.0.1:51198', host: '127.0.0.1:51199' })).status,
+        403,
+        'a different localhost port is rejected',
       )
       assert.equal(
         (await callMounted(routes, 'GET', '/api/we-wallpaper/list', { origin: 'https://evil.example' })).status,
@@ -1375,6 +1382,57 @@ await testAsync('WE route family: list, same-origin fence, state and method gate
         (await callMounted(routes, 'GET', '/api/we-wallpaper/list', { 'sec-fetch-site': 'cross-site' })).status,
         403,
         'cross-site fetch metadata is rejected',
+      )
+      // v1.6.4: a sandboxed (opaque-origin) wallpaper frame fetches its own
+      // subresources as Sec-Fetch-Site: cross-site + Origin: null; those read-only
+      // GETs are the app's own wallpaper channel and must still be served, while
+      // cross-site writes keep being rejected.
+      assert.equal(
+        (await callMounted(routes, 'GET', '/skin-tianlight/_engine/webwallgl.js', { 'sec-fetch-site': 'cross-site', origin: 'null' })).status,
+        200,
+        'sandboxed WebWallGL engine script is readable',
+      )
+      assert.equal(
+        (await callMounted(routes, 'GET', '/skin-tianlight/_scene-frame', { 'sec-fetch-site': 'cross-site', origin: 'null' })).status,
+        200,
+        'sandboxed scene frame is readable',
+      )
+      const sandboxedSceneProject = await callMounted(routes, 'GET', '/skin-tianlight/_scene-project/0/missing.png', {
+        'sec-fetch-site': 'cross-site',
+        origin: 'null',
+      })
+      assert.notEqual(sandboxedSceneProject.status, 403, 'sandboxed scene-project reads are not fenced out')
+      const sandboxedWebProject = await callMounted(routes, 'GET', '/skin-tianlight/_web-project/0/index.html', {
+        'sec-fetch-site': 'cross-site',
+        origin: 'null',
+      })
+      assert.notEqual(sandboxedWebProject.status, 403, 'sandboxed web-project reads are not fenced out')
+      assert.equal(
+        (await callMounted(routes, 'GET', '/skin-tianlight/_settings', { 'sec-fetch-site': 'cross-site' })).status,
+        403,
+        'cross-site reads outside the wallpaper channels are still fenced',
+      )
+      assert.equal(
+        (await callMounted(routes, 'POST', '/skin-tianlight/_transcode', { 'sec-fetch-site': 'cross-site', origin: 'null', 'content-type': 'application/json' }, '{}')).status,
+        403,
+        'sandboxed/opaque-origin writes are still fenced',
+      )
+      const sandboxedWeWeb = await callMounted(routes, 'GET', '/api/we-wallpaper/web/3003/index.html', {
+        'sec-fetch-site': 'cross-site',
+        origin: 'null',
+      })
+      assert.notEqual(sandboxedWeWeb.status, 403, 'sandboxed WE web-project reads are not fenced out')
+      // The allowlist is matched on a normalised pathname: a `..` segment must not
+      // tunnel from an exempt read prefix into a different host route.
+      assert.equal(
+        (await callMounted(routes, 'GET', '/skin-tianlight/_scene-project/../_settings', { 'sec-fetch-site': 'cross-site', origin: 'null' })).status,
+        403,
+        'a dot-dot escape out of the sandboxed read prefix stays fenced',
+      )
+      assert.equal(
+        (await callMounted(routes, 'GET', '/api/we-wallpaper/web/../state', { 'sec-fetch-site': 'cross-site', origin: 'null' })).status,
+        403,
+        'a dot-dot escape out of the WE web-project prefix stays fenced',
       )
 
       const initial = await callMounted(routes, 'GET', '/api/we-wallpaper/state')

@@ -89,6 +89,12 @@
 			};
 
 			const stampAll = () => {
+				// A long streaming session mounts and unmounts many bubbles/surfaces. The
+				// cleanup set must not pin detached subtrees forever: drop nodes the page
+				// has already removed before each pass (fake DOMs may not expose it).
+				for (const node of stamped) {
+					if (node.isConnected === false) stamped.delete(node);
+				}
 				// ---- left column + sidebar shell ----
 				// The slot marker is the public layout contract; the product data attribute
 				// is the shell root that paints the sidebar background.

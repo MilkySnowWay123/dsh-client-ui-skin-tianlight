@@ -89,6 +89,22 @@
 				"pet.action.mute": "静音 1 小时",
 				"pet.action.focus": "专注 25 分钟",
 				"pet.action.hub": "角色中枢",
+				"pet.action.chat": "AI 对话",
+				"pet.chat.placeholder": "和我说点什么…",
+				"pet.chat.send": "发送",
+				"pet.chat.thinking": "想想…",
+				"pet.chat.empty": "先说点什么吧。",
+				"pet.chat.unavailable": "AI 大脑还没就绪。",
+				"pet.chat.failed": "这次没接住，再试一次？",
+				"pet.chat.you": "听见了。",
+				"pet.chat.deniedSay": "这句我接不了。",
+				"pet.chat.reason.paused": "我现在被暂停了，先不聊。",
+				"pet.chat.reason.permission": "我没有聊天权限。",
+				"pet.chat.reason.rateLimit": "说得有点快，缓一缓。",
+				"pet.chat.reason.invalid": "这句话我读不懂。",
+				"pet.chat.reason.disabled": "AI 还没有启用。",
+				"pet.chat.reason.internal": "我这边出了点小问题。",
+				"pet.chat.reason.default": "暂时没法回复。",
 				"pet.act.mute": "好，安静一小时",
 				"pet.act.focusStart": "专注 25 分钟，开始",
 				"pet.act.focusStop": "专注结束，歇口气吧",
@@ -130,6 +146,22 @@
 				"pet.action.mute": "Mute 1h",
 				"pet.action.focus": "Focus 25m",
 				"pet.action.hub": "Role hub",
+				"pet.action.chat": "AI chat",
+				"pet.chat.placeholder": "Say something to me…",
+				"pet.chat.send": "Send",
+				"pet.chat.thinking": "Thinking…",
+				"pet.chat.empty": "Say something first.",
+				"pet.chat.unavailable": "The AI brain isn't ready.",
+				"pet.chat.failed": "I missed that one. Try again?",
+				"pet.chat.you": "Heard you.",
+				"pet.chat.deniedSay": "I can't take this one.",
+				"pet.chat.reason.paused": "I'm paused right now.",
+				"pet.chat.reason.permission": "I don't have chat permission.",
+				"pet.chat.reason.rateLimit": "A bit fast — give me a moment.",
+				"pet.chat.reason.invalid": "I couldn't read that.",
+				"pet.chat.reason.disabled": "AI isn't enabled.",
+				"pet.chat.reason.internal": "Something went wrong on my side.",
+				"pet.chat.reason.default": "Can't reply right now.",
 				"pet.act.mute": "Okay, quiet for an hour",
 				"pet.act.focusStart": "Focusing for 25 minutes",
 				"pet.act.focusStop": "Focus done. Take a breather",
@@ -154,6 +186,285 @@
 		function pick(list) {
 			return list[Math.floor(Math.random() * list.length)];
 		}
+
+		// ---- v1.6.4 per-look action packs（每个形象一套动作名+回复，桌宠与角色中枢共用） ----
+		// One pack per look. `mediaId` is the life engine's replaceable-media id; the
+		// built-in art is "default". The packs are a shared surface (the companion menu
+		// reads labels/lines, the role hub edits them), so the API is installed at
+		// factory scope and stays available while the switchable companion is off.
+		// Defaults stay i18n KEYS: the consumer resolves them with TL_T when it renders,
+		// so a language switch only needs a re-read (the menu re-reads through the API).
+		// Storage shape: { version:1, packs:{ [mediaId]:{ pet:{label,lines}, feed:{...}, play:{...} } } }.
+		const PET_ACTIONS_KEY = "tianlight.petActions.v1";
+		const PET_ACTIONS_VERSION = 1;
+		const PET_ACTION_IDS = ["pet", "feed", "play"];
+		const PET_ACTION_LABEL_MAX = 24;
+		const PET_ACTION_LINE_MAX = 120;
+		const PET_ACTION_LINES_MAX = 8;
+		const PET_ACTION_MEDIA_MAX = 512;
+		const PET_ACTION_LABEL_KEYS = {
+			pet: "pet.action.pet",
+			feed: "pet.action.feed",
+			play: "pet.action.play",
+		};
+
+		function petActionsStorage() {
+			try {
+				const storage = globalThis.localStorage;
+				if (storage === null || storage === undefined) return null;
+				if (typeof storage.getItem !== "function" || typeof storage.setItem !== "function") return null;
+				return storage;
+			} catch (error) {
+				return null;
+			}
+		}
+
+		/** Remove control characters and collapse whitespace (labels/lines are single-line). */
+		function petActionsScrub(value) {
+			try {
+				return String(value)
+					.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
+					.replace(/\s+/g, " ")
+					.trim();
+			} catch (error) {
+				return "";
+			}
+		}
+
+		/** Count characters, not UTF-16 units, so a cap never splits an emoji. */
+		function petActionsClip(value, max) {
+			try {
+				const chars = Array.from(String(value));
+				if (chars.length <= max) return chars.join("");
+				return chars.slice(0, Math.max(0, max)).join("");
+			} catch (error) {
+				return "";
+			}
+		}
+
+		function petActionsMediaId(value) {
+			try {
+				if (typeof value !== "string") return "default";
+				const id = petActionsScrub(value);
+				if (id === "") return "default";
+				return petActionsClip(id, PET_ACTION_MEDIA_MAX);
+			} catch (error) {
+				return "default";
+			}
+		}
+
+		/** Read the raw packs map; malformed / foreign-version data is treated as empty. */
+		function petActionsReadPacks() {
+			try {
+				const storage = petActionsStorage();
+				if (storage === null) return {};
+				const raw = storage.getItem(PET_ACTIONS_KEY);
+				if (typeof raw !== "string" || raw === "") return {};
+				const value = JSON.parse(raw);
+				if (value === null || typeof value !== "object" || Array.isArray(value)) return {};
+				if (value.version !== undefined && value.version !== PET_ACTIONS_VERSION) return {};
+				const packs = value.packs;
+				if (packs === null || typeof packs !== "object" || Array.isArray(packs)) return {};
+				return packs;
+			} catch (error) {
+				return {};
+			}
+		}
+
+		function petActionsWritePacks(packs) {
+			try {
+				const storage = petActionsStorage();
+				if (storage === null) return false;
+				storage.setItem(PET_ACTIONS_KEY, JSON.stringify({ version: PET_ACTIONS_VERSION, packs }));
+				return true;
+			} catch (error) {
+				note("companion:actions-store", error);
+				return false;
+			}
+		}
+
+		/** Broadcast one pack change (detail: { mediaId }); the companion + hub re-read. */
+		function petActionsDispatch(mediaId) {
+			try {
+				if (typeof document === "undefined" || document === null || typeof document.dispatchEvent !== "function") return;
+				const detail = { mediaId };
+				let event = null;
+				if (typeof CustomEvent === "function") {
+					event = new CustomEvent("tianlight:pet-actions", { detail });
+				} else {
+					// Some test environments have no CustomEvent constructor; a plain object
+					// keeps the dispatch observable instead of throwing.
+					event = { type: "tianlight:pet-actions", detail };
+				}
+				document.dispatchEvent(event);
+			} catch (error) {
+				note("companion:actions-dispatch", error);
+			}
+		}
+
+		/** Default pack: i18n keys (resolved by the consumer at render time). */
+		function petActionsDefaults() {
+			const result = {};
+			for (const id of PET_ACTION_IDS) {
+				result[id] = { label: PET_ACTION_LABEL_KEYS[id], lines: (LINES[id] ?? []).slice() };
+			}
+			return result;
+		}
+
+		/** Normalize one stored/offered action override; null means "malformed". */
+		function petActionsNormalizeAction(value) {
+			if (value === null || value === undefined) return {};
+			if (typeof value !== "object" || Array.isArray(value)) return null;
+			const result = {};
+			if (value.label !== undefined && value.label !== null) {
+				if (typeof value.label !== "string") return null;
+				const label = petActionsClip(petActionsScrub(value.label), PET_ACTION_LABEL_MAX);
+				if (label !== "") result.label = label;
+			}
+			if (value.lines !== undefined && value.lines !== null) {
+				if (!Array.isArray(value.lines)) return null;
+				const lines = [];
+				for (const item of value.lines) {
+					if (typeof item !== "string") return null;
+					const line = petActionsClip(petActionsScrub(item), PET_ACTION_LINE_MAX);
+					if (line === "") continue;
+					lines.push(line);
+					if (lines.length >= PET_ACTION_LINES_MAX) break;
+				}
+				if (lines.length > 0) result.lines = lines;
+			}
+			return result;
+		}
+
+		/** Effective pack for one look: defaults + stored overrides (never throws). */
+		function petActionsGet(mediaIdInput) {
+			const mediaId = petActionsMediaId(mediaIdInput);
+			const defaults = petActionsDefaults();
+			const result = { mediaId };
+			for (const id of PET_ACTION_IDS) {
+				result[id] = { label: defaults[id].label, lines: defaults[id].lines.slice() };
+			}
+			try {
+				const packs = petActionsReadPacks();
+				const custom = Object.prototype.hasOwnProperty.call(packs, mediaId) ? packs[mediaId] : null;
+				if (custom === null || typeof custom !== "object" || Array.isArray(custom)) return result;
+				for (const id of PET_ACTION_IDS) {
+					const action = petActionsNormalizeAction(custom[id]);
+					if (action === null) continue;
+					if (typeof action.label === "string" && action.label !== "") result[id].label = action.label;
+					if (Array.isArray(action.lines) && action.lines.length > 0) result[id].lines = action.lines.slice(0, PET_ACTION_LINES_MAX);
+				}
+			} catch (error) {
+				note("companion:actions-get", error);
+			}
+			return result;
+		}
+
+		/** Custom part of one offered action: fields equal to the localized defaults are dropped. */
+		function petActionsCustomAction(id, action) {
+			const result = {};
+			const defaultLabel = TL_T(PET_ACTION_LABEL_KEYS[id]);
+			if (typeof action.label === "string" && action.label !== "" && action.label !== defaultLabel) result.label = action.label;
+			if (Array.isArray(action.lines) && action.lines.length > 0) {
+				const defaultLines = (LINES[id] ?? []).map((key) => TL_T(key));
+				const sameAsDefault =
+					action.lines.length === defaultLines.length && action.lines.every((line, index) => line === defaultLines[index]);
+				if (sameAsDefault === false) result.lines = action.lines.slice();
+			}
+			return result;
+		}
+
+		/**
+		 * Validate + persist one look's pack. Partial packs are supported: only the
+		 * actions present in `pack` are written, the look's other custom actions are kept.
+		 * A submitted value that merely repeats the localized default (the hub fills the
+		 * editor with display text) is not custom and removes that field, so untouched
+		 * rows keep following the default text across language switches. An action left
+		 * with no custom field is dropped, and an empty pack deletes the look's entry.
+		 * Returns {ok:true, pack:<effective pack>} or {ok:false, reason:"invalid"}.
+		 */
+		function petActionsSet(mediaIdInput, pack) {
+			try {
+				if (typeof mediaIdInput !== "string" || petActionsScrub(mediaIdInput) === "") return { ok: false, reason: "invalid" };
+				if (pack === null || typeof pack !== "object" || Array.isArray(pack)) return { ok: false, reason: "invalid" };
+				const mediaId = petActionsMediaId(mediaIdInput);
+				const packs = petActionsReadPacks();
+				const raw = Object.prototype.hasOwnProperty.call(packs, mediaId) ? packs[mediaId] : null;
+				const merged = {};
+				// Existing custom actions survive a partial edit; corrupt entries are skipped.
+				if (raw !== null && typeof raw === "object" && Array.isArray(raw) === false) {
+					for (const id of PET_ACTION_IDS) {
+						const existing = petActionsNormalizeAction(raw[id]);
+						if (existing !== null && Object.keys(existing).length > 0) merged[id] = existing;
+					}
+				}
+				for (const id of PET_ACTION_IDS) {
+					if (Object.prototype.hasOwnProperty.call(pack, id) === false) continue;
+					const action = petActionsNormalizeAction(pack[id]);
+					if (action === null) return { ok: false, reason: "invalid" };
+					const custom = petActionsCustomAction(id, action);
+					if (Object.keys(custom).length > 0) merged[id] = custom;
+					else delete merged[id];
+				}
+				if (Object.keys(merged).length > 0) packs[mediaId] = merged;
+				else delete packs[mediaId];
+				petActionsWritePacks(packs);
+				petActionsDispatch(mediaId);
+				return { ok: true, pack: petActionsGet(mediaId) };
+			} catch (error) {
+				note("companion:actions-set", error);
+				return { ok: false, reason: "invalid" };
+			}
+		}
+
+		/** Drop one look's overrides (back to localized defaults) and broadcast. */
+		function petActionsClear(mediaIdInput) {
+			try {
+				if (typeof mediaIdInput !== "string" || petActionsScrub(mediaIdInput) === "") return { ok: false, reason: "invalid" };
+				const mediaId = petActionsMediaId(mediaIdInput);
+				const packs = petActionsReadPacks();
+				const existed = Object.prototype.hasOwnProperty.call(packs, mediaId);
+				if (existed) delete packs[mediaId];
+				petActionsWritePacks(packs);
+				petActionsDispatch(mediaId);
+				return { ok: true, mediaId, cleared: existed };
+			} catch (error) {
+				note("companion:actions-clear", error);
+				return { ok: false, reason: "invalid" };
+			}
+		}
+
+		/** The look currently painted by the life engine ("default" when absent). */
+		function petActionsCurrent() {
+			try {
+				const life = globalThis.tianlightLife;
+				if (life !== null && life !== undefined && typeof life === "object" && typeof life.media === "function") {
+					const media = life.media();
+					if (media !== null && media !== undefined && typeof media === "object") {
+						const id = typeof media.id === "string" ? petActionsScrub(media.id) : "";
+						if (id !== "") return petActionsClip(id, PET_ACTION_MEDIA_MAX);
+					}
+				}
+			} catch (error) {
+				note("companion:actions-current", error);
+			}
+			return "default";
+		}
+
+		/** Shared API consumed by the companion menu and the role hub (contract frozen). */
+		const petActionsApi = {
+			version: PET_ACTIONS_VERSION,
+			defaults: petActionsDefaults,
+			get: petActionsGet,
+			set: petActionsSet,
+			clear: petActionsClear,
+			current: petActionsCurrent,
+		};
+		// Factory-scope install keeps the API available to the role hub even before the
+		// switchable companion module mounts; the companion disposer restores whatever
+		// global existed before this skin instance (same rule as the always-on channels).
+		const previousPetActionsGlobal = globalThis.tianlightPetActions;
+		globalThis.tianlightPetActions = petActionsApi;
 
 		function loadState() {
 			try {
@@ -199,6 +510,9 @@
 		 * returned disposer.
 		 */
 		function installCompanion() {
+			// A previous companion instance restored the pre-skin global on dispose; every
+			// (re)install owns the shared action API again while the pet module is on.
+			globalThis.tianlightPetActions = petActionsApi;
 			const saved = loadState();
 			// Matches the installed artwork (1130x569, about 2:1); keep in sync with the
 			// `[data-tl-cat]` box in the stylesheet.
@@ -371,6 +685,20 @@
 					note("companion:art-fallback", error);
 				}
 			});
+			// Same fail-soft rule for a replacement clip: a broken/unsupported video falls
+			// back to the built-in art instead of leaving an empty body. `stopVideo()` drops
+			// the src, so one failing switch cannot retry in a loop. Named so dispose can
+			// drop it: the media stack outlives no companion, and a stray handler would be
+			// held by the video element forever.
+			const onVideoError = () => {
+				try {
+					if (root.dataset.tlCatMedia !== "video" || video.hidden === true) return;
+					useBuiltInArt();
+				} catch (error) {
+					note("companion:video-fallback", error);
+				}
+			};
+			video.addEventListener("error", onVideoError);
 			const onPetMedia = (event) => {
 				try {
 					const detail = event === null || event === undefined ? null : event.detail;
@@ -397,6 +725,9 @@
 			// Same namespace separation as the speech bubble above.
 			menu.dataset.tlCatmenu = "";
 			const ACTIONS = [
+				// v1.6.4: AI chat is the first item of the same interaction row. It carries
+				// no mood delta; doAction() toggles the composer instead of a line.
+				{ id: "chat", labelKey: "pet.action.chat" },
 				{ id: "pet", labelKey: "pet.action.pet", mood: 8 },
 				{ id: "feed", labelKey: "pet.action.feed", mood: 12 },
 				{ id: "play", labelKey: "pet.action.play", mood: 6 },
@@ -418,6 +749,46 @@
 				menu.appendChild(button);
 			}
 			root.appendChild(menu);
+
+			// ---- v1.6.4 AI chat composer (the menu item「AI 对话」toggles it) ----
+			// DOM contract (all inside the pet root, after the menu):
+			//   div[data-tl-catchat] > div[data-tl-catchat-status]
+			//                        + input[data-tl-catchat-input]
+			//                        + button[data-tl-catchat-send]
+			// Mounted after the menu inside the same root: the stylesheet floats it above
+			// the art (a looping video keeps playing), and pointerdown inside it must never
+			// start a drag. Closed by default: the root carries data-tl-chat-open to show it,
+			// and the busy state is exposed as data-tl-busy on the panel.
+			const chat = document.createElement("div");
+			chat.dataset.tlCatchat = "";
+			chat.setAttribute("aria-hidden", "true");
+			// The stylesheet owns the transition, but `hidden` keeps the composer out of
+			// the layout even before/without CSS, and is lifted by openChat().
+			chat.hidden = true;
+			const chatStatus = document.createElement("div");
+			chatStatus.dataset.tlCatchatStatus = "";
+			chatStatus.setAttribute("role", "status");
+			chatStatus.setAttribute("aria-live", "polite");
+			const chatInput = document.createElement("input");
+			chatInput.type = "text";
+			chatInput.setAttribute("type", "text");
+			chatInput.dataset.tlCatchatInput = "";
+			chatInput.maxLength = 500;
+			chatInput.setAttribute("maxlength", "500");
+			chatInput.autocomplete = "off";
+			chatInput.spellcheck = false;
+			chatInput.placeholder = TL_T("pet.chat.placeholder");
+			chatInput.setAttribute("placeholder", TL_T("pet.chat.placeholder"));
+			chatInput.setAttribute("aria-label", TL_T("pet.chat.placeholder"));
+			chatInput.tabIndex = -1;
+			const chatSend = document.createElement("button");
+			chatSend.type = "button";
+			chatSend.setAttribute("type", "button");
+			chatSend.dataset.tlCatchatSend = "";
+			chatSend.textContent = TL_T("pet.chat.send");
+			chatSend.tabIndex = -1;
+			chat.append(chatStatus, chatInput, chatSend);
+			root.appendChild(chat);
 
 			const clamp = () => {
 				const maxX = Math.max(8, window.innerWidth - PET_WIDTH - 8);
@@ -450,8 +821,12 @@
 			// 正在显示台词的 i18n key。翻译在“显示”和“语言切换”两个时刻取值，
 			// 不冻结在 say() 调用那一刻：旧实现切换语言后已显示的旧台词仍是中文。
 			let bubbleKey = "";
-			const say = (line, hold = 3200) => {
+			const say = (line, hold = 3200, chatReply = false) => {
 				bubbleKey = typeof line === "string" ? line : "";
+				// v1.6.4: a chat answer is allowed a wider, scrollable bubble (CSS keys on
+				// `[data-tl-chat]`); any other line removes the marker again.
+				if (chatReply === true) bubble.dataset.tlChat = "";
+				else delete bubble.dataset.tlChat;
 				// v1.0.0: the life engine speaks through this same bubble with its own
 				// `life.line.*` keys, so translate ANY key the dictionaries know. Duty
 				// `speak` passes arbitrary user copy, which TL_T returns unchanged.
@@ -461,6 +836,7 @@
 				if (bubbleTimer !== 0) window.clearTimeout(bubbleTimer);
 				bubbleTimer = window.setTimeout(() => {
 					delete bubble.dataset.tlShow;
+					delete bubble.dataset.tlChat;
 					bubbleTimer = 0;
 					bubbleKey = "";
 				}, hold);
@@ -474,6 +850,7 @@
 				}
 				bubbleKey = "";
 				delete bubble.dataset.tlShow;
+				delete bubble.dataset.tlChat;
 				bubble.textContent = "";
 			};
 
@@ -566,17 +943,234 @@
 			};
 			dutyChoices.hidden = true;
 
+			// ---- v1.6.4 AI chat: composer state, send path, bubble reply ----
+			// Brain denials are mapped onto dedicated i18n keys so every refused turn says
+			// WHY (paused / permission / rate limit / malformed / disabled / internal). The
+			// brain itself owns the permission model and quotas; this layer only displays.
+			const CHAT_REASON_KEYS = {
+				paused: "pet.chat.reason.paused",
+				permission: "pet.chat.reason.permission",
+				"rate-limit": "pet.chat.reason.rateLimit",
+				rateLimit: "pet.chat.reason.rateLimit",
+				"invalid-input": "pet.chat.reason.invalid",
+				invalid: "pet.chat.reason.invalid",
+				empty: "pet.chat.reason.invalid",
+				disabled: "pet.chat.reason.disabled",
+				"internal-error": "pet.chat.reason.internal",
+				internal: "pet.chat.reason.internal",
+			};
+			let chatOpen = false;
+			let chatBusy = false;
+			let chatStatusKey = "";
+			let disposed = false;
+
+			/** Effective pack of the look currently painted (null when the API is missing). */
+			const currentPack = () => {
+				try {
+					const api = globalThis.tianlightPetActions;
+					if (api === null || api === undefined || typeof api.get !== "function" || typeof api.current !== "function") return null;
+					const pack = api.get(api.current());
+					return pack !== null && typeof pack === "object" ? pack : null;
+				} catch (error) {
+					note("companion:pack-read", error);
+					return null;
+				}
+			};
+			/** Menu label: this look's custom label for pet/feed/play, i18n key otherwise. */
+			const actionLabel = (action) => {
+				if (action.id === "pet" || action.id === "feed" || action.id === "play") {
+					const pack = currentPack();
+					const custom = pack === null ? null : pack[action.id];
+					if (custom !== null && custom !== undefined && typeof custom.label === "string" && custom.label !== "") {
+						return TL_T(custom.label);
+					}
+				}
+				return TL_T(action.labelKey);
+			};
+			/** Replies for one action: custom lines when set, else the built-in i18n keys. */
+			const actionLines = (id) => {
+				const pack = currentPack();
+				const custom = pack === null ? null : pack[id];
+				if (custom !== null && custom !== undefined && Array.isArray(custom.lines) && custom.lines.length > 0) return custom.lines;
+				return LINES[id] ?? [];
+			};
+			const setChatStatus = (key) => {
+				chatStatusKey = typeof key === "string" && key !== "" ? key : "";
+				chatStatus.textContent = chatStatusKey === "" ? "" : TL_T(chatStatusKey);
+			};
+			const setChatBusy = (busy) => {
+				chatBusy = busy === true;
+				if (chatBusy) chat.dataset.tlBusy = "";
+				else delete chat.dataset.tlBusy;
+				chatInput.disabled = chatBusy;
+				chatSend.disabled = chatBusy;
+			};
+			const focusChatInput = () => {
+				try {
+					chatInput.focus?.();
+				} catch (error) {
+					note("companion:chat-focus", error);
+				}
+			};
+			const openChat = () => {
+				chatOpen = true;
+				root.dataset.tlChatOpen = "";
+				// Not enough viewport above the pet: flip the composer below it (the
+				// stylesheet keys on data-tl-chat-flip) instead of pushing it off-screen.
+				if (state.y < 96) root.dataset.tlChatFlip = "";
+				else delete root.dataset.tlChatFlip;
+				chat.hidden = false;
+				chat.setAttribute("aria-hidden", "false");
+				chatInput.tabIndex = 0;
+				chatSend.tabIndex = 0;
+				setChatStatus("");
+				wake();
+				later(() => {
+					// The composer may have been closed in the same tick; never focus a
+					// hidden input (it would steal the keyboard from the page).
+					if (chatOpen === true) focusChatInput();
+				}, 0);
+			};
+			const closeChat = () => {
+				chatOpen = false;
+				delete root.dataset.tlChatOpen;
+				delete root.dataset.tlChatFlip;
+				chat.hidden = true;
+				chat.setAttribute("aria-hidden", "true");
+				chatInput.tabIndex = -1;
+				chatSend.tabIndex = -1;
+				setChatStatus("");
+				// Never leave the keyboard on a closed composer: Enter would keep sending.
+				try {
+					chatInput.blur?.();
+					chatSend.blur?.();
+				} catch (error) {
+					note("companion:chat-blur", error);
+				}
+			};
+			const toggleChat = () => {
+				if (chatOpen === true) closeChat();
+				else openChat();
+			};
+			/** Show a chat answer in the say bubble: longer hold + the wide-bubble marker. */
+			const sayChat = (reply) => {
+				const text = typeof reply === "string" ? reply.trim() : "";
+				if (text === "" || !root.isConnected) return false;
+				const hold = Math.min(24000, Math.max(9000, 4000 + text.length * 30));
+				say(text, hold, true);
+				return true;
+			};
+			const sendChat = async () => {
+				if (chatBusy === true) return;
+				const raw = typeof chatInput.value === "string" ? chatInput.value : "";
+				const text = raw.trim().slice(0, 500);
+				if (text === "") {
+					setChatStatus("pet.chat.empty");
+					focusChatInput();
+					return;
+				}
+				let brain = null;
+				try {
+					brain = globalThis.tianlightPet;
+				} catch (error) {
+					brain = null;
+					note("companion:chat-brain", error);
+				}
+				if (brain === null || brain === undefined || typeof brain.chat !== "function") {
+					setChatStatus("pet.chat.unavailable");
+					return;
+				}
+				setChatBusy(true);
+				setChatStatus("pet.chat.thinking");
+				try {
+					const result = await brain.chat(text);
+					if (disposed === true) return;
+					if (result !== null && typeof result === "object" && result.ok === true) {
+						const reply =
+							typeof result.reply === "string" && result.reply.trim() !== ""
+								? result.reply.trim()
+								: typeof result.text === "string"
+									? result.text.trim()
+									: "";
+						if (sayChat(reply) === false) {
+							setChatStatus("pet.chat.failed");
+							return;
+						}
+						chatInput.value = "";
+						setChatStatus("pet.chat.you");
+						later(() => {
+							if (chatBusy === false && chatStatusKey === "pet.chat.you") setChatStatus("");
+						}, 2200);
+						wake();
+						noteInteraction("talk");
+					} else {
+						const reason = result !== null && typeof result === "object" && typeof result.reason === "string" ? result.reason : "";
+						if (reason === "") setChatStatus("pet.chat.failed");
+						else setChatStatus(Object.prototype.hasOwnProperty.call(CHAT_REASON_KEYS, reason) ? CHAT_REASON_KEYS[reason] : "pet.chat.reason.default");
+						say("pet.chat.deniedSay", 3200);
+					}
+				} catch (error) {
+					note("companion:chat", error);
+					if (disposed !== true) setChatStatus("pet.chat.failed");
+				} finally {
+					setChatBusy(false);
+					if (disposed !== true && chatOpen === true) focusChatInput();
+				}
+			};
+			// Keyboard: Enter sends, Escape closes. The panel consumes its own key events so
+			// the cat root's Enter/Space menu shortcut can never fire while typing.
+			chat.addEventListener("keydown", (event) => {
+				if (event === null || event === undefined) return;
+				if (typeof event.stopPropagation === "function") event.stopPropagation();
+				if (event.key === "Escape") {
+					if (typeof event.preventDefault === "function") event.preventDefault();
+					closeChat();
+				}
+			});
+			chatInput.addEventListener("keydown", (event) => {
+				if (event === null || event === undefined) return;
+				if (event.key === "Escape") {
+					if (typeof event.preventDefault === "function") event.preventDefault();
+					if (typeof event.stopPropagation === "function") event.stopPropagation();
+					closeChat();
+					return;
+				}
+				if (event.key !== "Enter") return;
+				if (typeof event.preventDefault === "function") event.preventDefault();
+				if (typeof event.stopPropagation === "function") event.stopPropagation();
+				void sendChat();
+			});
+			chatSend.addEventListener("click", (event) => {
+				if (event !== null && event !== undefined && typeof event.stopPropagation === "function") event.stopPropagation();
+				void sendChat();
+			});
+
 			// 语言切换（跟随 DSH 或手动）时刷新可读文案与正在显示的台词，不重建 DOM。
 			const refreshCompanionLabels = () => {
 				root.setAttribute("aria-label", TL_T("pet.aria"));
 				for (const button of menu.querySelectorAll("[data-tl-action]")) {
 					const action = ACTIONS.find((candidate) => candidate.id === button.dataset.tlAction);
-					if (action !== undefined) button.textContent = TL_T(action.labelKey);
+					if (action !== undefined) button.textContent = actionLabel(action);
 				}
+				chatInput.placeholder = TL_T("pet.chat.placeholder");
+				chatInput.setAttribute("aria-label", TL_T("pet.chat.placeholder"));
+				chatSend.textContent = TL_T("pet.chat.send");
+				if (chatStatusKey !== "") chatStatus.textContent = TL_T(chatStatusKey);
 				if (bubbleTimer !== 0 && bubbleKey !== "") bubble.textContent = TL_T(bubbleKey);
 			};
 			const unsubscribeI18n = subscribeTl5I18n(refreshCompanionLabels);
 			refreshCompanionLabels();
+			// The media switch and the role hub's pack edits both require a re-read of the
+			// effective pack: the current look's labels/lines must be reflected immediately.
+			const onPetPackChanged = () => {
+				try {
+					refreshCompanionLabels();
+				} catch (error) {
+					note("companion:pack-refresh", error);
+				}
+			};
+			document.addEventListener("tianlight:pet-actions", onPetPackChanged);
+			document.addEventListener("tianlight:pet-media", onPetPackChanged);
 
 			let sleeping = false;
 			const wake = () => {
@@ -608,6 +1202,12 @@
 					} catch {
 						// the hub is optional infrastructure; the menu stays usable
 					}
+					return;
+				}
+				// v1.6.4: the AI chat item toggles the composer; it carries no mood delta.
+				if (id === "chat") {
+					closeMenu();
+					toggleChat();
 					return;
 				}
 				// v1.0.0 life-rhythm controls: the pet menu and the role settings page
@@ -646,7 +1246,7 @@
 					say(pick(LINES.nap));
 				} else {
 					wake();
-					say(pick(LINES[id]));
+					say(pick(actionLines(id)));
 					if (id === "pet" || id === "feed" || id === "play") noteInteraction(id === "pet" ? "pat" : id);
 				}
 				state.mood = Math.min(100, state.mood + action.mood);
@@ -656,6 +1256,9 @@
 
 			let menuOpen = false;
 			const openMenu = () => {
+				// v1.6.4: the cat menu hangs BELOW the pet while the chat composer sits ABOVE
+				// it, so both can be visible; that keeps「AI 对话」a real toggle (click it
+				// again from the menu to close the composer).
 				menuOpen = true;
 				menu.dataset.tlShow = "";
 				// Keep the pill inside the viewport: the pet lives near the right edge by
@@ -687,7 +1290,7 @@
 
 			const onPointerDown = (event) => {
 				if (event.button !== undefined && event.button !== 0) return;
-				if (event.target instanceof HTMLElement && event.target.closest("[data-tl-catmenu]") !== null) return;
+				if (event.target instanceof HTMLElement && event.target.closest("[data-tl-catmenu], [data-tl-catchat]") !== null) return;
 				dragging = true;
 				moved = false;
 				pointerId = event.pointerId;
@@ -728,6 +1331,13 @@
 			root.addEventListener("pointerup", onPointerUp);
 			root.addEventListener("pointercancel", onPointerUp);
 			root.addEventListener("keydown", (event) => {
+				if (event.key === "Escape") {
+					if (chatOpen === true) {
+						event.preventDefault();
+						closeChat();
+					}
+					return;
+				}
 				if (event.key !== "Enter" && event.key !== " ") return;
 				event.preventDefault();
 				if (menuOpen) closeMenu();
@@ -863,7 +1473,10 @@
 				try {
 					if (currentMedia !== null || !root.isConnected) return;
 					const media = readLifeMedia();
-					if (media !== null) applyMedia(media);
+					if (media !== null) {
+						applyMedia(media);
+						refreshCompanionLabels();
+					}
 				} catch (error) {
 					note("companion:media-late-read", error);
 				}
@@ -872,7 +1485,14 @@
 			later(tryApplyLateMedia, 900);
 
 			return () => {
+				disposed = true;
 				companionDutyBridge.api = null;
+				// Release the shared action API the same way the duty channel releases its
+				// global: restore the pre-skin value (delete when there was none).
+				if (globalThis.tianlightPetActions === petActionsApi) {
+					if (previousPetActionsGlobal === undefined) delete globalThis.tianlightPetActions;
+					else globalThis.tianlightPetActions = previousPetActionsGlobal;
+				}
 				hideDuty("dispose");
 				if (typeof unsubscribeI18n === "function") unsubscribeI18n();
 				window.clearInterval(idleTimer);
@@ -883,8 +1503,11 @@
 				window.removeEventListener("pointermove", onProximity);
 				window.removeEventListener("resize", onResize);
 				document.removeEventListener("pointerdown", onDocumentPointerDown, true);
+				document.removeEventListener("tianlight:pet-actions", onPetPackChanged);
+				document.removeEventListener("tianlight:pet-media", onPetPackChanged);
 				document.removeEventListener("tianlight:pet-media", onPetMedia);
 				root.removeEventListener("contextmenu", onContextMenu);
+				video.removeEventListener("error", onVideoError);
 				try {
 					stopVideo();
 				} catch (error) {

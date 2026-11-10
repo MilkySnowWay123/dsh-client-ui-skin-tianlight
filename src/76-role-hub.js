@@ -93,6 +93,19 @@
 				"hub.media.reason.catalog": "素材列表暂不可用",
 				"hub.media.reason.internal": "内部错误",
 				"hub.media.reason.default": "未知原因",
+				"hub.media.listHint": "所有形象都列在下面，文件名一直可见；点任意一行即可切换。",
+				"hub.media.pack.title": "动作包（当前形象）",
+				"hub.media.pack.hint": "为当前选中的形象修改动作名与回复；保存后桌宠菜单立即生效，点「恢复默认」可去掉自定义。",
+				"hub.media.pack.labelPet": "摸摸动作名",
+				"hub.media.pack.labelFeed": "喂食动作名",
+				"hub.media.pack.labelPlay": "逗猫棒动作名",
+				"hub.media.pack.linesPlaceholder": "一行一条回复",
+				"hub.media.pack.save": "保存动作包",
+				"hub.media.pack.saved": "动作包已保存，桌宠菜单已更新。",
+				"hub.media.pack.reset": "恢复默认动作包",
+				"hub.media.pack.resetDone": "已恢复默认动作包。",
+				"hub.media.pack.invalid": "动作包不合法：请检查动作名或回复内容后重试。",
+				"hub.media.pack.unavailable": "桌宠动作接口未就绪，动作包暂不可编辑。",
 				"hub.upload.button": "上传图片 / 视频",
 				"hub.upload.hint": "从本机选择图片或视频（≤32 MiB），上传后立即生效。",
 				"hub.upload.uploading": "上传中…",
@@ -390,6 +403,19 @@
 				"hub.media.reason.catalog": "The media catalog is unavailable",
 				"hub.media.reason.internal": "Internal error",
 				"hub.media.reason.default": "Unknown reason",
+				"hub.media.listHint": "Every look is listed below with its file name always visible; click a row to switch.",
+				"hub.media.pack.title": "Action pack (current look)",
+				"hub.media.pack.hint": "Customize the action labels and replies for the selected look; saving applies to the pet menu right away, and Reset removes the customization.",
+				"hub.media.pack.labelPet": "Pet action label",
+				"hub.media.pack.labelFeed": "Feed action label",
+				"hub.media.pack.labelPlay": "Wand action label",
+				"hub.media.pack.linesPlaceholder": "One reply per line",
+				"hub.media.pack.save": "Save action pack",
+				"hub.media.pack.saved": "Action pack saved; the pet menu is updated.",
+				"hub.media.pack.reset": "Reset action pack",
+				"hub.media.pack.resetDone": "Action pack restored to the default.",
+				"hub.media.pack.invalid": "The action pack is invalid: check the labels or replies and try again.",
+				"hub.media.pack.unavailable": "The pet action API is not ready, so the action pack cannot be edited.",
 				"hub.upload.button": "Upload image / video",
 				"hub.upload.hint": "Pick an image or video from this machine (<=32 MiB); it applies right away.",
 				"hub.upload.uploading": "Uploading…",
@@ -670,6 +696,17 @@
 			"catalog-unavailable": "hub.media.reason.catalog",
 			"internal-error": "hub.media.reason.internal",
 		};
+		/** v1.6.4 per-look action packs: the three menu actions and their label keys. */
+		const HUB_PACK_ACTIONS = ["pet", "feed", "play"];
+		const HUB_PACK_LABEL_KEYS = {
+			pet: "hub.media.pack.labelPet",
+			feed: "hub.media.pack.labelFeed",
+			play: "hub.media.pack.labelPlay",
+		};
+		const HUB_PACK_LABEL_MAX = 24;
+		/** Companion-side caps (src/40-companion.js): the hub rejects instead of clipping. */
+		const HUB_PACK_LINE_MAX = 120;
+		const HUB_PACK_LINES_MAX = 8;
 		/** Static key map for every weather state (the i18n audit scans literals). */
 		const HUB_WEATHER_STATE_KEYS = {
 			unavailable: "hub.weather.state.unavailable",
@@ -766,6 +803,19 @@
 		function hubPetAgent() {
 			try {
 				return globalThis.tianlightPetAgent !== null && globalThis.tianlightPetAgent !== undefined ? globalThis.tianlightPetAgent : null;
+			} catch {
+				return null;
+			}
+		}
+
+		/**
+		 * v1.6.4 per-look action packs: the companion (src/40-companion.js) publishes
+		 * `globalThis.tianlightPetActions = { get(mediaId), set(mediaId, pack), clear(mediaId) }`.
+		 * Optional: an older companion simply has no editor.
+		 */
+		function hubPetActions() {
+			try {
+				return globalThis.tianlightPetActions !== null && globalThis.tianlightPetActions !== undefined ? globalThis.tianlightPetActions : null;
 			} catch {
 				return null;
 			}
@@ -1049,6 +1099,10 @@
 			let triggerEl = null;
 			let mediaCache = null;
 			let mediaBusy = false;
+			/** One look switch in flight (double click / row + Apply must not race). */
+			let mediaApplying = false;
+			/** Effective pack last loaded by the editor (for "did this row have custom value?"). */
+			let loadedPack = null;
 			let chatBusy = false;
 			let llmPending = false;
 			let lastError = "";
@@ -1098,6 +1152,8 @@
 				agentPermPending = false;
 				agentBusy = false;
 				chatBusy = false;
+				mediaApplying = false;
+				loadedPack = null;
 				permConfirmPending.clear();
 				const win = hubBrowserWindow();
 				if (timer !== 0) {
@@ -1365,6 +1421,92 @@
 			const setUploadStatus = (text) => {
 				if (ui !== null) ui.uploadStatus.textContent = text;
 			};
+			/** Media id the hub is editing now; an unfilled <select> falls back to the built-in look. */
+			const currentMediaId = () => {
+				if (ui === null) return "default";
+				const value = ui.mediaSelect !== null && ui.mediaSelect !== undefined ? ui.mediaSelect.value : "";
+				return typeof value === "string" && value !== "" ? value : "default";
+			};
+			/** A look switch must never overlap a catalog reload or another switch. */
+			const mediaLocked = () => mediaBusy === true || mediaApplying === true;
+			/** Disable/enable every filename row so a double click cannot start two switches. */
+			const syncMediaRowDisabled = () => {
+				if (ui === null || ui.mediaList === null || ui.mediaList === undefined) return;
+				const locked = mediaLocked();
+				for (const row of ui.mediaList.children) {
+					if (row === null || typeof row !== "object") continue;
+					row.disabled = locked;
+				}
+			};
+			/** v1.6.4: mark the row of the *effective* look in the always-visible name list. */
+			const syncMediaListSelection = (selected) => {
+				if (ui === null || ui.mediaList === null || ui.mediaList === undefined) return;
+				for (const row of ui.mediaList.children) {
+					if (row === null || typeof row !== "object" || typeof row.getAttribute !== "function") continue;
+					if (row.getAttribute("data-media-id") === selected) {
+						row.setAttribute("data-selected", "");
+						row.setAttribute("aria-pressed", "true");
+					} else {
+						row.removeAttribute("data-selected");
+						row.setAttribute("aria-pressed", "false");
+					}
+				}
+			};
+			/** Re-read the life status so the selected highlight never lies. */
+			const refreshMediaListSelection = () => {
+				if (ui === null) return;
+				const life = hubLifeEngine();
+				const status = life !== null ? hubTry(() => life.status?.(), null, "media-list-status") : null;
+				let selected = "default";
+				if (status !== null && status.media !== null && typeof status.media === "object" && typeof status.media.id === "string") selected = status.media.id;
+				syncMediaListSelection(selected);
+			};
+			/**
+			 * v1.6.4: the always-visible look list. The native <select> options were
+			 * unreadable (only the current one showed), so every look is a button row
+			 * with its file name + kind/size; clicking a row applies that look through
+			 * exactly the same path as the Apply button (set it on the <select> first).
+			 */
+			const renderMediaList = (items, selected) => {
+				if (ui === null || ui.mediaList === null || ui.mediaList === undefined) return;
+				const list = ui.mediaList;
+				list.textContent = "";
+				const appendRow = (mediaId, name, meta) => {
+					const row = hubCreate("button", {
+						type: "button",
+						className: "tl-hub-media-row",
+						"data-tl-hub-media-row": "",
+						"data-media-id": mediaId,
+						title: name,
+						"aria-label": name,
+						"aria-pressed": "false",
+					});
+					row.appendChild(hubCreate("span", { className: "tl-hub-media-name" }, name));
+					row.appendChild(hubCreate("span", { className: "tl-hub-media-meta" }, meta));
+					row.disabled = mediaLocked();
+					row.addEventListener("click", () => runAsync(() => selectMediaFromList(mediaId)));
+					list.appendChild(row);
+				};
+				appendRow("default", TL_T("hub.media.default"), "");
+				for (const item of items) {
+					if (item === null || typeof item !== "object" || typeof item.id !== "string" || item.id === "" || item.id === "default") continue;
+					const bytes = Number(item.bytes);
+					const kind = item.kind === "video" ? "video" : "image";
+					const meta = Number.isFinite(bytes) && bytes > 0 ? kind + " · " + Math.round(bytes / 1024) + " KB" : kind;
+					appendRow(item.id, String(item.name ?? item.id), meta);
+				}
+				syncMediaListSelection(selected);
+			};
+			/** Row click: mirror the choice into the <select>, then run the existing apply path. */
+			const selectMediaFromList = async (mediaId) => {
+				if (ui === null || mediaLocked() === true) return;
+				try {
+					ui.mediaSelect.value = mediaId;
+				} catch (error) {
+					note("role-hub:media-list-select", error);
+				}
+				await applySelectedMedia();
+			};
 			const refreshMedia = async () => {
 				if (ui === null || mediaBusy === true) return;
 				const life = hubLifeEngine();
@@ -1374,11 +1516,16 @@
 						ui.mediaApply.disabled = true;
 						ui.mediaUpload.disabled = true;
 						ui.mediaDefault.disabled = true;
+						if (ui.mediaList !== null && ui.mediaList !== undefined) ui.mediaList.textContent = "";
 					}
 					setMediaStatus(TL_T("hub.media.unavailable"));
+					await loadEffectivePack();
 					return;
 				}
 				mediaBusy = true;
+				// No look switch may start while the catalog is being rebuilt.
+				ui.mediaApply.disabled = true;
+				syncMediaRowDisabled();
 				setMediaStatus(TL_T("hub.loading"));
 				try {
 					let result = null;
@@ -1415,36 +1562,61 @@
 						rejected.length === 0
 							? ""
 							: TL_T("hub.media.rejected", { names: rejected.map((item) => String(item?.name ?? item?.id ?? "?")).join(", ") });
+					// v1.6.4: keep the always-visible filename list and the pack editor in
+					// sync with the just-loaded catalog / effective look.
+					renderMediaList(items, selected);
+					await loadEffectivePack();
 				} catch (error) {
 					setLastError("media-render", error);
 				} finally {
 					mediaBusy = false;
+					if (ui !== null) {
+						// Re-arm only when no switch is still in flight (upload path can
+						// overlap a longer catalog reload).
+						ui.mediaApply.disabled = mediaApplying === true;
+						syncMediaRowDisabled();
+					}
 				}
 			};
 			const applySelectedMedia = async () => {
 				const life = hubLifeEngine();
-				if (ui === null) return;
+				// A switch is ignored while the catalog reloads or another switch runs.
+				if (ui === null || mediaApplying === true || mediaBusy === true) return;
 				if (life === null || typeof life.setMedia !== "function") {
 					setMediaStatus(TL_T("hub.media.unavailable"));
 					return;
 				}
+				const target = ui;
 				const id = typeof ui.mediaSelect.value === "string" ? ui.mediaSelect.value : "default";
+				// v1.6.4: lock the Apply button and every filename row until this one
+				// switch settles (double click / row + Apply must not race).
+				mediaApplying = true;
 				ui.mediaApply.disabled = true;
+				syncMediaRowDisabled();
 				try {
 					const result = await life.setMedia(id === "default" ? null : id);
+					if (ui !== target) return;
 					if (result !== null && typeof result === "object" && result.ok === true) {
 						const media = result.media !== null && typeof result.media === "object" ? result.media : {};
 						setMediaStatus(TL_T("hub.media.applied", { name: String(media.name ?? id) }));
+						// v1.6.4: the effective look changed -> move the list highlight and
+						// load that look's action pack into the editor.
+						refreshMediaListSelection();
+						await loadEffectivePack();
 					} else {
 						setMediaStatus(TL_T("hub.media.failed", { reason: hubReasonLabel(result?.reason, HUB_MEDIA_REASON_KEYS) }));
 					}
 				} catch (error) {
 					setLastError("media-apply", error);
-					setMediaStatus(TL_T("hub.media.failed", { reason: String(error?.message ?? error) }));
+					if (ui === target) setMediaStatus(TL_T("hub.media.failed", { reason: String(error?.message ?? error) }));
 				} finally {
-					if (ui !== null) ui.mediaApply.disabled = false;
+					mediaApplying = false;
+					if (ui === target) {
+						ui.mediaApply.disabled = false;
+						syncMediaRowDisabled();
+					}
 				}
-				refreshStatus();
+				if (ui === target) refreshStatus();
 			};
 			/** v1.5.0 "restore default look": setMedia(null), then refresh catalog + note. */
 			const restoreDefaultMedia = async () => {
@@ -1541,6 +1713,9 @@
 						}
 					}
 					setUploadStatus(TL_T("hub.upload.done", { name: String(applied.name ?? applied.id) }));
+					// v1.6.4: reflect the freshly uploaded look and load its action pack.
+					refreshMediaListSelection();
+					await loadEffectivePack();
 					refreshStatus();
 				} catch (error) {
 					setLastError("upload", error);
@@ -1548,6 +1723,207 @@
 				} finally {
 					if (ui !== null) ui.mediaUpload.disabled = false;
 				}
+			};
+
+			// ---- action pack editor (v1.6.4, globalThis.tianlightPetActions) -------
+			const setPackStatus = (text) => {
+				if (ui !== null && ui.packStatus !== null && ui.packStatus !== undefined) ui.packStatus.textContent = text;
+			};
+			const packControls = () => {
+				if (ui === null) return [];
+				const nodes = [ui.packSave, ui.packReset];
+				for (const actionId of HUB_PACK_ACTIONS) {
+					if (ui.packLabels !== null && ui.packLabels !== undefined) nodes.push(ui.packLabels[actionId]);
+					if (ui.packLines !== null && ui.packLines !== undefined) nodes.push(ui.packLines[actionId]);
+				}
+				return nodes.filter((node) => node !== null && node !== undefined);
+			};
+			const setPackEnabled = (enabled) => {
+				for (const node of packControls()) node.disabled = enabled !== true;
+			};
+			/** The companion-side store, or null when this companion build has no action API. */
+			const packApi = () => {
+				const actions = hubPetActions();
+				if (actions === null) return null;
+				const usable = typeof actions.get === "function" && typeof actions.set === "function" && typeof actions.clear === "function";
+				return usable === true ? actions : null;
+			};
+			/** Textarea -> one trimmed non-empty reply per line (the documented pack shape). */
+			const splitPackLines = (value) => {
+				const result = [];
+				for (const line of String(value ?? "").split(/\r?\n/)) {
+					const text = line.trim();
+					if (text !== "") result.push(text);
+				}
+				return result;
+			};
+			/**
+			 * The companion keeps built-in labels/lines as i18n keys and resolves them
+			 * when the menu renders; the editor must show the same readable text.
+			 * Custom (literal) text passes through unchanged.
+			 */
+			const packDisplayText = (value) => {
+				const text = typeof value === "string" ? value : "";
+				if (text === "") return "";
+				const translated = TL_T(text);
+				return translated !== text ? translated : text;
+			};
+			const fillPackInputs = (pack) => {
+				if (ui === null) return;
+				for (const actionId of HUB_PACK_ACTIONS) {
+					const row = pack !== null && typeof pack === "object" && pack[actionId] !== null && typeof pack[actionId] === "object" ? pack[actionId] : null;
+					const label = row !== null && typeof row.label === "string" ? packDisplayText(row.label) : "";
+					const lines = row !== null && Array.isArray(row.lines) ? row.lines.filter((line) => typeof line === "string").map(packDisplayText) : [];
+					ui.packLabels[actionId].value = label;
+					ui.packLines[actionId].value = lines.filter((line) => line !== "").join("\n");
+				}
+			};
+			/** Exact reply-line comparison (for "unchanged vs this look's defaults"). */
+			const packLinesEqual = (left, right) => left.length === right.length && left.every((line, index) => line === right[index]);
+			/** One action of any effective pack in the same display form the editor shows. */
+			const packDisplayRow = (pack, actionId) => {
+				const row = pack !== null && typeof pack === "object" && pack[actionId] !== null && typeof pack[actionId] === "object" ? pack[actionId] : null;
+				if (row === null) return null;
+				const label = typeof row.label === "string" ? packDisplayText(row.label).trim() : "";
+				const lines = Array.isArray(row.lines)
+					? row.lines
+							.filter((line) => typeof line === "string")
+							.map((line) => packDisplayText(line).trim())
+							.filter((line) => line !== "")
+					: [];
+				return { label, lines };
+			};
+			/**
+			 * Load the current look's effective pack (get) into the editor. Also gates the
+			 * whole editor: an old companion without `tianlightPetActions` shows the
+			 * unavailable note and disables every input/button.
+			 */
+			const loadEffectivePack = async () => {
+				const target = ui;
+				if (target === null) return;
+				loadedPack = null;
+				const actions = packApi();
+				setPackEnabled(actions !== null);
+				if (actions === null) {
+					fillPackInputs(null);
+					setPackStatus(TL_T("hub.media.pack.unavailable"));
+					return;
+				}
+				let pack = null;
+				try {
+					pack = await actions.get(currentMediaId());
+				} catch (error) {
+					note("role-hub:pack-get", error);
+					pack = null;
+				}
+				// The hub may have been closed (or closed and reopened) while get resolved.
+				if (ui !== target) return;
+				loadedPack = pack !== null && typeof pack === "object" ? pack : null;
+				fillPackInputs(loadedPack);
+				setPackStatus("");
+			};
+			/** Save the editor into the current look's pack; the pet menu reads it next open. */
+			const savePack = async () => {
+				const target = ui;
+				if (target === null) return;
+				const actions = packApi();
+				if (actions === null) {
+					setPackEnabled(false);
+					setPackStatus(TL_T("hub.media.pack.unavailable"));
+					return;
+				}
+				const mediaId = currentMediaId();
+				// Read + validate the three editors first. The companion clips oversized
+				// input silently; an explicit invalid note is honest and keeps the UI value.
+				const edited = {};
+				for (const actionId of HUB_PACK_ACTIONS) {
+					const label = String(target.packLabels[actionId].value ?? "").trim();
+					const lines = splitPackLines(target.packLines[actionId].value);
+					if (lines.length > HUB_PACK_LINES_MAX || lines.some((line) => Array.from(line).length > HUB_PACK_LINE_MAX)) {
+						setPackStatus(TL_T("hub.media.pack.invalid"));
+						return;
+					}
+					edited[actionId] = { label, lines };
+				}
+				// H1: submit ONLY actions that really differ from this look's localized
+				// defaults; untouched rows stay out of the payload so they keep following
+				// the default text across language switches. The companion keeps customs
+				// for omitted actions, so a row being reset (cleared, or edited back to
+				// the default text) is sent empty to let the companion drop that override.
+				const defaults = hubTry(() => (typeof actions.defaults === "function" ? actions.defaults() : null), null, "pack-defaults");
+				const changed = {};
+				let changedCount = 0;
+				for (const actionId of HUB_PACK_ACTIONS) {
+					const value = edited[actionId];
+					const defaultsDisplay = packDisplayRow(defaults, actionId);
+					const currentDisplay = packDisplayRow(loadedPack, actionId);
+					const hadCustom =
+						defaultsDisplay !== null &&
+						currentDisplay !== null &&
+						(currentDisplay.label !== defaultsDisplay.label || packLinesEqual(currentDisplay.lines, defaultsDisplay.lines) === false);
+					const empty = value.label === "" && value.lines.length === 0;
+					const sameAsDefault =
+						empty === false && defaultsDisplay !== null && value.label === defaultsDisplay.label && packLinesEqual(value.lines, defaultsDisplay.lines);
+					if (empty === true || sameAsDefault === true) {
+						// Untouched / reset row: omitted unless a stale override must be removed.
+						if (hadCustom === true) {
+							changed[actionId] = { label: "", lines: [] };
+							changedCount += 1;
+						}
+						continue;
+					}
+					changed[actionId] = value;
+					changedCount += 1;
+				}
+				let result = null;
+				try {
+					if (changedCount === 0) {
+						// Nothing differs from the defaults: drop any frozen custom pack.
+						result = await actions.clear(mediaId);
+					} else {
+						result = await actions.set(mediaId, changed);
+					}
+				} catch (error) {
+					note(changedCount === 0 ? "role-hub:pack-clear-default" : "role-hub:pack-set", error);
+					if (ui === target) setPackStatus(TL_T("hub.media.pack.invalid"));
+					return;
+				}
+				if (ui !== target) return;
+				if (result !== null && typeof result === "object" && result.ok === false) {
+					setPackStatus(TL_T("hub.media.pack.invalid"));
+					return;
+				}
+				// Success: reload what the companion actually stored, then confirm.
+				await loadEffectivePack();
+				if (ui !== target) return;
+				setPackStatus(TL_T("hub.media.pack.saved"));
+			};
+			/** Drop the custom pack for the current look, reload, then confirm. */
+			const resetPack = async () => {
+				const target = ui;
+				if (target === null) return;
+				const actions = packApi();
+				if (actions === null) {
+					setPackEnabled(false);
+					setPackStatus(TL_T("hub.media.pack.unavailable"));
+					return;
+				}
+				let result = null;
+				try {
+					result = await actions.clear(currentMediaId());
+				} catch (error) {
+					note("role-hub:pack-clear", error);
+					if (ui === target) setPackStatus(TL_T("hub.media.pack.invalid"));
+					return;
+				}
+				if (ui !== target) return;
+				if (result !== null && typeof result === "object" && result.ok === false) {
+					setPackStatus(TL_T("hub.media.pack.invalid"));
+					return;
+				}
+				await loadEffectivePack();
+				if (ui !== target) return;
+				setPackStatus(TL_T("hub.media.pack.resetDone"));
 			};
 
 			// ---- weather card (v1.5.0, globalThis.tianlightWeather) -----------------
@@ -2799,6 +3175,9 @@
 				]);
 				const mediaRow = hubCreate("div", { className: "tl-hub-row" });
 				state.mediaSelect = hubCreate("select", { "data-tl-hub-media": "", className: "tl-hub-select", "aria-label": TL_T("hub.media.select") });
+				// v1.6.4: choosing another value in the (still supported) select reloads
+				// the action pack editor for that look.
+				state.mediaSelect.addEventListener("change", () => runAsync(loadEffectivePack));
 				state.mediaApply = hubCreate("button", { type: "button", "data-tl-hub-media-apply": "", className: "tl-hub-btn" }, TL_T("hub.media.apply"));
 				state.mediaApply.addEventListener("click", () => runAsync(applySelectedMedia));
 				mediaRow.appendChild(state.mediaSelect);
@@ -2807,6 +3186,10 @@
 				state.mediaDefault.addEventListener("click", () => runAsync(restoreDefaultMedia));
 				mediaRow.appendChild(state.mediaDefault);
 				mediaCard.appendChild(mediaRow);
+				// v1.6.4: always-visible filename list (the native select hid the names).
+				mediaCard.appendChild(hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-media-list-hint": "" }, TL_T("hub.media.listHint")));
+				state.mediaList = hubCreate("div", { "data-tl-hub-media-list": "", className: "tl-hub-media-list" });
+				mediaCard.appendChild(state.mediaList);
 				const uploadRow = hubCreate("div", { className: "tl-hub-row" });
 				state.uploadInput = hubCreate("input", {
 					type: "file",
@@ -2833,6 +3216,47 @@
 				mediaCard.appendChild(state.mediaRejected);
 				state.uploadStatus = hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-upload-status": "", role: "status" }, "");
 				mediaCard.appendChild(state.uploadStatus);
+				// v1.6.4: per-look action pack editor. The companion owns the data
+				// (globalThis.tianlightPetActions), so the hub only reads/writes it.
+				const packSection = hubCreate("section", { "data-tl-hub-media-pack": "", className: "tl-hub-media-pack" }, [
+					hubCreate("h4", { className: "tl-hub-pack-title", "data-tl-hub-pack-title": "" }, TL_T("hub.media.pack.title")),
+					hubCreate("p", { className: "tl-hub-note tl-hub-hint" }, TL_T("hub.media.pack.hint")),
+				]);
+				state.packLabels = {};
+				state.packLines = {};
+				for (const actionId of HUB_PACK_ACTIONS) {
+					const labelKey = HUB_PACK_LABEL_KEYS[actionId] ?? "hub.media.pack.labelPet";
+					const actionRow = hubCreate("div", { className: "tl-hub-pack-row", "data-tl-hub-pack-row": actionId });
+					state.packLabels[actionId] = hubCreate("input", {
+						type: "text",
+						className: "tl-hub-input tl-hub-pack-label",
+						"data-tl-hub-pack-label": actionId,
+						maxlength: String(HUB_PACK_LABEL_MAX),
+						placeholder: TL_T(labelKey),
+						"aria-label": TL_T(labelKey),
+					});
+					state.packLines[actionId] = hubCreate("textarea", {
+						className: "tl-hub-input tl-hub-textarea tl-hub-pack-lines",
+						"data-tl-hub-pack-lines": actionId,
+						rows: "2",
+						placeholder: TL_T("hub.media.pack.linesPlaceholder"),
+						"aria-label": TL_T(labelKey),
+					});
+					actionRow.appendChild(state.packLabels[actionId]);
+					actionRow.appendChild(state.packLines[actionId]);
+					packSection.appendChild(actionRow);
+				}
+				const packButtons = hubCreate("div", { className: "tl-hub-pack-actions", "data-tl-hub-pack-actions": "" });
+				state.packSave = hubCreate("button", { type: "button", className: "tl-hub-btn", "data-tl-hub-pack-save": "" }, TL_T("hub.media.pack.save"));
+				state.packSave.addEventListener("click", () => runAsync(savePack));
+				state.packReset = hubCreate("button", { type: "button", className: "tl-hub-btn", "data-tl-hub-pack-reset": "" }, TL_T("hub.media.pack.reset"));
+				state.packReset.addEventListener("click", () => runAsync(resetPack));
+				packButtons.appendChild(state.packSave);
+				packButtons.appendChild(state.packReset);
+				packSection.appendChild(packButtons);
+				state.packStatus = hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-pack-status": "", role: "status" }, "");
+				packSection.appendChild(state.packStatus);
+				mediaCard.appendChild(packSection);
 				body.appendChild(mediaCard);
 
 				// d) AI chat + permissioned actions
@@ -3022,7 +3446,12 @@
 					refreshGlass();
 					refreshAi();
 					refreshAgent();
-					runAsync(refreshMedia);
+					// The pack editor is loaded after the catalog pass (sequentially, so a
+					// slow listMedia can never overwrite it with a stale look's pack).
+					runAsync(async () => {
+						await refreshMedia();
+						await loadEffectivePack();
+					});
 					runAsync(refreshAgentSessions);
 					if (win !== null) timer = win.setInterval(refreshAll, HUB_REFRESH_MS);
 					try {

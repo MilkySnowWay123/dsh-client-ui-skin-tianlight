@@ -2,6 +2,17 @@
 
 本文件由 `node tools/release.mjs --note "…"` 维护；条目按版本倒序，格式参考 Keep a Changelog。
 
+## [1.6.4] - 2026-11-10
+
+### 发布说明
+
+- **桌宠「AI 对话」（新）**：互动菜单首位新增「AI 对话」——点击弹出输入条（`div[data-tl-catchat]`，root 加 `data-tl-chat-open`），Enter 发送 / Escape 关闭；调用既有 `globalThis.tianlightPet.chat(text)`（权限、暂停、配额、审计与失败回退语义不变，**不新增权限与网络通道**），回复显示在桌宠气泡（`data-tl-chat` 标记加宽）；识别当前图片/视频形象，视频形象悬浮在视频上方，顶部空间不足（`y < 96`）自动加 `data-tl-chat-flip` 翻到下方；失败按 reason 映射友好提示。
+- **每个形象一套「动作包」（新）**：`globalThis.tianlightPetActions`（`version/defaults/get/set/clear/current`，`localStorage["tianlight.petActions.v1"]`，按 `mediaId` 存 pet/feed/play 的 `label`+`lines`）；动作名 ≤24 字符、每条回复 ≤120 字符/≤8 条；桌宠菜单按当前形象 `mediaId` 生效并随 `tianlight:pet-media` 重读；支持**部分提交**（未提交动作保留原自定义），保存后派发 `tianlight:pet-actions` 即时刷新；语言切换后未自定义动作继续跟随默认文案。
+- **角色中枢（新）**：形象卡新增**文件名常显列表**（`[data-tl-hub-media-list]`，每行文件名/类型/大小，点击切换，当前行高亮）；修复下拉 `option` 白字白底不可见；新增**动作包编辑器**（`[data-tl-hub-media-pack]`：三种动作的 label+lines、保存/恢复默认/状态提示），保存只提交与默认显示值不同的动作（H1 语义），桌宠动作 API 缺失时禁用并提示。
+- **全代码审查修复**：H1 动作包默认文案冻结（中枢差异提交 + 桌宠部分提交/空动作删除 override）、H2 WE 宿主裸 pipe 在文件缺失/客户端 abort 时可崩宿主或泄漏句柄（新增 `pipeFileSafe`）、M1 低电量异步泄漏（`disposed` 标志）、M2 选择器桥 stamped 节点清理（`isConnected`）、M3 聊天输入条视口翻转（CSS + root 属性）、M4 转码 kill 后 5s 兜底 settle、M5 宿主同源栅栏收紧（`lib/index.js` + WE 宿主）+ `tools/test.mjs` 契约测试、**复审发现并修复 M5 沙箱回归**（沙箱 iframe 的 WebWallGL 场景/网页壁纸只读资源经 `SANDBOXED_READ_PATHS` 放行，且路径归一化防 `..` 绕过，写入与其它跨站读取仍 403）。审查报告 [docs/REVIEW-1.6.4.md](docs/REVIEW-1.6.4.md)；剩余已知限制（M6 WE 清单同步扫描、M7 场景录制 teardown ~18s、bridge 全量扫描 CPU）不阻塞发布。
+- **版本与发布**：`BUILD`/`HOST_BUILD`/`package.json`/`skin.json` = **1.6.4**；新增 [docs/RELEASE-1.6.4.md](docs/RELEASE-1.6.4.md)；i18n 新增 29 键（`pet.*` 16 + `hub.media.*` 13，1216 → 1245）；内部 tag `v1.6.4`、公开命名 **v1.0.3（正式版）**；含宿主半/内核改动，升级需 **Ctrl+F5 + 重启 DSH 一次**。
+- **验证**：静态链 build/build --check 26/26、test 67/67（含沙箱只读 + dot-dot 回归断言）、structure --strict、audit（v1.6.4 新守卫 3 条：AI 对话菜单/动作包、形象文件名列表/动作包编辑、聊天状态双语；无阻断）、check-css、verify、i18n-audit（zh=en 1245 键）全绿；Node 冒烟 **688/688 PASS**（v1.6.3 的 631 条回归 + 57 条新增：T 20 / B 16 / U 扩 10 / S 扩 11，含 **S90–S93 M5 沙箱回归与 pathname 归一化断言**），构建 sha `2bd062c1…`（`lib/client.js` 1,354,877 B；仅宿主半修复，client 未变），证据 `diag/skinlab/runs/20261110-204923-v164-v164-node-smoke/`；同一 build sha 复跑同样 688/688（`runs/20261110-204911-v164-v164-node-smoke/`）。v1.6.4 构建实跑 DSH 0.2.0/0.2.1/0.2.2 兼容矩阵：三行 COMPATIBLE（bundles 72/77/86）、hookscan 与 upgrade-check 全绿（证据 `diag/skinlab/evidence/compat-v164/`）。
+
 ## [1.6.3] - 2026-11-10
 
 ### 发布说明
