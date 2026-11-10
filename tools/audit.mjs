@@ -411,6 +411,16 @@ report(
   "v1.6.1 weather chip ships its five states and a localized open hint",
 )
 
+// ---- 14. v1.6.2: fixed top-left dawn-burst artwork removed ----
+report(
+  !source.includes("data-tl-crest") && !source.includes("CREST_SVG") ? "PASS" : "FAIL",
+  "v1.6.2 removed the fixed top-left dawn-burst artwork (no permanent sun on the wallpaper)",
+)
+report(
+  source.includes('dataset.tlVeil = ""') && source.includes("[data-tl-veil]") ? "PASS" : "FAIL",
+  "v1.6.2 keeps the scene veil (sky-light tint) after removing the corner artwork",
+)
+
 console.log(issues === 0 ? 'AUDIT: no blocking issues' : `AUDIT: ${issues} blocking issue(s)`)
 process.exitCode = issues === 0 ? 0 : 1
 

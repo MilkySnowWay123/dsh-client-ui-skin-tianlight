@@ -2,6 +2,15 @@
 
 本文件由 `node tools/release.mjs --note "…"` 维护；条目按版本倒序，格式参考 Keep a Changelog。
 
+## [1.6.2] - 2026-11-10
+
+### 发布说明
+
+- **移除壁纸左上角固定晨光装饰（用户反馈）**：根因是 `src/30-wallpaper.js` 的 `CREST_SVG`（内联「dawn burst」SVG）在每张壁纸重建场景层时都会创建 crest 节点并 `append` 到场景层，固定 `top:-120px; left:-140px; opacity:.42`（深色主题 `.30`），看起来像常驻小太阳。现删除 SVG 常量、crest 创建代码与 `[data-tl-scene] > [data-tl-crest]` 两条 CSS；场景层顺序（video/photo/shader/sceneFrame/webFrame/overlay×2/dim/veil）与 **veil 天空光渐变保持不变**，切换壁纸不再出现任何固定角标。
+- **影响面**：纯视觉修复；液态玻璃 v2、侧栏「新会话」按钮、主界面天气胶囊、桌宠/角色中枢、AI 权限与限额、宿主路由均不变。所有壁纸类型与所有玻璃档（含 `off`）生效，升级后无需重新配置。
+- **版本与文档**：`BUILD`/`HOST_BUILD`/`package.json`/`skin.json` = **1.6.2**；新增 [docs/RELEASE-1.6.2.md](docs/RELEASE-1.6.2.md)；公开上传物/发布说明命名 **v1.0.1**（内部构建 1.6.2）。
+- **验证**：静态链 build/build --check 26/26、test 67/67、structure --strict、audit（v1.6.2 新守卫 2 条：无 `CREST_SVG`/`[data-tl-crest]` 残留 + veil 天空光保留）、check-css、verify、i18n-audit（zh=en 1216 键）全绿；Node 冒烟 **626/626 PASS**（v1.6.1 的 622 条回归 + 新增 4 条 S74–S77：crest 移除 / 场景层顺序 / veil 保留 / `installScene` 无 crest），构建 sha `e39657bb…`（`lib/client.js` 1,300,780 B），证据 `diag/skinlab/runs/20261110-191809-v162-v162-node-smoke/`；同一 build sha 复跑同样 626/626。
+
 ## [1.6.1] - 2026-11-10
 
 ### 发布说明

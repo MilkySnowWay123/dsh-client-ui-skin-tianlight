@@ -1,27 +1,8 @@
 		//#region wallpaper
-		/** Inline SVG: a corner "dawn burst" so the top-left reads as sky light. */
-		const CREST_SVG =
-			"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'>" +
-			"<defs>" +
-			"<radialGradient id='c' cx='50%' cy='50%' r='50%'>" +
-			"<stop offset='0' stop-color='#ffffff' stop-opacity='.95'/>" +
-			"<stop offset='.35' stop-color='#cfeaff' stop-opacity='.55'/>" +
-			"<stop offset='1' stop-color='#9fd0ff' stop-opacity='0'/>" +
-			"</radialGradient>" +
-			"<linearGradient id='r' x1='0' y1='1' x2='1' y2='0'>" +
-			"<stop offset='0' stop-color='#ffffff' stop-opacity='.55'/>" +
-			"<stop offset='1' stop-color='#bfe4ff' stop-opacity='0'/>" +
-			"</linearGradient>" +
-			"</defs>" +
-			"<circle cx='100' cy='100' r='100' fill='url(#c)'/>" +
-			"<g stroke='url(#r)' stroke-linecap='round'>" +
-			"<path d='M100 100 L196 46' stroke-width='7'/>" +
-			"<path d='M100 100 L188 92' stroke-width='4'/>" +
-			"<path d='M100 100 L170 148' stroke-width='3'/>" +
-			"<path d='M100 100 L118 196' stroke-width='5'/>" +
-			"</g>" +
-			"<circle cx='100' cy='100' r='16' fill='#ffffff' fill-opacity='.85'/>" +
-			"</svg>";
+		// v1.6.2: the old fixed top-left corner artwork (a small dawn-burst sun) was
+		// removed on user feedback: it lived on the scene layer, so it showed on every
+		// wallpaper switch and read as a permanent sun. The veil below still carries the
+		// sky-light tint; no other corner artwork is painted here.
 
 		/** One shared manifest read per page: which optional assets actually exist. */
 		let manifestPromise = null;
@@ -2487,7 +2468,7 @@
 			video.style.setProperty("--tl-focal-x", FOCAL_X);
 			scene.appendChild(video);
 
-			// Still-image layer. Same slot as the video (painted under veil/crest by DOM
+			// Still-image layer. Same slot as the video (painted under the veil by DOM
 			// order), so an image wallpaper needs no second scene or code path.
 			const photo = document.createElement("div");
 			photo.dataset.tlPhoto = "";
@@ -2495,7 +2476,7 @@
 			scene.appendChild(photo);
 
 			// Third channel: a WebGL canvas painted between the still layer and the veil,
-			// so the crest/veil keep working over procedural wallpaper frames.
+			// so the veil keeps working over procedural wallpaper frames.
 			const shaderCanvas = document.createElement("canvas");
 			shaderCanvas.dataset.tlShader = "";
 			shaderCanvas.hidden = true;
@@ -2526,7 +2507,7 @@
 			webFrame.setAttribute("title", "Web wallpaper");
 			scene.appendChild(webFrame);
 
-			// Overlay stack: two CSS-only slots above all media, below the veil/crest.
+			// Overlay stack: two CSS-only slots above all media, below the veil.
 			for (const index of [0, 1]) {
 				const overlay = document.createElement("div");
 				overlay.dataset.tlOverlay = "";
@@ -2545,12 +2526,6 @@
 			const veil = document.createElement("div");
 			veil.dataset.tlVeil = "";
 			scene.appendChild(veil);
-
-			const crest = document.createElement("div");
-			crest.dataset.tlCrest = "";
-			crest.innerHTML = CREST_SVG;
-			crest.style.setProperty("--tl-focal-x", FOCAL_X);
-			scene.appendChild(crest);
 
 			document.body.insertBefore(scene, document.body.firstChild);
 			applyPlayback(scene, readPlayback());

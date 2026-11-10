@@ -234,18 +234,9 @@ body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-scene] > [data-tl-veil] {
 	background:
 		linear-gradient(180deg, rgba(120, 180, 240, 0.06) 0%, transparent 42%, rgba(2, 8, 18, 0.30) 100%);
 }
-/* top-left dawn burst: corner artwork that never meets a control */
-body[data-dsh-tianlight] [data-tl-scene] > [data-tl-crest] {
-	position: absolute;
-	top: -120px;
-	left: -140px;
-	width: 520px;
-	height: 520px;
-	opacity: 0.42;
-}
-body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-scene] > [data-tl-crest] {
-	opacity: 0.30;
-}
+/* v1.6.2: the fixed top-left "dawn burst" corner artwork was removed on user feedback
+   (it looked like a permanent little sun on every wallpaper). The veil above still
+   supplies the sky-light tint; nothing else is pinned to the top-left corner. */
 
 /* ---- model picker: same glass pill as the composer ----
    Targets are runtime-stamped attributes (selector bridge), never build hashes. */
@@ -1319,7 +1310,7 @@ body[data-dsh-tianlight] [data-tl-scene] > [data-tl-scene-frame] {
 	background: transparent;
 	pointer-events: none;
 }
-/* ---- overlay stack: two CSS-only layers above the wallpaper, below veil/crest ---- */
+/* ---- overlay stack: two CSS-only layers above the wallpaper, below the veil ---- */
 body[data-dsh-tianlight] [data-tl-scene] > [data-tl-overlay] {
 	position: absolute;
 	inset: 0;
