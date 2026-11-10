@@ -1,10 +1,11 @@
 name: release
 
-# Creates the public GitHub Releases for the pushed tags from the release-note
+# Creates/updates the public GitHub Releases for the pushed tags from the release-note
 # files that ship in the repository root (RELEASE-NOTES-v1.0.x.md). Runs on every
-# push to main (idempotent: existing releases are left alone) and can also be
-# dispatched manually. The workflow uses the repository's own GITHUB_TOKEN, so no
-# personal token is needed to publish a release after a push.
+# push to main (idempotent: an existing release is edited to match its notes file, a
+# missing one is created) and can also be dispatched manually. The workflow uses the
+# repository's own GITHUB_TOKEN, so no personal token is needed to publish a release
+# after a push.
 on:
   push:
     branches: [main]
@@ -25,7 +26,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: create releases from RELEASE-NOTES-v*.md (idempotent)
+      - name: sync releases from RELEASE-NOTES-v*.md (idempotent)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -42,11 +43,15 @@ jobs:
               echo "skip $tag: tag not present in this checkout"
               continue
             fi
+            title="$(head -n 1 "$notes" | sed -e 's/^# *//' -e 's/\r$//')"
             if gh release view "$tag" >/dev/null 2>&1; then
-              echo "skip $tag: release already exists"
+              # The release may already exist (e.g. created from the tag before this
+              # workflow ran). The notes file is authoritative, so edit it back into
+              # sync instead of leaving the tag-message placeholder as the release.
+              echo "updating release $tag: $title"
+              gh release edit "$tag" --title "$title" --notes-file "$notes"
               continue
             fi
-            title="$(head -n 1 "$notes" | sed -e 's/^# *//' -e 's/\r$//')"
             echo "creating release $tag: $title"
             gh release create "$tag" --title "$title" --notes-file "$notes" --verify-tag
           done
