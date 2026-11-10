@@ -82,6 +82,13 @@ body[data-dsh-tianlight] {
 	--dsw-alias-fill-tsp-secondary: rgba(255, 255, 255, 0.30) !important;
 	--dsw-alias-interactive-bg-active: var(--tl-accent-soft) !important;
 	--dsw-alias-interactive-bg-hover-danger: rgba(192, 57, 43, 0.16) !important;
+	/* v1.6.1: the sidebar "new chat" button lives on an opaque product fill token
+	   (light: pure white, dark: a neutral-750 block). The skin owns 100% wallpaper, so
+	   these two tokens must be glass as well; the same tokens paint every product
+	   "elevated" button, which fixes their dark blocks too. The per-surface rule for
+	   the stamped button is in the v1.6.1 section at the end of this sheet. */
+	--dsw-alias-button-elevated-fill: var(--tl-glass-fill) !important;
+	--dsw-alias-button-floating-hover: var(--tl-accent-soft) !important;
 	--dsw-alias-onboarding-card-fill: var(--tl-glass-fill) !important;
 	--dsw-alias-onboarding-secondary-fill: rgba(255, 255, 255, 0.22) !important;
 	--dsw-alias-settings-card-fill: var(--tl-glass-fill) !important;
@@ -136,6 +143,9 @@ body[data-dsh-tianlight][data-ds-dark-theme] {
 	--dsw-alias-fill-tsp-secondary: rgba(20, 34, 54, 0.36) !important;
 	--dsw-alias-interactive-bg-active: var(--tl-accent-soft) !important;
 	--dsw-alias-interactive-bg-hover-danger: rgba(255, 120, 105, 0.18) !important;
+	/* v1.6.1: same glass handover for the elevated button family in the dark theme. */
+	--dsw-alias-button-elevated-fill: var(--tl-glass-fill) !important;
+	--dsw-alias-button-floating-hover: var(--tl-accent-soft) !important;
 	--dsw-alias-onboarding-card-fill: var(--tl-glass-fill) !important;
 	--dsw-alias-onboarding-secondary-fill: rgba(18, 30, 48, 0.30) !important;
 	--dsw-alias-settings-card-fill: var(--tl-glass-fill) !important;
@@ -1964,30 +1974,68 @@ body[data-dsh-tianlight] {
 	--tl-liquid-lo: 0;
 	--tl-liquid-noise: 0;
 	--tl-liquid-sheen: 0;
+	/* v1.6.1 liquid glass v2. The surface/size pairs below are the complete
+	   multi-layer recipe every glass surface paints, so each rule is a one-line
+	   background-image away from the whole look: a baked feTurbulence grain tile
+	   (size --tl-liquid-grain), a cool bottom-right tint, the diagonal sheen, then
+	   the top-left radial specular. The flat pair is the same recipe without the
+	   tiled grain, for surfaces that appear in large numbers (transcript bubbles).
+	   The var() references resolve against the selected depth on <body>, so only the
+	   numbers and the per-level grain URL are repeated per depth. */
+	--tl-liquid-grain: 140px;
+	--tl-liquid-rim: 0;
+	--tl-liquid-grain-image: none;
+	--tl-liquid-surface:
+		var(--tl-liquid-grain-image),
+		radial-gradient(120% 100% at 100% 100%, rgba(120, 170, 235, calc(0.05 + var(--tl-liquid-noise) * 1.2)) 0%, rgba(96, 146, 214, calc(0.03 + var(--tl-liquid-noise) * 0.6)) 42%, rgba(80, 130, 200, 0) 72%),
+		linear-gradient(115deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 32%, rgba(255, 255, 255, 0) 62%, rgba(255, 255, 255, var(--tl-liquid-lo)) 100%),
+		radial-gradient(120% 80% at 14% 4%, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 56%);
+	--tl-liquid-surface-size: var(--tl-liquid-grain) var(--tl-liquid-grain), auto, auto, auto;
+	--tl-liquid-surface-flat:
+		radial-gradient(120% 100% at 100% 100%, rgba(120, 170, 235, calc(0.05 + var(--tl-liquid-noise) * 1.2)) 0%, rgba(96, 146, 214, calc(0.03 + var(--tl-liquid-noise) * 0.6)) 42%, rgba(80, 130, 200, 0) 72%),
+		linear-gradient(115deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 32%, rgba(255, 255, 255, 0) 62%, rgba(255, 255, 255, var(--tl-liquid-lo)) 100%),
+		radial-gradient(120% 80% at 14% 4%, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 56%);
+	--tl-liquid-surface-flat-size: auto, auto, auto;
+	--tl-liquid-fallback-boost: radial-gradient(120% 90% at 18% 6%, rgba(170, 215, 255, calc(0.04 + var(--tl-liquid-sheen) * 0.10)) 0%, rgba(120, 170, 230, 0) 62%);
+	/* The 1px light/dark inner edge pair and the outer soft glow, shared by every
+	   surface so one box-shadow declaration composes the full v2 rim. */
+	--tl-liquid-rim-shadow:
+		inset 1px 1px 0 rgba(255, 255, 255, var(--tl-liquid-rim)),
+		inset -1px -1px 0 rgba(4, 14, 28, calc(var(--tl-liquid-rim) * 0.55));
+	--tl-liquid-glow-shadow: 0 0 calc(6px + 14px * var(--tl-liquid-sheen)) rgba(150, 200, 250, calc(var(--tl-liquid-sheen) * 0.14));
 }
 body[data-dsh-tianlight][data-tl-glass-effective="soft"] {
-	--tl-liquid-blur: 7px;
-	--tl-liquid-sat: 1.18;
-	--tl-liquid-hi: 0.22;
-	--tl-liquid-lo: 0.12;
-	--tl-liquid-noise: 0;
-	--tl-liquid-sheen: 0.35;
+	--tl-liquid-blur: 11px;
+	--tl-liquid-sat: 1.3;
+	--tl-liquid-hi: 0.30;
+	--tl-liquid-lo: 0.14;
+	--tl-liquid-noise: 0.035;
+	--tl-liquid-sheen: 0.4;
+	--tl-liquid-grain: 180px;
+	--tl-liquid-rim: 0.26;
+	--tl-liquid-grain-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'140'%20height%3D'140'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.9'%20numOctaves%3D'2'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20type%3D'saturate'%20values%3D'0'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'140'%20height%3D'140'%20filter%3D'url(%23n)'%20opacity%3D'0.035'%2F%3E%3C%2Fsvg%3E");
 }
 body[data-dsh-tianlight][data-tl-glass-effective="real"] {
-	--tl-liquid-blur: 12px;
-	--tl-liquid-sat: 1.42;
-	--tl-liquid-hi: 0.40;
-	--tl-liquid-lo: 0.22;
-	--tl-liquid-noise: 0;
+	--tl-liquid-blur: 19px;
+	--tl-liquid-sat: 1.5;
+	--tl-liquid-hi: 0.52;
+	--tl-liquid-lo: 0.28;
+	--tl-liquid-noise: 0.05;
 	--tl-liquid-sheen: 1;
+	--tl-liquid-grain: 140px;
+	--tl-liquid-rim: 0.46;
+	--tl-liquid-grain-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'140'%20height%3D'140'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.9'%20numOctaves%3D'2'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20type%3D'saturate'%20values%3D'0'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'140'%20height%3D'140'%20filter%3D'url(%23n)'%20opacity%3D'0.05'%2F%3E%3C%2Fsvg%3E");
 }
 body[data-dsh-tianlight][data-tl-glass-effective="frosted"] {
-	--tl-liquid-blur: 20px;
-	--tl-liquid-sat: 0.92;
-	--tl-liquid-hi: 0.44;
-	--tl-liquid-lo: 0.05;
+	--tl-liquid-blur: 26px;
+	--tl-liquid-sat: 0.95;
+	--tl-liquid-hi: 0.55;
+	--tl-liquid-lo: 0.08;
 	--tl-liquid-noise: 0.12;
-	--tl-liquid-sheen: 0.1;
+	--tl-liquid-sheen: 0.12;
+	--tl-liquid-grain: 110px;
+	--tl-liquid-rim: 0.5;
+	--tl-liquid-grain-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'140'%20height%3D'140'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.9'%20numOctaves%3D'2'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20type%3D'saturate'%20values%3D'0'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'140'%20height%3D'140'%20filter%3D'url(%23n)'%20opacity%3D'0.12'%2F%3E%3C%2Fsvg%3E");
 }
 body[data-dsh-tianlight] [data-tl-scene]::after {
 	content: "";
@@ -1996,9 +2044,8 @@ body[data-dsh-tianlight] [data-tl-scene]::after {
 	pointer-events: none;
 	z-index: 2;
 	opacity: 1;
-	background-image:
-		linear-gradient(115deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 34%, rgba(255, 255, 255, 0) 64%, rgba(255, 255, 255, var(--tl-liquid-lo)) 100%),
-		radial-gradient(120% 80% at 16% 6%, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 58%);
+	background-image: var(--tl-liquid-surface);
+	background-size: var(--tl-liquid-surface-size);
 	-webkit-backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
 	backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
 }
@@ -2049,8 +2096,12 @@ body[data-dsh-tianlight][data-tl-lowpower] [data-tl-rheo][data-tl-rheo-empty] {
 	backdrop-filter: blur(3px) saturate(1.05);
 	box-shadow: none;
 }
-/* ---- v1.6.0: liquid glass on the rest of the interface ----
-   v1.5 wired the depth preset only into the wallpaper scene layer and the skin's own
+/* ---- v1.6.0/v1.6.1: liquid glass on the rest of the interface ----
+   v1.6.1 upgrades this block to the liquid-glass v2 recipe: one shared multi-layer
+   surface (tiled grain + cool tint + diagonal sheen + top-left specular), 1px
+   light/dark inner rim, outer soft glow, softer/deeper blur presets and softer
+   rebound transitions. The v1.6.0 grouping/performance contract is unchanged.
+   v1.6.0 wired the depth preset only into the wallpaper scene layer and the skin's own
    pills, so changing depth on a normal page looked like "nothing happened". These
    grouped rules spread the same recipe over every KNOWN glass / popover surface.
    Hard constraints, in order of importance:
@@ -2069,115 +2120,151 @@ body[data-dsh-tianlight][data-tl-lowpower] [data-tl-rheo][data-tl-rheo-empty] {
    - [data-tl-lowpower] flattens all of it (blur <= 3px, no shadow, no animation). */
 
 /* Scene-less fallback. The wallpaper module is optional, so when the scene layer is
-   absent the glass installer inserts one fixed data-tl-liquid-fallback node; the
-   gradient reads the same depth variables, so the selected depth stays visible on a
-   bare page. It is painted beneath the product UI (root is z-index 1, body is
-   transparent) and never intercepts a pointer. */
+   absent the glass installer inserts one fixed data-tl-liquid-fallback node; it paints
+   the SAME v2 surface stack (grain + cool tint + sheen + specular) plus one stronger
+   backlight gradient, so the selected depth stays visible on a bare page. It is
+   painted beneath the product UI (root is z-index 1, body is transparent) and never
+   intercepts a pointer. */
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-liquid-fallback] {
 	position: fixed;
 	inset: 0;
 	z-index: -1;
 	pointer-events: none;
-	background-image:
-		linear-gradient(115deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 38%, rgba(255, 255, 255, 0) 66%, rgba(255, 255, 255, var(--tl-liquid-lo)) 100%),
-		radial-gradient(120% 80% at 16% 6%, rgba(150, 200, 255, 0.20) 0%, rgba(110, 165, 230, 0.09) 55%, rgba(70, 120, 190, 0.05) 100%);
+	background-image: var(--tl-liquid-surface), var(--tl-liquid-fallback-boost);
+	background-size: var(--tl-liquid-surface-size), auto;
 	-webkit-backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
 	backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
+	box-shadow: var(--tl-liquid-rim-shadow);
 }
 body[data-dsh-tianlight][data-tl-glass-effective="off"] [data-tl-liquid-fallback] {
 	display: none;
 }
 body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-liquid-fallback] {
 	background-image: linear-gradient(115deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 60%);
+	background-size: auto;
 	-webkit-backdrop-filter: blur(2px) saturate(1.04);
 	backdrop-filter: blur(2px) saturate(1.04);
+	box-shadow: none;
 }
 
-/* Group A: heavy surfaces. Fill, specular rim, hairline and a light drop shadow.
+/* Group A: heavy surfaces. Fill, v2 surface stack (tiled grain + cool tint + sheen +
+   specular), 1px light/dark inner rim, outer soft glow and a light drop shadow.
    The sidebar column is the one place the depth adds a fill on purpose: it is a
    product surface that otherwise stays fully transparent, and "glass everywhere"
    is the point of this preset. The fill is mixed down so the wallpaper still reads
-   through it. */
+   through it. No extra backdrop-filter on these panels: one large blur layer is the
+   budget, and the scene/fallback layer already owns it. */
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar], [data-tl-sidebar-col]) {
 	background-color: color-mix(in srgb, var(--tl-glass-fill) 62%, transparent) !important;
-	background-image: linear-gradient(180deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 24%) !important;
+	background-image: var(--tl-liquid-surface) !important;
+	background-size: var(--tl-liquid-surface-size);
 	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi)),
+		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-glow-shadow),
 		0 0 0 0.5px var(--tl-glass-line),
 		0 10px 30px rgba(8, 26, 44, 0.14);
 }
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-settings], [data-tl-wall]) {
-	background-image: linear-gradient(150deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 30%) !important;
+	background-image: var(--tl-liquid-surface) !important;
+	background-size: var(--tl-liquid-surface-size);
 	border-color: var(--tl-glass-line);
 	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi)),
+		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-glow-shadow),
 		0 18px 60px rgba(8, 26, 44, 0.26);
 }
 body[data-dsh-tianlight][data-ds-dark-theme]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-settings], [data-tl-wall]) {
 	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi)),
+		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-glow-shadow),
 		0 18px 60px rgba(0, 0, 0, 0.55);
 }
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-hub] [data-tl-hub-panel] {
-	background-image: linear-gradient(150deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 30%);
+	background-image: var(--tl-liquid-surface);
+	background-size: var(--tl-liquid-surface-size);
 	border-color: var(--tl-glass-line);
 	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi)),
+		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-glow-shadow),
 		0 28px 80px rgba(4, 14, 26, 0.45);
 }
 
 /* ARIA fallbacks. The bridge stamps the surfaces it recognises; the product also
    ships plain role="dialog|menu|listbox|tooltip|tabpanel" nodes. Their fill is left
-   alone (an unknown product panel keeps its own legibility floor); the depth only
-   adds its light signature: a specular top edge, a hairline ring drawn with a
-   box-shadow (so no border appears where the product had none and nothing reflows)
-   and a shallow elevation. */
+   alone (an unknown product panel keeps its own legibility floor); the depth adds the
+   v2 light signature: the surface stack, the 1px light/dark rim drawn with a
+   box-shadow (so nothing reflows) and the outer soft glow. */
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([role="dialog"], [role="menu"], [role="listbox"]) {
-	background-image: linear-gradient(150deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 32%);
+	background-image: var(--tl-liquid-surface);
+	background-size: var(--tl-liquid-surface-size);
 	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi)),
+		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-glow-shadow),
 		0 0 0 0.5px var(--tl-glass-line),
 		0 12px 34px rgba(8, 26, 44, 0.18);
 }
 
-/* Group B: light surfaces. One inset specular, one hairline ring, one shallow
-   shadow; no per-item blur (bubbles are the long-list case) and no fill override on
-   the pet bubbles/menus, which are already near-opaque for readability. */
-body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-bubble], [data-tl-duty], [data-tl-catmenu], [role="tooltip"], [role="tabpanel"]) {
+/* Group B: light surfaces. The flat stack (no tiled grain) keeps a long transcript
+   cheap: hundreds of bubbles must not each paint an SVG noise tile; the detached
+   tooltip/tabpanel surfaces are few enough for the full stack. No per-item blur. */
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-bubble], [data-tl-duty], [data-tl-catmenu]) {
+	background-image: var(--tl-liquid-surface-flat) !important;
+	background-size: var(--tl-liquid-surface-flat-size);
 	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi)),
+		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-glow-shadow),
 		0 0 0 0.5px var(--tl-glass-line),
 		0 6px 18px rgba(8, 26, 44, 0.12);
+}
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([role="tooltip"], [role="tabpanel"]) {
+	background-image: var(--tl-liquid-surface);
+	background-size: var(--tl-liquid-surface-size);
+	box-shadow:
+		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-glow-shadow),
+		0 0 0 0.5px var(--tl-glass-line),
+		0 8px 22px rgba(8, 26, 44, 0.16);
 }
 
 /* Composer: the blur already lives on ::before (a backdrop-filter on the card itself
    would re-anchor its non-portaled tooltips, which are position:fixed). The depth
-   only strengthens the sheen, the hairline and the saturation, so the pseudo layer
-   ownership stays untouched. */
+   only strengthens the sheen, the hairline, the rim and the saturation, so the pseudo
+   layer ownership stays untouched. */
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-composer] {
-	background-image: linear-gradient(115deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 34%, rgba(255, 255, 255, 0) 66%, rgba(255, 255, 255, var(--tl-liquid-lo)) 100%) !important;
+	background-image: var(--tl-liquid-surface) !important;
+	background-size: var(--tl-liquid-surface-size);
 	border-color: rgba(255, 255, 255, calc(var(--tl-liquid-hi) + 0.18)) !important;
 	box-shadow:
-		0 12px 38px rgba(8, 28, 52, 0.26),
-		inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi)) !important;
+		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-glow-shadow),
+		0 12px 38px rgba(8, 28, 52, 0.26) !important;
 }
 body[data-dsh-tianlight][data-ds-dark-theme]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-composer] {
 	box-shadow:
-		0 12px 38px rgba(0, 0, 0, 0.50),
-		inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi)) !important;
+		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-glow-shadow),
+		0 12px 38px rgba(0, 0, 0, 0.50) !important;
 }
 
 /* Model pill: the v1.5 rule above already contributes the depth blur, specular edge
-   and border; add the diagonal sheen on top of it. */
+   and border; paint the full v2 stack on top of it. */
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-model] {
-	background-image: linear-gradient(122deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 46%, rgba(255, 255, 255, 0) 72%, rgba(255, 255, 255, var(--tl-liquid-lo)) 100%) !important;
+	background-image: var(--tl-liquid-surface) !important;
+	background-size: var(--tl-liquid-surface-size);
+	box-shadow:
+		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-glow-shadow),
+		0 6px 20px rgba(8, 26, 44, 0.16) !important;
 }
 
-/* Floating menus (bridge-stamped): sheen plus a deeper shadow than the bubble tier. */
+/* Floating menus (bridge-stamped): full stack plus a deeper shadow than the bubble
+   tier and the outer glow. */
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-menu] {
-	background-image: linear-gradient(150deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 30%) !important;
+	background-image: var(--tl-liquid-surface) !important;
+	background-size: var(--tl-liquid-surface-size);
 	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi)),
+		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-glow-shadow),
 		0 14px 38px rgba(8, 26, 44, 0.22);
 }
 
@@ -2209,15 +2296,15 @@ body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-eff
 }
 
 /* Low power / 15fps: flatten every decoration the depth just added. Fills may stay
-   (they cost no per-frame compositing) but shadows, sheen layers and animation go,
-   and the two live blurs drop to 3px, matching the v1.5 low-power recipe. The sheen
-   is cleared only on the surfaces this block paints one on, so a product
+   (they cost no per-frame compositing) but shadows, v2 surface layers, rim/glow and
+   animation go, and every live blur drops to 3px, matching the v1.5 low-power recipe.
+   The v2 stack is cleared only on the surfaces this block paints one on, so a product
    background-image elsewhere is never thrown away. */
-body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar], [data-tl-sidebar-col], [data-tl-settings], [data-tl-wall], [data-tl-hub-panel], [data-tl-composer], [data-tl-model], [data-tl-rheo][data-tl-rheo-empty], [data-tl-bubble], [data-tl-menu], [data-tl-duty], [data-tl-catmenu], [role="dialog"], [role="menu"], [role="listbox"], [role="tooltip"], [role="tabpanel"]) {
+body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar], [data-tl-sidebar-col], [data-tl-settings], [data-tl-wall], [data-tl-hub-panel], [data-tl-glass-preview], [data-tl-composer], [data-tl-model], [data-tl-rheo][data-tl-rheo-empty], [data-tl-bubble], [data-tl-menu], [data-tl-duty], [data-tl-catmenu], [role="dialog"], [role="menu"], [role="listbox"], [role="tooltip"], [role="tabpanel"]) {
 	box-shadow: none !important;
 	animation: none !important;
 }
-body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar], [data-tl-sidebar-col], [data-tl-settings], [data-tl-wall], [data-tl-hub-panel], [data-tl-composer], [data-tl-model], [data-tl-menu], [role="dialog"], [role="menu"], [role="listbox"]) {
+body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar], [data-tl-sidebar-col], [data-tl-settings], [data-tl-wall], [data-tl-hub-panel], [data-tl-glass-preview], [data-tl-composer], [data-tl-model], [data-tl-menu], [role="dialog"], [role="menu"], [role="listbox"], [role="tooltip"], [role="tabpanel"]) {
 	background-image: none !important;
 }
 body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-menu] {
@@ -2234,9 +2321,19 @@ body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], 
 	-webkit-backdrop-filter: blur(3px) saturate(1.05) !important;
 	backdrop-filter: blur(3px) saturate(1.05) !important;
 }
+/* v1.6.1 surfaces (new-chat button, weather chip) flatten with the rest; their blur
+   lives on the element itself (small, no fixed descendants), never on a panel. */
+body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-new-chat], [data-tl-weather-chip]) {
+	box-shadow: none !important;
+	animation: none !important;
+	background-image: none !important;
+	-webkit-backdrop-filter: blur(3px) saturate(1.05) !important;
+	backdrop-filter: blur(3px) saturate(1.05) !important;
+}
 @media (prefers-reduced-motion: reduce) {
-	body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-menu], [data-tl-composer], [data-tl-liquid-fallback]) {
+	body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-menu], [data-tl-composer], [data-tl-liquid-fallback], [data-tl-new-chat], [data-tl-weather-chip]) {
 		animation: none !important;
+		transition: none !important;
 	}
 }
 
@@ -2246,17 +2343,21 @@ body[data-dsh-tianlight] [data-tl-hub] [data-tl-glass-preview] {
 	height: 34px;
 	border-radius: 10px;
 	border: 0.5px solid rgba(255, 255, 255, 0.42);
-	background-image:
-		linear-gradient(122deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 42%, rgba(255, 255, 255, 0) 64%, rgba(255, 255, 255, var(--tl-liquid-lo)) 100%),
-		radial-gradient(90% 120% at 12% 0%, rgba(180, 220, 255, 0.32) 0%, rgba(120, 170, 230, 0.10) 55%, rgba(90, 140, 210, 0.06) 100%);
+	background-image: var(--tl-liquid-surface), radial-gradient(90% 120% at 12% 0%, rgba(180, 220, 255, calc(0.10 + var(--tl-liquid-sheen) * 0.16)) 0%, rgba(120, 170, 230, 0.10) 55%, rgba(90, 140, 210, 0.06) 100%);
+	background-size: var(--tl-liquid-surface-size), auto;
 	-webkit-backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
 	backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi));
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi)),
+		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-glow-shadow);
 }
 body[data-dsh-tianlight] [data-tl-hub] [data-tl-glass-preview][data-depth="off"] {
 	background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.06), rgba(120, 170, 230, 0.06));
+	background-size: auto;
 	-webkit-backdrop-filter: none;
 	backdrop-filter: none;
+	box-shadow: none;
 }
 body[data-dsh-tianlight] [data-tl-hub] [data-tl-glass-preview-label] {
 	display: block;
@@ -2579,6 +2680,175 @@ body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-agent-hint] {
 }
 body[data-dsh-tianlight] [data-tl-hub] .tl-hub-log > p[data-source="agent"] {
 	color: var(--tl-ok, #2f8f4e);
+}
+
+/* ---- v1.6.1 new surfaces: product "new chat" button + main-interface weather chip ----
+   Both must exist at EVERY depth. Off keeps the neutral glass look; depth != off adds
+   the full liquid-glass v2 surface. The new-chat dark-block fix is the one deliberate
+   off-mode visual change: the product painted that button with
+   --dsw-alias-button-elevated-fill (an opaque block on the 100% wallpaper interface).
+   Layout is never taken over: the new-chat geometry belongs to the product (its
+   collapsed variant is fixed by the product in the desktop titlebar), the chip is ours. */
+
+/* "New chat" button. The selector bridge stamps it from the stable _newSession module
+   class on <button> (expanded sidebar + collapsed titlebar rail variants), so no build
+   hash is named here. The two product tokens are glass in the token blocks above. */
+body[data-dsh-tianlight] [data-tl-new-chat] {
+	background-color: color-mix(in srgb, var(--tl-glass-fill) 78%, transparent) !important;
+	border: 0.5px solid var(--tl-glass-line) !important;
+	color: var(--tl-ink) !important;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+	transition:
+		background-color 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
+		border-color 160ms ease,
+		box-shadow 180ms ease,
+		transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-new-chat] {
+	background-color: color-mix(in srgb, var(--tl-glass-fill) 72%, transparent) !important;
+	background-image: var(--tl-liquid-surface) !important;
+	background-size: var(--tl-liquid-surface-size);
+	border-color: rgba(255, 255, 255, calc(var(--tl-liquid-rim) + 0.16)) !important;
+	box-shadow:
+		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-glow-shadow),
+		0 4px 16px rgba(8, 26, 44, 0.16) !important;
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-new-chat] {
+		-webkit-backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
+		backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
+	}
+}
+@media (hover: hover) {
+	body[data-dsh-tianlight] [data-tl-new-chat]:hover {
+		background-color: var(--tl-accent-soft) !important;
+		border-color: var(--tl-accent) !important;
+	}
+}
+body[data-dsh-tianlight] [data-tl-new-chat]:active {
+	transform: scale(0.985);
+}
+body[data-dsh-tianlight] [data-tl-new-chat]:focus-visible {
+	outline: 2px solid var(--tl-accent) !important;
+	outline-offset: 2px;
+}
+
+/* Main-interface weather chip. DOM contract (created by the weather module, exactly one
+   per page): div[data-tl-weather-chip][role=button][tabindex=0] with
+   data-tl-weather-state=off|no-location|waiting|error|ready and up to three children
+   ([data-tl-weather-icon], [data-tl-weather-temp], [data-tl-weather-desc]; plain spans
+   are accepted as a fallback). It floats below the Windows title strip and the DSH top
+   frame clearance, above the wallpaper but below product modals / the role hub
+   (z-index 96 < the 1000 mask family), and never takes layout space. */
+body[data-dsh-tianlight] [data-tl-weather-chip] {
+	position: fixed;
+	top: calc(var(--dsh-windows-titlebar-height, 0px) + var(--dsh-frame-top-clearance, 48px) + 8px);
+	right: 14px;
+	z-index: 96;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	box-sizing: border-box;
+	max-width: min(240px, 46vw);
+	height: 30px;
+	padding: 0 11px;
+	border-radius: 999px;
+	border: 0.5px solid var(--tl-glass-line);
+	background-color: color-mix(in srgb, var(--tl-glass-fill) 90%, transparent);
+	color: var(--tl-ink);
+	font: 500 12px/1 var(--ds-font-family, system-ui);
+	letter-spacing: 0.01em;
+	white-space: nowrap;
+	cursor: pointer;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-app-region: no-drag;
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.16),
+		0 4px 16px rgba(8, 26, 44, 0.16);
+	transition:
+		transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
+		background-color 180ms ease,
+		border-color 180ms ease,
+		box-shadow 200ms ease;
+}
+body[data-dsh-tianlight] [data-tl-weather-chip] [data-tl-weather-icon],
+body[data-dsh-tianlight] [data-tl-weather-chip] > span:first-child {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	font-size: 14px;
+	line-height: 1;
+}
+body[data-dsh-tianlight] [data-tl-weather-chip] svg {
+	display: block;
+	flex: none;
+	width: 15px;
+	height: 15px;
+}
+body[data-dsh-tianlight] [data-tl-weather-chip] [data-tl-weather-temp] {
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+body[data-dsh-tianlight] [data-tl-weather-chip] [data-tl-weather-desc] {
+	min-width: 0;
+	max-width: 118px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	color: var(--tl-ink-soft, var(--tl-ink));
+}
+body[data-dsh-tianlight] [data-tl-weather-chip][data-tl-weather-state="off"],
+body[data-dsh-tianlight] [data-tl-weather-chip][data-tl-weather-state="no-location"] {
+	color: var(--tl-ink-soft, var(--tl-ink));
+}
+body[data-dsh-tianlight] [data-tl-weather-chip][data-tl-weather-state="off"] [data-tl-weather-desc],
+body[data-dsh-tianlight] [data-tl-weather-chip][data-tl-weather-state="no-location"] [data-tl-weather-desc] {
+	color: var(--tl-ink-faint, var(--tl-ink));
+}
+body[data-dsh-tianlight] [data-tl-weather-chip][data-tl-weather-state="waiting"] {
+	opacity: 0.78;
+}
+body[data-dsh-tianlight] [data-tl-weather-chip][data-tl-weather-state="ready"] {
+	color: var(--tl-ink);
+}
+body[data-dsh-tianlight] [data-tl-weather-chip][data-tl-weather-state="error"] {
+	border-color: color-mix(in srgb, var(--tl-bad, #c94f4f) 55%, transparent);
+	color: var(--tl-bad, #c94f4f);
+}
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-weather-chip] {
+	background-color: color-mix(in srgb, var(--tl-glass-fill) 78%, transparent);
+	background-image: var(--tl-liquid-surface);
+	background-size: var(--tl-liquid-surface-size);
+	border-color: rgba(255, 255, 255, calc(var(--tl-liquid-rim) + 0.14));
+	box-shadow:
+		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-glow-shadow),
+		0 6px 20px rgba(8, 26, 44, 0.18);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-weather-chip] {
+		-webkit-backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
+		backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
+	}
+}
+@media (hover: hover) {
+	body[data-dsh-tianlight] [data-tl-weather-chip]:hover {
+		transform: translateY(-1px) scale(1.02);
+		border-color: var(--tl-accent);
+		background-color: color-mix(in srgb, var(--tl-glass-fill) 70%, var(--tl-accent-soft));
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, calc(0.16 + var(--tl-liquid-rim))),
+			0 8px 24px rgba(8, 26, 44, 0.22);
+	}
+}
+body[data-dsh-tianlight] [data-tl-weather-chip]:active {
+	transform: scale(0.976);
+}
+body[data-dsh-tianlight] [data-tl-weather-chip]:focus-visible {
+	outline: 2px solid var(--tl-accent) !important;
+	outline-offset: 2px;
 }
 `;
 

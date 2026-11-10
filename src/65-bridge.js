@@ -36,6 +36,7 @@
 				"data-tl-model-effort",
 				"data-tl-bubble",
 				"data-tl-menu",
+				"data-tl-new-chat",
 			];
 			const stamped = new Set();
 
@@ -65,7 +66,8 @@
 			const outermost = (nodes) => {
 				const set = new Set(nodes);
 				return nodes.filter((node) => {
-					for (let parent = node.parentElement; parent !== null; parent = parent.parentElement) {
+					// v1.6.1: tolerate a fake DOM (verifier) that has no parentElement.
+					for (let parent = node.parentElement; parent !== null && parent !== undefined; parent = parent.parentElement) {
 						if (set.has(parent)) return false;
 					}
 					return true;
@@ -75,9 +77,15 @@
 			// Defense in depth: a themed surface must never be a huge layout container.
 			// 2026-10-30 regression: an over-broad selector stamped the whole right-side
 			// panel body and painted it with the opaque panel fill (giant dark block).
+			// v1.6.1: a fake DOM (verifier) may not implement layout, so an unmeasurable
+			// node is treated as "not oversized" instead of throwing the whole pass away.
 			const isOversized = (node) => {
-				const rect = node.getBoundingClientRect();
-				return rect.width * rect.height > globalThis.innerWidth * globalThis.innerHeight * 0.5;
+				try {
+					const rect = node.getBoundingClientRect();
+					return rect.width * rect.height > globalThis.innerWidth * globalThis.innerHeight * 0.5;
+				} catch {
+					return false;
+				}
 			};
 
 			const stampAll = () => {
@@ -159,6 +167,20 @@
 					(node) => node.hasAttribute("data-trigger-menu") || hasSegment(node, "menu"),
 				);
 				for (const node of outermost(menuCandidates)) mark(node, "data-tl-menu");
+
+				// ---- sidebar "new chat" button (expanded sidebar + collapsed titlebar rail) ----
+				// The product paints it with its own elevated-button fill
+				// (`--dsw-alias-button-elevated-fill`), which the skin does not own, so the
+				// button stayed an opaque block on a 100% wallpaper interface. Both the wide
+				// button and the collapsed 28-36px rail variant carry the same `newSession`
+				// module class; stamping turns them into ordinary skin surfaces.
+				const newChatCandidates = [...document.querySelectorAll("[class*='_newSession']")].filter(
+					(node) =>
+						String(node.tagName).toUpperCase() === "BUTTON" &&
+						hasSegment(node, "newSession") &&
+						isOversized(node) === false,
+				);
+				for (const node of outermost(newChatCandidates)) mark(node, "data-tl-new-chat");
 			};
 
 			// Debounced to one pass per frame: the app mutates constantly.

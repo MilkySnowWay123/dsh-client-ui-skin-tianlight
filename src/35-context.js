@@ -443,6 +443,279 @@
 		}
 
 		/**
+		 * v1.6.1：DSH 主界面右上角的常驻「天气胶囊」。
+		 *
+		 * 由 99-apply 作为 always-on installer 安装（duty channel 附近），所以智能情境
+		 * 模块被关掉时胶囊仍然存在：此时 summary().runtime 为 false，胶囊显示中性
+		 * 「天气」状态，绝不自己联网、也绝不自动 enable 天气。数据只读
+		 * `weatherController.summary()` 的 7 个键（enabled/text/last/updatedAt/error/
+		 * hasLocation/runtime）；优先订阅模型变化，只有 subscribe 不可用时才用 60 秒
+		 * 轮询兜底；语言切换用 subscribeTl5I18n 刷新文案与 aria-label。
+		 *
+		 * click / Enter / Space 只调用已存在的 `globalThis.tianlightRoleHub.open()`：
+		 * 角色中枢里本来就有天气卡。不新增网络路径、权限、全局句柄或设置入口。
+		 *
+		 * 生命周期：dispose 移除节点、退订、清定时器与监听；document.body 为空时安全
+		 * 跳过；重复安装复用孤儿节点，页面上永远只有一颗胶囊。
+		 */
+		/** off / no-location / waiting / error / ready 五态；runtime 缺失归入 off。 */
+		function weatherChipState(summary) {
+			if (summary === null || summary === undefined || typeof summary !== "object") return "off";
+			if (summary.enabled !== true || summary.runtime !== true) return "off";
+			if (summary.hasLocation !== true) return "no-location";
+			if (typeof summary.error === "string" && summary.error !== "") return "error";
+			if (summary.last !== null && summary.last !== undefined) return "ready";
+			return "waiting";
+		}
+
+		/**
+		 * 胶囊可见文案：温度与描述分开两个 span（样式 owner 按
+		 * `[data-tl-weather-temp]` / `[data-tl-weather-desc]` 精确布局）。ready 时温度
+		 * 取 summary.last.temperatureC、描述用本地 WMO 码映射到既有的
+		 * `ctx.weather.desc*` 键；其它状态温度留空（hidden）、描述是状态短文案。
+		 * 自包含实现（不依赖片段里的其它 helper），便于隔离 verifier 直接执行。
+		 */
+		function weatherChipVisibleParts(state, summary) {
+			const describe = (code) => {
+				const value = Number(code);
+				if (Number.isFinite(value) === false) return TL_T("ctx.weather.descUnknown");
+				if (value === 0) return TL_T("ctx.weather.descClear");
+				if (value === 1) return TL_T("ctx.weather.descMainlyClear");
+				if (value === 2) return TL_T("ctx.weather.descPartlyCloudy");
+				if (value === 3) return TL_T("ctx.weather.descOvercast");
+				if (value === 45 || value === 48) return TL_T("ctx.weather.descFog");
+				if (value === 56 || value === 57 || value === 66 || value === 67) return TL_T("ctx.weather.descFreezing");
+				if (value === 95 || value === 96 || value === 99) return TL_T("ctx.weather.descThunder");
+				if (value === 80 || value === 81 || value === 82) return TL_T("ctx.weather.descShowers");
+				if (value === 51 || value === 53 || value === 55) return TL_T("ctx.weather.descDrizzle");
+				if (value === 71 || value === 73 || value === 75 || value === 77) return TL_T("ctx.weather.descSnow");
+				if (value === 85 || value === 86) return TL_T("ctx.weather.descSnowShowers");
+				if (value >= 51 && value <= 67) return TL_T("ctx.weather.descRain");
+				if (value >= 80 && value <= 99) return TL_T("ctx.weather.descRain");
+				return TL_T("ctx.weather.descUnknown");
+			};
+			if (state === "ready") {
+				const last = summary !== null && typeof summary === "object" ? summary.last : null;
+				if (last !== null && last !== undefined && typeof last === "object") {
+					const temperature = Number(last.temperatureC);
+					return {
+						temp: Number.isFinite(temperature) ? String(temperature) + "°C" : "",
+						desc: describe(last.code),
+					};
+				}
+				return { temp: "", desc: TL_T("weather.chip.ready") };
+			}
+			if (state === "no-location") return { temp: "", desc: TL_T("weather.chip.noLocation") };
+			if (state === "waiting") return { temp: "", desc: TL_T("weather.chip.waiting") };
+			if (state === "error") return { temp: "", desc: TL_T("weather.chip.error") };
+			return { temp: "", desc: TL_T("weather.chip.off") };
+		}
+
+		/**
+		 * title / aria-label 的本地化详情：只用 summary 的 7 个键，不发起任何请求。
+		 * 自包含实现（错误码/时间格式化都在函数内），隔离 verifier 可直接执行；每个
+		 * 分支都用完整字面量 key 调 TL_T，静态 i18n 审计才能看到真实 key。
+		 */
+		function weatherChipDetail(state, summary) {
+			if (state === "no-location") return TL_T("weather.chip.detailNoLocation");
+			if (state === "waiting") return TL_T("weather.chip.detailWaiting");
+			if (state === "error") {
+				const code = summary !== null && typeof summary === "object" && typeof summary.error === "string" ? summary.error : "";
+				let reason = code;
+				if (code === "network") reason = TL_T("ctx.weather.errorNetwork");
+				else if (code === "timeout") reason = TL_T("ctx.weather.errorTimeout");
+				else if (code === "invalid") reason = TL_T("ctx.weather.errorInvalid");
+				else if (code === "geocode") reason = TL_T("ctx.weather.errorGeocode");
+				else if (code === "geolocation") reason = TL_T("ctx.weather.errorGeolocation");
+				else if (code === "unavailable") reason = TL_T("ctx.weather.errorUnavailable");
+				return TL_T("weather.chip.detailError", { reason: reason });
+			}
+			if (state === "ready") {
+				const text = typeof summary.text === "string" && summary.text !== "" ? summary.text : TL_T("weather.chip.ready");
+				const at = Number(summary.updatedAt);
+				let time = "";
+				if (Number.isFinite(at)) {
+					const date = new Date(at);
+					if (Number.isFinite(date.getTime())) {
+						time = String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0");
+					}
+				}
+				return time === "" ? text : TL_T("weather.chip.detailReady", { text: text, time: time });
+			}
+			if (summary !== null && typeof summary === "object" && summary.enabled === true && summary.runtime !== true) {
+				return TL_T("weather.chip.detailMissing");
+			}
+			return TL_T("weather.chip.detailOff");
+		}
+
+		/** 图标只是装饰（aria-hidden）：WMO 码 → 单字符字形，闭集、不联网。 */
+		function weatherChipGlyph(state, summary) {
+			if (state !== "ready" || summary === null || typeof summary !== "object") return "☁";
+			const last = summary.last;
+			if (last === null || last === undefined || typeof last !== "object") return "☁";
+			const code = Number(last.code);
+			if (Number.isFinite(code) === false) return "☁";
+			if (code === 71 || code === 73 || code === 75 || code === 77 || code === 85 || code === 86) return "❄";
+			if (code === 95 || code === 96 || code === 99) return "⚡";
+			if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return "☂";
+			if (code === 45 || code === 48 || code === 2 || code === 3) return "☁";
+			if (code === 0 || code === 1) return last.isDay === true ? "☀" : "☾";
+			return "☁";
+		}
+
+		/**
+		 * 天气胶囊安装器。节点只创建一次（重复安装复用同一颗），每次数据/语言变化只
+		 * 更新文本与属性，不重建 DOM。dispose 幂等。
+		 */
+		function installWeatherChip() {
+			const body = document.body;
+			if (body === null || body === undefined) return () => {};
+			const WEATHER_CHIP_POLL_MS = 60000;
+			// 幂等单节点：上一实例/旧构建可能留下孤儿节点，直接复用；正常 teardown 已移除
+			// 节点，所以这里通常走创建分支。节点只创建一次，数据/语言变化只更新文本。
+			let chip = body.querySelector("[data-tl-weather-chip]");
+			if (chip === null) {
+				chip = document.createElement("div");
+				chip.setAttribute("data-tl-weather-chip", "");
+				body.appendChild(chip);
+			}
+			chip.setAttribute("role", "button");
+			chip.setAttribute("tabindex", "0");
+			let icon = chip.querySelector("[data-tl-weather-icon]");
+			if (icon === null) {
+				icon = document.createElement("span");
+				icon.setAttribute("data-tl-weather-icon", "");
+				icon.setAttribute("aria-hidden", "true");
+				chip.appendChild(icon);
+			}
+			let temp = chip.querySelector("[data-tl-weather-temp]");
+			if (temp === null) {
+				temp = document.createElement("span");
+				temp.setAttribute("data-tl-weather-temp", "");
+				chip.appendChild(temp);
+			}
+			let desc = chip.querySelector("[data-tl-weather-desc]");
+			if (desc === null) {
+				desc = document.createElement("span");
+				desc.setAttribute("data-tl-weather-desc", "");
+				chip.appendChild(desc);
+			}
+
+			let alive = true;
+			let unsubscribeWeather = null;
+			let unsubscribeModules = null;
+			let pollTimer = 0;
+			const openRoleHub = () => {
+				// 中枢是可选的 always-on 基础设施：缺席时静默，不抛错、不弹窗。
+				try {
+					globalThis.tianlightRoleHub?.open?.();
+				} catch (error) {
+					note("context:weather-chip-open", error);
+				}
+			};
+			const onClick = (event) => {
+				if (event !== null && event !== undefined && typeof event.stopPropagation === "function") {
+					// 胶囊浮在 DSH 表面之上：这一下点击只负责开中枢，不能同时触发底下的
+					// 菜单关闭/场景点击处理器。
+					event.stopPropagation();
+				}
+				openRoleHub();
+			};
+			const onKeyDown = (event) => {
+				if (event === null || event === undefined) return;
+				const key = typeof event.key === "string" ? event.key : "";
+				if (key !== "Enter" && key !== " " && key !== "Spacebar") return;
+				if (typeof event.preventDefault === "function") event.preventDefault();
+				if (typeof event.stopPropagation === "function") event.stopPropagation();
+				openRoleHub();
+			};
+			const refresh = () => {
+				if (alive === false) return;
+				let summary = null;
+				try {
+					summary = weatherController.summary();
+				} catch (error) {
+					note("context:weather-chip-summary", error);
+					summary = null;
+				}
+				const state = weatherChipState(summary);
+				const hint = TL_T("weather.chip.openHint");
+				const detail = weatherChipDetail(state, summary);
+				const aria = TL_T("weather.chip.aria", { text: detail, hint: hint });
+				const parts = weatherChipVisibleParts(state, summary);
+				chip.setAttribute("data-tl-weather-state", state);
+				chip.setAttribute("aria-label", aria);
+				chip.title = aria;
+				icon.textContent = weatherChipGlyph(state, summary);
+				temp.textContent = parts.temp;
+				temp.hidden = parts.temp === "";
+				desc.textContent = parts.desc;
+			};
+
+			chip.addEventListener("click", onClick);
+			chip.addEventListener("keydown", onKeyDown);
+			const unsubscribeI18n = subscribeTl5I18n(refresh);
+			try {
+				if (weatherController !== null && weatherController !== undefined && typeof weatherController.subscribe === "function") {
+					const unsubscribe = weatherController.subscribe(refresh);
+					if (typeof unsubscribe === "function") unsubscribeWeather = unsubscribe;
+				}
+			} catch (error) {
+				unsubscribeWeather = null;
+				note("context:weather-chip-subscribe", error);
+			}
+			// 智能情境模块的开关会改变 summary().runtime：订阅模块状态，让胶囊在模块被
+			// 关掉/重新打开时立刻回到中性态或恢复显示，而不用等下一次天气抓取。
+			try {
+				if (typeof moduleController !== "undefined" && typeof moduleController.subscribe === "function") {
+					const unsubscribe = moduleController.subscribe(refresh);
+					if (typeof unsubscribe === "function") unsubscribeModules = unsubscribe;
+				}
+			} catch (error) {
+				note("context:weather-chip-modules", error);
+			}
+			// 需求兜底：模型没有 subscribe 时才用 60 秒轮询；正常路径零定时器。
+			if (unsubscribeWeather === null) pollTimer = window.setInterval(refresh, WEATHER_CHIP_POLL_MS);
+			refresh();
+
+			let disposed = false;
+			const dispose = () => {
+				if (disposed === true) return;
+				disposed = true;
+				alive = false;
+				chip.removeEventListener("click", onClick);
+				chip.removeEventListener("keydown", onKeyDown);
+				if (unsubscribeWeather !== null) {
+					try {
+						unsubscribeWeather();
+					} catch (error) {
+						note("context:weather-chip-unsubscribe", error);
+					}
+				}
+				unsubscribeWeather = null;
+				if (unsubscribeModules !== null) {
+					try {
+						unsubscribeModules();
+					} catch (error) {
+						note("context:weather-chip-modules-unsubscribe", error);
+					}
+				}
+				unsubscribeModules = null;
+				if (pollTimer !== 0) {
+					window.clearInterval(pollTimer);
+					pollTimer = 0;
+				}
+				try {
+					unsubscribeI18n();
+				} catch (error) {
+					note("context:weather-chip-i18n", error);
+				}
+				chip.remove();
+			};
+			return dispose;
+		}
+
+		/**
 		 * C1 时段定义与每个时段的“配方”。v0.5.3 起刻意保守：只做很小的亮度偏移
 		 * （玻璃 ±≤0.04、场景压暗 ≤0.04，合成后 |影响| ≤6%），叠加层只留微弱边缘
 		 * 过渡，不碰壁纸选择、不加模糊/filter。用户明确关闭时恢复原状。
@@ -674,6 +947,19 @@
 				"ctx.weather.retry": "重试",
 				"ctx.weather.statusPrefix": "状态：{value}",
 				"ctx.weather.geolocationHint": "桌面端（Electron）可能无法定位；失败会保留上次数据并显示原因。",
+				"weather.chip.aria": "天气：{text}。{hint}",
+				"weather.chip.off": "天气",
+				"weather.chip.noLocation": "未设位置",
+				"weather.chip.waiting": "等待数据",
+				"weather.chip.error": "获取失败",
+				"weather.chip.ready": "天气",
+				"weather.chip.openHint": "点击打开角色中枢查看天气卡",
+				"weather.chip.detailOff": "天气未启用",
+				"weather.chip.detailMissing": "天气运行时未挂载",
+				"weather.chip.detailNoLocation": "已启用，尚未设置位置",
+				"weather.chip.detailWaiting": "正在等待首次天气数据",
+				"weather.chip.detailError": "获取失败：{reason}",
+				"weather.chip.detailReady": "{text} · 更新于 {time}",
 			},
 			en: {
 				"ctx.idle": "Default",
@@ -760,6 +1046,19 @@
 				"ctx.weather.retry": "Retry",
 				"ctx.weather.statusPrefix": "Status: {value}",
 				"ctx.weather.geolocationHint": "Desktop (Electron) geolocation may be unavailable; failures keep the last data and show the reason.",
+				"weather.chip.aria": "Weather: {text}. {hint}",
+				"weather.chip.off": "Weather",
+				"weather.chip.noLocation": "No location",
+				"weather.chip.waiting": "Waiting",
+				"weather.chip.error": "Failed",
+				"weather.chip.ready": "Weather",
+				"weather.chip.openHint": "Click to open the role hub weather card",
+				"weather.chip.detailOff": "Weather is off",
+				"weather.chip.detailMissing": "Weather runtime is not mounted",
+				"weather.chip.detailNoLocation": "Enabled, but no location is set",
+				"weather.chip.detailWaiting": "Waiting for the first weather data",
+				"weather.chip.detailError": "Fetch failed: {reason}",
+				"weather.chip.detailReady": "{text} · updated {time}",
 			},
 		});
 

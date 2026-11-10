@@ -2,6 +2,16 @@
 
 本文件由 `node tools/release.mjs --note "…"` 维护；条目按版本倒序，格式参考 Keep a Changelog。
 
+## [1.6.1] - 2026-11-10
+
+### 发布说明
+
+- **侧栏「新会话」深色块修复**：根因是 DSH 产品按钮 token（`--dsw-alias-button-elevated-fill` / hover `--dsw-alias-button-floating-hover` / 边框 `--dsw-alias-border-l3`）皮肤此前未接管。selector bridge 现识别 `newSession` 分段按钮并打 `data-tl-new-chat`，**所有深度档**皮肤化（透明/玻璃填充 + 0.5px 描边 + 主题文字色 + hover accent-soft + focus-visible）——**off 档也不再是深色块**；`depth-on` 套完整液态玻璃 v2；产品 token 覆盖块（`--dsw-alias-*`）同步接管同类产品按钮。
+- **液态玻璃 v2（OriginOS 7 风）**：三档 blur/sat 整体上调（soft **11px**/1.30、real **19px**/1.50、frosted **26px**/0.95）；多层 specular（左上径向 + 对角 sheen + 右下冷色 tint）、1px 亮/暗边（新增 `--tl-liquid-rim`）、外柔光（`--tl-liquid-glow-shadow`）、细噪点（新增 `--tl-liquid-grain`，feTurbulence SVG data URI）、hover/active 柔和回弹；v1.6 的全部分组 A/B、场景兜底层与中枢预览条同步升级，新增表面：新会话按钮 `[data-tl-new-chat]`、天气胶囊 `[data-tl-weather-chip]`；性能预算不变（每视口最多一层大 blur、气泡不逐项 blur），`[data-tl-lowpower]` 压平 blur≤3px、`prefers-reduced-motion` 关过渡、`off` 零变化（新会话修复除外）。
+- **DSH 主界面天气胶囊**：主界面右上常驻浮动玻璃胶囊（fixed、不占布局；`top` 叠加 Desktop 标题栏安全区、`right:14px`、`z-index:96`），状态 `off/no-location/waiting/error/ready` 与 zh/en 文案（`weather.chip.*`）；优先订阅 `globalThis.tianlightWeather`，无订阅能力时 60s 轮询 `summary()`；点击/Enter/Space 打开角色中枢天气卡；**不自动 enable、不新增网络请求与权限**；lifecycle-owned，dispose 移除/退订/清定时器，由 `src/99-apply.js` 常驻安装。
+- **版本与文档**：`BUILD`/`HOST_BUILD`/`package.json`/`skin.json` = **1.6.1**；新增 [docs/RELEASE-1.6.1.md](docs/RELEASE-1.6.1.md)；公开上传物/发布说明命名 **v1.0.0**（内部构建 1.6.1）。
+- **验证**：静态链 build/build --check 26/26、test 67/67、structure --strict、audit（v1.6.1 新守卫 4 条：新会话全档玻璃 / 玻璃 v2 配方 / 天气胶囊挂载 / 五状态+本地化）、check-css、verify、i18n-audit（zh=en 1216 键）全绿；Node 冒烟 **622/622 PASS**（v1.6.0 的 586 条回归 + 36 条新增：N 11 / C 16 / G 扩展 9），构建 sha `54b425d4…`（`lib/client.js` 1,301,872 B），证据 `diag/skinlab/runs/20261110-184557-v161-v161-node-smoke/`；同一 build sha 复跑同样 622/622。
+
 ## [1.6.0] - 2026-11-10
 
 ### 发布说明

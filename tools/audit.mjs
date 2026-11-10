@@ -377,6 +377,40 @@ report(
   "depth off keeps the v1.4 look (no liquid-glass surface rule) and low power flattens the extra decoration",
 )
 
+// ---- 13. v1.6.1: sidebar new-chat glass, liquid glass v2, main-UI weather chip ----
+report(
+  source.includes("data-tl-new-chat") &&
+    source.includes('hasSegment(node, "newSession")') &&
+    source.includes("--dsw-alias-button-elevated-fill: var(--tl-glass-fill) !important")
+    ? "PASS"
+    : "FAIL",
+  "v1.6.1 sidebar New Chat button is a skin surface at every depth (opaque product fill replaced)",
+)
+report(
+  ["--tl-liquid-grain-image", "--tl-liquid-rim-shadow", "--tl-liquid-glow-shadow"].every((name) => source.includes(name + ":")) &&
+    source.includes("--tl-liquid-blur: 11px") &&
+    source.includes("--tl-liquid-blur: 19px") &&
+    source.includes("--tl-liquid-blur: 26px")
+    ? "PASS"
+    : "FAIL",
+  "v1.6.1 liquid glass v2 recipe (grain + 1px rim + outer glow + three depth presets)",
+)
+report(
+  source.includes("data-tl-weather-chip") &&
+    source.includes("function installWeatherChip()") &&
+    source.includes('install("ui-skin-tianlight: weather chip"')
+    ? "PASS"
+    : "FAIL",
+  "v1.6.1 main-interface weather chip is mounted by an always-on lifecycle",
+)
+report(
+  ["off", "no-location", "waiting", "error", "ready"].every((state) => source.includes('data-tl-weather-state="' + state + '"')) &&
+    source.includes("weather.chip.openHint")
+    ? "PASS"
+    : "FAIL",
+  "v1.6.1 weather chip ships its five states and a localized open hint",
+)
+
 console.log(issues === 0 ? 'AUDIT: no blocking issues' : `AUDIT: ${issues} blocking issue(s)`)
 process.exitCode = issues === 0 ? 0 : 1
 

@@ -102,6 +102,9 @@
 		 * lifetime. There is exactly one node, it is a direct child of body, and it is
 		 * pointless (and would cost a full-viewport compositing layer) while the scene
 		 * exists or while low power has flattened the effect.
+		 * v1.6.1: the node's recipe is the liquid-glass v2 surface stack (tiled grain +
+		 * cool tint + sheen + specular + rim/glow); the lifecycle itself is unchanged
+		 * and the attribute stays a plain presence marker (the stylesheet owns the look).
 		 */
 		function liquidFallbackWanted(effective) {
 			if (effective === "off") return false;

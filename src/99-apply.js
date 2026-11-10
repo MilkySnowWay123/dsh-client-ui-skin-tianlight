@@ -305,6 +305,13 @@
 				// degrades to `companion-off` when the companion module is switched off.
 				install("ui-skin-tianlight: duty channel", () => installDutyChannel());
 
+				// ---- v1.6.1 weather chip (always on, no DSH restart) ----
+				// The chip reads weatherController.summary() from the factory closure and opens
+				// the role hub, so it must stay outside the switchable context module: with the
+				// context module off, summary().runtime is false and the chip degrades to its
+				// neutral off state (zero network requests, never auto-enables weather).
+				install("ui-skin-tianlight: weather chip", () => installWeatherChip());
+
 				// ---- v1.0.0 character life layer ----
 				// The life engine owns the virtual clock / daily rhythm / proactive budget,
 				// gates duty interrupts, resolves replaceable pet media and persists the
