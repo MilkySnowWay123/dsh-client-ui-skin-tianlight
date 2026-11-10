@@ -96,3 +96,26 @@ npm run upgrade               # upgrade-check + resolve-selectors
 - **不要让仓库包含 `backup/`**：那是本机快照，会把 100+ KB 的历史副本带进 Git 历史，且每次改都快照
 - **不要把临时日志带进仓库**：诊断路由已移除；旧目录里的 `diag.log` 也请忽略
 - **不要把 `node_modules/` 里的链接提交**：那是 junction/symlink，推上去会变成指向本机路径的坏链接
+
+## 公开仓库版本命名（CI 契约）
+
+> 适用于 `github-upload/`（GitHub 镜像仓库）。`.github/workflows/check.yml` 的 `package (tag)` 任务会校验 **tag 必须等于 `v` + package.json 的 version**；不匹配会让 tag 的 CI 变红，也不会上传发行包。
+
+- **内部仓库 `tianlight/`** 使用内部版本号（v1.6.x），内部 tag 继续按内部版本打。
+- **公开仓库（GitHub 镜像）** 使用公开版本号（v1.0.x）：`package.json` / `skin.json` / `lib/index.js` 的 `BUILD` / `src/10-constants.js` 的 `HOST_BUILD` 都改成公开版本，并重新 `node tools/build.mjs` 生成 `lib/client.js`；同时写入 `INTERNAL-BUILD.json` 记录对应的内部版本/tag/内部构建 sha，避免追溯困难。
+- 公开 tag 与公开版本一一对应（例如 tag `v1.0.1` ↔ package version `1.0.1`），这样 CI 的 static + package 两个 job 全绿，并自动产出 `dist/` 发行包 artifact。
+- 内部 tag（如 `v1.6.2`）也可以留在公开仓库里作为构建来源记录，它们的 CI 同样通过（tag 等于其所在提交的包版本）。
+
+### 一条命令生成公开构建
+
+```powershell
+# 在公开镜像 checkout 里执行（先由内部仓库同步 tracked 文件）
+node tools/public-release.mjs --dir <镜像目录> --version 1.0.2 --internal-version 1.6.3 --internal-tag v1.6.3 --internal-sha <内部 client 的 sha256>
+```
+
+该工具会改四处版本标记、写入 `INTERNAL-BUILD.json`、重新构建 `lib/client.js`，并打印后续的静态链、`node tools/pack.mjs`、commit/tag/push 命令（工具本身不执行 git）。
+
+### 为什么这样做
+
+- CI 的 tag/version 契约保证"发出去的 tag 一定能打包、包版本和 tag 一致"，用户从 tag 安装不会拿到版本错位的包。
+- 内部迭代仍用 v1.6.x 连续编号，公开版本用 v1.0.x 独立编号，两者通过 `INTERNAL-BUILD.json` 与 release notes 互相映射。
