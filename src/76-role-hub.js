@@ -12,6 +12,7 @@
 		 * 实验 Agent、审计。所有能力都通过既有运行时 API 调用，这里不持有第二个事实源：
 		 *   - globalThis.tianlightLife   生活节奏/专注/静音/形象（src/42-life.js）
 		 *   - globalThis.tianlightPet    AI 大脑/权限/审计（src/44-pet-brain.js）
+		 *   - globalThis.tianlightPetMind 自主思考引擎（src/44-pet-brain.js，v1.6.8）
 		 *   - globalThis.tianlightPetAgent 受控 DSH Agent 通道（src/48-pet-agent.js）
 		 *   - glassDepthController       液态玻璃三档（src/57-glass.js）
 		 *   - POST ASSET_BASE/_upload    本机图片/视频上传（宿主已有路由，≤32 MiB）
@@ -153,6 +154,37 @@
 				"hub.ai.reason.companionOff": "桌宠不在身边",
 				"hub.ai.reason.internal": "内部错误",
 				"hub.ai.reason.default": "暂时不能聊",
+				// v1.6.8「自主思考」卡片（桌宠完全智能体）。
+				"hub.mind.title": "自主思考",
+				"hub.mind.hint": "让桌宠按自己的节奏想一想。只在已启用、页面可见、非低电量且 AI 未暂停时运行；开口会占用既有主动开口预算，不联网、不执行任何操作。",
+				"hub.mind.enable": "启用思考",
+				"hub.mind.disable": "暂停思考",
+				"hub.mind.interval": "思考间隔",
+				"hub.mind.intervalValue": "{n} 分钟",
+				"hub.mind.speak": "自主开口",
+				"hub.mind.think": "现在想一下",
+				"hub.mind.thinking": "正在想…",
+				"hub.mind.thinkDone": "想到了一点。",
+				"hub.mind.thinkSpoken": "想到一点，也说给你听了。",
+				"hub.mind.thinkSkipped": "这次没有想：{reason}",
+				"hub.mind.clear": "清空想法",
+				"hub.mind.cleared": "想法已清空。",
+				"hub.mind.empty": "还没有想法，点「现在想一下」试试。",
+				"hub.mind.unavailable": "自主思考引擎未就绪（请确认 AI 大脑已启用）。",
+				"hub.mind.paused": "AI 已暂停：自主思考不会运行。",
+				"hub.mind.disabledNote": "自主思考已暂停。",
+				"hub.mind.status": "间隔 {n} 分钟 · 共 {count} 条 · 最近 {time}",
+				"hub.mind.statusNever": "间隔 {n} 分钟 · 还没想过",
+				"hub.mind.reason.paused": "AI 已暂停",
+				"hub.mind.reason.disabled": "未启用",
+				"hub.mind.reason.hidden": "页面不可见",
+				"hub.mind.reason.lowpower": "低电量",
+				"hub.mind.reason.busy": "正在思考",
+				"hub.mind.reason.denied": "AI 拒绝",
+				"hub.mind.reason.cooldown": "还没到间隔",
+				"hub.mind.reason.internal": "内部错误",
+				"hub.mind.kind.llm": "LLM 生成",
+				"hub.mind.kind.local": "本地",
 				"hub.perm.title": "权限总览",
 				"hub.perm.hint": "安全与需确认能力可直接管理；6 项高风险能力默认关闭、可显式授权（皮肤不内置实现，需你另行提供适配器）；驱动 DSH 永远禁止。",
 				"hub.perm.risk.safe": "安全",
@@ -463,6 +495,37 @@
 				"hub.ai.reason.companionOff": "The companion is not around",
 				"hub.ai.reason.internal": "Internal error",
 				"hub.ai.reason.default": "Not available right now",
+				// v1.6.8 autonomous thinking card (fully agentic companion).
+				"hub.mind.title": "Autonomous thinking",
+				"hub.mind.hint": "Let the companion think at its own pace. It only runs when enabled, the page is visible, no low-power mode is on and the AI is not paused; speaking uses the existing proactive budget and never touches the network or performs actions.",
+				"hub.mind.enable": "Enable thinking",
+				"hub.mind.disable": "Pause thinking",
+				"hub.mind.interval": "Interval",
+				"hub.mind.intervalValue": "{n} min",
+				"hub.mind.speak": "Speak autonomously",
+				"hub.mind.think": "Think now",
+				"hub.mind.thinking": "Thinking…",
+				"hub.mind.thinkDone": "Had a thought.",
+				"hub.mind.thinkSpoken": "Had a thought — and said it aloud.",
+				"hub.mind.thinkSkipped": "No thought this time: {reason}",
+				"hub.mind.clear": "Clear thoughts",
+				"hub.mind.cleared": "Thoughts cleared.",
+				"hub.mind.empty": "No thoughts yet — try \"Think now\".",
+				"hub.mind.unavailable": "The thinking engine is unavailable (make sure the AI brain is enabled).",
+				"hub.mind.paused": "AI is paused: autonomous thinking will not run.",
+				"hub.mind.disabledNote": "Autonomous thinking is paused.",
+				"hub.mind.status": "Every {n} min · {count} thoughts · last {time}",
+				"hub.mind.statusNever": "Every {n} min · no thoughts yet",
+				"hub.mind.reason.paused": "AI is paused",
+				"hub.mind.reason.disabled": "not enabled",
+				"hub.mind.reason.hidden": "page hidden",
+				"hub.mind.reason.lowpower": "low power",
+				"hub.mind.reason.busy": "already thinking",
+				"hub.mind.reason.denied": "refused by the AI",
+				"hub.mind.reason.cooldown": "interval not reached",
+				"hub.mind.reason.internal": "internal error",
+				"hub.mind.kind.llm": "LLM",
+				"hub.mind.kind.local": "local",
 				"hub.perm.title": "Permissions",
 				"hub.perm.hint": "Safe and confirm-only capabilities can be managed here; the six high-risk capabilities are off by default and can be explicitly allowed (the skin ships no implementation; you must provide an adapter); driving DSH stays permanently denied.",
 				"hub.perm.risk.safe": "Safe",
@@ -746,6 +809,22 @@
 			"companion-off": "hub.ai.reason.companionOff",
 			"internal-error": "hub.ai.reason.internal",
 		};
+		/** v1.6.8 thinking engine: allowed intervals (mirrors tianlightPetMind). */
+		const HUB_MIND_INTERVALS = [5, 10, 15, 30];
+		/** Every refusal/skip reason the thinking engine can return. */
+		const HUB_MIND_REASON_KEYS = {
+			paused: "hub.mind.reason.paused",
+			disabled: "hub.mind.reason.disabled",
+			hidden: "hub.mind.reason.hidden",
+			lowpower: "hub.mind.reason.lowpower",
+			"low-power": "hub.mind.reason.lowpower",
+			busy: "hub.mind.reason.busy",
+			denied: "hub.mind.reason.denied",
+			"proactive-denied": "hub.mind.reason.denied",
+			cooldown: "hub.mind.reason.cooldown",
+			"internal-error": "hub.mind.reason.internal",
+			internal: "hub.mind.reason.internal",
+		};
 		/** `[data-tl-hub-agent-target]` value for "create a new pet session". */
 		const HUB_AGENT_TARGET_NEW = "__new__";
 		const HUB_AGENT_REASON_KEYS = {
@@ -794,6 +873,15 @@
 		function hubPetBrain() {
 			try {
 				return globalThis.tianlightPet !== null && globalThis.tianlightPet !== undefined ? globalThis.tianlightPet : null;
+			} catch {
+				return null;
+			}
+		}
+
+		/** v1.6.8 private-thinking engine (`src/44-pet-brain.js`); optional. */
+		function hubPetMind() {
+			try {
+				return globalThis.tianlightPetMind !== null && globalThis.tianlightPetMind !== undefined ? globalThis.tianlightPetMind : null;
 			} catch {
 				return null;
 			}
@@ -1105,6 +1193,8 @@
 			let loadedPack = null;
 			let chatBusy = false;
 			let llmPending = false;
+			// v1.6.8 autonomous-thinking card state (read-through only).
+			let mindBusy = false;
 			let lastError = "";
 			// v1.2.0 experimental agent card state (all read-through, no second source).
 			let agentStatusCache = null;
@@ -1152,6 +1242,7 @@
 				agentPermPending = false;
 				agentBusy = false;
 				chatBusy = false;
+				mindBusy = false;
 				mediaApplying = false;
 				loadedPack = null;
 				permConfirmPending.clear();
@@ -2292,6 +2383,135 @@
 				setAiNote(paused ? TL_T("hub.ai.resumedNote") : TL_T("hub.ai.pausedNote"));
 				refreshAi();
 			};
+			// ---- v1.6.8 autonomous-thinking card -----------------------------------
+			// The hub is a read-through control surface for globalThis.tianlightPetMind
+			// (src/44-pet-brain.js): no second source of truth, every handler awaits the
+			// engine and then re-reads status. Missing API => card disabled + note.
+			const setMindNote = (text) => {
+				if (ui !== null && ui.mindStatus !== null && ui.mindStatus !== undefined) ui.mindStatus.textContent = text;
+			};
+			const hubMindReasonLabel = (reason) => {
+				const key = Object.prototype.hasOwnProperty.call(HUB_MIND_REASON_KEYS, reason) ? HUB_MIND_REASON_KEYS[reason] : "hub.mind.reason.internal";
+				return TL_T(key);
+			};
+			const mindStatusOf = () => {
+				const mind = hubPetMind();
+				if (mind === null || typeof mind.status !== "function") return null;
+				const status = hubTry(() => mind.status(), null, "mind-status");
+				return status !== null && typeof status === "object" ? status : null;
+			};
+			const refreshMind = () => {
+				if (ui === null) return;
+				const mind = hubPetMind();
+				const available = mind !== null && typeof mind.status === "function";
+				const status = available ? mindStatusOf() : null;
+				const enabled = status !== null && status.enabled === true;
+				const brain = hubPetBrain();
+				const brainStatus = brain !== null && typeof brain.status === "function" ? hubTry(() => brain.status(), null, "mind-brain-status") : null;
+				const brainPaused = brainStatus !== null && typeof brainStatus === "object" && brainStatus.paused === true;
+				const interval =
+					status !== null && Number.isFinite(status.intervalMin) && HUB_MIND_INTERVALS.indexOf(status.intervalMin) >= 0
+						? status.intervalMin
+						: 15;
+				const thoughts = available && typeof mind.thoughts === "function" ? hubTry(() => mind.thoughts(), null, "mind-thoughts") : null;
+				const list = Array.isArray(thoughts) ? thoughts.slice(0, 5) : [];
+				const thoughtCount =
+					status !== null && Number.isFinite(status.thoughtCount) ? Math.max(0, Math.floor(status.thoughtCount)) : list.length;
+				ui.mindCard.setAttribute("data-tl-hub-mind-ready", available ? "true" : "false");
+				ui.mindCard.setAttribute("data-tl-hub-mind-enabled", enabled ? "true" : "false");
+				ui.mindToggle.disabled = available === false;
+				ui.mindToggle.textContent = enabled ? TL_T("hub.mind.disable") : TL_T("hub.mind.enable");
+				ui.mindInterval.disabled = available === false || enabled === false;
+				ui.mindInterval.value = String(interval);
+				ui.mindSpeak.disabled = available === false || enabled === false;
+				ui.mindSpeak.checked = status === null || status.autonomousSpeech !== false;
+				ui.mindThink.disabled = available === false || enabled === false || mindBusy === true;
+				ui.mindClear.disabled = available === false || thoughtCount === 0;
+				ui.mindThoughts.textContent = "";
+				if (available === false) {
+					ui.mindThoughts.appendChild(
+						hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-mind-empty": "unavailable" }, TL_T("hub.mind.unavailable")),
+					);
+				} else if (list.length === 0) {
+					ui.mindThoughts.appendChild(hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-mind-empty": "true" }, TL_T("hub.mind.empty")));
+				} else {
+					for (const entry of list) {
+						if (entry === null || typeof entry !== "object" || typeof entry.text !== "string") continue;
+						const kindText = entry.kind === "llm" ? TL_T("hub.mind.kind.llm") : TL_T("hub.mind.kind.local");
+						ui.mindThoughts.appendChild(
+							hubCreate("div", { className: "tl-hub-mind-thought", "data-tl-hub-mind-thought": entry.kind === "llm" ? "llm" : "local" }, [
+								hubCreate("span", { className: "tl-hub-mind-time", "data-tl-hub-mind-time": "" }, hubClock(entry.at)),
+								hubCreate("span", { className: "tl-hub-mind-kind", "data-tl-hub-mind-kind": "" }, kindText),
+								hubCreate("span", { className: "tl-hub-mind-text", "data-tl-hub-mind-text": "" }, entry.text),
+							]),
+						);
+					}
+				}
+				if (available === false) setMindNote(TL_T("hub.mind.unavailable"));
+				else if (brainPaused === true) setMindNote(TL_T("hub.mind.paused"));
+				else if (enabled === false) setMindNote(TL_T("hub.mind.disabledNote"));
+				else if (status !== null && Number.isFinite(status.lastThinkAt) && status.lastThinkAt > 0) {
+					setMindNote(TL_T("hub.mind.status", { n: interval, count: thoughtCount, time: hubClock(status.lastThinkAt) }));
+				} else {
+					setMindNote(TL_T("hub.mind.statusNever", { n: interval }));
+				}
+			};
+			const onMindToggle = async () => {
+				const mind = hubPetMind();
+				if (mind === null) return;
+				const status = mindStatusOf();
+				if (status !== null && status.enabled === true) {
+					await hubTry(async () => mind.disable?.(), null, "mind-disable");
+					refreshMind();
+					setMindNote(TL_T("hub.mind.disabledNote"));
+					return;
+				}
+				const interval = Number(ui !== null ? ui.mindInterval.value : 15);
+				const speak = ui !== null && ui.mindSpeak.checked === true;
+				await hubTry(async () => mind.enable?.({ intervalMin: HUB_MIND_INTERVALS.indexOf(interval) >= 0 ? interval : 15, autonomousSpeech: speak }), null, "mind-enable");
+				refreshMind();
+			};
+			const onMindInterval = async () => {
+				const mind = hubPetMind();
+				if (mind === null || ui === null) return;
+				const status = mindStatusOf();
+				if (status === null || status.enabled !== true) return;
+				const interval = Number(ui.mindInterval.value);
+				if (HUB_MIND_INTERVALS.indexOf(interval) < 0) return;
+				await hubTry(async () => mind.enable?.({ intervalMin: interval }), null, "mind-interval");
+				refreshMind();
+			};
+			const onMindSpeak = async () => {
+				const mind = hubPetMind();
+				if (mind === null || ui === null) return;
+				const status = mindStatusOf();
+				if (status === null || status.enabled !== true) return;
+				await hubTry(async () => mind.enable?.({ autonomousSpeech: ui.mindSpeak.checked === true }), null, "mind-speak");
+				refreshMind();
+			};
+			const onMindThink = async () => {
+				const mind = hubPetMind();
+				if (mind === null || typeof mind.thinkNow !== "function" || mindBusy === true) return;
+				mindBusy = true;
+				refreshMind();
+				setMindNote(TL_T("hub.mind.thinking"));
+				const result = await hubTry(async () => mind.thinkNow(), null, "mind-think");
+				mindBusy = false;
+				refreshMind();
+				if (result !== null && typeof result === "object" && result.ok === true) {
+					setMindNote(result.spoken === true ? TL_T("hub.mind.thinkSpoken") : TL_T("hub.mind.thinkDone"));
+				} else {
+					const reason = result !== null && typeof result === "object" && typeof result.reason === "string" ? result.reason : "internal";
+					setMindNote(TL_T("hub.mind.thinkSkipped", { reason: hubMindReasonLabel(reason) }));
+				}
+			};
+			const onMindClear = async () => {
+				const mind = hubPetMind();
+				if (mind === null || typeof mind.clearThoughts !== "function") return;
+				await hubTry(async () => mind.clearThoughts(), null, "mind-clear");
+				refreshMind();
+				setMindNote(TL_T("hub.mind.cleared"));
+			};
 			const renderAudit = () => {
 				if (ui === null) return;
 				const pet = hubPetBrain();
@@ -3299,6 +3519,60 @@
 				aiCard.appendChild(state.logBox);
 				body.appendChild(aiCard);
 
+				// d1) v1.6.8 autonomous thinking (fully agentic companion, opt-in):
+				// enable/pause, interval, autonomous-speech switch, "think now", the
+				// latest five thoughts and one status line. Read-through only.
+				const mindCard = hubCreate("section", { "data-tl-hub-mind": "", className: "tl-hub-card tl-hub-mind" }, [
+					hubCreate("h3", { className: "tl-hub-card-title" }, TL_T("hub.mind.title")),
+					hubCreate("p", { className: "tl-hub-note tl-hub-hint" }, TL_T("hub.mind.hint")),
+				]);
+				state.mindCard = mindCard;
+				const mindRow = hubCreate("div", { className: "tl-hub-row" });
+				state.mindToggle = hubCreate(
+					"button",
+					{ type: "button", "data-tl-hub-mind-toggle": "", className: "tl-hub-btn", "data-tl-hub-mind-enabled": "false" },
+					TL_T("hub.mind.enable"),
+				);
+				state.mindToggle.addEventListener("click", () => runAsync(onMindToggle));
+				mindRow.appendChild(state.mindToggle);
+				state.mindInterval = hubCreate("select", {
+					"data-tl-hub-mind-interval": "",
+					className: "tl-hub-select",
+					"aria-label": TL_T("hub.mind.interval"),
+				});
+				for (const minutes of HUB_MIND_INTERVALS) {
+					state.mindInterval.appendChild(hubCreate("option", { value: String(minutes) }, TL_T("hub.mind.intervalValue", { n: minutes })));
+				}
+				state.mindInterval.value = "15";
+				state.mindInterval.addEventListener("change", () => runAsync(onMindInterval));
+				mindRow.appendChild(state.mindInterval);
+				const mindSpeakBox = hubCreate("span", { className: "tl-hub-mind-speak" });
+				state.mindSpeak = hubCreate("input", { type: "checkbox", "data-tl-hub-mind-speak": "" });
+				state.mindSpeak.checked = true;
+				state.mindSpeak.addEventListener("change", () => runAsync(onMindSpeak));
+				mindSpeakBox.appendChild(state.mindSpeak);
+				mindSpeakBox.appendChild(hubCreate("span", { className: "tl-hub-mind-speak-label" }, TL_T("hub.mind.speak")));
+				mindRow.appendChild(mindSpeakBox);
+				mindCard.appendChild(mindRow);
+				const mindActionRow = hubCreate("div", { className: "tl-hub-row" });
+				state.mindThink = hubCreate("button", { type: "button", "data-tl-hub-mind-think": "", className: "tl-hub-btn" }, TL_T("hub.mind.think"));
+				state.mindThink.addEventListener("click", () => runAsync(onMindThink));
+				mindActionRow.appendChild(state.mindThink);
+				state.mindClear = hubCreate("button", { type: "button", "data-tl-hub-mind-clear": "", className: "tl-hub-btn" }, TL_T("hub.mind.clear"));
+				state.mindClear.addEventListener("click", () => runAsync(onMindClear));
+				mindActionRow.appendChild(state.mindClear);
+				mindCard.appendChild(mindActionRow);
+				state.mindThoughts = hubCreate("div", {
+					"data-tl-hub-mind-thoughts": "",
+					className: "tl-hub-mind-thoughts",
+					role: "log",
+					"aria-live": "polite",
+				});
+				mindCard.appendChild(state.mindThoughts);
+				state.mindStatus = hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-mind-status": "", role: "status" }, "");
+				mindCard.appendChild(state.mindStatus);
+				body.appendChild(mindCard);
+
 				// d2) experimental DSH Agent bridge (v1.2.0): permissioned hand-off of the
 				// user's typed sentence to a user-selected DSH session. Never auto-triggers.
 				const agentCard = hubCreate("section", { "data-tl-hub-agent": "", className: "tl-hub-card tl-hub-agent" }, [
@@ -3416,6 +3690,7 @@
 				hubTry(refreshWeather, null, "refresh-weather");
 				hubTry(refreshGlass, null, "refresh-glass");
 				hubTry(refreshAi, null, "refresh-ai");
+				hubTry(refreshMind, null, "refresh-mind");
 				hubTry(refreshAgent, null, "refresh-agent");
 			};
 			const open = () => {
@@ -3445,6 +3720,7 @@
 					refreshWeather();
 					refreshGlass();
 					refreshAi();
+					refreshMind();
 					refreshAgent();
 					// The pack editor is loaded after the catalog pass (sequentially, so a
 					// slow listMedia can never overwrite it with a stale look's pack).
@@ -3474,6 +3750,7 @@
 					document: typeof document !== "undefined" && document !== null && document.body !== null && document.body !== undefined,
 					life: hubLifeEngine() !== null,
 					pet: hubPetBrain() !== null,
+					mind: hubPetMind() !== null,
 					agent: hubPetAgent() !== null,
 					glass: hubGlassDepthController() !== null,
 					weather: (() => {
@@ -3487,6 +3764,7 @@
 					weather: true,
 					selftest: true,
 					feedback: true,
+					mindThinking: true,
 				},
 				logCount: logEntries.length,
 				lastError: lastError,

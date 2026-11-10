@@ -25,32 +25,71 @@
 		 *     no beacon, no background request loop), never touches a filesystem API,
 		 *     never imports or calls a DSH service, and never reads DSH sessions,
 		 *     tasks, files or credentials;
-		 *   - the only persistent state is three localStorage keys owned by the skin:
+		 *   - the only persistent state is four localStorage keys owned by the skin:
 		 *       tianlight.pet.permissions.v1  capability bits
 		 *       tianlight.pet.pause.v1        kill switch
 		 *       tianlight.pet.ai.v1           LLM usage + daily limit
+		 *       tianlight.petMind.v1          v1.6.8 bounded private-thought store
 		 *   - the optional LLM adapter is supplied by the page owner. It is only called
 		 *     after the user grants `llm` with `{ consent: "user-explicit" }`; the
-		 *     system prompt is a fixed safety string, `messages` contains exactly the
-		 *     current user sentence (never DSH data/history), output is sanitized, the
-		 *     call is bounded by 20s/1200 chars and daily/minute quotas. Any failure
-		 *     falls back to the local brain and is audited as `llm-fallback`;
+		 *     system prompt is a fixed safety string, `messages` contains the current
+		 *     user sentence plus (v1.6.8) a bounded, skin-local context digest built
+		 *     from this skin's own chat history, memory counters and current thought —
+		 *     never DSH data/files/credentials/sessions — output is sanitized, the call
+		 *     is bounded by 20s/1200 chars and daily/minute quotas. Any failure falls
+		 *     back to the local brain and is audited as `llm-fallback`;
 		 *   - `agentChat` is only a permission bit plus an audit source for the
 		 *     separate src/48-pet-agent.js bridge (that bridge owns the injected
 		 *     client `remote.session` call and sends only user-typed prompts to a
 		 *     user-selected session). The brain itself still has no DSH access, and
 		 *     the forbidden `agent` capability — the pet driving tasks/tools by
 		 *     itself — remains permanently denied;
-		 *   - there are no DOM listeners and no persistent timers. The only timer is
-		 *     the per-call LLM timeout, which is cleared in a `finally` block.
+		 *   - there are no DOM listeners. The only persistent timer is the v1.6.8
+		 *     private-thinking loop (60s; it is cleared by the install disposer), and
+		 *     the per-call LLM timeout is cleared in a `finally` block.
 		 *
-		 * The visible control plane is the role hub (`src/76-role-hub.js`), which
-		 * consumes `globalThis.tianlightPet` and never mutates state on its own.
+		 * v1.6.8「完全智能体」adds a private thinking engine on top of the same brain:
+		 *   - `globalThis.tianlightPetMind` (version 1) runs a bounded 60s loop that
+		 *     composes a 60–160 character first-person inner monologue from skin-local
+		 *     context (time/period, life memory, recent companion chat history, the last
+		 *     few thoughts) and persists at most 30 thoughts in
+		 *     `tianlight.petMind.v1`;
+		 *   - generation prefers the SAME `brain.chat()` path, so the existing pause
+		 *     switch, LLM quotas, sanitization and audit records apply unchanged; a
+		 *     missing/failed adapter falls back to a local template composer, so a
+		 *     thought never depends on the network and never throws;
+		 *   - autonomous speech is opt-in (`autonomousSpeech`) and additionally gated by
+		 *     the brain's `proactive` permission plus the life engine's existing
+		 *     mute/quiet/asleep/focus/budget gate. Without a life engine a thought is
+		 *     recorded but never spoken;
+		 *   - the loop is inert while the page is hidden, while the render tier is
+		 *     15fps or the low-power attribute is present, and while the brain is
+		 *     paused. It never drives DSH, never executes tools and adds no network
+		 *     channel of its own.
+		 *
+		 * The visible control planes are the role hub (`src/76-role-hub.js`), which
+		 * consumes `globalThis.tianlightPet` + `globalThis.tianlightPetMind` and never
+		 * mutates state on its own, and the companion speech bubble (thought bridge).
 		 */
 		const PET_VERSION = 1;
 		const PET_PERMISSIONS_KEY = "tianlight.pet.permissions.v1";
 		const PET_PAUSE_KEY = "tianlight.pet.pause.v1";
 		const PET_AI_KEY = "tianlight.pet.ai.v1";
+		// v1.6.8 private-thinking store (independent from the chat/LLM keys above).
+		const PET_MIND_KEY = "tianlight.petMind.v1";
+		const PET_MIND_VERSION = 1;
+		const PET_MIND_TICK_MS = 60000;
+		const PET_MIND_DEFAULT_INTERVAL = 15;
+		const PET_MIND_INTERVALS = [5, 10, 15, 30];
+		const PET_MIND_THOUGHT_MAX = 30;
+		const PET_MIND_THOUGHT_MIN_CHARS = 60;
+		const PET_MIND_THOUGHT_MAX_CHARS = 160;
+		const PET_MIND_RECENT_LIMIT = 5;
+		const PET_MIND_CONTEXT_MESSAGES = 6;
+		const PET_MIND_DIGEST_MAX = 700;
+		const PET_MIND_GOAL_KEYS = ["pet.mind.goal.1", "pet.mind.goal.2", "pet.mind.goal.3"];
+		/** Bounded skin-local context digest used by the chat prompt (v1.6.8). */
+		const PET_CHAT_CONTEXT_MAX = 700;
 		const PET_SAFE_CAPS = ["chat", "memory", "focus", "media", "remind", "proactive"];
 		/**
 		 * `llm` lets a user-provided adapter answer local chat; `agentChat` lets the
@@ -119,6 +158,17 @@
 			"Never suggest dangerous or irreversible actions; if asked, refuse. " +
 			"Reply in one or two calm sentences, at most 1200 characters, in the user's language. " +
 			"Never claim an action was performed.";
+		/**
+		 * v1.6.8: prompt for one private inner monologue. It intentionally forbids
+		 * questions/actions/permissions and asks for the 60–160 character window the
+		 * mind stores. The bounded context digest is appended by petMindThink().
+		 */
+		const PET_MIND_PROMPT =
+			"You are the same quiet mint-cat companion, but now you are thinking privately to yourself instead of replying to the user. " +
+			"Write ONE first-person inner monologue in the user's language, between 60 and 160 characters. " +
+			"Use only the bounded local context below for tone and continuity. " +
+			"Do not ask questions, do not propose or perform actions, do not mention permissions, tools, files, the network, the app or the user's private data. " +
+			"Do not repeat the context verbatim. Keep it gentle, specific to this moment, and a little curious.";
 
 		// ---- i18n ---------------------------------------------------------------
 		// Every local-brain reply is an i18n key so the hub and the bubble follow the
@@ -155,6 +205,31 @@
 				"pet.brain.permissions": "高风险能力默认关闭，只由你在中枢逐个授权；未授权我不用。驱动 DSH 永远禁止。",
 				"pet.brain.denied": "我没有这个权限。",
 				"pet.brain.fallback": "我没太听懂。可以问状态、专注、静默或权限。",
+				// v1.6.8: more human local chat (skin-local context only).
+				"pet.chat.ctx.continue": "刚才的「{topic}」，我还记着。",
+				"pet.chat.ctx.period": "现在是{period}，我在这儿听你说。",
+				"pet.chat.ctx.memory": "我们聊过 {turns} 句了，慢慢说。",
+				"pet.chat.ctx.thought": "我刚在想{thought}，正好你来了。",
+				"pet.chat.ctx.soft": "嗯，我在。「{topic}」可以再展开一点。",
+				"pet.chat.ctx.plain": "嗯，我听着呢。",
+				// v1.6.8: local inner-monologue templates (60–160 chars after assembly).
+				"pet.mind.line.period": "现在是{period}。",
+				"pet.mind.line.clock": "这会儿是 {time}。",
+				"pet.mind.line.topic": "我还在想你说的「{topic}」。",
+				"pet.mind.line.lastPet": "我上回说「{line}」，好像还能说得更好。",
+				"pet.mind.line.memory": "我们一共互动过 {interactions} 次。",
+				"pet.mind.line.streak": "已经连续 {streak} 天见到你了。",
+				"pet.mind.line.lastThought": "上一个念头是「{thought}」。",
+				"pet.mind.line.quiet": "屋里很安静，适合慢慢想。",
+				"pet.mind.line.focus": "你在专注，我就守在旁边不出声。",
+				"pet.mind.line.energy": "今天的光线让人放松。",
+				"pet.mind.line.goal": "我最近的小目标是{goal}。",
+				"pet.mind.goal.1": "多记住我们聊过的事",
+				"pet.mind.goal.2": "少打扰你，多陪着你",
+				"pet.mind.goal.3": "把每天过得更慢一点",
+				"pet.mind.line.close1": "这些念头先留在心里。",
+				"pet.mind.line.close2": "不着急说出口。",
+				"pet.mind.line.close3": "想完就把注意力还给你。",
 			},
 			en: {
 				"pet.brain.greet": "Hello. I'm here. No rush.",
@@ -186,6 +261,31 @@
 				"pet.brain.permissions": "High-risk ones start off; only you can grant them. Driving DSH is forbidden.",
 				"pet.brain.denied": "I don't have that permission.",
 				"pet.brain.fallback": "I didn't catch that. Ask about status, focus, quiet or permissions.",
+				// v1.6.8: more human local chat (skin-local context only).
+				"pet.chat.ctx.continue": "You said \"{topic}\" — I still remember.",
+				"pet.chat.ctx.period": "It's {period}; I'm here listening.",
+				"pet.chat.ctx.memory": "We've talked {turns} turns; no rush.",
+				"pet.chat.ctx.thought": "I was thinking {thought}, then you arrived.",
+				"pet.chat.ctx.soft": "I'm here. Tell me more about \"{topic}\".",
+				"pet.chat.ctx.plain": "Mm, I'm listening.",
+				// v1.6.8: local inner-monologue templates (60–160 chars after assembly).
+				"pet.mind.line.period": "It's {period} right now.",
+				"pet.mind.line.clock": "It's {time}.",
+				"pet.mind.line.topic": "I keep thinking about \"{topic}\".",
+				"pet.mind.line.lastPet": "Last time I said \"{line}\" — maybe I can say it better.",
+				"pet.mind.line.memory": "We've interacted {interactions} times in total.",
+				"pet.mind.line.streak": "That's {streak} days in a row together.",
+				"pet.mind.line.lastThought": "My previous thought was \"{thought}\".",
+				"pet.mind.line.quiet": "The room is quiet — good for thinking.",
+				"pet.mind.line.focus": "You're focusing, so I'll stay quiet beside you.",
+				"pet.mind.line.energy": "The light today is easy to rest in.",
+				"pet.mind.line.goal": "My small goal lately is to {goal}.",
+				"pet.mind.goal.1": "remember more of what we talk about",
+				"pet.mind.goal.2": "interrupt less and stay close more",
+				"pet.mind.goal.3": "take each day a little slower",
+				"pet.mind.line.close1": "I'll keep these thoughts to myself for now.",
+				"pet.mind.line.close2": "No need to say them out loud yet.",
+				"pet.mind.line.close3": "Then I'll give my attention back to you.",
 			},
 		});
 
@@ -211,6 +311,15 @@
 		let petLocalMinute = [];
 		let petLocalDay = { dayKey: "", count: 0 };
 		let petLlmMinute = { bucket: -1, count: 0 };
+		// v1.6.8 private thinking: persisted state, loop handle and subscribers.
+		let petMindState = petMindFallbackState();
+		let petMindTimer = 0;
+		let petMindBusy = false;
+		const petMindSubscribers = new Set();
+		/** Recently spoken local chat lines, used to avoid mechanical repetition. */
+		let petLocalReplyRing = [];
+		/** Rotation seed so consecutive context replies vary even with a small pool. */
+		let petLocalReplySeed = 0;
 
 		// ---- small helpers ------------------------------------------------------
 		function petStorage() {
@@ -717,7 +826,10 @@
 				if (intent === "forbidden") return { intent, reply: TL_T("pet.brain.denied") };
 				if (intent === "greeting") return { intent, reply: TL_T("pet.brain.greet") };
 				if (intent === "help") return { intent, reply: TL_T("pet.brain.help") };
-				if (intent === "fallback") return { intent, reply: TL_T("pet.brain.fallback") };
+				// v1.6.8: the fallback is no longer a canned line — it continues the
+				// conversation using the skin-local context (recent topic, period,
+				// memory, current thought) and avoids repeating a recent line.
+				if (intent === "fallback") return { intent, reply: petLocalContextReply(text) };
 				if (intent === "permissions") return { intent, reply: TL_T("pet.brain.permissions") };
 				if (intent === "status") return { intent, reply: petStatusReply() };
 				if (intent === "mute") {
@@ -861,18 +973,30 @@
 		/**
 		 * One bounded adapter call. The adapter contract is
 		 * `{ id, chat({ system, messages, maxChars, timeoutMs }) => Promise<string> }`.
-		 * The payload carries the fixed system prompt and ONLY the current user
-		 * sentence — never DSH state, files, credentials or earlier turns.
+		 * The payload carries the fixed system prompt, the current user sentence and —
+		 * since v1.6.8 — a bounded skin-local context digest (this skin's chat history,
+		 * memory counters, current thought and time). It never carries DSH state, files,
+		 * credentials or sessions. `options.includeContext === false` skips the digest
+		 * when the caller already supplies its own bounded context (the mind prompt).
 		 */
-		async function petCallLlm(text, now) {
+		async function petCallLlm(text, now, options) {
 			const adapter = petAdapter;
 			if (adapter === null) return { ok: false, reason: "no-adapter" };
 			petChargeLlm(now);
 			let timer = 0;
 			try {
+				let content = text;
+				const includeContext = options === null || typeof options !== "object" || options.includeContext !== false;
+				if (includeContext === true) {
+					const digest = petChatContextDigest(petChatContext(), PET_CHAT_CONTEXT_MAX);
+					if (digest !== "") content = "Context (skin-local and bounded; use it only for tone and continuity):\n" + digest + "\n\nUser: " + text;
+					const chars = Array.from(content);
+					const maxInput = PET_INPUT_MAX + PET_CHAT_CONTEXT_MAX;
+					if (chars.length > maxInput) content = chars.slice(0, maxInput).join("");
+				}
 				const payload = {
 					system: PET_SYSTEM_PROMPT,
-					messages: [{ role: "user", content: text }],
+					messages: [{ role: "user", content }],
 					maxChars: PET_LLM_MAX_CHARS,
 					timeoutMs: PET_LLM_TIMEOUT_MS,
 				};
@@ -1012,8 +1136,12 @@
 		 * One chat turn. Order of checks is the permission model in code:
 		 * installed -> paused -> chat capability -> input -> (optional LLM with
 		 * quotas) -> local reply with local rate limits. Always resolves.
+		 *
+		 * `options` is internal only (the documented global API is `chat(text)`):
+		 * `{ includeContext:false }` tells the LLM prompt builder that the caller
+		 * already embedded its own bounded context (the v1.6.8 mind prompt).
 		 */
-		async function petChat(input) {
+		async function petChat(input, options) {
 			try {
 				const now = Date.now();
 				petEnsureDay(now);
@@ -1034,7 +1162,7 @@
 				if (llmWanted) {
 					const quota = petLlmQuota(now);
 					if (quota.ok === true) {
-						const attempt = await petCallLlm(text, now);
+						const attempt = await petCallLlm(text, now, options);
 						if (attempt.ok === true && typeof attempt.reply === "string" && attempt.reply !== "") {
 							reply = attempt.reply;
 							source = "llm";
@@ -1051,6 +1179,9 @@
 					if (petLocalRateOk(now) !== true) return petChatDenied("rate-limit");
 					const local = petLocalReply(text);
 					reply = petClipText(local.reply, PET_LOCAL_REPLY_MAX);
+					// Remember the last few local lines so the context reply can avoid
+					// sounding like a recording (ring lives in memory only).
+					petLocalReplyRing = [reply, ...petLocalReplyRing.filter((line) => line !== reply)].slice(0, 8);
 					petLocalMinute.push(now);
 					petEnsureDay(now);
 					petLocalDay.count = petNonNegativeInt(petLocalDay.count, 0) + 1;
@@ -1244,14 +1375,752 @@
 			}
 		}
 
+		// ---- v1.6.8 skin-local chat context --------------------------------------
+		/**
+		 * The only chat-history source for both the human-like chat and the mind is the
+		 * companion's v1.6.7 store (src/40-companion.js): its factory-scope helper first,
+		 * the published `tianlightPetChats` global as a fallback. Both are optional — a
+		 * missing companion degrades to "no recent turns", never to an error.
+		 */
+		function petChatHistory() {
+			try {
+				if (typeof petChatsRecentContext === "function") {
+					const recent = petChatsRecentContext(PET_MIND_CONTEXT_MESSAGES);
+					if (recent !== null && typeof recent === "object" && Array.isArray(recent.messages)) {
+						return petChatHistoryNormalize(recent.messages);
+					}
+				}
+				const api = globalThis.tianlightPetChats;
+				if (api === null || api === undefined || typeof api.list !== "function") return [];
+				const conversations = api.list();
+				if (!Array.isArray(conversations) || conversations.length === 0) return [];
+				const conversation = conversations[0];
+				if (conversation === null || typeof conversation !== "object" || Array.isArray(conversation.messages) === false) return [];
+				return petChatHistoryNormalize(conversation.messages);
+			} catch (error) {
+				return [];
+			}
+		}
+
+		function petChatHistoryNormalize(messages) {
+			const result = [];
+			try {
+				for (const message of messages.slice(-PET_MIND_CONTEXT_MESSAGES)) {
+					if (message === null || typeof message !== "object") continue;
+					if (typeof message.text !== "string" || message.text === "") continue;
+					result.push({
+						role: message.role === "user" ? "user" : "pet",
+						text: petClipText(message.text, 160),
+						at: petNonNegativeInt(message.at, 0),
+					});
+				}
+			} catch (error) {
+				result.length = 0;
+			}
+			return result;
+		}
+
+		function petClockLabel(nowInput) {
+			try {
+				const date = new Date(petNumber(nowInput, Date.now()));
+				const hours = String(date.getHours()).padStart(2, "0");
+				const minutes = String(date.getMinutes()).padStart(2, "0");
+				return hours + ":" + minutes;
+			} catch (error) {
+				return "";
+			}
+		}
+
+		/** Period id used when the life engine is unavailable (same seven buckets). */
+		function petMindLocalPeriod(nowInput) {
+			try {
+				const hour = new Date(petNumber(nowInput, Date.now())).getHours();
+				if (hour < 5) return "night";
+				if (hour < 8) return "dawn";
+				if (hour < 11) return "morning";
+				if (hour < 13) return "noon";
+				if (hour < 17) return "afternoon";
+				if (hour < 19) return "dusk";
+				if (hour < 22) return "evening";
+				return "night";
+			} catch (error) {
+				return "night";
+			}
+		}
+
+		/** Context snapshot for one local chat reply / LLM digest. Never throws. */
+		function petChatContext() {
+			const now = Date.now();
+			const life = petLifeStatus();
+			const memory = life !== null && life.memory !== null && typeof life.memory === "object" ? life.memory : {};
+			const messages = petChatHistory();
+			let lastUserText = "";
+			let lastPetText = "";
+			for (let index = messages.length - 1; index >= 0; index -= 1) {
+				const message = messages[index];
+				if (lastUserText === "" && message.role === "user") lastUserText = petClipText(message.text, 160);
+				if (lastPetText === "" && message.role === "pet") lastPetText = petClipText(message.text, 80);
+				if (lastUserText !== "" && lastPetText !== "") break;
+			}
+			const thought = petMindLastThought();
+			const period = life !== null && typeof life.period === "string" && life.period !== "" ? life.period : petMindLocalPeriod(now);
+			return {
+				time: petClockLabel(now),
+				period,
+				periodLabel: petPeriodLabel(period),
+				memory: {
+					interactions: petNonNegativeInt(memory.interactions, 0),
+					turns: petNonNegativeInt(memory.talks, petTurns),
+					streak: petNonNegativeInt(memory.streakDays, 0),
+				},
+				quiet: life !== null && life.quiet === true,
+				focus: life !== null && life.focus !== null && typeof life.focus === "object" && life.focus.active === true,
+				messages,
+				lastUserText,
+				lastPetText,
+				thought,
+			};
+		}
+
+		/** Bounded prompt digest for user chat (skin-local chat + memory + thought). */
+		function petChatContextDigest(context, maxChars) {
+			try {
+				const lines = [];
+				lines.push("Local time: " + context.time + " (" + context.periodLabel + ").");
+				lines.push(
+					"Memory: interactions=" + context.memory.interactions + ", chatTurns=" + context.memory.turns + ", streakDays=" + context.memory.streak + ".",
+				);
+				if (context.focus === true) lines.push("The user is in a focus session.");
+				if (context.quiet === true) lines.push("Quiet hours are active.");
+				if (context.messages.length > 0) {
+					lines.push("Recent skin-local chat (oldest first; never repeat verbatim):");
+					for (const message of context.messages) lines.push("- " + message.role + ": " + message.text);
+				}
+				if (context.thought !== null && typeof context.thought === "object") {
+					lines.push("My current private thought: " + petClipText(context.thought.text, 120));
+				}
+				const max = Number.isFinite(maxChars) ? Math.max(80, maxChars) : PET_CHAT_CONTEXT_MAX;
+				return petClipText(lines.join("\n"), max);
+			} catch (error) {
+				return "";
+			}
+		}
+
+		/**
+		 * v1.6.8: local reply for the fallback intent. It continues the recent topic,
+		 * folds in the period / memory / current thought, rotates the clause pair and
+		 * skips any line that was just said (ring), so the local brain stops sounding
+		 * canned while staying inside the 80-char local reply cap.
+		 */
+		function petLocalContextReply(text) {
+			void text;
+			try {
+				const context = petChatContext();
+				const recent = petLocalReplyRing.slice(0, 8);
+				const topic = petClipText(context.lastUserText, 24);
+				const pool = [];
+				if (topic !== "") pool.push(TL_T("pet.chat.ctx.continue", { topic }));
+				if (context.thought !== null && typeof context.thought === "object") {
+					pool.push(TL_T("pet.chat.ctx.thought", { thought: petClipText(context.thought.text, 28) }));
+				}
+				if (topic !== "") pool.push(TL_T("pet.chat.ctx.soft", { topic }));
+				pool.push(TL_T("pet.chat.ctx.period", { period: context.periodLabel }));
+				if (context.memory.turns > 0) pool.push(TL_T("pet.chat.ctx.memory", { turns: context.memory.turns }));
+				pool.push(TL_T("pet.chat.ctx.plain"));
+				const usable = pool.filter((candidate) => typeof candidate === "string" && candidate !== "");
+				let chosen = "";
+				for (let attempt = 0; attempt < usable.length && chosen === ""; attempt += 1) {
+					const first = usable[(petLocalReplySeed + attempt) % usable.length];
+					let second = usable[(petLocalReplySeed + attempt + 1) % usable.length];
+					if (second === first || first.indexOf(second) >= 0 || second.indexOf(first) >= 0) second = "";
+					// A short opener gets one distinct second clause so it never feels like
+					// a one-word bot; the cap still applies afterwards.
+					let candidate = second !== "" && Array.from(first).length < 24 ? (first + " " + second).trim() : first;
+					candidate = petClipText(candidate, PET_LOCAL_REPLY_MAX);
+					if (candidate !== "" && recent.indexOf(candidate) < 0) chosen = candidate;
+				}
+				if (chosen === "") chosen = usable.length > 0 ? usable[0] : TL_T("pet.chat.ctx.plain");
+				petLocalReplySeed = (petLocalReplySeed + 1) % 997;
+				return petClipText(chosen, PET_LOCAL_REPLY_MAX);
+			} catch (error) {
+				note("pet-brain:local-context", error);
+				return TL_T("pet.brain.fallback");
+			}
+		}
+
+		// ---- v1.6.8 private thinking engine --------------------------------------
+		function petMindFallbackState() {
+			return {
+				version: PET_MIND_VERSION,
+				enabled: false,
+				intervalMin: PET_MIND_DEFAULT_INTERVAL,
+				autonomousSpeech: true,
+				thoughts: [],
+				lastThinkAt: 0,
+			};
+		}
+
+		function petMindInterval(value) {
+			const number = Number(value);
+			return PET_MIND_INTERVALS.indexOf(number) >= 0 ? number : PET_MIND_DEFAULT_INTERVAL;
+		}
+
+		function petMindNewId() {
+			let salt = "";
+			try {
+				salt = Math.random().toString(36).slice(2, 8);
+			} catch (error) {
+				salt = "";
+			}
+			return "mind-" + Date.now().toString(36) + "-" + (salt === "" ? "0" : salt);
+		}
+
+		/** One thought is always a single 60–160 character paragraph. */
+		function petMindClipThought(value) {
+			try {
+				const cleaned = petStripControls(String(value === null || value === undefined ? "" : value))
+					.replace(/\s+/g, " ")
+					.trim();
+				return petClipText(cleaned, PET_MIND_THOUGHT_MAX_CHARS);
+			} catch (error) {
+				return "";
+			}
+		}
+
+		function petLoadMind() {
+			const fallback = petMindFallbackState();
+			try {
+				const raw = petReadJson(PET_MIND_KEY);
+				if (raw === null) return fallback;
+				if (raw.version !== undefined && raw.version !== PET_MIND_VERSION) return fallback;
+				const state = petMindFallbackState();
+				state.enabled = raw.enabled === true;
+				state.intervalMin = petMindInterval(raw.intervalMin);
+				state.autonomousSpeech = raw.autonomousSpeech !== false;
+				state.lastThinkAt = petNonNegativeInt(raw.lastThinkAt, 0);
+				if (Array.isArray(raw.thoughts)) {
+					for (const entry of raw.thoughts) {
+						if (state.thoughts.length >= PET_MIND_THOUGHT_MAX) break;
+						if (entry === null || typeof entry !== "object") continue;
+						const text = petMindClipThought(entry.text);
+						if (text === "") continue;
+						state.thoughts.push({
+							id: typeof entry.id === "string" && entry.id !== "" ? petClipText(entry.id, 64) : petMindNewId(),
+							at: petNonNegativeInt(entry.at, 0),
+							kind: entry.kind === "llm" ? "llm" : "local",
+							text,
+						});
+					}
+				}
+				return state;
+			} catch (error) {
+				return fallback;
+			}
+		}
+
+		function petMindSave() {
+			try {
+				const state = petMindState;
+				petWriteJson(PET_MIND_KEY, {
+					version: PET_MIND_VERSION,
+					enabled: state.enabled === true,
+					intervalMin: petMindInterval(state.intervalMin),
+					autonomousSpeech: state.autonomousSpeech === true,
+					thoughts: state.thoughts.slice(0, PET_MIND_THOUGHT_MAX),
+					lastThinkAt: petNonNegativeInt(state.lastThinkAt, 0),
+				});
+			} catch (error) {
+				note("pet-mind:save", error);
+			}
+		}
+
+		function petMindDocument() {
+			try {
+				return typeof document === "undefined" || document === null ? null : document;
+			} catch (error) {
+				return null;
+			}
+		}
+
+		/**
+		 * Low-power signal: the existing 15fps render tier, the low-power body
+		 * attribute (set by src/55-lowpower.js) or a forced "on" low-power mode.
+		 */
+		function petMindLowPower() {
+			try {
+				if (typeof readRenderTier === "function" && readRenderTier() === "15") return true;
+				const doc = petMindDocument();
+				if (
+					doc !== null &&
+					doc.body !== null &&
+					doc.body !== undefined &&
+					typeof doc.body.hasAttribute === "function" &&
+					doc.body.hasAttribute("data-tl-lowpower")
+				) {
+					return true;
+				}
+				if (typeof lowPowerController !== "undefined" && lowPowerController !== null && typeof lowPowerController.read === "function") {
+					return lowPowerController.read() === "on";
+				}
+			} catch (error) {
+				// a missing low-power controller simply is not a low-power signal
+			}
+			return false;
+		}
+
+		function petMindLastThought() {
+			try {
+				const first = petMindState.thoughts.length > 0 ? petMindState.thoughts[0] : null;
+				if (first === null || typeof first !== "object") return null;
+				return { id: first.id, at: first.at, kind: first.kind, text: first.text };
+			} catch (error) {
+				return null;
+			}
+		}
+
+		function petMindThoughts() {
+			try {
+				return petMindState.thoughts.map((entry) => ({ id: entry.id, at: entry.at, kind: entry.kind, text: entry.text }));
+			} catch (error) {
+				return [];
+			}
+		}
+
+		function petMindStatus() {
+			try {
+				const doc = petMindDocument();
+				const intervalMin = petMindInterval(petMindState.intervalMin);
+				return {
+					version: PET_MIND_VERSION,
+					installed: petInstalled === true,
+					enabled: petMindState.enabled === true,
+					intervalMin,
+					autonomousSpeech: petMindState.autonomousSpeech === true,
+					thoughtCount: petMindState.thoughts.length,
+					lastThinkAt: petNonNegativeInt(petMindState.lastThinkAt, 0),
+					lastThought: petMindLastThought(),
+					thinking: petMindBusy === true,
+					paused: petPaused === true,
+					hidden: doc !== null && doc.hidden === true,
+					lowPower: petMindLowPower(),
+					nextDueAt:
+						petMindState.lastThinkAt > 0 ? petNonNegativeInt(petMindState.lastThinkAt, 0) + intervalMin * 60000 : 0,
+				};
+			} catch (error) {
+				return {
+					version: PET_MIND_VERSION,
+					installed: false,
+					enabled: false,
+					intervalMin: PET_MIND_DEFAULT_INTERVAL,
+					autonomousSpeech: true,
+					thoughtCount: 0,
+					lastThinkAt: 0,
+					lastThought: null,
+					thinking: false,
+					paused: false,
+					hidden: false,
+					lowPower: false,
+					nextDueAt: 0,
+				};
+			}
+		}
+
+		function petMindNotify() {
+			for (const listener of [...petMindSubscribers]) {
+				try {
+					listener(petMindStatus());
+				} catch (error) {
+					note("pet-mind:subscriber", error);
+				}
+			}
+		}
+
+		function petMindSubscribe(listener) {
+			if (typeof listener !== "function") return () => {};
+			petMindSubscribers.add(listener);
+			return () => petMindSubscribers.delete(listener);
+		}
+
+		function petMindEnable(options) {
+			try {
+				const opts = options !== null && typeof options === "object" ? options : {};
+				petMindState.enabled = true;
+				if (opts.intervalMin !== undefined) petMindState.intervalMin = petMindInterval(opts.intervalMin);
+				if (opts.autonomousSpeech !== undefined) petMindState.autonomousSpeech = opts.autonomousSpeech === true;
+				petMindSave();
+				petMindNotify();
+				return { ok: true, status: petMindStatus() };
+			} catch (error) {
+				note("pet-mind:enable", error);
+				return { ok: false, reason: "internal-error" };
+			}
+		}
+
+		function petMindDisable() {
+			try {
+				petMindState.enabled = false;
+				petMindSave();
+				petMindNotify();
+				return { ok: true, status: petMindStatus() };
+			} catch (error) {
+				note("pet-mind:disable", error);
+				return { ok: false, reason: "internal-error" };
+			}
+		}
+
+		function petMindClearThoughts() {
+			try {
+				const cleared = petMindState.thoughts.length;
+				petMindState.thoughts = [];
+				petMindState.lastThinkAt = 0;
+				petMindSave();
+				petMindNotify();
+				return { ok: true, cleared };
+			} catch (error) {
+				note("pet-mind:clear", error);
+				return { ok: false, reason: "internal-error" };
+			}
+		}
+
+		/** Full context snapshot for one thought (also does bounded prompt digest). */
+		function petMindContext(nowInput) {
+			const now = petNumber(nowInput, Date.now());
+			const life = petLifeStatus();
+			const memory = life !== null && life.memory !== null && typeof life.memory === "object" ? life.memory : {};
+			const messages = petChatHistory();
+			let lastUserTopic = "";
+			let lastPetText = "";
+			for (let index = messages.length - 1; index >= 0; index -= 1) {
+				const message = messages[index];
+				if (lastUserTopic === "" && message.role === "user") lastUserTopic = petClipText(message.text, 24);
+				if (lastPetText === "" && message.role === "pet") lastPetText = petClipText(message.text, 40);
+				if (lastUserTopic !== "" && lastPetText !== "") break;
+			}
+			const lastThought = petMindLastThought();
+			const period = life !== null && typeof life.period === "string" && life.period !== "" ? life.period : petMindLocalPeriod(now);
+			const recentThoughts = [];
+			for (const thought of petMindState.thoughts.slice(0, PET_MIND_RECENT_LIMIT)) {
+				if (thought !== null && typeof thought === "object" && typeof thought.text === "string") recentThoughts.push(thought.text);
+			}
+			let hour = 12;
+			let dayNumber = 0;
+			try {
+				hour = new Date(now).getHours();
+				dayNumber = Math.floor(now / 86400000);
+			} catch (error) {
+				hour = 12;
+				dayNumber = 0;
+			}
+			return {
+				now,
+				time: petClockLabel(now),
+				period,
+				periodLabel: petPeriodLabel(period),
+				hour,
+				dayNumber,
+				memory: {
+					interactions: petNonNegativeInt(memory.interactions, 0),
+					turns: petNonNegativeInt(memory.talks, petTurns),
+					streak: petNonNegativeInt(memory.streakDays, 0),
+					lastSeenAt: petNonNegativeInt(memory.lastSeenAt, 0),
+				},
+				quiet: life !== null && life.quiet === true,
+				focus: life !== null && life.focus !== null && typeof life.focus === "object" && life.focus.active === true,
+				energy: life !== null && typeof life.energy === "string" ? life.energy : "normal",
+				messages,
+				lastUserTopic,
+				lastPetText,
+				lastThoughtText: lastThought !== null ? petClipText(lastThought.text, 40) : "",
+				recentThoughts,
+				thoughtCount: petMindState.thoughts.length,
+				goalKey: PET_MIND_GOAL_KEYS[(petMindState.thoughts.length + Math.floor(now / 86400000)) % PET_MIND_GOAL_KEYS.length],
+			};
+		}
+
+		function petMindDigest(context) {
+			try {
+				const lines = [];
+				lines.push("Local time: " + context.time + " (" + context.periodLabel + ").");
+				lines.push(
+					"Memory: interactions=" + context.memory.interactions + ", chatTurns=" + context.memory.turns + ", streakDays=" + context.memory.streak + ".",
+				);
+				if (context.focus === true) lines.push("The user is in a focus session right now.");
+				if (context.quiet === true) lines.push("Quiet hours are active.");
+				if (context.messages.length > 0) {
+					const recent = [];
+					for (const message of context.messages) recent.push(message.role + ": " + petClipText(message.text, 40));
+					lines.push("Recent skin-local chat (oldest first): " + recent.join(" | "));
+				}
+				if (context.lastUserTopic !== "") lines.push("Recent topic from the user: " + context.lastUserTopic);
+				if (context.lastPetText !== "") lines.push("My previous line: " + context.lastPetText);
+				if (context.recentThoughts.length > 0) lines.push("My recent thoughts (do not repeat): " + context.recentThoughts.join(" | "));
+				lines.push("A small private goal: " + TL_T(context.goalKey) + ".");
+				return petClipText(lines.join("\n"), PET_MIND_DIGEST_MAX);
+			} catch (error) {
+				return "";
+			}
+		}
+
+		/**
+		 * Local template composer: the guaranteed-offline path. It assembles a 60–160
+		 * character monologue from time/period, memory, the current topic, the previous
+		 * thought and a small goal, and retries when the result repeats a recent thought.
+		 */
+		function petMindComposeThought(context) {
+			try {
+				const seedBase = (context.thoughtCount * 7 + context.hour * 3 + context.dayNumber) % 97;
+				const opener = () =>
+					seedBase % 2 === 0
+						? TL_T("pet.mind.line.period", { period: context.periodLabel })
+						: TL_T("pet.mind.line.clock", { time: context.time });
+				const middles = [];
+				if (context.lastUserTopic !== "") middles.push(() => TL_T("pet.mind.line.topic", { topic: context.lastUserTopic }));
+				if (context.lastThoughtText !== "") middles.push(() => TL_T("pet.mind.line.lastThought", { thought: context.lastThoughtText }));
+				if (context.memory.interactions > 0) middles.push(() => TL_T("pet.mind.line.memory", { interactions: context.memory.interactions }));
+				if (context.memory.streak > 0) middles.push(() => TL_T("pet.mind.line.streak", { streak: context.memory.streak }));
+				if (context.lastPetText !== "") middles.push(() => TL_T("pet.mind.line.lastPet", { line: context.lastPetText }));
+				if (context.quiet === true) middles.push(() => TL_T("pet.mind.line.quiet"));
+				else if (context.focus === true) middles.push(() => TL_T("pet.mind.line.focus"));
+				else middles.push(() => TL_T("pet.mind.line.energy"));
+				const goal = () => TL_T("pet.mind.line.goal", { goal: TL_T(context.goalKey) });
+				const closers = [
+					() => TL_T("pet.mind.line.close1"),
+					() => TL_T("pet.mind.line.close2"),
+					() => TL_T("pet.mind.line.close3"),
+				];
+				const charCount = (value) => Array.from(value).length;
+				let candidate = "";
+				for (let attempt = 0; attempt < 6; attempt += 1) {
+					const parts = [opener()];
+					if (middles.length > 0) parts.push(middles[(seedBase + attempt * 3) % middles.length]());
+					if (middles.length > 1 && attempt % 2 === 0) parts.push(middles[(seedBase + attempt * 5 + 1) % middles.length]());
+					parts.push(goal());
+					parts.push(closers[(seedBase + attempt) % closers.length]());
+					let text = parts
+						.filter((part) => typeof part === "string" && part !== "")
+						.join(" ")
+						.replace(/\s+/g, " ")
+						.trim();
+					let guard = 0;
+					while (charCount(text) < PET_MIND_THOUGHT_MIN_CHARS && middles.length > 0 && guard < 4) {
+						text = (text + " " + middles[(seedBase + guard + attempt) % middles.length]()).replace(/\s+/g, " ").trim();
+						guard += 1;
+					}
+					candidate = petMindClipThought(text);
+					const duplicate = petMindState.thoughts.slice(0, PET_MIND_RECENT_LIMIT).some((entry) => entry.text === candidate);
+					if (candidate !== "" && duplicate === false) return candidate;
+				}
+				return candidate !== "" ? candidate : TL_T("pet.mind.line.period", { period: context.periodLabel });
+			} catch (error) {
+				note("pet-mind:compose", error);
+				return "";
+			}
+		}
+
+		/** Pads a short LLM answer up to the 60-char floor and clips it to 160. */
+		function petMindNormalizeThought(raw, context) {
+			try {
+				let text = petMindClipThought(petSanitizeLlmReply(raw));
+				if (text === "") return "";
+				if (Array.from(text).length < PET_MIND_THOUGHT_MIN_CHARS) {
+					const fillers = [];
+					if (context.lastUserTopic !== "") fillers.push(TL_T("pet.mind.line.topic", { topic: context.lastUserTopic }));
+					if (context.lastThoughtText !== "") fillers.push(TL_T("pet.mind.line.lastThought", { thought: context.lastThoughtText }));
+					fillers.push(TL_T("pet.mind.line.goal", { goal: TL_T(context.goalKey) }));
+					fillers.push(TL_T("pet.mind.line.close2"));
+					let merged = text;
+					for (const filler of fillers) {
+						if (Array.from(merged).length >= PET_MIND_THOUGHT_MIN_CHARS) break;
+						merged = (merged + " " + filler).replace(/\s+/g, " ").trim();
+					}
+					text = petMindClipThought(merged);
+				}
+				return text;
+			} catch (error) {
+				return "";
+			}
+		}
+
+		/** Why the loop/thinkNow must stay quiet ("" means allowed). */
+		function petMindSafety() {
+			if (petInstalled !== true) return "disabled";
+			if (petMindState.enabled !== true) return "disabled";
+			if (petPaused === true) return "paused";
+			const doc = petMindDocument();
+			if (doc !== null && doc.hidden === true) return "hidden";
+			if (petMindLowPower() === true) return "lowpower";
+			return "";
+		}
+
+		/** LLM path is available only through the normal gated brain chat path. */
+		function petMindLlmReady() {
+			try {
+				if (petInstalled !== true || petPaused === true) return false;
+				if (petGranted("chat") !== true) return false;
+				if (petGranted("llm") !== true || petAdapter === null) return false;
+				const quota = petLlmQuota(Date.now());
+				return quota !== null && typeof quota === "object" && quota.ok === true;
+			} catch (error) {
+				return false;
+			}
+		}
+
+		/**
+		 * Autonomous speech: opt-in, permission-gated by the brain's proactive check and
+		 * budget-gated by the life engine's existing gate (mute/quiet/asleep/budget).
+		 * No life engine (or no companion bridge) => record-only, as specified.
+		 */
+		function petMindSpeak(thought) {
+			try {
+				const life = petLife();
+				if (life === null) return { spoken: false, reason: "no-life" };
+				const bridge = companionDutyBridge.api;
+				if (bridge === null || bridge === undefined || typeof bridge.sayThought !== "function") {
+					return { spoken: false, reason: "companion-off" };
+				}
+				if (petMaybeProactive({ source: "pet-mind" }) !== true) return { spoken: false, reason: "proactive-denied" };
+				if (typeof life.gate === "function") {
+					const verdict = life.gate({ type: "proactive", priority: 30, source: "pet-mind" });
+					if (verdict === null || typeof verdict !== "object" || verdict.allow !== true) {
+						return { spoken: false, reason: verdict !== null && typeof verdict === "object" && typeof verdict.reason === "string" ? verdict.reason : "gate" };
+					}
+				}
+				const length = Array.from(thought.text).length;
+				const hold = Math.min(12000, Math.max(5000, 4000 + length * 30));
+				bridge.sayThought(thought.text, hold);
+				return { spoken: true, reason: "" };
+			} catch (error) {
+				note("pet-mind:speak", error);
+				return { spoken: false, reason: "internal-error" };
+			}
+		}
+
+		/** Observation event for other skin surfaces (no listener is required). */
+		function petMindBroadcast(thought, spoken) {
+			try {
+				const doc = petMindDocument();
+				if (doc === null || typeof doc.dispatchEvent !== "function") return;
+				const detail = {
+					thought: { id: thought.id, at: thought.at, kind: thought.kind, text: thought.text },
+					spoken: spoken === true,
+				};
+				let event = null;
+				if (typeof CustomEvent === "function") event = new CustomEvent("tianlight:pet-thought", { detail });
+				else event = { type: "tianlight:pet-thought", detail };
+				doc.dispatchEvent(event);
+			} catch (error) {
+				note("pet-mind:broadcast", error);
+			}
+		}
+
+		/**
+		 * Produce one thought (the only generation path; always resolves).
+		 * Safety pre-checks run first, and again after an awaited LLM call.
+		 */
+		async function petMindThink(trigger) {
+			if (petMindBusy === true) return { ok: false, reason: "busy" };
+			const safety = petMindSafety();
+			if (safety !== "") return { ok: false, reason: safety };
+			petMindBusy = true;
+			try {
+				const now = Date.now();
+				const context = petMindContext(now);
+				let kind = "local";
+				let text = "";
+				if (petMindLlmReady() === true) {
+					try {
+						// Same gated brain path as user chat: pause/quota/audit/sanitize apply.
+						const prompt = PET_MIND_PROMPT + "\n\nLocal context:\n" + petMindDigest(context);
+						const attempt = await petChat(prompt, { includeContext: false });
+						if (petInstalled !== true) return { ok: false, reason: "disabled" };
+						if (
+							attempt !== null &&
+							typeof attempt === "object" &&
+							attempt.ok === true &&
+							attempt.source === "llm" &&
+							typeof attempt.reply === "string"
+						) {
+							const normalized = petMindNormalizeThought(attempt.reply, context);
+							if (normalized !== "") {
+								text = normalized;
+								kind = "llm";
+							}
+						}
+					} catch (error) {
+						note("pet-mind:llm", error);
+					}
+				}
+				const after = petMindSafety();
+				if (after !== "") return { ok: false, reason: after };
+				if (text === "") text = petMindComposeThought(context);
+				if (text === "") return { ok: false, reason: "internal-error" };
+				const thought = { id: petMindNewId(), at: now, kind, text: petMindClipThought(text) };
+				petMindState.thoughts.unshift(thought);
+				if (petMindState.thoughts.length > PET_MIND_THOUGHT_MAX) petMindState.thoughts.length = PET_MIND_THOUGHT_MAX;
+				petMindState.lastThinkAt = now;
+				petMindSave();
+				let spoken = false;
+				let speakReason = "";
+				if (petMindState.autonomousSpeech === true) {
+					const speech = petMindSpeak(thought);
+					spoken = speech.spoken === true;
+					speakReason = speech.reason;
+				}
+				petMindBroadcast(thought, spoken);
+				petMindNotify();
+				return {
+					ok: true,
+					thought,
+					spoken,
+					reason: speakReason,
+					trigger: typeof trigger === "string" ? trigger : "tick",
+				};
+			} catch (error) {
+				note("pet-mind:think", error);
+				return { ok: false, reason: "internal-error" };
+			} finally {
+				petMindBusy = false;
+			}
+		}
+
+		/** 60s loop: inert unless enabled/visible/not-low-power/not-paused and due. */
+		function petMindTick() {
+			try {
+				if (petMindState.enabled !== true) return;
+				if (petMindSafety() !== "") return;
+				const now = Date.now();
+				const intervalMs = petMindInterval(petMindState.intervalMin) * 60000;
+				if (petMindState.lastThinkAt > 0 && now - petMindState.lastThinkAt < intervalMs) return;
+				void petMindThink("tick").catch((error) => note("pet-mind:tick-think", error));
+			} catch (error) {
+				note("pet-mind:tick", error);
+			}
+		}
+
+		/** The v1 public API published as `globalThis.tianlightPetMind` (contract). */
+		const petMindApi = {
+			version: PET_MIND_VERSION,
+			status: () => petMindStatus(),
+			enable: (options) => petMindEnable(options),
+			disable: () => petMindDisable(),
+			thinkNow: () => petMindThink("manual"),
+			lastThought: () => petMindLastThought(),
+			thoughts: () => petMindThoughts(),
+			clearThoughts: () => petMindClearThoughts(),
+			subscribe: (listener) => petMindSubscribe(listener),
+		};
+
 		// ---- install / dispose --------------------------------------------------
 		/**
-		 * Publish `globalThis.tianlightPet` (version 1). The previous instance, if
-		 * any, is saved and restored by the disposer; the brain natively owns no DOM
-		 * and no listeners, so teardown is just the global handover.
+		 * Publish `globalThis.tianlightPet` (version 1) and, since v1.6.8,
+		 * `globalThis.tianlightPetMind` (version 1). The previous globals, if any, are
+		 * saved and restored by the disposer; the brain owns no DOM and no listeners.
+		 * Its only persistent timer is the 60s private-thinking loop, which is cleared
+		 * here and is inert until the user enables the mind.
 		 */
 		function installPetBrain() {
 			const previous = globalThis.tianlightPet;
+			let previousMind;
 			let api = null;
 			let disposed = false;
 			try {
@@ -1269,6 +2138,11 @@
 				petLocalMinute = [];
 				petLocalDay = { dayKey: petTodayKey, count: 0 };
 				petLlmMinute = { bucket: -1, count: 0 };
+				// v1.6.8: re-read the bounded thought store; loop handles start empty.
+				petMindState = petLoadMind();
+				petMindBusy = false;
+				petMindSubscribers.clear();
+				petLocalReplyRing = [];
 				api = {
 					version: PET_VERSION,
 					status: () => petStatus(),
@@ -1289,6 +2163,18 @@
 					maybeProactive: (context) => petMaybeProactive(context),
 				};
 				globalThis.tianlightPet = api;
+				// v1.6.8: publish the private-thinking API and start its 60s loop. The
+				// loop is inert until enabled; a timer failure must not break the brain.
+				previousMind = globalThis.tianlightPetMind;
+				globalThis.tianlightPetMind = petMindApi;
+				if (typeof window !== "undefined" && window !== null && typeof window.setInterval === "function") {
+					try {
+						petMindTimer = window.setInterval(petMindTick, PET_MIND_TICK_MS);
+					} catch (error) {
+						petMindTimer = 0;
+						note("pet-mind:timer", error);
+					}
+				}
 			} catch (error) {
 				note("pet-brain:install-failed", error);
 				petInstalled = false;
@@ -1297,6 +2183,17 @@
 			return () => {
 				if (disposed) return;
 				disposed = true;
+				// Stop the thinking loop first: it must never run against a torn-down brain.
+				if (petMindTimer !== 0) {
+					try {
+						window.clearInterval(petMindTimer);
+					} catch (error) {
+						note("pet-mind:dispose-timer", error);
+					}
+					petMindTimer = 0;
+				}
+				petMindBusy = false;
+				petMindSubscribers.clear();
 				try {
 					if (globalThis.tianlightPet === api) {
 						if (previous === undefined) delete globalThis.tianlightPet;
@@ -1304,6 +2201,14 @@
 					}
 				} catch (error) {
 					note("pet-brain:dispose", error);
+				}
+				try {
+					if (globalThis.tianlightPetMind === petMindApi) {
+						if (previousMind === undefined) delete globalThis.tianlightPetMind;
+						else globalThis.tianlightPetMind = previousMind;
+					}
+				} catch (error) {
+					note("pet-mind:dispose", error);
 				}
 				petInstalled = false;
 				petAdapter = null;

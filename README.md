@@ -6,6 +6,16 @@
 >
 > 包名 `@dsh-external/dsh-client-ui-skin-tianlight` · 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
 
+## v1.6.8 · 正式版：桌宠「自主思考」智能体 · 更像人的聊天
+
+`1.6.8`（26 片段；`BUILD`/`HOST_BUILD` = `1.6.8`）。细节见 [docs/RELEASE-1.6.8.md](docs/RELEASE-1.6.8.md)：
+
+- **自主思考引擎**：`globalThis.tianlightPetMind` v1（`tianlight.petMind.v1`）按间隔做内心独白；启用后仅在页面可见/非低电量/未暂停时思考；可自主开口，但受既有主动开口预算与 life gate（静音/免打扰/睡眠）约束，无 life 引擎时只记录不开口。
+- **聊天更像人**：本地回复融入最近话题/时段/记忆/当前想法并防复读；LLM 适配器存在时 prompt 附带最近聊天与当前想法的有界摘要；权限、配额、审计语义不变，与「☰」对话历史互通。
+- **角色中枢「自主思考」卡片**：开关 / 间隔 5/10/15/30 分钟 / 自主开口开关 / 「现在想一下」/ 最近想法 / 清空；API 缺失时禁用并提示。
+- **安全边界**：不新增权限与网络通道，不自动驱动 DSH Agent、不自动执行工具；低电量 / 页面隐藏 / 暂停不思考；定时器与订阅 dispose 清理。
+- **公开上传命名**：公开版本名 **v1.0.7（正式版）**（内部构建 `1.6.8`）。仅浏览器半逻辑改动；因 `BUILD`/`HOST_BUILD` bump，建议 **Ctrl+F5 后重启 DSH 一次**以消除宿主半 stale 提示。
+
 ## v1.6.7 · 正式版：URL/ShaderToy 壁纸入口 · 回复即收面板 · 对话历史（☰）
 
 `1.6.7`（26 片段；`BUILD`/`HOST_BUILD` = `1.6.7`）。细节见 [docs/RELEASE-1.6.7.md](docs/RELEASE-1.6.7.md)：

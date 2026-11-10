@@ -853,6 +853,39 @@
 			return () => petChatSubscribers.delete(listener);
 		}
 
+		/**
+		 * v1.6.8 chat-context bridge: a bounded view of the most recent conversation
+		 * for the pet brain (human-like chat + private thought). Only this skin's own
+		 * store is read, never DSH data. Returns `{ conversationId, title, messages }`
+		 * with at most 6 messages (oldest first, text clipped) so a caller can embed it
+		 * in a prompt safely; a missing/empty store returns an empty shape.
+		 */
+		function petChatsRecentContext(limitInput) {
+			try {
+				const limit = Number.isFinite(Number(limitInput)) ? Math.max(1, Math.min(6, Math.floor(Number(limitInput)))) : 6;
+				const state = petChatsRead();
+				const conversation = state.conversations.length > 0 ? state.conversations[0] : null;
+				if (conversation === null) return { conversationId: "", title: "", messages: [] };
+				const messages = [];
+				for (const message of conversation.messages.slice(-limit)) {
+					if (message === null || typeof message !== "object") continue;
+					messages.push({
+						role: message.role === "user" ? "user" : "pet",
+						text: petActionsClip(message.text, message.role === "user" ? 200 : 240),
+						at: Number.isFinite(message.at) ? message.at : 0,
+					});
+				}
+				return {
+					conversationId: conversation.id,
+					title: typeof conversation.title === "string" ? conversation.title : "",
+					messages,
+				};
+			} catch (error) {
+				note("companion:chats-recent", error);
+				return { conversationId: "", title: "", messages: [] };
+			}
+		}
+
 		/** Shared API (contract: version 1). The panel reads the same functions directly. */
 		const petChatsApi = {
 			version: PET_CHATS_VERSION,
@@ -865,6 +898,8 @@
 			append: petChatsAppend,
 			editUserMessage: petChatsEditUserMessage,
 			subscribe: petChatsSubscribe,
+			// v1.6.8 additive: bounded context for the brain/mind (backward compatible).
+			recent: petChatsRecentContext,
 		};
 		// Same lifecycle rule as the action-pack API: installed at factory scope so other
 		// modules can read history even before the switchable companion mounts, and
@@ -1335,6 +1370,9 @@
 				// `[data-tl-chat]`); any other line removes the marker again.
 				if (chatReply === true) bubble.dataset.tlChat = "";
 				else delete bubble.dataset.tlChat;
+				// v1.6.8: a private-thought marker rides the same bubble; a normal line
+				// always clears it so a thought is never mistaken for a chat answer.
+				delete bubble.dataset.tlThought;
 				// v1.0.0: the life engine speaks through this same bubble with its own
 				// `life.line.*` keys, so translate ANY key the dictionaries know. Duty
 				// `speak` passes arbitrary user copy, which TL_T returns unchanged.
@@ -1345,6 +1383,7 @@
 				bubbleTimer = window.setTimeout(() => {
 					delete bubble.dataset.tlShow;
 					delete bubble.dataset.tlChat;
+					delete bubble.dataset.tlThought;
 					bubbleTimer = 0;
 					bubbleKey = "";
 				}, hold);
@@ -1359,7 +1398,29 @@
 				bubbleKey = "";
 				delete bubble.dataset.tlShow;
 				delete bubble.dataset.tlChat;
+				delete bubble.dataset.tlThought;
 				bubble.textContent = "";
+			};
+			/**
+			 * v1.6.8 thought bubble bridge (consumed by the private-thinking engine in
+			 * src/44-pet-brain.js through companionDutyBridge.api.sayThought). It reuses
+			 * the existing say channel — same bubble element, same timer/lifecycle — and
+			 * marks the node with `data-tl-thought` for diagnostics/tests. Returns true
+			 * when something was shown.
+			 */
+			const sayThought = (text, hold) => {
+				try {
+					const line = typeof text === "string" ? text.trim() : "";
+					if (line === "") return false;
+					const requested = Number(hold);
+					const holdMs = Math.min(24000, Math.max(5000, Number.isFinite(requested) ? requested : 6000));
+					say(line, holdMs, true);
+					bubble.dataset.tlThought = "";
+					return true;
+				} catch (error) {
+					note("companion:thought-say", error);
+					return false;
+				}
 			};
 
 			// ---- v0.7.0 duty bubble lifecycle (driven by the duty channel) ----
@@ -1441,6 +1502,8 @@
 				showDuty,
 				hideDuty,
 				say: (text, hold) => say(text, hold),
+				// v1.6.8: private thought display (same bubble, marked data-tl-thought).
+				sayThought: (text, hold) => sayThought(text, hold),
 				clearSay,
 				status: () => ({
 					ready: true,

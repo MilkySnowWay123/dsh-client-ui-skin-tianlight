@@ -2969,6 +2969,55 @@ body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-pack-status] {
 	font: 400 11px/1.5 var(--ds-font-family, system-ui);
 	color: var(--tl-ink-faint, var(--tl-ink-soft, var(--tl-ink)));
 }
+/* v1.6.8 autonomous-thinking card (src/76-role-hub.js): a compact control row,
+   an opt-in speech switch and a short scrollable list of the latest thoughts. */
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-mind] .tl-hub-mind-speak {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font: 500 11px/1.4 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-soft, var(--tl-ink));
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-mind] [data-tl-hub-mind-speak] {
+	accent-color: var(--tl-accent);
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-mind] .tl-hub-mind-thoughts {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	max-height: 180px;
+	overflow: auto;
+	margin-top: 4px;
+	padding: 8px 9px;
+	border-radius: 11px;
+	background: rgba(8, 18, 30, 0.1);
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-mind] .tl-hub-mind-thought {
+	display: grid;
+	grid-template-columns: auto auto 1fr;
+	align-items: baseline;
+	gap: 6px;
+	font: 400 11px/1.5 var(--ds-font-family, system-ui);
+	color: var(--tl-ink);
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-mind] .tl-hub-mind-time {
+	font: 600 10px/1.4 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-faint, var(--tl-ink-soft, var(--tl-ink)));
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-mind] .tl-hub-mind-kind {
+	font: 600 9px/1.3 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-faint, var(--tl-ink-soft, var(--tl-ink)));
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-mind] .tl-hub-mind-text {
+	min-width: 0;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-mind][data-tl-hub-mind-ready="false"] [data-tl-hub-mind-thoughts] {
+	opacity: 0.6;
+}
 /* The cat menu grew from 7 to 8 actions: wrap instead of pushing buttons off the
    screen edge, and round the pill accordingly. */
 body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catmenu] {

@@ -2,6 +2,16 @@
 
 本文件由 `node tools/release.mjs --note "…"` 维护；条目按版本倒序，格式参考 Keep a Changelog。
 
+## [1.6.8] - 2026-11-10
+
+### 发布说明
+
+- **桌宠「自主思考」智能体（新）**：新增 `globalThis.tianlightPetMind` v1 与 `localStorage["tianlight.petMind.v1"]`（enabled / intervalMin 5·10·15·30 / autonomousSpeech / thoughts ≤30 / lastThinkAt，损坏静默重置）。60s tick 仅在启用、页面可见、非 15fps、非低电量、大脑未暂停且到达间隔时思考；`thinkNow()` 可手动触发。思考上下文含本地时段、life memory、v1.6.7 对话历史最近 6 条、最近 5 条想法；优先复用既有 `tianlightPet.chat()`（LLM 适配器存在时走既有 gated LLM 路径，沿用暂停/配额/审计），否则本地模板组合；强制 60–160 字。自主开口为 opt-in，经 `maybeProactive` + `tianlightLife.gate`（静音/免打扰/睡眠/每日主动预算）；无 life 引擎只记录不开口。dispose 恢复 global、清定时器与订阅。
+- **聊天更像人**：本地 fallback 融合最近话题/时段/记忆/当前想法并做防复读轮换；有 LLM 适配器时 prompt 注入有界上下文摘要（近 6 条聊天 + 记忆 + 当前想法 + 时段，≤700 字，无 DSH 数据）。权限/配额/审计语义不变，与 v1.6.7「☰」对话历史互通。
+- **角色中枢「自主思考」卡片**：启用/暂停、间隔选择、自主开口开关、「现在想一下」、最近 5 条想法（时间/来源/文本）、清空、状态行；API 缺失时禁用并本地化提示；气泡新增 `data-tl-thought` 标记。
+- **版本与发布**：`BUILD`/`HOST_BUILD`/`package.json`/`skin.json` = **1.6.8**（feedback 模板同步）；新增 [docs/RELEASE-1.6.8.md](docs/RELEASE-1.6.8.md)；i18n 新增 53 键（6 `pet.chat.ctx.*` + 17 `pet.mind.*` + 30 `hub.mind.*`，1266 → **1319**）；内部 tag `v1.6.8`，公开命名 **v1.0.7（正式版）**。
+- **验证（本地）**：静态链全绿；Node 冒烟 **715/715 PASS**（v1.6.7 的 706 条回归 + P-M1..P-M7 + S99/S100），构建 sha `1188519c…`（`lib/client.js` 1,464,313 B）；证据见 `diag/skinlab/runs/*-v168-v168-node-smoke/`。
+
 ## [1.6.7] - 2026-11-10
 
 ### 发布说明

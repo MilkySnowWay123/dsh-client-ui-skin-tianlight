@@ -497,6 +497,35 @@ report(
   'v1.6.7 keeps a queryable pet chat history (new chat, edit a sent message, delete a chat)',
 )
 
+// ---- 18. v1.6.8: private autonomous mind + context-aware chat + hub card ----
+report(
+  source.includes('tianlight.petMind.v1') &&
+    source.includes('tianlightPetMind') &&
+    source.includes('petMindTick') &&
+    source.includes('petMindThink')
+    ? 'PASS'
+    : 'FAIL',
+  'v1.6.8 gives the pet a private autonomous mind (interval tick, inner monologue, opt-in proactive speech)',
+)
+report(
+  source.includes('petChatContextDigest') &&
+    source.includes('petLocalContextReply') &&
+    source.includes('petCallLlm') &&
+    source.includes('Local context:')
+    ? 'PASS'
+    : 'FAIL',
+  'v1.6.8 makes pet chat context-aware (recent turns, time, memory and current thought in local + LLM replies)',
+)
+report(
+  source.includes('data-tl-hub-mind') &&
+    source.includes('hub.mind.') &&
+    source.includes('sayThought') &&
+    source.includes('data-tl-thought')
+    ? 'PASS'
+    : 'FAIL',
+  'v1.6.8 adds the role-hub autonomous-mind card and shows a thought in the say bubble',
+)
+
 console.log(issues === 0 ? 'AUDIT: no blocking issues' : `AUDIT: ${issues} blocking issue(s)`)
 process.exitCode = issues === 0 ? 0 : 1
 
