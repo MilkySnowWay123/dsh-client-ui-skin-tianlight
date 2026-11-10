@@ -9,7 +9,7 @@
 		 *   - the pet only ever sends a prompt the user typed in the role hub; it
 		 *     never prompts on its own (no timers, no life/duty hook), never
 		 *     approves/cancels anything, and calls no other session operations;
-		 *   - one in-flight prompt, <=10 prompts/day, <=500 chars, 60s reply window;
+		 *   - one in-flight prompt, <=30 prompts/day, <=1000 chars, 120s reply window;
 		 *   - every send is audited locally and mirrored into `tianlightPet.audit`;
 		 *   - the target session is explicitly chosen by the user: either a brand
 		 *     new "pet session" or one existing session from the user's list;
@@ -25,9 +25,11 @@
 		 */
 		const PET_AGENT_VERSION = 1;
 		const PET_AGENT_KEY = "tianlight.pet.agent.v1";
-		const PET_AGENT_DAILY_CAP = 10;
-		const PET_AGENT_MAX_CHARS = 500;
-		const PET_AGENT_TIMEOUT_MS = 60000;
+		const PET_AGENT_DAILY_CAP = 30;
+		/** Upper bound for a persisted daily cap (old saves clamp into 1..100). */
+		const PET_AGENT_DAILY_CAP_MAX = 100;
+		const PET_AGENT_MAX_CHARS = 1000;
+		const PET_AGENT_TIMEOUT_MS = 120000;
 		const PET_AGENT_AUDIT_MAX = 30;
 		const PET_AGENT_SESSIONS_MAX = 20;
 
@@ -52,7 +54,7 @@
 			} catch (error) {
 				note("pet-agent:read-state", error);
 			}
-			const cap = Math.min(30, Math.max(1, Math.floor(Number(stored?.cap) || PET_AGENT_DAILY_CAP)));
+			const cap = Math.min(PET_AGENT_DAILY_CAP_MAX, Math.max(1, Math.floor(Number(stored?.cap) || PET_AGENT_DAILY_CAP)));
 			const sameDay = stored?.dayKey === dayKey;
 			return {
 				version: PET_AGENT_VERSION,

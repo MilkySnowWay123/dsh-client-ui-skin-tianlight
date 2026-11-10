@@ -294,6 +294,89 @@ report(
   "feedback panel prefills the GitHub issue URL",
 )
 
+// ---- 12. v1.6.0: raised safety limits (numbers only) + liquid glass on every surface ----
+report(
+  source.includes("const LIFE_DEFAULT_CAP = 12") && source.includes("const LIFE_BUDGET_MAX = 50") ? "PASS" : "FAIL",
+  "v1.6 raised the proactive budget: 12 bubbles/day by default, adjustable up to 50",
+)
+report(
+  source.includes("const PET_LOCAL_MINUTE_LIMIT = 20") &&
+    source.includes("const PET_LOCAL_DAILY_LIMIT = 1200") &&
+    source.includes("const PET_INPUT_MAX = 1000")
+    ? "PASS"
+    : "FAIL",
+  "v1.6 raised local pet chat: 20/min + 1200/day and 1000 chars of input",
+)
+report(
+  source.includes("const PET_DAILY_LIMIT_DEFAULT = 60") &&
+    source.includes("const PET_DAILY_LIMIT_MAX = 120") &&
+    source.includes("const PET_MINUTE_CALL_LIMIT = 6")
+    ? "PASS"
+    : "FAIL",
+  "v1.6 raised LLM quotas: 60/day default (120 max) and 6 calls/min",
+)
+report(
+  source.includes("const PET_LLM_MAX_CHARS = 1200") &&
+    source.includes("const PET_REPLY_MAX = 1200") &&
+    source.includes("const PET_LLM_TIMEOUT_MS = 20000")
+    ? "PASS"
+    : "FAIL",
+  "v1.6 raised LLM output: 1200 chars (payload + reply cap) and a 20s timeout",
+)
+report(
+  source.includes("const PET_AGENT_DAILY_CAP = 30") &&
+    source.includes("const PET_AGENT_DAILY_CAP_MAX = 100") &&
+    source.includes("const PET_AGENT_MAX_CHARS = 1000") &&
+    source.includes("const PET_AGENT_TIMEOUT_MS = 120000")
+    ? "PASS"
+    : "FAIL",
+  "v1.6 raised the agent bridge: 30/day default (100 max), 1000 chars, 120s",
+)
+report(
+  source.includes("const HUB_AI_INPUT_MAX = 1000") && source.includes('max: "50"') ? "PASS" : "FAIL",
+  "v1.6 hub input and life-budget bounds follow the raised limits",
+)
+report(
+  source.includes('const PET_FORBIDDEN_CAPS = ["agent"]') && source.includes('"tianlight.pet.permissions.v1"')
+    ? "PASS"
+    : "FAIL",
+  "raised limits did not touch the permission model (agent stays the only forbidden capability)",
+)
+report(
+  [
+    "[data-tl-sidebar]",
+    "[data-tl-sidebar-col]",
+    "[data-tl-settings]",
+    "[data-tl-wall]",
+    "[data-tl-hub-panel]",
+    '[role="dialog"]',
+    '[role="menu"]',
+    '[role="listbox"]',
+    "[data-tl-composer]",
+    "[data-tl-bubble]",
+    "[data-tl-duty]",
+    "[data-tl-catmenu]",
+    '[role="tooltip"]',
+    '[role="tabpanel"]',
+  ].every((selector) => source.includes(selector))
+    ? "PASS"
+    : "FAIL",
+  "liquid glass covers every known product surface when a depth is on",
+)
+report(
+  source.includes("function syncLiquidFallback(") && source.includes('setAttribute("data-tl-liquid-fallback", "")')
+    ? "PASS"
+    : "FAIL",
+  "scene-less liquid-glass fallback layer is created, synced and disposed",
+)
+report(
+  source.includes('[data-tl-glass-effective="off"] [data-tl-liquid-fallback]') &&
+    source.includes('body[data-dsh-tianlight][data-tl-lowpower]:is(')
+    ? "PASS"
+    : "FAIL",
+  "depth off keeps the v1.4 look (no liquid-glass surface rule) and low power flattens the extra decoration",
+)
+
 console.log(issues === 0 ? 'AUDIT: no blocking issues' : `AUDIT: ${issues} blocking issue(s)`)
 process.exitCode = issues === 0 ? 0 : 1
 

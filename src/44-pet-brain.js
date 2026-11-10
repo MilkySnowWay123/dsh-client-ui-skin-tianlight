@@ -33,7 +33,7 @@
 		 *     after the user grants `llm` with `{ consent: "user-explicit" }`; the
 		 *     system prompt is a fixed safety string, `messages` contains exactly the
 		 *     current user sentence (never DSH data/history), output is sanitized, the
-		 *     call is bounded by 12s/600 chars and daily/minute quotas. Any failure
+		 *     call is bounded by 20s/1200 chars and daily/minute quotas. Any failure
 		 *     falls back to the local brain and is audited as `llm-fallback`;
 		 *   - `agentChat` is only a permission bit plus an audit source for the
 		 *     separate src/48-pet-agent.js bridge (that bridge owns the injected
@@ -82,17 +82,18 @@
 		const PET_AUDIT_CAPS = [...PET_SAFE_CAPS, ...PET_MEDIUM_CAPS, ...PET_HIGH_CAPS, ...PET_FORBIDDEN_CAPS];
 		/** Valid actions for audit records (internal ring and external agent records). */
 		const PET_AUDIT_ACTIONS = ["chat", "say", "grant", "revoke", "llm", "pause", "resume", "proactive-check", "agent", "capability"];
-		const PET_DAILY_LIMIT_DEFAULT = 20;
-		const PET_DAILY_LIMIT_MAX = 50;
-		const PET_MINUTE_CALL_LIMIT = 3;
-		const PET_LOCAL_MINUTE_LIMIT = 8;
-		const PET_LOCAL_DAILY_LIMIT = 300;
-		const PET_INPUT_MAX = 280;
+		const PET_DAILY_LIMIT_DEFAULT = 60;
+		const PET_DAILY_LIMIT_MAX = 120;
+		const PET_MINUTE_CALL_LIMIT = 6;
+		const PET_LOCAL_MINUTE_LIMIT = 20;
+		const PET_LOCAL_DAILY_LIMIT = 1200;
+		const PET_INPUT_MAX = 1000;
 		const PET_SAY_MAX = 200;
-		const PET_REPLY_MAX = 600;
+		/** Hard cap for one LLM reply kept/displayed by the brain; local replies use PET_LOCAL_REPLY_MAX. */
+		const PET_REPLY_MAX = 1200;
 		const PET_LOCAL_REPLY_MAX = 80;
-		const PET_LLM_TIMEOUT_MS = 12000;
-		const PET_LLM_MAX_CHARS = 600;
+		const PET_LLM_TIMEOUT_MS = 20000;
+		const PET_LLM_MAX_CHARS = 1200;
 		const PET_AUDIT_MAX = 60;
 		const PET_AUDIT_DEFAULT_LIMIT = 20;
 		const PET_LLM_TIMEOUT_TOKEN = { timeout: true };
@@ -116,7 +117,7 @@
 			"Never ask for secrets, passwords, API keys, tokens or personal data. " +
 			"Never output HTML, scripts, links or executable code. " +
 			"Never suggest dangerous or irreversible actions; if asked, refuse. " +
-			"Reply in one or two calm sentences, at most 600 characters, in the user's language. " +
+			"Reply in one or two calm sentences, at most 1200 characters, in the user's language. " +
 			"Never claim an action was performed.";
 
 		// ---- i18n ---------------------------------------------------------------

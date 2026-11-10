@@ -34,8 +34,8 @@
 		/** Percent chance per 30s tick once the 30min gap has passed. */
 		const LIFE_PROACTIVE_CHANCE = 12;
 		const LIFE_TICK_MS = 30000;
-		const LIFE_DEFAULT_CAP = 6;
-		const LIFE_BUDGET_MAX = 20;
+		const LIFE_DEFAULT_CAP = 12;
+		const LIFE_BUDGET_MAX = 50;
 		const LIFE_MUTE_MAX_MS = 86400000;
 		const LIFE_FOCUS_MINUTES = 25;
 		const LIFE_FOCUS_MAX_MINUTES = 180;

@@ -621,7 +621,7 @@
 		const HUB_REFRESH_MS = 4000;
 		/** 本机上传的客户端上限；宿主 _upload 还会再校验一次大小与类型。 */
 		const HUB_UPLOAD_MAX_BYTES = 32 * 1024 * 1024;
-		const HUB_AI_INPUT_MAX = 280;
+		const HUB_AI_INPUT_MAX = 1000;
 		const HUB_LOG_MAX = 50;
 		const HUB_AUDIT_LIMIT = 8;
 		const HUB_GLASS_LEVELS = ["off", "frosted", "soft", "real"];
@@ -1248,7 +1248,7 @@
 				ui.lifeQuietEnabled.checked = quiet.enabled !== false;
 				ui.lifeQuietStart.value = typeof quiet.start === "string" ? quiet.start : "23:00";
 				ui.lifeQuietEnd.value = typeof quiet.end === "string" ? quiet.end : "08:00";
-				ui.lifeBudget.value = String(Number.isFinite(config.cap) ? Math.max(0, Math.min(20, Math.round(config.cap))) : 6);
+				ui.lifeBudget.value = String(Number.isFinite(config.cap) ? Math.max(0, Math.min(50, Math.round(config.cap))) : 12);
 				ui.lifeWake.value = typeof config.wake === "string" ? config.wake : "08:00";
 				ui.lifeSleep.value = typeof config.sleep === "string" ? config.sleep : "23:00";
 				ui.lifeVirtual.value = String(Number.isFinite(config.virtualOffsetMinutes) ? Math.max(-720, Math.min(720, Math.round(config.virtualOffsetMinutes))) : 0);
@@ -1282,7 +1282,7 @@
 				if (timeOk(quietEnd)) patch.quiet.end = quietEnd;
 				else invalid = true;
 				const budget = Number(ui.lifeBudget.value);
-				if (Number.isFinite(budget) && budget >= 0 && budget <= 20) patch.budgetDaily = Math.round(budget);
+				if (Number.isFinite(budget) && budget >= 0 && budget <= 50) patch.budgetDaily = Math.round(budget);
 				else invalid = true;
 				const wake = String(ui.lifeWake.value ?? "");
 				if (timeOk(wake)) patch.wake = wake;
@@ -2646,7 +2646,7 @@
 				state.lifeBudget = hubCreate("input", {
 					type: "number",
 					min: "0",
-					max: "20",
+					max: "50",
 					step: "1",
 					"data-tl-hub-budget": "",
 					className: "tl-hub-input tl-hub-num",

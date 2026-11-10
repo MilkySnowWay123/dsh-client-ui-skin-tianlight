@@ -2,6 +2,16 @@
 
 本文件由 `node tools/release.mjs --note "…"` 维护；条目按版本倒序，格式参考 Keep a Changelog。
 
+## [1.6.0] - 2026-11-10
+
+### 发布说明
+
+- **安全上限整体上调（权限模型不变）**：主动开口预算 6/20 → **12/50**；本地 chat 8/分、300/天 → **20/分、1200/天**，输入 280 → **1000** 字；LLM 日配额 20/50 → **60/120**、分钟 3 → **6**、输入 280 → **1000**、输出 600 → **1200** 字、超时 12s → **20s**；AI Agent 日 10/30 → **30/100**、输入 500 → **1000** 字、超时 60s → **120s**；中枢生活预算 0..20 → **0..50**；审计环 60/30 不变。默认关闭、显式授权、可撤销、全程审计、`agent`（驱动 DSH）永久禁止全部不变，旧持久化值按新区间 clamp。文档 [docs/RELEASE-1.6.0.md](docs/RELEASE-1.6.0.md)、[docs/AI-PET-PERMISSIONS.md](docs/AI-PET-PERMISSIONS.md) 已同步。
+- **液态玻璃全覆盖**：depth != off 时统一应用到侧栏/设置/壁纸库/中枢/对话框/菜单/列表框/输入区/气泡/胶囊/提示等表面（分组 A 重：填充/specular/描边/轻阴影；分组 B 轻：气泡/胶囊/提示只加高光与描边；每视口只留一层模糊——大面板与气泡不叠实时 blur；输入控件只加描边/微高光、不加 blur）；无壁纸场景时自动插入 `[data-tl-liquid-fallback]` 玻璃兜底（scene 出现/消失同步、dispose 删除、低电量禁用）；off 档零变化、低电量/15fps 自动压平、`prefers-reduced-motion` 关动画；中枢预览条保留。
+- **静态链全绿**：build 26/26、test 67/67、structure --strict、audit（v1.6 新守卫 10 条：全界面分组 / 场景缺失 fallback / 上限新值）、check-css、verify、i18n-audit（zh=en 1203 键）；`BUILD`/`HOST_BUILD`/`package.json`/`skin.json` = **1.6.0**。
+- **Node 冒烟**：**586/586 PASS**（v1.5 的 534 条回归按新上限更新 + 52 条新增，含 G（GLASS-ALL）23 条 / Q（LIMITS）27 条），构建 sha `d9533358…`（`lib/client.js` 1,272,497 B），证据 `diag/skinlab/runs/20261110-174704-v160-v160-node-smoke/`；同 build sha 复跑同样 586/586。
+- **发布物**：`github-upload/` 镜像同步 v1.6.0（commit + tag）；**仅本地、未 push**（本会话无凭据）。
+
 ## [1.5.0] - 2026-11-10
 
 ### 发布说明

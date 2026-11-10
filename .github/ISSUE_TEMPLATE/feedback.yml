@@ -26,8 +26,8 @@ body:
     id: version
     attributes:
       label: 天光版本
-      description: 例如 v1.5.0（可在角色中枢或 CHANGELOG 查看）
-      placeholder: v1.5.0
+      description: 例如 v1.6.0（可在角色中枢或 CHANGELOG 查看）
+      placeholder: v1.6.0
     validations:
       required: true
   - type: input

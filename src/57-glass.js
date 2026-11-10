@@ -53,6 +53,10 @@
 		 * treatment between the wallpaper and the product UI (the `[data-tl-scene]`
 		 * layer, painted by the stylesheet ::after). The effective level degrades
 		 * automatically under low power / 15fps so the energy promise holds.
+		 * v1.6.0: when the scene layer is absent (wallpaper module off) a fixed
+		 * data-tl-liquid-fallback node paints the same depth recipe; it is created and
+		 * removed by syncLiquidFallback() below and is never inserted while low power
+		 * has flattened the effect.
 		 */
 		const GLASS_DEPTH_KEY = "tianlight.glassDepth";
 		const GLASS_DEPTHS = ["off", "frosted", "soft", "real"];
@@ -89,9 +93,46 @@
 			return effective;
 		}
 
+		// ---- v1.6.0: scene-less liquid-glass fallback ----
+		/**
+		 * The depth recipe normally rides on the wallpaper scene layer. The wallpaper
+		 * module is optional and its scene can be torn down, and without it a non-off
+		 * depth would look like "nothing happened". The stylesheet therefore also paints
+		 * a fixed data-tl-liquid-fallback layer; this installer owns only that node's
+		 * lifetime. There is exactly one node, it is a direct child of body, and it is
+		 * pointless (and would cost a full-viewport compositing layer) while the scene
+		 * exists or while low power has flattened the effect.
+		 */
+		function liquidFallbackWanted(effective) {
+			if (effective === "off") return false;
+			const body = document.body;
+			if (body === null) return false;
+			if (body.hasAttribute("data-tl-lowpower")) return false;
+			// installScene() injects the scene as body.firstChild; a direct query is enough
+			// and avoids the scene-must-be-a-descendant assumption.
+			return body.querySelector("[data-tl-scene]") === null;
+		}
+
+		/** Idempotent: create / keep / remove the single fallback node for this depth. */
+		function syncLiquidFallback(effective) {
+			const body = document.body;
+			if (body === null) return;
+			const existing = document.querySelector("[data-tl-liquid-fallback]");
+			if (liquidFallbackWanted(effective)) {
+				if (existing !== null) return;
+				const node = document.createElement("div");
+				node.setAttribute("data-tl-liquid-fallback", "");
+				node.setAttribute("aria-hidden", "true");
+				body.insertBefore(node, body.firstChild);
+				return;
+			}
+			if (existing !== null) existing.remove();
+		}
+
 		function installGlassDepth() {
 			let depth = readGlassDepth();
 			let effective = applyGlassDepth(depth);
+			syncLiquidFallback(effective);
 			glassDepthController = {
 				read: () => depth,
 				effective: () => effective,
@@ -99,6 +140,7 @@
 				apply: (next) => {
 					depth = GLASS_DEPTHS.includes(next) ? next : GLASS_DEPTH_DEFAULT;
 					effective = applyGlassDepth(depth);
+					syncLiquidFallback(effective);
 					try {
 						globalThis.localStorage.setItem(GLASS_DEPTH_KEY, depth);
 					} catch {
@@ -108,6 +150,7 @@
 				},
 				refresh: () => {
 					effective = applyGlassDepth(depth);
+					syncLiquidFallback(effective);
 					return effective;
 				},
 			};
@@ -115,10 +158,19 @@
 			try {
 				observer = new MutationObserver(() => {
 					const next = effectiveGlassDepth(depth);
-					if (next === effective) return;
-					effective = applyGlassDepth(depth);
+					if (next !== effective) effective = applyGlassDepth(depth);
+					// childList only (no deep observation): the scene is injected/removed as a
+					// direct body child, and watching descendants would fire on every streaming
+					// token of the transcript. The call is cheap and syncLiquidFallback is a
+					// no-op when the wanted state has not changed. Observing the attributes as
+					// well keeps the low-power transition in the same callback.
+					syncLiquidFallback(effective);
 				});
-				observer.observe(document.body, { attributes: true, attributeFilter: ["data-tl-lowpower", "data-tl-lowpower-reason"] });
+				observer.observe(document.body, {
+					attributes: true,
+					attributeFilter: ["data-tl-lowpower", "data-tl-lowpower-reason"],
+					childList: true,
+				});
 			} catch (error) {
 				note("glass-depth:observer", error);
 			}
@@ -129,6 +181,8 @@
 				} catch (error) {
 					note("glass-depth:disconnect", error);
 				}
+				const fallback = document.querySelector("[data-tl-liquid-fallback]");
+				if (fallback !== null) fallback.remove();
 				const body = document.body;
 				if (body !== null) {
 					body.removeAttribute("data-tl-glass-depth");
