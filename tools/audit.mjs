@@ -421,6 +421,27 @@ report(
   "v1.6.2 keeps the scene veil (sky-light tint) after removing the corner artwork",
 )
 
+// ---- 15. v1.6.3: display name is 天光 (no legacy 遐蝶) + DSH 0.2.0/0.2.1/0.2.2 declared ----
+const skinManifest = JSON.parse(fs.readFileSync(fileURLToPath(new URL('../skin.json', import.meta.url)), 'utf8'))
+const readmeText = fs.readFileSync(fileURLToPath(new URL('../README.md', import.meta.url)), 'utf8')
+report(
+  skinManifest.name === '天光' &&
+    skinManifest.nameEn === 'TIANLIGHT' &&
+    !JSON.stringify(skinManifest).includes('遐蝶') &&
+    !readmeText.includes('遐蝶')
+    ? 'PASS'
+    : 'FAIL',
+  'v1.6.3 display name is 天光 (the legacy 遐蝶 name is gone from the manifest and README)',
+)
+report(
+  Array.isArray(skinManifest.dshCompatibilityTested) &&
+    ['0.2.0-rc.2', '0.2.1-rc.5', '0.2.2-rc.1'].every((version) => skinManifest.dshCompatibilityTested.includes(version)) &&
+    skinManifest.dshCompatibilityRange === '>=0.2.0-rc.1 <0.3.0'
+    ? 'PASS'
+    : 'FAIL',
+  'v1.6.3 declares DSH 0.2.0 / 0.2.1 / 0.2.2 compatibility (checked in the multi-version matrix)',
+)
+
 console.log(issues === 0 ? 'AUDIT: no blocking issues' : `AUDIT: ${issues} blocking issue(s)`)
 process.exitCode = issues === 0 ? 0 : 1
 

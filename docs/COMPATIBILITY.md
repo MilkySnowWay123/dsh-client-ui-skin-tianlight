@@ -351,6 +351,22 @@ compat-matrix 输出；如需重新生成，按 §9 运行 `npm run compat` 与 
 - Slot API：`ctx.inject(['slots'])`、`slots.inject(key, cb)`、`slots.register({name,id,order}, Component)`
   在 0.2.0/0.2.1/0.2.2 相同（0.2.2 的渲染器实现与 0.2.0 同源）。
 
+### 6.1 2026-11-10 三线实测（v1.6.3 实证）
+
+对三份真实安装（npm 缓存 / 本机 diag/versions 目录）重新跑 `tools/compat-matrix.mjs`、`tools/hook-scan.mjs`、
+`tools/upgrade-check.mjs`，证据在 `diag/skinlab/evidence/compat-v163/`（`matrix.json` + 每版本各一份
+`hookscan-<ver>.log` / `upgrade-check-<ver>.log`）：
+
+| DSH 版本 | bundles | 钩子层 | slot / 产品 data / 类名分段 | 客户端契约 | verdict |
+|---|---|---|---|---|---|
+| 0.2.0-rc.2 | 72 | slot + product-data + class-segments | 全在（advisory `data-message-bubble` 无 → `_bubble` 兜底） | 11/11 true | **COMPATIBLE** |
+| 0.2.1-rc.5 | 77 | slot + product-data + class-segments | 全在（advisory `data-message-bubble` 无 → `_bubble` 兜底） | 11/11 true | **COMPATIBLE** |
+| 0.2.2-rc.1 | 86 | slot + product-data + class-segments | 全在（advisory `data-message-bubble` 有 → 前进钩子生效） | 11/11 true | **COMPATIBLE** |
+
+- `hookscan-*.log` 三份结论均为 `all bridge hooks present`；`upgrade-check-*.log` 三份均为 `all upgrade assumptions hold`。
+- `matrix.json` 的 `missing` 三行均为空；`data-message-bubble` 仅 0.2.2 出现（与 §6 既有判断一致），由 `_bubble` 段兜底吸收。
+- **结论**：三条线共用同一份构建与同一套 CSS，**无需版本 if 分支**——桥按「Slot 契约 → 产品 `data-*` → 类名分段」分层发现（§7），本次实测确认该策略对 0.2.0 / 0.2.1 / 0.2.2 同时成立。
+
 ## 7. 适配策略：分层发现，而不是版本分支
 
 `src/65-bridge.js` 在运行时按以下顺序找宿主表面，命中哪层用哪层：

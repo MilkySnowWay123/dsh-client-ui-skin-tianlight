@@ -12,7 +12,7 @@ v0.6.0 新增 **Wallpaper Engine 库集成**：宿主扫描本机 WE 库 + `scen
 最终构建 **`acb17a6` / 896,889 字符 / 930,994 字节 / 22 片段**；静态链 build 22/22、test 67/67 全绿；
 W 自检 web/Desktop 各 23/23（见 [docs/RELEASE-0.6.0.md](docs/RELEASE-0.6.0.md) §6）。
 
-**当前（v1.6.1）**：浏览器半 **26 个片段 / 25 个 region**、宿主半 12 个模块；`lib/client.js` 由 `tools/build.mjs` 按显式顺序拼装（v1.6.0 基线 1,231,576 字符 / 1,272,497 字节）。片段数演变：v1.0.0 新增 `42-life.js`，v1.1.0 新增 `44-pet-brain.js` / `76-role-hub.js`，v1.2.0 新增 `48-pet-agent.js`，v1.3.0 移除 `74-life-settings.js` 后稳定在 26 片段。v1.6.0：安全上限整体上调 + 液态玻璃覆盖全部界面（分组 A/B + 场景缺失 fallback）；v1.6.1：液态玻璃 v2（OriginOS 风）+ 侧栏「新会话」按钮全档皮肤化 + DSH 主界面天气胶囊。
+**当前（v1.6.3）**：浏览器半 **26 个片段 / 25 个 region**、宿主半 12 个模块；`lib/client.js` 由 `tools/build.mjs` 按显式顺序拼装（v1.6.0 基线 1,231,576 字符 / 1,272,497 字节）。片段数演变：v1.0.0 新增 `42-life.js`，v1.1.0 新增 `44-pet-brain.js` / `76-role-hub.js`，v1.2.0 新增 `48-pet-agent.js`，v1.3.0 移除 `74-life-settings.js` 后稳定在 26 片段。v1.6.0：安全上限整体上调 + 液态玻璃覆盖全部界面（分组 A/B + 场景缺失 fallback）；v1.6.1：液态玻璃 v2（OriginOS 风）+ 侧栏「新会话」按钮全档皮肤化 + DSH 主界面天气胶囊；v1.6.2：移除壁纸左上角固定晨光装饰（`CREST_SVG` / `[data-tl-crest]`，veil 保留）；v1.6.3：显示名统一为「天光」+ DSH 0.2.0/0.2.1/0.2.2 三线兼容实证（见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) §6.1）。
 
 **v0.5.3 行为变更**：皮肤显式语言只切皮肤文案，**不再调用 `locale.setLocale()`**（不联动 DSH 界面语言）；
 「跟随 DSH」仍走 locale 订阅。C1/C2/C3/C4 默认 OFF（已持久化选择保留）。
@@ -318,5 +318,6 @@ additive 入口，不需要新的 DSH 钩子：旧宿主缺前缀时客户端按
 - [x] v1.4.0：高风险权限改为「默认关 + 显式授权 + 适配器 + 审计」，`agent`（驱动 DSH）仍永久禁止；v1.5.0：玻璃默认 soft + 中枢预览 / 天气卡 / 一键自检 / 反馈面板
 - [x] v1.6.0：安全上限整体上调（主动开口 12/50、本地 chat 20/分 1200/天、LLM 日 60/上限 120、Agent 日 30/上限 100 等）+ 液态玻璃覆盖全部界面（分组 A/B + 场景缺失 fallback）
 - [x] v1.6.1：液态玻璃 v2（OriginOS 风多层 specular/亮暗边/细噪点/外柔光/回弹）+ 侧栏「新会话」按钮全档皮肤化 + DSH 主界面天气胶囊
+- [x] v1.6.2：移除壁纸左上角固定晨光装饰（`CREST_SVG` / `[data-tl-crest]`；场景层顺序与 veil 保留）；v1.6.3：显示名统一「天光」+ DSH 0.2.0-rc.2 / 0.2.1-rc.5 / 0.2.2-rc.1 三线 compat-matrix / hook-scan / upgrade-check 实证全绿
 - [ ] 客户端纯逻辑（取色数学、弹簧积分、轮播选片、配方归一化、天气码映射）抽成可单测模块
 - [ ] 给 CI 加一条：DSH 新版本发布时自动跑 `compat-matrix.mjs` + `upgrade-check.mjs`（CI 没有 DSH 安装，需自托管 runner）

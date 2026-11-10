@@ -2,6 +2,15 @@
 
 本文件由 `node tools/release.mjs --note "…"` 维护；条目按版本倒序，格式参考 Keep a Changelog。
 
+## [1.6.3] - 2026-11-10
+
+### 发布说明
+
+- **显示名统一为「天光」**：`skin.json` 的 `name` 改为「天光」（`nameEn` 保持 `TIANLIGHT`），README 标题改为「天光（TIANLIGHT）— DSH Web 皮肤插件」（去掉旧显示名里的修饰前缀）。**仅显示文本变化**：skin id / `package` 包名 / `bodyAttr`（`data-dsh-tianlight`）/ `wiring.id` / 全部设置键与 `state/` 数据均不变，旧用户无迁移成本；反馈模板的版本示例同步 1.6.3。
+- **DSH 三线兼容性实证（2026-11-10）**：0.2.0-rc.2 / 0.2.1-rc.5 / 0.2.2-rc.1 三份真实安装——bundles 72/77/86，钩子层同为 slot+product-data+class-segments；`slot` / `data-composer-card` / `data-sidebar-collapsed` / `data-trigger-menu` / `data-slot` / `_sidebarCol` / `_card` / `_trigger*` / `_bubble` / `_menu` / `_panel`+`_mask` / `[data-chat-running]` 三线全在，11 项客户端契约全 true、`missing` 全空，verdict 三行全 **COMPATIBLE**；`data-message-bubble` advisory 仅 0.2.2 有（0.2.0/0.2.1 由 `_bubble` 兜底）。hook-scan 三份均 `all bridge hooks present`、upgrade-check 三份均 `all upgrade assumptions hold`；证据 `diag/skinlab/evidence/compat-v163/`（`matrix.json` + 6 份日志），详见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) §6.1。
+- **版本与文档**：`BUILD`/`HOST_BUILD`/`package.json`/`skin.json` = **1.6.3**；新增 [docs/RELEASE-1.6.3.md](docs/RELEASE-1.6.3.md)；公开上传物/发布说明命名 **v1.0.2**（内部构建 1.6.3）。
+- **验证**：静态链 build/build --check 26/26、test 67/67、structure --strict、audit（v1.6.3 新守卫 2 条：显示名不含旧前缀 + DSH 三版本兼容声明）、check-css、verify、i18n-audit（zh=en 1216 键）全绿；Node 冒烟 **631/631 PASS**（v1.6.2 的 626 条回归 + 新增 5 条 S78–S82：名称 / 兼容元数据 / 兼容证据），构建 sha `926f6f17…`（`lib/client.js` 1,300,780 B），证据 `diag/skinlab/runs/20261110-194055-v163-v163-node-smoke/`；同一 build sha 复跑同样 631/631。
+
 ## [1.6.2] - 2026-11-10
 
 ### 发布说明
