@@ -1,0 +1,61 @@
+name: 反馈 / Feedback
+description: 报告天光皮肤的问题、功能反馈或建议（bug / feature / feedback）
+title: "[feedback] "
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！桌宠中枢里有「反馈」面板，可一键复制环境信息/下载 JSON 后粘贴到这里。
+        请勿粘贴 API key、Token、隐私文件内容。
+        更多说明见 [docs/FEEDBACK.md](../docs/FEEDBACK.md)。
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 类型
+      options:
+        - 功能不生效 / 没有反应
+        - 显示或样式问题
+        - 桌宠 / AI / 权限相关
+        - 文档与安装
+        - 建议 / 新功能
+        - 其他
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 天光版本
+      description: 例如 v1.5.0（可在角色中枢或 CHANGELOG 查看）
+      placeholder: v1.5.0
+    validations:
+      required: true
+  - type: input
+    id: dsh
+    attributes:
+      label: DSH 版本
+      description: DSH Desktop / Harness 版本
+      placeholder: 0.2.2-rc.1
+  - type: textarea
+    id: what
+    attributes:
+      label: 发生了什么
+      description: 复现步骤 + 预期行为 + 实际现象；如与玻璃/天气/形象有关，请说明角色中枢里看到的档位/状态。
+      placeholder: |
+        1. 打开角色中枢（右键桌宠）
+        2. 切换到「液态玻璃 → 真实」
+        3. 预期/实际：……
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境信息（可选）
+      description: 从角色中枢「反馈 → 复制」粘贴，或填写浏览器/系统信息
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 确认
+      options:
+        - label: 我没有粘贴任何凭据/隐私内容
+          required: true

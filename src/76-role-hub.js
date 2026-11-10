@@ -76,6 +76,8 @@
 				"hub.glass.lowered": "当前档：{depth}（实际 {effective}，已自动降级）",
 				"hub.glass.unavailable": "玻璃控制器未就绪。",
 				"hub.glass.done": "玻璃质感：{depth}",
+				"hub.glass.previewHint": "默认柔和；真实更明显、磨砂最安静；低电量/15fps 自动降级。",
+				"hub.glass.preview": "当前：{depth} · 实际：{effective}",
 				"hub.media.title": "桌宠形象",
 				"hub.media.select": "选择形象",
 				"hub.media.apply": "应用形象",
@@ -85,6 +87,8 @@
 				"hub.media.rejected": "已忽略超过 32 MiB 的素材：{names}",
 				"hub.media.unavailable": "生活引擎未就绪，暂时不能换形象。",
 				"hub.media.failed": "切换失败：{reason}",
+				"hub.media.defaultRestored": "已恢复默认形象。",
+				"hub.media.restoreDefault": "恢复默认形象",
 				"hub.media.reason.unknown": "素材已不在库中",
 				"hub.media.reason.catalog": "素材列表暂不可用",
 				"hub.media.reason.internal": "内部错误",
@@ -171,6 +175,89 @@
 				"hub.cap.approve": "代审批",
 				"hub.cap.message": "代发消息",
 				"hub.cap.install": "安装插件",
+				"hub.weather.title": "天气",
+				"hub.weather.hint": "天气由独立天气引擎提供；未启用或没有位置时不会联网请求。",
+				"hub.weather.unavailable": "天气引擎未接入。",
+				"hub.weather.disabled": "天气未启用。",
+				"hub.weather.waiting": "等待天气数据…",
+				"hub.weather.noLocation": "还没有位置：输入城市解析，或使用当前定位。",
+				"hub.weather.error": "天气获取失败：{reason}",
+				"hub.weather.normal": "{description} · {temperature}°C · 更新于 {time}",
+				"hub.weather.updated": "更新于 {time}",
+				"hub.weather.cityResolved": "城市已设为 {name}。",
+				"hub.weather.unknown": "未知天气",
+				"hub.weather.location": "位置：{name}",
+				"hub.weather.enable": "启用天气",
+				"hub.weather.city": "城市",
+				"hub.weather.cityPlaceholder": "城市名（如 上海）",
+				"hub.weather.resolve": "解析城市",
+				"hub.weather.lat": "纬度",
+				"hub.weather.lon": "经度",
+				"hub.weather.coords": "应用坐标",
+				"hub.weather.locate": "使用当前定位",
+				"hub.weather.refresh": "刷新天气",
+				"hub.weather.locating": "正在定位…",
+				"hub.weather.resolving": "正在解析城市…",
+				"hub.weather.applied": "天气设置已更新。",
+				"hub.weather.enabledOn": "天气已启用。",
+				"hub.weather.enabledOff": "天气已停用。",
+				"hub.weather.invalidCity": "请先输入城市。",
+				"hub.weather.invalidCoords": "坐标不合法：纬度 -90..90、经度 -180..180。",
+				"hub.weather.resolveFailed": "无法解析城市：{reason}",
+				"hub.weather.refreshed": "天气已刷新。",
+				"hub.weather.failed": "操作失败：{reason}",
+				"hub.weather.reason.default": "未知原因",
+				"hub.weather.reason.network": "网络不可用",
+				"hub.weather.reason.timeout": "请求超时",
+				"hub.weather.reason.invalid": "响应不合法",
+				"hub.weather.reason.geocode": "城市解析失败",
+				"hub.weather.reason.geolocation": "定位不可用",
+				"hub.weather.reason.unavailable": "天气服务不可用",
+				"hub.weather.state.unavailable": "不可用",
+				"hub.weather.state.disabled": "未启用",
+				"hub.weather.state.noLocation": "无位置",
+				"hub.weather.state.waiting": "等待数据",
+				"hub.weather.state.error": "错误",
+				"hub.weather.state.normal": "正常",
+				"hub.selftest.title": "功能自检",
+				"hub.selftest.hint": "逐项检查中枢依赖的运行时接口是否正常，反馈问题时可附上结果。",
+				"hub.selftest.run": "运行自检",
+				"hub.selftest.running": "检查中…",
+				"hub.selftest.copy": "复制结果",
+				"hub.selftest.copied": "自检结果已复制。",
+				"hub.selftest.copyFailed": "复制失败：请手动选择文本。",
+				"hub.selftest.pass": "通过",
+				"hub.selftest.fail": "失败",
+				"hub.selftest.summary": "{pass} 项通过 / {fail} 项失败",
+				"hub.selftest.empty": "还没有运行自检。",
+				"hub.selftest.item.life": "生活引擎",
+				"hub.selftest.item.pet": "AI 大脑/权限",
+				"hub.selftest.item.glass": "玻璃控制器",
+				"hub.selftest.item.media": "形象媒体库",
+				"hub.selftest.item.weather": "天气",
+				"hub.selftest.item.agent": "AI Agent（实验）",
+				"hub.selftest.item.hub": "中枢自身",
+				"hub.selftest.unknown": "未知项",
+				"hub.selftest.detail.ok": "正常",
+				"hub.selftest.detail.missing": "未接入",
+				"hub.selftest.detail.empty": "无数据",
+				"hub.selftest.detail.error": "异常：{reason}",
+				"hub.feedback.title": "反馈",
+				"hub.feedback.hint": "把环境与功能状态一起发给作者（不含对话内容/文件）；也可直接打开 GitHub Issue。",
+				"hub.feedback.placeholder": "遇到了什么问题？（可留空，使用默认模板）",
+				"hub.feedback.copy": "复制反馈信息",
+				"hub.feedback.copied": "反馈信息已复制。",
+				"hub.feedback.copyFailed": "复制失败：请手动选择文本。",
+				"hub.feedback.issue": "打开 GitHub Issue",
+				"hub.feedback.issueOpened": "已打开 GitHub Issue 页面。",
+				"hub.feedback.issueBlocked": "浏览器拦截了弹窗，请允许弹窗后重试。",
+				"hub.feedback.issueTitle": "[天光 v1.5] 角色中枢反馈",
+				"hub.feedback.issueBody": "请描述问题或期望，并附上下方复制的反馈信息。",
+				"hub.feedback.download": "下载 JSON",
+				"hub.feedback.downloaded": "已下载 {name}。",
+				"hub.feedback.downloadFailed": "下载失败：{reason}",
+				"hub.feedback.unsupported": "当前环境不支持该操作。",
+				"hub.feedback.version": "版本：{version}",
 				"hub.audit.title": "审计",
 				"hub.audit.empty": "暂无记录。",
 				"hub.audit.unavailable": "审计未接入。",
@@ -286,6 +373,8 @@
 				"hub.glass.lowered": "Depth: {depth} (effective {effective}, auto-lowered)",
 				"hub.glass.unavailable": "Glass control is unavailable.",
 				"hub.glass.done": "Glass depth: {depth}",
+				"hub.glass.previewHint": "Soft is the default; Real is the most visible, Frosted the quietest; auto-lowered on low power or 15fps.",
+				"hub.glass.preview": "Current: {depth} · effective: {effective}",
 				"hub.media.title": "Companion look",
 				"hub.media.select": "Choose look",
 				"hub.media.apply": "Apply look",
@@ -295,6 +384,8 @@
 				"hub.media.rejected": "Skipped items over 32 MiB: {names}",
 				"hub.media.unavailable": "Life engine unavailable; the look cannot change now.",
 				"hub.media.failed": "Could not switch: {reason}",
+				"hub.media.defaultRestored": "Restored the default look.",
+				"hub.media.restoreDefault": "Restore default look",
 				"hub.media.reason.unknown": "The item is no longer in the library",
 				"hub.media.reason.catalog": "The media catalog is unavailable",
 				"hub.media.reason.internal": "Internal error",
@@ -381,6 +472,89 @@
 				"hub.cap.approve": "Approve",
 				"hub.cap.message": "Message",
 				"hub.cap.install": "Install",
+				"hub.weather.title": "Weather",
+				"hub.weather.hint": "Weather comes from a separate weather engine; nothing is requested while disabled or without a location.",
+				"hub.weather.unavailable": "Weather engine is not available.",
+				"hub.weather.disabled": "Weather is off.",
+				"hub.weather.waiting": "Waiting for weather data…",
+				"hub.weather.noLocation": "No location yet: resolve a city or use your current location.",
+				"hub.weather.error": "Weather failed: {reason}",
+				"hub.weather.normal": "{description} · {temperature}°C · updated {time}",
+				"hub.weather.updated": "updated {time}",
+				"hub.weather.cityResolved": "City set to {name}.",
+				"hub.weather.unknown": "Unknown weather",
+				"hub.weather.location": "Location: {name}",
+				"hub.weather.enable": "Enable weather",
+				"hub.weather.city": "City",
+				"hub.weather.cityPlaceholder": "City name (e.g. Shanghai)",
+				"hub.weather.resolve": "Resolve city",
+				"hub.weather.lat": "Latitude",
+				"hub.weather.lon": "Longitude",
+				"hub.weather.coords": "Apply coordinates",
+				"hub.weather.locate": "Use current location",
+				"hub.weather.refresh": "Refresh weather",
+				"hub.weather.locating": "Locating…",
+				"hub.weather.resolving": "Resolving city…",
+				"hub.weather.applied": "Weather settings updated.",
+				"hub.weather.enabledOn": "Weather enabled.",
+				"hub.weather.enabledOff": "Weather disabled.",
+				"hub.weather.invalidCity": "Type a city first.",
+				"hub.weather.invalidCoords": "Invalid coordinates: latitude -90..90, longitude -180..180.",
+				"hub.weather.resolveFailed": "Could not resolve the city: {reason}",
+				"hub.weather.refreshed": "Weather refreshed.",
+				"hub.weather.failed": "Action failed: {reason}",
+				"hub.weather.reason.default": "unknown reason",
+				"hub.weather.reason.network": "network unavailable",
+				"hub.weather.reason.timeout": "request timed out",
+				"hub.weather.reason.invalid": "invalid response",
+				"hub.weather.reason.geocode": "could not resolve the city",
+				"hub.weather.reason.geolocation": "geolocation unavailable",
+				"hub.weather.reason.unavailable": "weather service unavailable",
+				"hub.weather.state.unavailable": "unavailable",
+				"hub.weather.state.disabled": "off",
+				"hub.weather.state.noLocation": "no location",
+				"hub.weather.state.waiting": "waiting",
+				"hub.weather.state.error": "error",
+				"hub.weather.state.normal": "ok",
+				"hub.selftest.title": "Self-test",
+				"hub.selftest.hint": "Checks the runtime interfaces the hub depends on; attach the result when reporting an issue.",
+				"hub.selftest.run": "Run self-test",
+				"hub.selftest.running": "Checking…",
+				"hub.selftest.copy": "Copy result",
+				"hub.selftest.copied": "Self-test result copied.",
+				"hub.selftest.copyFailed": "Copy failed: select the text manually.",
+				"hub.selftest.pass": "PASS",
+				"hub.selftest.fail": "FAIL",
+				"hub.selftest.summary": "{pass} passed / {fail} failed",
+				"hub.selftest.empty": "The self-test has not run yet.",
+				"hub.selftest.item.life": "Life engine",
+				"hub.selftest.item.pet": "AI brain / permissions",
+				"hub.selftest.item.glass": "Glass controller",
+				"hub.selftest.item.media": "Media library",
+				"hub.selftest.item.weather": "Weather",
+				"hub.selftest.item.agent": "AI Agent",
+				"hub.selftest.item.hub": "Role hub",
+				"hub.selftest.unknown": "Unknown item",
+				"hub.selftest.detail.ok": "ok",
+				"hub.selftest.detail.missing": "not available",
+				"hub.selftest.detail.empty": "no data",
+				"hub.selftest.detail.error": "error: {reason}",
+				"hub.feedback.title": "Feedback",
+				"hub.feedback.hint": "Send the environment and feature state to the author (no conversation or files); you can also open a GitHub issue directly.",
+				"hub.feedback.placeholder": "What went wrong? (optional; the default template is used when empty)",
+				"hub.feedback.copy": "Copy feedback",
+				"hub.feedback.copied": "Feedback copied.",
+				"hub.feedback.copyFailed": "Copy failed: select the text manually.",
+				"hub.feedback.issue": "Open GitHub issue",
+				"hub.feedback.issueOpened": "Opened the GitHub issue page.",
+				"hub.feedback.issueBlocked": "The browser blocked the popup; allow popups and retry.",
+				"hub.feedback.issueTitle": "[Tianlight v1.5] Role hub feedback",
+				"hub.feedback.issueBody": "Describe the problem or expectation and attach the copied feedback below.",
+				"hub.feedback.download": "Download JSON",
+				"hub.feedback.downloaded": "Downloaded {name}.",
+				"hub.feedback.downloadFailed": "Download failed: {reason}",
+				"hub.feedback.unsupported": "This action is not supported in this environment.",
+				"hub.feedback.version": "Version: {version}",
 				"hub.audit.title": "Audit",
 				"hub.audit.empty": "No records yet.",
 				"hub.audit.unavailable": "Audit unavailable.",
@@ -496,6 +670,34 @@
 			"catalog-unavailable": "hub.media.reason.catalog",
 			"internal-error": "hub.media.reason.internal",
 		};
+		/** Static key map for every weather state (the i18n audit scans literals). */
+		const HUB_WEATHER_STATE_KEYS = {
+			unavailable: "hub.weather.state.unavailable",
+			disabled: "hub.weather.state.disabled",
+			noLocation: "hub.weather.state.noLocation",
+			waiting: "hub.weather.state.waiting",
+			error: "hub.weather.state.error",
+			normal: "hub.weather.state.normal",
+		};
+		/** Raw summary().error codes from the weather engine (not localized by it). */
+		const HUB_WEATHER_REASON_KEYS = {
+			network: "hub.weather.reason.network",
+			timeout: "hub.weather.reason.timeout",
+			invalid: "hub.weather.reason.invalid",
+			geocode: "hub.weather.reason.geocode",
+			geolocation: "hub.weather.reason.geolocation",
+			unavailable: "hub.weather.reason.unavailable",
+		};
+		/** Static key map for the seven self-test rows. */
+		const HUB_SELFTEST_ITEM_KEYS = {
+			life: "hub.selftest.item.life",
+			pet: "hub.selftest.item.pet",
+			glass: "hub.selftest.item.glass",
+			media: "hub.selftest.item.media",
+			weather: "hub.selftest.item.weather",
+			agent: "hub.selftest.item.agent",
+			hub: "hub.selftest.item.hub",
+		};
 		const HUB_AI_REASON_KEYS = {
 			paused: "hub.ai.reason.paused",
 			permission: "hub.ai.reason.permission",
@@ -564,6 +766,15 @@
 		function hubPetAgent() {
 			try {
 				return globalThis.tianlightPetAgent !== null && globalThis.tianlightPetAgent !== undefined ? globalThis.tianlightPetAgent : null;
+			} catch {
+				return null;
+			}
+		}
+
+		/** The v1.5.0 weather controller bridge (`globalThis.tianlightWeather`); optional. */
+		function hubWeather() {
+			try {
+				return globalThis.tianlightWeather !== null && globalThis.tianlightWeather !== undefined ? globalThis.tianlightWeather : null;
 			} catch {
 				return null;
 			}
@@ -662,6 +873,120 @@
 			}
 		}
 
+		/** Skin/bundle version for feedback payloads (diagnostic instance first, then BUILD). */
+		function hubVersionString() {
+			try {
+				const instance = globalThis.__dshTianlightInstance;
+				if (instance !== null && instance !== undefined) {
+					if (typeof instance.version === "string" && instance.version !== "") return instance.version;
+					if (typeof instance.build === "string" && instance.build !== "") return instance.build;
+				}
+			} catch {
+				// diagnostics are optional
+			}
+			try {
+				if (typeof HOST_BUILD === "string" && HOST_BUILD !== "") return HOST_BUILD;
+			} catch {
+				// the constant may be absent in a stripped harness
+			}
+			return "unknown";
+		}
+
+		/** Normalize the documented v1.5 weather snapshot (never throws). */
+		function hubWeatherSnapshot(weather) {
+			const controller = weather !== null && weather !== undefined ? weather : hubWeather();
+			if (controller === null) return null;
+			const snapshot = hubTry(() => (typeof controller.summary === "function" ? controller.summary() : null), null, "weather-summary");
+			if (snapshot === null || typeof snapshot !== "object") return null;
+			const last = snapshot.last !== null && typeof snapshot.last === "object" ? snapshot.last : null;
+			return {
+				enabled: snapshot.enabled === true,
+				hasLocation: snapshot.hasLocation === true,
+				runtime: snapshot.runtime === true,
+				last,
+				text: typeof snapshot.text === "string" ? snapshot.text : "",
+				error: typeof snapshot.error === "string" ? snapshot.error : "",
+				updatedAt: Number.isFinite(snapshot.updatedAt) ? snapshot.updatedAt : null,
+			};
+		}
+
+		/** Clipboard write with a textarea fallback (both paths are best effort). */
+		async function hubCopyText(text) {
+			const payload = typeof text === "string" ? text : String(text ?? "");
+			try {
+				const navigatorRef = typeof navigator !== "undefined" ? navigator : null;
+				if (navigatorRef !== null && navigatorRef.clipboard !== null && navigatorRef.clipboard !== undefined && typeof navigatorRef.clipboard.writeText === "function") {
+					await navigatorRef.clipboard.writeText(payload);
+					return true;
+				}
+			} catch {
+				// fall through to the textarea path
+			}
+			try {
+				const doc = typeof document !== "undefined" && document !== null ? document : null;
+				if (doc === null || doc.body === null || doc.body === undefined) return false;
+				const area = doc.createElement("textarea");
+				area.value = payload;
+				area.setAttribute("readonly", "");
+				area.className = "tl-hub-copy-fallback";
+				doc.body.appendChild(area);
+				try {
+					if (typeof area.select === "function") area.select();
+					if (typeof area.setSelectionRange === "function") area.setSelectionRange(0, payload.length);
+				} catch {
+					// selection is best effort
+				}
+				let copied = false;
+				try {
+					copied = typeof doc.execCommand === "function" ? doc.execCommand("copy") === true : false;
+				} catch {
+					copied = false;
+				}
+				area.remove();
+				return copied;
+			} catch {
+				return false;
+			}
+		}
+
+		/** Download a JSON payload (Blob + object URL, always revoked). */
+		function hubDownloadJson(payload, filename) {
+			try {
+				const doc = typeof document !== "undefined" && document !== null ? document : null;
+				const BlobCtor = typeof Blob !== "undefined" ? Blob : null;
+				const URLApi = typeof URL !== "undefined" ? URL : null;
+				if (doc === null || BlobCtor === null || URLApi === null || typeof URLApi.createObjectURL !== "function") {
+					return { ok: false, reason: "unsupported" };
+				}
+				const text = JSON.stringify(payload, null, 2);
+				const blob = new BlobCtor([text], { type: "application/json" });
+				const url = URLApi.createObjectURL(blob);
+				let anchor = null;
+				try {
+					anchor = doc.createElement("a");
+					anchor.href = url;
+					anchor.download = filename;
+					anchor.rel = "noopener";
+					if (doc.body !== null && doc.body !== undefined) doc.body.appendChild(anchor);
+					if (typeof anchor.click === "function") anchor.click();
+					return { ok: true, name: filename };
+				} finally {
+					try {
+						if (anchor !== null && typeof anchor.remove === "function") anchor.remove();
+					} catch {
+						// node already gone
+					}
+					try {
+						URLApi.revokeObjectURL(url);
+					} catch {
+						// revoke is best effort
+					}
+				}
+			} catch (error) {
+				return { ok: false, reason: String(error?.message ?? error) };
+			}
+		}
+
 		/**
 		 * Normalize chat() results from the parallel pet-brain implementation. The
 		 * documented contract is `chat(text)`, and the UI accepts both a plain string
@@ -737,6 +1062,10 @@
 			let agentSessionsCache = [];
 			// v1.4.0 permission rows that are armed for their second consent click.
 			const permConfirmPending = new Map();
+			// v1.5.0 weather / selftest state.
+			let weatherBusy = false;
+			let selftestBusy = false;
+			const selftestResults = [];
 			const logEntries = [];
 
 			const setLastError = (stage, error) => {
@@ -999,14 +1328,25 @@
 						button.setAttribute("aria-pressed", "false");
 					}
 				}
+				const syncGlassPreview = () => {
+					if (ui === null || ui.glassPreview === null || ui.glassPreview === undefined) return;
+					ui.glassPreview.setAttribute("data-tl-glass-preview", depth);
+					ui.glassPreview.setAttribute("data-depth", depth);
+					ui.glassPreview.setAttribute("data-effective", effective);
+					if (ui.glassPreviewLabel !== null && ui.glassPreviewLabel !== undefined) {
+						ui.glassPreviewLabel.textContent = TL_T("hub.glass.preview", { depth: hubGlassLabel(depth), effective: hubGlassLabel(effective) });
+					}
+				};
 				if (controller === null) {
 					ui.glassEffective.textContent = TL_T("hub.glass.unavailable");
+					syncGlassPreview();
 					return;
 				}
 				ui.glassEffective.textContent =
 					depth === effective
 						? TL_T("hub.glass.effective", { depth: hubGlassLabel(depth) })
 						: TL_T("hub.glass.lowered", { depth: hubGlassLabel(depth), effective: hubGlassLabel(effective) });
+				syncGlassPreview();
 			};
 			const applyGlass = (level) => {
 				const controller = hubGlassDepthController();
@@ -1033,6 +1373,7 @@
 						ui.mediaSelect.disabled = true;
 						ui.mediaApply.disabled = true;
 						ui.mediaUpload.disabled = true;
+						ui.mediaDefault.disabled = true;
 					}
 					setMediaStatus(TL_T("hub.media.unavailable"));
 					return;
@@ -1068,6 +1409,7 @@
 					select.disabled = false;
 					ui.mediaApply.disabled = false;
 					ui.mediaUpload.disabled = typeof fetch !== "function";
+					ui.mediaDefault.disabled = selected === "default";
 					setMediaStatus(items.length <= 1 ? TL_T("hub.media.empty") : "");
 					ui.mediaRejected.textContent =
 						rejected.length === 0
@@ -1103,6 +1445,30 @@
 					if (ui !== null) ui.mediaApply.disabled = false;
 				}
 				refreshStatus();
+			};
+			/** v1.5.0 "restore default look": setMedia(null), then refresh catalog + note. */
+			const restoreDefaultMedia = async () => {
+				const life = hubLifeEngine();
+				if (ui === null) return;
+				if (life === null || typeof life.setMedia !== "function") {
+					setMediaStatus(TL_T("hub.media.unavailable"));
+					return;
+				}
+				ui.mediaDefault.disabled = true;
+				try {
+					const result = await life.setMedia(null);
+					if (result !== null && typeof result === "object" && result.ok === false) {
+						setMediaStatus(TL_T("hub.media.failed", { reason: hubReasonLabel(result.reason, HUB_MEDIA_REASON_KEYS) }));
+					} else {
+						await refreshMedia();
+						setMediaStatus(TL_T("hub.media.defaultRestored"));
+					}
+				} catch (error) {
+					setLastError("media-default", error);
+					setMediaStatus(TL_T("hub.media.failed", { reason: String(error?.message ?? error) }));
+				} finally {
+					refreshStatus();
+				}
 			};
 			const uploadPetMedia = async (file) => {
 				if (typeof fetch !== "function") return { ok: false, status: 0, reason: TL_T("hub.upload.noFetch") };
@@ -1182,6 +1548,175 @@
 				} finally {
 					if (ui !== null) ui.mediaUpload.disabled = false;
 				}
+			};
+
+			// ---- weather card (v1.5.0, globalThis.tianlightWeather) -----------------
+			const setWeatherNote = (text) => {
+				if (ui !== null && ui.weatherNote !== null && ui.weatherNote !== undefined) ui.weatherNote.textContent = text;
+			};
+			/**
+			 * Render the weather snapshot with the v1.5 precedence:
+			 * disabled -> unmounted (!runtime) -> no location -> error -> ready -> waiting.
+			 * `text` is already localized by the engine, so prefer it and only append the
+			 * raw error code for diagnostics.
+			 */
+			const refreshWeather = () => {
+				if (ui === null) return;
+				const weather = hubWeather();
+				const snapshot = hubWeatherSnapshot(weather);
+				let state = "unavailable";
+				let statusText = TL_T("hub.weather.unavailable");
+				if (weather !== null) {
+					if (snapshot === null) {
+						state = "error";
+						statusText = TL_T("hub.weather.error", { reason: TL_T("hub.weather.reason.default") });
+					} else if (snapshot.enabled !== true) {
+						state = "disabled";
+						statusText = snapshot.text !== "" ? snapshot.text : TL_T("hub.weather.disabled");
+					} else if (snapshot.runtime !== true) {
+						// The module is exposed early but its context runtime is not mounted yet.
+						state = "unavailable";
+						statusText = snapshot.text !== "" ? snapshot.text : TL_T("hub.weather.unavailable");
+					} else if (snapshot.hasLocation !== true) {
+						state = "noLocation";
+						statusText = snapshot.text !== "" ? snapshot.text : TL_T("hub.weather.noLocation");
+					} else if (snapshot.error !== "") {
+						state = "error";
+						const reason = hubReasonLabel(snapshot.error, HUB_WEATHER_REASON_KEYS, "hub.weather.reason.default");
+						statusText = snapshot.text !== "" ? snapshot.text : TL_T("hub.weather.error", { reason });
+						statusText += " (" + snapshot.error + ")";
+					} else if (snapshot.last !== null) {
+						state = "normal";
+						const at = snapshot.updatedAt !== null ? snapshot.updatedAt : snapshot.last !== null && Number.isFinite(snapshot.last.at) ? snapshot.last.at : 0;
+						const base = snapshot.text !== "" ? snapshot.text : TL_T("hub.weather.state.normal");
+						statusText = at > 0 ? base + " · " + TL_T("hub.weather.updated", { time: hubDateTime(at) }) : base;
+					} else {
+						state = "waiting";
+						statusText = snapshot.text !== "" ? snapshot.text : TL_T("hub.weather.waiting");
+					}
+				}
+				ui.weatherStatus.textContent = statusText;
+				ui.weatherStatus.setAttribute("data-tl-hub-weather-state", state);
+				ui.weatherStatus.setAttribute("data-tl-weather-state", TL_T(HUB_WEATHER_STATE_KEYS[state] ?? "hub.weather.state.unavailable"));
+				const interactive = weather !== null && weatherBusy !== true;
+				ui.weatherEnabled.disabled = interactive !== true;
+				ui.weatherEnabled.checked = snapshot !== null && snapshot.enabled === true;
+				for (const node of [ui.weatherCity, ui.weatherResolve, ui.weatherLat, ui.weatherLon, ui.weatherCoords, ui.weatherLocate, ui.weatherRefresh]) {
+					if (node !== null && node !== undefined) node.disabled = interactive !== true;
+				}
+			};
+			/** Shared busy/feedback wrapper for every weather action. */
+			const runWeatherAction = async (busyKey, task) => {
+				const weather = hubWeather();
+				if (weather === null) {
+					setWeatherNote(TL_T("hub.weather.unavailable"));
+					return;
+				}
+				weatherBusy = true;
+				if (busyKey !== "") setWeatherNote(TL_T(busyKey));
+				refreshWeather();
+				try {
+					await task(weather);
+				} catch (error) {
+					setLastError("weather", error);
+					setWeatherNote(TL_T("hub.weather.failed", { reason: String(error?.message ?? error) }));
+				} finally {
+					weatherBusy = false;
+					refreshWeather();
+				}
+			};
+			const onWeatherEnabled = () => {
+				const enabled = ui !== null && ui.weatherEnabled.checked === true;
+				runAsync(() =>
+					runWeatherAction("", async (weather) => {
+						if (typeof weather.apply !== "function") {
+							setWeatherNote(TL_T("hub.weather.failed", { reason: TL_T("hub.weather.reason.default") }));
+							return;
+						}
+						weather.apply({ enabled });
+						setWeatherNote(enabled ? TL_T("hub.weather.enabledOn") : TL_T("hub.weather.enabledOff"));
+					}),
+				);
+			};
+			const onWeatherResolve = () => {
+				runAsync(() =>
+					runWeatherAction("hub.weather.resolving", async (weather) => {
+						if (ui === null) return;
+						const city = String(ui.weatherCity.value ?? "").trim();
+						if (city === "") {
+							setWeatherNote(TL_T("hub.weather.invalidCity"));
+							return;
+						}
+						if (typeof weather.resolveCity !== "function") {
+							setWeatherNote(TL_T("hub.weather.failed", { reason: TL_T("hub.weather.reason.default") }));
+							return;
+						}
+						const result = await weather.resolveCity(city);
+						if (result !== null && typeof result === "object" && result.ok === true) {
+							const name = typeof result.name === "string" && result.name !== "" ? result.name : city;
+							setWeatherNote(TL_T("hub.weather.cityResolved", { name }));
+						} else {
+							const reason =
+								result !== null && typeof result === "object" && typeof result.error === "string" && result.error !== ""
+									? result.error
+									: TL_T("hub.weather.reason.default");
+							setWeatherNote(TL_T("hub.weather.resolveFailed", { reason }));
+						}
+					}),
+				);
+			};
+			const onWeatherCoords = () => {
+				runAsync(() =>
+					runWeatherAction("", async (weather) => {
+						if (ui === null) return;
+						const lat = Number(ui.weatherLat.value);
+						const lon = Number(ui.weatherLon.value);
+						if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+							setWeatherNote(TL_T("hub.weather.invalidCoords"));
+							return;
+						}
+						if (typeof weather.setManualLocation !== "function") {
+							setWeatherNote(TL_T("hub.weather.failed", { reason: TL_T("hub.weather.reason.default") }));
+							return;
+						}
+						const result = weather.setManualLocation(lat, lon);
+						if (result !== null && typeof result === "object" && result.ok === false) {
+							const reason = typeof result.error === "string" && result.error !== "" ? result.error : TL_T("hub.weather.reason.default");
+							setWeatherNote(TL_T("hub.weather.failed", { reason }));
+						} else {
+							setWeatherNote(TL_T("hub.weather.applied"));
+						}
+					}),
+				);
+			};
+			const onWeatherLocate = () => {
+				runAsync(() =>
+					runWeatherAction("hub.weather.locating", async (weather) => {
+						if (typeof weather.useCurrentLocation !== "function") {
+							setWeatherNote(TL_T("hub.weather.failed", { reason: TL_T("hub.weather.reason.default") }));
+							return;
+						}
+						const result = await weather.useCurrentLocation();
+						if (result !== null && typeof result === "object" && result.ok === false) {
+							const reason = typeof result.error === "string" && result.error !== "" ? result.error : TL_T("hub.weather.reason.default");
+							setWeatherNote(TL_T("hub.weather.failed", { reason }));
+						} else {
+							setWeatherNote(TL_T("hub.weather.applied"));
+						}
+					}),
+				);
+			};
+			const onWeatherRefresh = () => {
+				runAsync(() =>
+					runWeatherAction("hub.loading", async (weather) => {
+						if (typeof weather.refresh !== "function") {
+							setWeatherNote(TL_T("hub.weather.failed", { reason: TL_T("hub.weather.reason.default") }));
+							return;
+						}
+						const fresh = await weather.refresh();
+						setWeatherNote(fresh === true ? TL_T("hub.weather.refreshed") : TL_T("hub.weather.waiting"));
+					}),
+				);
 			};
 
 			// ---- AI card ------------------------------------------------------------
@@ -1720,6 +2255,292 @@
 				}
 			};
 
+			// ---- self-test (v1.5.0) -------------------------------------------------
+			const setSelftestNote = (text) => {
+				if (ui !== null && ui.selftestNote !== null && ui.selftestNote !== undefined) ui.selftestNote.textContent = text;
+			};
+			const withSelftestTimeout = (promise, ms) => {
+				const win = hubBrowserWindow();
+				if (win === null || typeof win.setTimeout !== "function") return Promise.resolve(promise);
+				return new Promise((resolve, reject) => {
+					let timer = 0;
+					const settle = (fn, value) => {
+						if (timer !== 0) {
+							try {
+								win.clearTimeout(timer);
+							} catch {
+								// the host already cleared it
+							}
+							timer = 0;
+						}
+						fn(value);
+					};
+					try {
+						timer = win.setTimeout(() => resolve({ timeout: true }), ms);
+					} catch {
+						resolve(promise);
+						return;
+					}
+					Promise.resolve(promise).then(
+						(value) => settle(resolve, value),
+						(error) => settle(reject, error),
+					);
+				});
+			};
+			const selftestFail = (detail) => ({ ok: false, detail });
+			const selftestError = (error) => ({ ok: false, detail: TL_T("hub.selftest.detail.error", { reason: String(error?.message ?? error) }) });
+			const selftestCheckDefs = [
+				{
+					id: "life",
+					run: async () => {
+						const life = hubLifeEngine();
+						if (life === null || typeof life.status !== "function") return selftestFail(TL_T("hub.selftest.detail.missing"));
+						const status = hubTry(() => life.status(), null, "selftest-life");
+						if (status === null || typeof status !== "object") return selftestFail(TL_T("hub.selftest.detail.empty"));
+						return { ok: status.version === 1 || typeof status.period === "string", detail: TL_T("hub.selftest.detail.ok") };
+					},
+				},
+				{
+					id: "pet",
+					run: async () => {
+						const pet = hubPetBrain();
+						if (pet === null || typeof pet.status !== "function") return selftestFail(TL_T("hub.selftest.detail.missing"));
+						const status = hubTry(() => pet.status(), null, "selftest-pet");
+						if (status === null || typeof status !== "object") return selftestFail(TL_T("hub.selftest.detail.empty"));
+						const rows = typeof pet.permissions === "function" ? hubTry(() => pet.permissions(), null, "selftest-perms") : null;
+						const count = Array.isArray(rows) ? rows.length : 0;
+						return { ok: count > 0, detail: count + " caps" };
+					},
+				},
+				{
+					id: "glass",
+					run: async () => {
+						const controller = hubGlassDepthController();
+						if (controller === null || typeof controller.read !== "function" || typeof controller.effective !== "function") {
+							return selftestFail(TL_T("hub.selftest.detail.missing"));
+						}
+						const depth = hubTry(() => controller.read(), null, "selftest-glass");
+						const effective = hubTry(() => controller.effective(), null, "selftest-glass");
+						const valid = HUB_GLASS_LEVELS.includes(depth) && HUB_GLASS_LEVELS.includes(effective);
+						return { ok: valid, detail: String(depth) + " / " + String(effective) };
+					},
+				},
+				{
+					id: "media",
+					run: async () => {
+						const life = hubLifeEngine();
+						if (life === null || typeof life.listMedia !== "function") return selftestFail(TL_T("hub.selftest.detail.missing"));
+						try {
+							const result = await withSelftestTimeout(life.listMedia(), 4000);
+							if (result !== null && typeof result === "object" && result.timeout === true) return selftestFail(TL_T("hub.selftest.detail.error", { reason: "timeout" }));
+							if (result === null || typeof result !== "object" || Array.isArray(result.items) === false) return selftestFail(TL_T("hub.selftest.detail.empty"));
+							return { ok: true, detail: result.items.length + " items" };
+						} catch (error) {
+							return selftestError(error);
+						}
+					},
+				},
+				{
+					id: "weather",
+					run: async () => {
+						const weather = hubWeather();
+						if (weather === null || typeof weather.summary !== "function") return selftestFail(TL_T("hub.selftest.detail.missing"));
+						const snapshot = hubWeatherSnapshot(weather);
+						if (snapshot === null) return selftestFail(TL_T("hub.selftest.detail.empty"));
+						const detail = snapshot.text !== "" ? snapshot.text : TL_T("hub.selftest.detail.empty");
+						return { ok: typeof snapshot.runtime === "boolean", detail };
+					},
+				},
+				{
+					id: "agent",
+					run: async () => {
+						const agent = hubPetAgent();
+						if (agent === null || typeof agent.status !== "function") return selftestFail(TL_T("hub.selftest.detail.missing"));
+						const status = hubTry(() => agent.status(), null, "selftest-agent");
+						if (status === null || typeof status !== "object") return selftestFail(TL_T("hub.selftest.detail.empty"));
+						return { ok: typeof status.available === "boolean", detail: status.available === true ? "available" : "unavailable" };
+					},
+				},
+				{
+					id: "hub",
+					run: async () => {
+						const hubStatus = hubTry(() => status(), null, "selftest-hub");
+						if (hubStatus === null || typeof hubStatus !== "object") return selftestFail(TL_T("hub.selftest.detail.empty"));
+						const ok = typeof hubStatus.version === "number" && hubStatus.dependencies !== null && typeof hubStatus.dependencies === "object";
+						return { ok, detail: TL_T("hub.selftest.detail.ok") };
+					},
+				},
+			];
+			const renderSelftest = () => {
+				if (ui === null) return;
+				const box = ui.selftestList;
+				box.textContent = "";
+				let pass = 0;
+				let fail = 0;
+				for (const result of selftestResults) {
+					if (result.ok === true) pass += 1;
+					else fail += 1;
+					box.appendChild(
+						hubCreate("div", { className: "tl-hub-selftest-row", "data-tl-hub-selftest-item": result.id, "data-ok": result.ok === true ? "true" : "false" }, [
+							hubCreate("span", { className: "tl-hub-selftest-name" }, TL_T(HUB_SELFTEST_ITEM_KEYS[result.id] ?? "hub.selftest.unknown")),
+							hubCreate("span", { className: "tl-hub-selftest-state", "data-ok": result.ok === true ? "true" : "false" }, result.ok === true ? TL_T("hub.selftest.pass") : TL_T("hub.selftest.fail")),
+							hubCreate("span", { className: "tl-hub-selftest-detail" }, String(result.detail ?? "")),
+						]),
+					);
+				}
+				ui.selftestSummary.textContent =
+					selftestResults.length === 0 ? TL_T("hub.selftest.empty") : TL_T("hub.selftest.summary", { pass, fail });
+			};
+			const selftestText = () => {
+				let pass = 0;
+				let fail = 0;
+				const lines = [];
+				for (const result of selftestResults) {
+					if (result.ok === true) pass += 1;
+					else fail += 1;
+					lines.push(TL_T(HUB_SELFTEST_ITEM_KEYS[result.id] ?? "hub.selftest.unknown") + ": " + (result.ok === true ? TL_T("hub.selftest.pass") : TL_T("hub.selftest.fail")) + " · " + String(result.detail ?? ""));
+				}
+				lines.push(TL_T("hub.selftest.summary", { pass, fail }));
+				return lines.join("\n");
+			};
+			const runSelftest = async () => {
+				if (selftestBusy === true || ui === null) return;
+				selftestBusy = true;
+				ui.selftestRun.disabled = true;
+				ui.selftestCopy.disabled = true;
+				setSelftestNote(TL_T("hub.selftest.running"));
+				selftestResults.length = 0;
+				renderSelftest();
+				for (const def of selftestCheckDefs) {
+					let result = null;
+					try {
+						result = await def.run();
+					} catch (error) {
+						result = selftestError(error);
+					}
+					selftestResults.push({
+						id: def.id,
+						ok: result !== null && result.ok === true,
+						detail: result !== null && typeof result.detail === "string" ? result.detail : "",
+					});
+					renderSelftest();
+				}
+				setSelftestNote("");
+				selftestBusy = false;
+				if (ui !== null) {
+					ui.selftestRun.disabled = false;
+					ui.selftestCopy.disabled = false;
+				}
+			};
+			const copySelftest = async () => {
+				if (selftestBusy === true) return;
+				if (selftestResults.length === 0) await runSelftest();
+				const copied = await hubCopyText(selftestText());
+				setSelftestNote(copied === true ? TL_T("hub.selftest.copied") : TL_T("hub.selftest.copyFailed"));
+			};
+
+			// ---- feedback panel (v1.5.0) -------------------------------------------
+			const setFeedbackStatus = (text) => {
+				if (ui !== null && ui.feedbackStatus !== null && ui.feedbackStatus !== undefined) ui.feedbackStatus.textContent = text;
+			};
+			const buildFeedbackPayload = () => {
+				const life = hubLifeEngine();
+				const pet = hubPetBrain();
+				const glassController = hubGlassDepthController();
+				const weather = hubWeather();
+				const agent = hubPetAgent();
+				const lifeStatus = life !== null ? hubTry(() => life.status?.(), null, "feedback-life") : null;
+				const petStatus = pet !== null ? hubTry(() => pet.status?.(), null, "feedback-pet") : null;
+				const petPermissions = pet !== null && typeof pet.permissions === "function" ? hubTry(() => pet.permissions(), null, "feedback-perms") : null;
+				const glass =
+					glassController !== null
+						? {
+								depth: hubTry(() => glassController.read(), "unknown", "feedback-glass"),
+								effective: hubTry(() => glassController.effective(), "unknown", "feedback-glass"),
+							}
+						: null;
+				const agentStatus = agent !== null ? hubTry(() => agent.status?.(), null, "feedback-agent") : null;
+				const hubStatus = hubTry(() => status(), null, "feedback-hub");
+				let userAgent = "";
+				try {
+					userAgent = String(typeof navigator !== "undefined" && navigator !== null ? navigator.userAgent ?? "" : "").slice(0, 200);
+				} catch {
+					userAgent = "";
+				}
+				const note = ui !== null && ui.feedbackText !== null && ui.feedbackText !== undefined ? String(ui.feedbackText.value ?? "").trim() : "";
+				return {
+					schema: "tianlight-feedback@1",
+					at: new Date().toISOString(),
+					version: hubVersionString(),
+					userAgent,
+					note,
+					hub: hubStatus,
+					life: lifeStatus,
+					pet: { status: petStatus, permissions: petPermissions },
+					glass,
+					weather: hubWeatherSnapshot(weather),
+					agent: agentStatus,
+				};
+			};
+			const onFeedbackCopy = () => {
+				runAsync(async () => {
+					setFeedbackStatus(TL_T("hub.loading"));
+					let text = "";
+					try {
+						text = JSON.stringify(buildFeedbackPayload(), null, 2);
+					} catch (error) {
+						setFeedbackStatus(TL_T("hub.feedback.copyFailed"));
+						return;
+					}
+					const copied = await hubCopyText(text);
+					setFeedbackStatus(copied === true ? TL_T("hub.feedback.copied") : TL_T("hub.feedback.copyFailed"));
+				});
+			};
+			const onFeedbackIssue = () => {
+				try {
+					const payload = buildFeedbackPayload();
+					const note = payload.note !== "" ? payload.note : TL_T("hub.feedback.issueBody");
+					let json = "";
+					try {
+						json = JSON.stringify(payload, null, 2).slice(0, 6000);
+					} catch {
+						json = "";
+					}
+					const body = note + "\n\n```json\n" + json + "\n```";
+					const url =
+						"https://github.com/MilkySnowWay123/dsh-client-ui-skin-tianlight/issues/new?title=" +
+						encodeURIComponent(TL_T("hub.feedback.issueTitle")) +
+						"&body=" +
+						encodeURIComponent(body);
+					const win = hubBrowserWindow();
+					if (win === null || typeof win.open !== "function") {
+						setFeedbackStatus(TL_T("hub.feedback.unsupported"));
+						return;
+					}
+					const opened = win.open(url, "_blank", "noopener,noreferrer");
+					setFeedbackStatus(opened === null || opened === undefined ? TL_T("hub.feedback.issueBlocked") : TL_T("hub.feedback.issueOpened"));
+				} catch (error) {
+					setLastError("feedback-issue", error);
+					setFeedbackStatus(TL_T("hub.feedback.issueBlocked"));
+				}
+			};
+			const onFeedbackDownload = () => {
+				try {
+					const filename = "tianlight-feedback-" + Date.now() + ".json";
+					const result = hubDownloadJson(buildFeedbackPayload(), filename);
+					if (result !== null && typeof result === "object" && result.ok === true) {
+						setFeedbackStatus(TL_T("hub.feedback.downloaded", { name: result.name }));
+					} else {
+						const rawReason = result !== null && typeof result === "object" && typeof result.reason === "string" ? result.reason : "";
+						const reason = rawReason === "" || rawReason === "unsupported" ? TL_T("hub.feedback.unsupported") : rawReason;
+						setFeedbackStatus(TL_T("hub.feedback.downloadFailed", { reason }));
+					}
+				} catch (error) {
+					setLastError("feedback-download", error);
+					setFeedbackStatus(TL_T("hub.feedback.downloadFailed", { reason: String(error?.message ?? error) }));
+				}
+			};
+
 			// ---- overlay build ------------------------------------------------------
 			const buildOverlay = () => {
 				const state = { glassButtons: {} };
@@ -1871,6 +2692,81 @@
 				lifeCard.appendChild(state.lifeNote);
 				body.appendChild(lifeCard);
 
+				// a3) weather (v1.5.0): the weather engine owns networking + geolocation
+				const weatherCard = hubCreate("section", { "data-tl-hub-weather": "", className: "tl-hub-card tl-hub-weather" }, [
+					hubCreate("h3", { className: "tl-hub-card-title" }, TL_T("hub.weather.title")),
+					hubCreate("p", { className: "tl-hub-note tl-hub-hint" }, TL_T("hub.weather.hint")),
+				]);
+				state.weatherStatus = hubCreate(
+					"p",
+					{ className: "tl-hub-note tl-hub-hint", "data-tl-hub-weather-status": "", role: "status" },
+					TL_T("hub.weather.unavailable"),
+				);
+				weatherCard.appendChild(state.weatherStatus);
+				const weatherEnableRow = hubCreate("div", { className: "tl-hub-row" });
+				weatherEnableRow.appendChild(hubCreate("span", { className: "tl-hub-status-key" }, TL_T("hub.weather.enable") + "："));
+				state.weatherEnabled = hubCreate("input", {
+					type: "checkbox",
+					"data-tl-hub-weather-enabled": "",
+					className: "tl-hub-check",
+					"aria-label": TL_T("hub.weather.enable"),
+				});
+				state.weatherEnabled.addEventListener("change", () => runAsync(onWeatherEnabled));
+				weatherEnableRow.appendChild(state.weatherEnabled);
+				weatherCard.appendChild(weatherEnableRow);
+				const weatherCityRow = hubCreate("div", { className: "tl-hub-row" });
+				weatherCityRow.appendChild(hubCreate("span", { className: "tl-hub-status-key" }, TL_T("hub.weather.city") + "："));
+				state.weatherCity = hubCreate("input", {
+					type: "text",
+					"data-tl-hub-weather-city": "",
+					className: "tl-hub-input",
+					placeholder: TL_T("hub.weather.cityPlaceholder"),
+					"aria-label": TL_T("hub.weather.city"),
+				});
+				weatherCityRow.appendChild(state.weatherCity);
+				state.weatherResolve = hubCreate("button", { type: "button", "data-tl-hub-weather-resolve": "", className: "tl-hub-btn" }, TL_T("hub.weather.resolve"));
+				state.weatherResolve.addEventListener("click", () => runAsync(onWeatherResolve));
+				weatherCityRow.appendChild(state.weatherResolve);
+				weatherCard.appendChild(weatherCityRow);
+				const weatherCoordsRow = hubCreate("div", { className: "tl-hub-row" });
+				weatherCoordsRow.appendChild(hubCreate("span", { className: "tl-hub-status-key" }, TL_T("hub.weather.lat") + "："));
+				state.weatherLat = hubCreate("input", {
+					type: "number",
+					step: "0.0001",
+					min: "-90",
+					max: "90",
+					"data-tl-hub-weather-lat": "",
+					className: "tl-hub-input tl-hub-num",
+					"aria-label": TL_T("hub.weather.lat"),
+				});
+				weatherCoordsRow.appendChild(state.weatherLat);
+				weatherCoordsRow.appendChild(hubCreate("span", { className: "tl-hub-status-key" }, TL_T("hub.weather.lon") + "："));
+				state.weatherLon = hubCreate("input", {
+					type: "number",
+					step: "0.0001",
+					min: "-180",
+					max: "180",
+					"data-tl-hub-weather-lon": "",
+					className: "tl-hub-input tl-hub-num",
+					"aria-label": TL_T("hub.weather.lon"),
+				});
+				weatherCoordsRow.appendChild(state.weatherLon);
+				state.weatherCoords = hubCreate("button", { type: "button", "data-tl-hub-weather-coords": "", className: "tl-hub-btn" }, TL_T("hub.weather.coords"));
+				state.weatherCoords.addEventListener("click", () => runAsync(onWeatherCoords));
+				weatherCoordsRow.appendChild(state.weatherCoords);
+				weatherCard.appendChild(weatherCoordsRow);
+				const weatherActionsRow = hubCreate("div", { className: "tl-hub-row" });
+				state.weatherLocate = hubCreate("button", { type: "button", "data-tl-hub-weather-locate": "", className: "tl-hub-btn" }, TL_T("hub.weather.locate"));
+				state.weatherLocate.addEventListener("click", () => runAsync(onWeatherLocate));
+				weatherActionsRow.appendChild(state.weatherLocate);
+				state.weatherRefresh = hubCreate("button", { type: "button", "data-tl-hub-weather-refresh": "", className: "tl-hub-btn" }, TL_T("hub.weather.refresh"));
+				state.weatherRefresh.addEventListener("click", () => runAsync(onWeatherRefresh));
+				weatherActionsRow.appendChild(state.weatherRefresh);
+				weatherCard.appendChild(weatherActionsRow);
+				state.weatherNote = hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-weather-note": "", role: "status" }, "");
+				weatherCard.appendChild(state.weatherNote);
+				body.appendChild(weatherCard);
+
 				// b) liquid glass
 				const glassCard = hubCreate("section", { "data-tl-hub-glass-card": "", className: "tl-hub-card" }, [
 					hubCreate("h3", { className: "tl-hub-card-title" }, TL_T("hub.glass.title")),
@@ -1883,8 +2779,17 @@
 					glassRow.appendChild(button);
 				}
 				glassCard.appendChild(glassRow);
+				state.glassPreview = hubCreate(
+					"div",
+					{ className: "tl-hub-glass-preview", "data-tl-glass-preview": "off", "data-tl-hub-glass-preview": "", "data-depth": "off" },
+					"",
+				);
+				state.glassPreviewLabel = hubCreate("span", { className: "tl-hub-glass-preview-label", "data-tl-glass-preview-label": "" }, "");
+				state.glassPreview.appendChild(state.glassPreviewLabel);
+				glassCard.appendChild(state.glassPreview);
 				state.glassEffective = hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-glass-effective": "" }, "");
 				glassCard.appendChild(state.glassEffective);
+				glassCard.appendChild(hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-glass-hint": "" }, TL_T("hub.glass.previewHint")));
 				body.appendChild(glassCard);
 
 				// c) companion look: catalog select + local upload
@@ -1898,6 +2803,9 @@
 				state.mediaApply.addEventListener("click", () => runAsync(applySelectedMedia));
 				mediaRow.appendChild(state.mediaSelect);
 				mediaRow.appendChild(state.mediaApply);
+				state.mediaDefault = hubCreate("button", { type: "button", "data-tl-hub-media-default": "", className: "tl-hub-btn" }, TL_T("hub.media.restoreDefault"));
+				state.mediaDefault.addEventListener("click", () => runAsync(restoreDefaultMedia));
+				mediaRow.appendChild(state.mediaDefault);
 				mediaCard.appendChild(mediaRow);
 				const uploadRow = hubCreate("div", { className: "tl-hub-row" });
 				state.uploadInput = hubCreate("input", {
@@ -2019,6 +2927,53 @@
 				state.auditBox = hubCreate("div", { "data-tl-hub-audit": "", className: "tl-hub-audit" });
 				auditCard.appendChild(state.auditBox);
 				body.appendChild(auditCard);
+
+				// g) self-test + feedback (v1.5.0): diagnostics the user can attach to a report
+				const selftestCard = hubCreate("section", { "data-tl-hub-selftest-card": "", className: "tl-hub-card" }, [
+					hubCreate("h3", { className: "tl-hub-card-title" }, TL_T("hub.selftest.title")),
+					hubCreate("p", { className: "tl-hub-note tl-hub-hint" }, TL_T("hub.selftest.hint")),
+				]);
+				const selftestRow = hubCreate("div", { className: "tl-hub-row" });
+				state.selftestRun = hubCreate("button", { type: "button", "data-tl-hub-selftest": "", className: "tl-hub-btn" }, TL_T("hub.selftest.run"));
+				state.selftestRun.addEventListener("click", () => runAsync(runSelftest));
+				selftestRow.appendChild(state.selftestRun);
+				state.selftestCopy = hubCreate("button", { type: "button", "data-tl-hub-selftest-copy": "", className: "tl-hub-btn" }, TL_T("hub.selftest.copy"));
+				state.selftestCopy.addEventListener("click", () => runAsync(copySelftest));
+				selftestRow.appendChild(state.selftestCopy);
+				selftestCard.appendChild(selftestRow);
+				state.selftestSummary = hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-selftest-summary": "" }, TL_T("hub.selftest.empty"));
+				selftestCard.appendChild(state.selftestSummary);
+				state.selftestList = hubCreate("div", { className: "tl-hub-selftest-list", "data-tl-hub-selftest-list": "" }, "");
+				selftestCard.appendChild(state.selftestList);
+				state.selftestNote = hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-selftest-note": "", role: "status" }, "");
+				selftestCard.appendChild(state.selftestNote);
+				body.appendChild(selftestCard);
+				const feedbackCard = hubCreate("section", { "data-tl-hub-feedback": "", className: "tl-hub-card tl-hub-feedback" }, [
+					hubCreate("h3", { className: "tl-hub-card-title" }, TL_T("hub.feedback.title")),
+					hubCreate("p", { className: "tl-hub-note tl-hub-hint" }, TL_T("hub.feedback.hint")),
+				]);
+				state.feedbackText = hubCreate("textarea", {
+					"data-tl-hub-feedback-text": "",
+					className: "tl-hub-input tl-hub-textarea",
+					placeholder: TL_T("hub.feedback.placeholder"),
+					"aria-label": TL_T("hub.feedback.placeholder"),
+					rows: "3",
+				});
+				feedbackCard.appendChild(state.feedbackText);
+				const feedbackRow = hubCreate("div", { className: "tl-hub-row" });
+				state.feedbackCopy = hubCreate("button", { type: "button", "data-tl-hub-feedback-copy": "", className: "tl-hub-btn" }, TL_T("hub.feedback.copy"));
+				state.feedbackCopy.addEventListener("click", () => onFeedbackCopy());
+				feedbackRow.appendChild(state.feedbackCopy);
+				state.feedbackIssue = hubCreate("button", { type: "button", "data-tl-hub-feedback-issue": "", className: "tl-hub-btn" }, TL_T("hub.feedback.issue"));
+				state.feedbackIssue.addEventListener("click", () => onFeedbackIssue());
+				feedbackRow.appendChild(state.feedbackIssue);
+				state.feedbackDownload = hubCreate("button", { type: "button", "data-tl-hub-feedback-download": "", className: "tl-hub-btn" }, TL_T("hub.feedback.download"));
+				state.feedbackDownload.addEventListener("click", () => onFeedbackDownload());
+				feedbackRow.appendChild(state.feedbackDownload);
+				feedbackCard.appendChild(feedbackRow);
+				state.feedbackStatus = hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-feedback-status": "", role: "status" }, "");
+				feedbackCard.appendChild(state.feedbackStatus);
+				body.appendChild(feedbackCard);
 				body.appendChild(hubCreate("p", { className: "tl-hub-hint", "data-tl-hub-settings-hint": "" }, TL_T("hub.settingsHint")));
 
 				panel.appendChild(head);
@@ -2034,6 +2989,7 @@
 				if (openState !== true || ui === null) return;
 				hubTry(refreshStatus, null, "refresh-status");
 				hubTry(() => refreshLifeConfig(false), null, "refresh-life-config");
+				hubTry(refreshWeather, null, "refresh-weather");
 				hubTry(refreshGlass, null, "refresh-glass");
 				hubTry(refreshAi, null, "refresh-ai");
 				hubTry(refreshAgent, null, "refresh-agent");
@@ -2062,6 +3018,7 @@
 					}
 					refreshStatus();
 					refreshLifeConfig(true);
+					refreshWeather();
 					refreshGlass();
 					refreshAi();
 					refreshAgent();
@@ -2090,6 +3047,17 @@
 					pet: hubPetBrain() !== null,
 					agent: hubPetAgent() !== null,
 					glass: hubGlassDepthController() !== null,
+					weather: (() => {
+						const snapshot = hubWeatherSnapshot();
+						return snapshot !== null && snapshot.runtime === true;
+					})(),
+				},
+				features: {
+					mediaDefault: true,
+					glassPreview: true,
+					weather: true,
+					selftest: true,
+					feedback: true,
 				},
 				logCount: logEntries.length,
 				lastError: lastError,
@@ -2128,6 +3096,9 @@
 				agentStatusCache = null;
 				agentTargetSignature = "";
 				agentSessionsCache = [];
+				selftestResults.length = 0;
+				weatherBusy = false;
+				selftestBusy = false;
 				logEntries.length = 0;
 			};
 		}

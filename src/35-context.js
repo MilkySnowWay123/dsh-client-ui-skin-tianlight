@@ -268,7 +268,34 @@
 				weatherRuntime === null ? Promise.resolve({ ok: false, error: "unavailable" }) : weatherRuntime.resolveCity(query),
 			useCurrentLocation: () =>
 				weatherRuntime === null ? Promise.resolve({ ok: false, error: "unavailable" }) : weatherRuntime.useCurrentLocation(),
+			// ---- v1.5.0 visible-weather surface: read-only summary + convenience switches ----
+			// `summary()` is what the role hub renders; it never triggers a request.
+			// `enable()` only flips the persisted flag (no geolocation, no city lookup);
+			// when coordinates already exist the existing reconcileWeather path starts the
+			// poll exactly as it did for the hidden panel.
+			summary: () => weatherSummary(),
+			isReady: () => weatherRuntime !== null,
+			enable: () => weatherController.apply({ enabled: true }),
+			disable: () => weatherController.apply({ enabled: false }),
 		};
+		/**
+		 * v1.5.0：全局句柄的簿记与暴露。
+		 *
+		 * 需求：`globalThis.tianlightWeather` 在 weatherController 定义之后即可见（隐藏的
+		 * 「环境」分区之外的中枢/自检可读），dispose 时若仍是同一对象则删除/还原。模块
+		 * 可被开关：factory 求值阶段先暴露一次（runtime=null，summary 会提示未挂载），
+		 * 之后每次 installContextRuntime 再挂一次（保留最初的旧值），这样重新启用后
+		 * 句柄仍在，而迟到的 disposer 也不会清掉新实例。
+		 */
+		let weatherGlobalToken = null;
+		let weatherGlobalPrevious = undefined;
+		function weatherExposeGlobal(token) {
+			if (weatherGlobalToken === null) weatherGlobalPrevious = globalThis.tianlightWeather;
+			weatherGlobalToken = token;
+			globalThis.tianlightWeather = weatherController;
+		}
+		const weatherModuleGlobalToken = {};
+		weatherExposeGlobal(weatherModuleGlobalToken);
 		Object.assign(weatherState, readWeatherSettings());
 
 		/** 宿主设置接管后的刷新（同 refreshContextState）：只在安装器入口调用。 */
@@ -351,6 +378,68 @@
 			const hours = String(date.getHours()).padStart(2, "0");
 			const minutes = String(date.getMinutes()).padStart(2, "0");
 			return hours + ":" + minutes;
+		}
+
+		/**
+		 * v1.5.0 天气可见化：给角色中枢/诊断用的一次性本地化摘要。只读——绝不发起
+		 * 请求、绝不写存储；五态文案复用面板同一批 `ctx.weather.*` 键，所以隐藏的
+		 * 「环境」分区和中枢不会说出两种天气。
+		 *
+		 * 状态优先级：未启用 → 运行时未挂载 → 未设位置 → 最近一次错误 → 已拿到数据
+		 * → 等待首帧。`runtime` 只表示 installContextRuntime 是否已挂载（网络+定时器
+		 * 的持有者），与用户是否启用无关。
+		 */
+		function weatherSummary() {
+			try {
+				const state = weatherSnapshot();
+				const hasLocation =
+					state.latitude !== null &&
+					state.longitude !== null &&
+					Number.isFinite(Number(state.latitude)) &&
+					Number.isFinite(Number(state.longitude));
+				const runtime = weatherRuntime !== null;
+				const last = state.last === null ? null : { ...state.last };
+				const error = typeof state.lastError === "string" ? state.lastError : "";
+				let text = "";
+				if (state.enabled !== true) {
+					text = TL_T("ctx.weather.statusDisabled");
+				} else if (runtime !== true) {
+					text = TL_T("ctx.weather.runtimeMissing");
+				} else if (hasLocation !== true) {
+					text = TL_T("ctx.weather.statusNoLocation");
+				} else if (error !== "") {
+					const errorKey = weatherErrorKey(error);
+					text = TL_T("ctx.weather.statusError", {
+						reason: errorKey === "" ? error : TL_T(errorKey),
+					});
+				} else if (last !== null) {
+					text = TL_T("ctx.weather.summaryLast", {
+						desc: TL_T(weatherDescriptionKey(last.code)),
+						temperature: String(last.temperatureC),
+					});
+				} else {
+					text = TL_T("ctx.weather.statusWaiting");
+				}
+				return {
+					enabled: state.enabled === true,
+					hasLocation: hasLocation === true,
+					runtime,
+					last,
+					text,
+					error,
+					updatedAt: last === null ? null : last.at,
+				};
+			} catch (summaryError) {
+				return {
+					enabled: false,
+					hasLocation: false,
+					runtime: weatherRuntime !== null,
+					last: null,
+					text: "",
+					error: "",
+					updatedAt: null,
+				};
+			}
 		}
 
 		/**
@@ -554,6 +643,8 @@
 				"ctx.weather.statusWaiting": "等待首次天气数据…",
 				"ctx.weather.statusLast": "{desc} · {temperature}°C · {time}",
 				"ctx.weather.statusError": "获取失败：{reason}（静默重试）",
+				"ctx.weather.runtimeMissing": "环境模块未挂载",
+				"ctx.weather.summaryLast": "{desc} · {temperature}°C",
 				"ctx.weather.conflictHint": "时段自适应也控制氛围；两者同时开启时以最近一次变更为准。",
 				"ctx.weather.errorNetwork": "网络不可用",
 				"ctx.weather.errorTimeout": "请求超时",
@@ -638,6 +729,8 @@
 				"ctx.weather.statusWaiting": "Waiting for the first weather data…",
 				"ctx.weather.statusLast": "{desc} · {temperature}°C · {time}",
 				"ctx.weather.statusError": "Fetch failed: {reason} (silent retry)",
+				"ctx.weather.runtimeMissing": "Context module not mounted",
+				"ctx.weather.summaryLast": "{desc} · {temperature}°C",
 				"ctx.weather.conflictHint": "Time-of-day also drives ambiance; when both are on, the most recent change wins.",
 				"ctx.weather.errorNetwork": "network unavailable",
 				"ctx.weather.errorTimeout": "request timed out",
@@ -1282,6 +1375,13 @@ body[data-dsh-tianlight] [data-tl-group="context"] .tl-fx-hint {
 			// persisted model before wiring timers/observers so adopted values apply now.
 			refreshContextState();
 			refreshWeatherState();
+			// v1.5.0: expose the live weather controller so the role hub / pet brain /
+			// diagnostics can render a visible weather card. The module-level token keeps
+			// re-applies safe: the first installer remembers the original global value, a
+			// stale disposer can never clear a newer instance, and the last disposer
+			// restores (or deletes) the original handle.
+			const weatherGlobalOwnToken = {};
+			weatherExposeGlobal(weatherGlobalOwnToken);
 
 			let alive = true;
 			let clockTimer = 0;
@@ -1848,6 +1948,21 @@ body[data-dsh-tianlight] [data-tl-group="context"] .tl-fx-hint {
 				unsubscribe();
 				unsubscribeWeather();
 				weatherRuntime = null;
+				// v1.5.0: only the owner of the current global handle restores it. Re-apply
+				// and late-dispose are handled by the token; the object check keeps a foreign
+				// global (someone else took the name) untouched.
+				if (weatherGlobalToken === weatherGlobalOwnToken) {
+					weatherGlobalToken = null;
+					try {
+						if (globalThis.tianlightWeather === weatherController) {
+							if (weatherGlobalPrevious === undefined) delete globalThis.tianlightWeather;
+							else globalThis.tianlightWeather = weatherGlobalPrevious;
+						}
+					} catch (error) {
+						note("context:weather-global-dispose", error);
+					}
+					weatherGlobalPrevious = undefined;
+				}
 				clearWeatherTimer();
 				clearWeatherRetry();
 				clearWeatherRequests();

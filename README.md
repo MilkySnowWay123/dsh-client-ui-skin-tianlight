@@ -6,6 +6,17 @@
 >
 > 包名 `@dsh-external/dsh-client-ui-skin-tianlight` · 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
 
+## v1.5.0 · 可见性修复：默认玻璃可见 · 天气上桌 · 恢复默认形象 · 自检 · 反馈渠道
+
+`1.5.0`（26 片段；`BUILD`/`HOST_BUILD` = `1.5.0`）。细节见 [docs/RELEASE-1.5.0.md](docs/RELEASE-1.5.0.md)：
+
+- **恢复默认形象**：角色中枢「桌宠形象」新增按钮 → `tianlightLife.setMedia(null)` 回到默认 `cat.png`/SVG。
+- **液态玻璃可见**：默认档改为 **柔和（soft）**、强度提升、并且同时作用于皮肤自身的玻璃胶囊/表面；中枢玻璃卡新增**预览条**——切换档位立刻看到差异（不再只有壁纸层才可见）。
+- **天气上桌**：角色中枢新增天气卡（启用开关、城市解析、坐标、定位、刷新、当前天气描述/温度/更新时间/错误状态），消费 `globalThis.tianlightWeather.summary()`；天气仍默认关闭、显式启用才联网（Open-Meteo，免 key）。
+- **一键自检**：中枢「自检」逐项检查 life/pet/glass/media/weather/agent/hub，列出 PASS/FAIL 并可复制结果。
+- **反馈渠道**：GitHub Issues 已开放；新增 issue 模板（`.github/ISSUE_TEMPLATE/feedback.yml`）、[docs/FEEDBACK.md](docs/FEEDBACK.md) 与中枢「反馈」面板（复制环境/预填 Issue/下载 JSON；不读取会话正文与凭据）。
+- 静态链 26/26、test 67/67、audit 新守卫、CSS/verify/i18n 全绿；Node 冒烟在 v1.4 465 条基础上新增 WEATHER/UX 段。
+
 ## v1.4.0 · 权限模型调整：驱动 DSH 仍永久禁止，其余高风险可授权
 
 `1.4.0`（26 片段；`BUILD`/`HOST_BUILD` = `1.4.0`）。细节见 [docs/RELEASE-1.4.0.md](docs/RELEASE-1.4.0.md)、权限规范 [docs/AI-PET-PERMISSIONS.md](docs/AI-PET-PERMISSIONS.md)：
@@ -221,6 +232,7 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 
 ## 版本历史
 
+- **v1.5.0（2026-11-10）**：可见性修复——液态玻璃默认柔和档、强度提升 + 中枢预览；天气卡上桌（启用/城市/定位/刷新/状态）；桌宠形象一键恢复默认；中枢一键自检；GitHub issue 模板 + 应用内反馈面板。详见 [docs/RELEASE-1.5.0.md](docs/RELEASE-1.5.0.md)。
 - **v1.4.0（2026-11-10）**：权限模型调整——「驱动 DSH」永久禁止；联网/文件/命令/代审批/代发消息/安装改为用户可显式授予的高风险权限（默认关、二次确认、可撤销、审计；皮肤不内置实现，需注册能力适配器才可调用）。详见 [docs/RELEASE-1.4.0.md](docs/RELEASE-1.4.0.md)。
 - **v1.3.0（2026-11-10）**：角色入口收进桌宠——删除设置页「角色 / 生活」与侧栏「角色」按钮，右键桌宠 / 桌宠菜单「角色中枢」为唯一入口；生活节奏设置并入中枢（26 片段）。详见 [docs/RELEASE-1.3.0.md](docs/RELEASE-1.3.0.md)。
 - **v1.2.0（2026-11-10）**：右键桌宠直达角色中枢；接入真实 DSH Agent（受控 `agentChat`：默认关、显式授权、仅用户手动提问、目标会话由用户选择、日≤10/≤500 字/60s/单飞、只 list/create/prompt/follow、审计+可断开、`agent` 自主执行仍永久禁止）。详见 [docs/RELEASE-1.2.0.md](docs/RELEASE-1.2.0.md)。

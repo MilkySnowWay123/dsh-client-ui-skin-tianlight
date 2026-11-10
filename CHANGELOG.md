@@ -2,6 +2,17 @@
 
 本文件由 `node tools/release.mjs --note "…"` 维护；条目按版本倒序，格式参考 Keep a Changelog。
 
+## [1.5.0] - 2026-11-10
+
+### 发布说明
+
+- **液态玻璃可见性修复**：默认档由 off 改为 **soft**；强度提升；除壁纸场景层外，也作用于皮肤自身玻璃胶囊/表面；中枢玻璃卡新增**预览条**（切换即见）与「默认柔和」说明；低电量/15fps 仍自动降级。
+- **天气上桌**：`src/35-context.js` 暴露 `globalThis.tianlightWeather`（含 `summary()/isReady()/enable()/disable()`）；角色中枢新增天气卡（当前天气描述/温度/更新时间/错误、启用开关、城市解析、坐标、定位、刷新、七态反馈），复用原有 Open-Meteo 天气（默认关闭、显式启用才联网、免 key）。
+- **恢复默认形象**：中枢新增「恢复默认形象」→ `tianlightLife.setMedia(null)`。
+- **一键自检**：中枢「自检」逐项检查 life/pet/glass/media/weather/agent/hub 并给出 PASS/FAIL、可复制结果。
+- **反馈渠道**：GitHub Issues 已开放；新增 `.github/ISSUE_TEMPLATE/feedback.yml`、`docs/FEEDBACK.md`、中枢「反馈」面板（复制/预填 Issue/下载 JSON，不读取会话正文与凭据）。
+- 静态链 26/26、test 67/67、audit v1.5 新守卫、CSS/verify/i18n 全绿；Node 冒烟 = v1.4 465 条回归 + WEATHER/UX 段。
+
 ## [1.4.0] - 2026-11-10
 
 ### 发布说明

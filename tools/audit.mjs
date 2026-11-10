@@ -271,6 +271,29 @@ report(
   "agent prompts are audited and budgeted in localStorage",
 )
 
+// ---- 11. v1.5.0 visibility & feedback: default glass, weather, self-test, feedback ----
+report(source.includes('const GLASS_DEPTH_DEFAULT = "soft"') ? "PASS" : "FAIL", "liquid glass defaults to the visible soft level")
+report(
+  source.includes("globalThis.tianlightWeather") && source.includes("summary(") ? "PASS" : "FAIL",
+  "weather controller is exposed with a localized summary for the pet hub",
+)
+report(
+  source.includes("data-tl-hub-media-default") && source.includes("setMedia(null)") ? "PASS" : "FAIL",
+  "role hub can restore the default pet look",
+)
+report(
+  source.includes("data-tl-hub-weather") && source.includes("data-tl-hub-glass-preview") ? "PASS" : "FAIL",
+  "role hub surfaces weather and a liquid-glass preview",
+)
+report(
+  source.includes("data-tl-hub-selftest") && source.includes("data-tl-hub-feedback") ? "PASS" : "FAIL",
+  "role hub ships a self-test panel and an in-app feedback channel",
+)
+report(
+  source.includes("dsh-client-ui-skin-tianlight/issues/new") ? "PASS" : "FAIL",
+  "feedback panel prefills the GitHub issue URL",
+)
+
 console.log(issues === 0 ? 'AUDIT: no blocking issues' : `AUDIT: ${issues} blocking issue(s)`)
 process.exitCode = issues === 0 ? 0 : 1
 

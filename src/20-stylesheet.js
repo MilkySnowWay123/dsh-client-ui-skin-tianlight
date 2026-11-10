@@ -1966,25 +1966,25 @@ body[data-dsh-tianlight] {
 	--tl-liquid-sheen: 0;
 }
 body[data-dsh-tianlight][data-tl-glass-effective="soft"] {
-	--tl-liquid-blur: 3px;
+	--tl-liquid-blur: 7px;
 	--tl-liquid-sat: 1.18;
-	--tl-liquid-hi: 0.14;
-	--tl-liquid-lo: 0.08;
+	--tl-liquid-hi: 0.22;
+	--tl-liquid-lo: 0.12;
 	--tl-liquid-noise: 0;
 	--tl-liquid-sheen: 0.35;
 }
 body[data-dsh-tianlight][data-tl-glass-effective="real"] {
-	--tl-liquid-blur: 6px;
+	--tl-liquid-blur: 12px;
 	--tl-liquid-sat: 1.42;
-	--tl-liquid-hi: 0.28;
-	--tl-liquid-lo: 0.16;
+	--tl-liquid-hi: 0.40;
+	--tl-liquid-lo: 0.22;
 	--tl-liquid-noise: 0;
 	--tl-liquid-sheen: 1;
 }
 body[data-dsh-tianlight][data-tl-glass-effective="frosted"] {
-	--tl-liquid-blur: 14px;
+	--tl-liquid-blur: 20px;
 	--tl-liquid-sat: 0.92;
-	--tl-liquid-hi: 0.34;
+	--tl-liquid-hi: 0.44;
 	--tl-liquid-lo: 0.05;
 	--tl-liquid-noise: 0.12;
 	--tl-liquid-sheen: 0.1;
@@ -2018,6 +2018,117 @@ body[data-dsh-tianlight][data-tl-lowpower] [data-tl-scene]::after {
 	body[data-dsh-tianlight][data-tl-glass-effective="real"] [data-tl-scene]::after {
 		animation: tl-liquid-sheen 22s ease-in-out infinite alternate;
 	}
+}
+/* v1.5.0: make the selected depth visible on the product's own glass surfaces too
+   (the wallpaper scene is optional, so a scene-only effect can look like "nothing
+   happened"). These are the same glass pills/panels that already use the
+   --tl-glass-* tokens; the depth only boosts blur/saturation and adds a specular
+   inner highlight. */
+body[data-dsh-tianlight][data-tl-glass-effective="soft"] [data-tl-model],
+body[data-dsh-tianlight][data-tl-glass-effective="frosted"] [data-tl-model],
+body[data-dsh-tianlight][data-tl-glass-effective="real"] [data-tl-model],
+body[data-dsh-tianlight][data-tl-glass-effective="soft"] [data-tl-rheo][data-tl-rheo-empty],
+body[data-dsh-tianlight][data-tl-glass-effective="frosted"] [data-tl-rheo][data-tl-rheo-empty],
+body[data-dsh-tianlight][data-tl-glass-effective="real"] [data-tl-rheo][data-tl-rheo-empty] {
+	-webkit-backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
+	backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi)),
+		0 6px 20px rgba(8, 26, 44, 0.16);
+	border-color: rgba(255, 255, 255, calc(var(--tl-liquid-hi) + 0.18)) !important;
+}
+body[data-dsh-tianlight][data-tl-glass-effective="real"] [data-tl-model],
+body[data-dsh-tianlight][data-tl-glass-effective="real"] [data-tl-rheo][data-tl-rheo-empty] {
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi)),
+		0 8px 26px rgba(8, 26, 44, 0.22);
+}
+body[data-dsh-tianlight][data-tl-lowpower] [data-tl-model],
+body[data-dsh-tianlight][data-tl-lowpower] [data-tl-rheo][data-tl-rheo-empty] {
+	-webkit-backdrop-filter: blur(3px) saturate(1.05);
+	backdrop-filter: blur(3px) saturate(1.05);
+	box-shadow: none;
+}
+/* Role-hub liquid-glass preview: a compact swatch that reflects the current depth
+   even before/without a wallpaper, so the control always has visible feedback. */
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-glass-preview] {
+	height: 34px;
+	border-radius: 10px;
+	border: 0.5px solid rgba(255, 255, 255, 0.42);
+	background-image:
+		linear-gradient(122deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 42%, rgba(255, 255, 255, 0) 64%, rgba(255, 255, 255, var(--tl-liquid-lo)) 100%),
+		radial-gradient(90% 120% at 12% 0%, rgba(180, 220, 255, 0.32) 0%, rgba(120, 170, 230, 0.10) 55%, rgba(90, 140, 210, 0.06) 100%);
+	-webkit-backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
+	backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi));
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-glass-preview][data-depth="off"] {
+	background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.06), rgba(120, 170, 230, 0.06));
+	-webkit-backdrop-filter: none;
+	backdrop-filter: none;
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-glass-preview-label] {
+	display: block;
+	margin-top: 4px;
+	font: 400 11px/1.5 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-faint, var(--tl-ink-soft, var(--tl-ink)));
+}
+/* v1.5.0 hub: weather card, self-test rows, feedback form. */
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-textarea {
+	min-height: 64px;
+	resize: vertical;
+	padding: 8px 10px;
+	border-radius: 10px;
+	border: 0.5px solid var(--tl-line-strong, rgba(255, 255, 255, 0.3));
+	background: var(--tl-glass-fill, rgba(255, 255, 255, 0.12));
+	color: var(--tl-ink);
+	font: 400 12px/1.5 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-weather input[type="checkbox"] {
+	appearance: auto;
+	width: 14px;
+	height: 14px;
+	accent-color: var(--tl-accent);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-weather input[type="text"],
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-weather input[type="number"] {
+	padding: 6px 9px;
+	border-radius: 9px;
+	border: 0.5px solid var(--tl-line-strong, rgba(255, 255, 255, 0.3));
+	background: var(--tl-glass-fill, rgba(255, 255, 255, 0.12));
+	color: var(--tl-ink);
+	font: 500 12px/1.3 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-weather input[type="number"] {
+	width: 84px;
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-selftest-row {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	padding: 3px 0;
+	font: 500 12px/1.45 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-selftest-row[data-ok="false"] .tl-hub-selftest-state {
+	color: var(--tl-bad, #c94f4f);
+	font-weight: 700;
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-selftest-row[data-ok="true"] .tl-hub-selftest-state {
+	color: var(--tl-ok, #2f8f4e);
+	font-weight: 700;
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-selftest-name {
+	min-width: 96px;
+	color: var(--tl-ink-soft, var(--tl-ink));
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-selftest-detail {
+	color: var(--tl-ink-faint, var(--tl-ink-soft, var(--tl-ink)));
+	font: 400 11px/1.5 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-feedback[data-status],
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-feedback-status] {
+	color: var(--tl-ink-soft, var(--tl-ink));
+	font: 400 11px/1.5 var(--ds-font-family, system-ui);
 }
 
 /* ---- v1.1.0 role hub: sidebar entry + full-screen "role control" overlay ---- */

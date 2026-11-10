@@ -56,7 +56,7 @@
 		 */
 		const GLASS_DEPTH_KEY = "tianlight.glassDepth";
 		const GLASS_DEPTHS = ["off", "frosted", "soft", "real"];
-		const GLASS_DEPTH_DEFAULT = "off";
+		const GLASS_DEPTH_DEFAULT = "soft";
 		let glassDepthController = null;
 
 		function readGlassDepth() {
