@@ -82,6 +82,10 @@
 				"hub.glass.done": "玻璃质感：{depth}",
 				"hub.glass.previewHint": "默认柔和；真实更明显、磨砂最安静；低电量/15fps 自动降级。",
 				"hub.glass.preview": "当前：{depth} · 实际：{effective}",
+				"hub.appearance.reset": "恢复默认外观",
+				"hub.appearance.hint": "恢复作者的默认外观（壁纸/玻璃档位/排版/特效/桌宠形象）；不会动聊天、权限、天气与你上传的壁纸文件。",
+				"hub.appearance.confirm": "再次点击确认恢复默认外观：现有外观设置会被覆盖（聊天/权限/天气不受影响）。",
+				"hub.appearance.done": "已恢复默认外观（{n} 项），正在刷新…",
 				"hub.media.title": "桌宠形象",
 				"hub.media.select": "选择形象",
 				"hub.media.apply": "应用形象",
@@ -455,6 +459,10 @@
 				"hub.glass.done": "Glass depth: {depth}",
 				"hub.glass.previewHint": "Soft is the default; Real is the most visible, Frosted the quietest; auto-lowered on low power or 15fps.",
 				"hub.glass.preview": "Current: {depth} · effective: {effective}",
+				"hub.appearance.reset": "Restore default appearance",
+				"hub.appearance.hint": "Restores the author's default look (wallpaper / glass depth / typography / effects / companion look); chat, permissions, weather and your uploaded wallpaper files are untouched.",
+				"hub.appearance.confirm": "Click again to restore the default appearance: current appearance settings will be overwritten (chat / permissions / weather are untouched).",
+				"hub.appearance.done": "Default appearance restored ({n} keys); reloading…",
 				"hub.media.title": "Companion look",
 				"hub.media.select": "Choose look",
 				"hub.media.apply": "Apply look",
@@ -2225,6 +2233,56 @@
 					setMediaStatus(TL_T("hub.media.failed", { reason: String(error?.message ?? error) }));
 				} finally {
 					refreshStatus();
+				}
+			};
+			/**
+			 * v2.0.1 "restore the author's default appearance": write the appearance keys of
+			 * presets/tianlight-default.json (embedded into the client at build time), then
+			 * reload once so every fragment re-reads them exactly like a fresh install. Chat,
+			 * permissions, weather and uploaded media files are never touched. Two clicks are
+			 * required (same destructive-action convention as the other resets).
+			 */
+			let appearanceResetArmedAt = 0;
+			let appearanceResetDisarmTimer = 0;
+			const resetDefaultAppearance = () => {
+				disarmPendingConfirms();
+				const now = Date.now();
+				const win = hubBrowserWindow();
+				if (now - appearanceResetArmedAt > 5000) {
+					appearanceResetArmedAt = now;
+					if (ui !== null && ui.appearanceNote !== null) {
+						ui.appearanceNote.textContent = TL_T("hub.appearance.confirm");
+						ui.appearanceNote.setAttribute("data-tl-armed", "");
+					}
+					if (win !== null && typeof win.setTimeout === "function") {
+						appearanceResetDisarmTimer = win.setTimeout(() => {
+							appearanceResetArmedAt = 0;
+							if (ui !== null && ui.appearanceNote !== null) {
+								ui.appearanceNote.textContent = TL_T("hub.appearance.hint");
+								ui.appearanceNote.removeAttribute("data-tl-armed");
+							}
+						}, 5000);
+					}
+					return;
+				}
+				appearanceResetArmedAt = 0;
+				if (win !== null && typeof win.clearTimeout === "function" && appearanceResetDisarmTimer !== 0) {
+					win.clearTimeout(appearanceResetDisarmTimer);
+					appearanceResetDisarmTimer = 0;
+				}
+				const written = tl5ApplyDefaultAppearance();
+				if (ui !== null && ui.appearanceNote !== null) {
+					ui.appearanceNote.textContent = TL_T("hub.appearance.done", { n: String(written) });
+					ui.appearanceNote.removeAttribute("data-tl-armed");
+				}
+				if (win !== null && typeof win.setTimeout === "function") {
+					win.setTimeout(() => {
+						try {
+							win.location.reload();
+						} catch (error) {
+							setLastError("appearance-reload", error);
+						}
+					}, 700);
 				}
 			};
 			const uploadPetMedia = async (file) => {
@@ -4129,6 +4187,14 @@
 				state.glassEffective = hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-glass-effective": "" }, "");
 				glassCard.appendChild(state.glassEffective);
 				glassCard.appendChild(hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-glass-hint": "" }, TL_T("hub.glass.previewHint")));
+				// v2.0.1: one-click "author's default look" (appearance keys only).
+				const appearanceRow = hubCreate("div", { className: "tl-hub-row" });
+				state.appearanceReset = hubCreate("button", { type: "button", "data-tl-hub-appearance-reset": "", className: "tl-hub-btn" }, TL_T("hub.appearance.reset"));
+				state.appearanceReset.addEventListener("click", () => resetDefaultAppearance());
+				appearanceRow.appendChild(state.appearanceReset);
+				glassCard.appendChild(appearanceRow);
+				state.appearanceNote = hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-appearance-note": "", role: "status" }, TL_T("hub.appearance.hint"));
+				glassCard.appendChild(state.appearanceNote);
 				body.appendChild(glassCard);
 
 				// c) companion look: catalog select + local upload

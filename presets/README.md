@@ -1,6 +1,18 @@
 # 精选配方（presets/）
 
-面板「⑥ 保存/分享」里的内置卡片是**规范来源**（`src/70-sidebar.js` 的 `CURATED_PRESETS`，不联网）；
+## 作者默认外观（`tianlight-default.json`，v2.0.1）
+
+`tianlight-default.json` 是**作者自己的外观设置**导出后筛出来的快照（`format: tianlight-default-appearance`，`version: 1`），
+只保留外观键：`tianlight.wallpaper`（指向随包自带的 `assets/bg-4k.mp4`，不是任何本机/WE 库路径）、
+`tianlight.zones`、`tianlight.layers`、`tianlight.glass`、`tianlight.glassDepth`、`tianlight.font.family`、
+`tianlight.effects`、`tianlight.context`、`tianlight.legibility`、`tianlight.playback`、`tianlight.petMedia.v1`（null = 默认 cat.png 形象）。
+
+- 聊天记录、念头、生活记忆、权限、天气坐标、本机路径、你上传的壁纸与 WE 库条目**都不在其中**。
+- 插件在**首次安装且没有任何已保存设置**时自动应用它；已有设置时绝不覆盖。
+- 想恢复它：角色中枢 →「液态玻璃」卡片 →「恢复默认外观」（两次点击确认，只覆盖上述外观键，不删除任何文件）。
+- 这份 JSON 与客户端内嵌的 `TL5_DEFAULT_APPEARANCE_JSON` 必须逐字节一致（`npm run check` 里的 test/audit 会强制校验）。
+
+## 面板「⑥ 保存/分享」里的内置卡片是**规范来源**（`src/70-sidebar.js` 的 `CURATED_PRESETS`，不联网）；
 这里的 JSON 是可直接复制/分享的配方副本。把文件内容粘贴进面板的「导入配方」文本框，或生成分享链接
 （`#tl=…`）发给别人即可。所有配方都不联网、不上传、不收集数据。
 
