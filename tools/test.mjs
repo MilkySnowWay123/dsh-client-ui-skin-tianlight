@@ -2792,6 +2792,9 @@ await testAsync('R4A client: pet privileges cannot be reached through replaceabl
   let loaded = null
   let disposeBrain = null
   let disposeAgent = null
+  // post-2.0.0 regression: `ctx.inject()` returns a Fiber with `.dispose()` in the real
+  // product; the fake below must expose that shape so a teardown TypeError cannot hide.
+  const agentInjected = []
   globalThis.localStorage = fakeStorage
   globalThis.BroadcastChannel = undefined
   globalThis.window = {
@@ -2848,7 +2851,14 @@ await testAsync('R4A client: pet privileges cannot be reached through replaceabl
       effect: (fn) => fn(),
       inject: (_deps, callback) => {
         const disposer = callback({ get: (name) => (name === 'remote.session' ? remote : undefined), remote: { session: remote } })
-        return typeof disposer === 'function' ? disposer : () => {}
+        let disposed = 0
+        agentInjected.push({ calls: () => disposed })
+        return {
+          dispose() {
+            disposed += 1
+            if (typeof disposer === 'function') disposer()
+          },
+        }
       },
     }
     disposeAgent = r4a.installPetAgent(fakeCtx)
@@ -2941,12 +2951,45 @@ await testAsync('R4A client: pet privileges cannot be reached through replaceabl
     assert.equal(listed.ok, false)
     const audit = r4a.petAuditRead(60)
     assert.ok(Array.isArray(audit) && audit.some((entry) => entry.action === 'agent' && entry.ok === false))
+
+    // post-2.0.0: older hosts return a disposer FUNCTION from ctx.inject; disposing must
+    // still call it (the Fiber-shaped fake above covers the current host).
+    let functionShapeCleanupCalls = 0
+    const functionShapeDispose = r4a.installPetAgent({
+      get: () => undefined,
+      effect: (fn) => fn(),
+      inject: (_deps, callback) => {
+        const disposer = callback({})
+        return () => {
+          functionShapeCleanupCalls += 1
+          if (typeof disposer === 'function') disposer()
+        }
+      },
+    })
+    functionShapeDispose()
+    assert.equal(functionShapeCleanupCalls, 2, 'function-shaped ctx.inject disposers are called exactly once per injection')
   } finally {
+    // Teardown must not log "pet-agent:dispose TypeError: cleanup is not a function"
+    // and every Fiber captured from ctx.inject() must be disposed.
+    const disposeWarnings = []
+    const originalWarn = console.warn
+    console.warn = (...args) => {
+      disposeWarnings.push(args.map((value) => String(value)).join(' '))
+    }
     try {
       if (typeof disposeAgent === 'function') disposeAgent()
     } catch {
       // best effort
+    } finally {
+      console.warn = originalWarn
     }
+    assert.equal(
+      disposeWarnings.some((line) => line.includes('pet-agent:dispose')),
+      false,
+      'Fiber-shaped ctx.inject scopes are disposed without a teardown TypeError',
+    )
+    assert.ok(agentInjected.length >= 2, 'both injected scopes were captured by the fake ctx')
+    assert.ok(agentInjected.every((probe) => probe.calls() >= 1), 'every injected Fiber was disposed via .dispose()')
     try {
       if (typeof disposeBrain === 'function') disposeBrain()
     } catch {

@@ -514,7 +514,19 @@
 				petAgentPending = false;
 				for (const cleanup of cleanups.splice(0).reverse()) {
 					try {
-						cleanup();
+						// post-2.0.0 fix: `ctx.inject()` returns a cordis Fiber (PromiseLike with
+						// `.dispose()`), not a disposer function, while older hosts returned a
+						// function. Accept both shapes; a plain `cleanup()` used to throw
+						// "cleanup is not a function" on every teardown and left the injected
+						// remote.session / uiWorkspace scopes mounted.
+						if (typeof cleanup === "function") {
+							cleanup();
+						} else if (cleanup !== null && cleanup !== undefined && typeof cleanup.dispose === "function") {
+							const result = cleanup.dispose();
+							if (result !== null && result !== undefined && typeof result.catch === "function") {
+								result.catch((error) => note("pet-agent:dispose", error));
+							}
+						}
 					} catch (error) {
 						note("pet-agent:dispose", error);
 					}

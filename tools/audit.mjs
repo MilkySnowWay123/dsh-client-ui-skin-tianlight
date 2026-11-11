@@ -1255,6 +1255,27 @@ report(
     : 'FAIL',
   'A4: synthetic clicks are ignored on role-hub consent / Agent connect / send entry points',
 )
+// A5 (post-2.0.0): ctx.inject() returns a cordis Fiber in current hosts; teardown must
+// dispose both Fiber (.dispose()) and legacy function shapes. The bare cleanup() call
+// produced "pet-agent:dispose TypeError: cleanup is not a function" and leaked the
+// injected remote.session / uiWorkspace scopes on every feature teardown.
+report(
+  (() => {
+    const petAgentAt = source.indexOf('function installPetAgent(')
+    if (petAgentAt < 0) return false
+    const at = source.indexOf('for (const cleanup of cleanups.splice(0).reverse())', petAgentAt)
+    if (at < 0) return false
+    const body = source.slice(at, at + 1200)
+    return (
+      body.includes('typeof cleanup === "function"') &&
+      body.includes('typeof cleanup.dispose === "function"') &&
+      body.includes('pet-agent:dispose')
+    )
+  })()
+    ? 'PASS'
+    : 'FAIL',
+  'A5: pet-agent teardown disposes both function-shaped and Fiber-shaped ctx.inject results',
+)
 // B1: a same-key edit made while the request is in flight stays queued and retries.
 report(
   /for \(const key of winners\) \{[\s\S]{0,160}?settingsMirror\.queue\.has\(key\)\) continue;/.test(source)

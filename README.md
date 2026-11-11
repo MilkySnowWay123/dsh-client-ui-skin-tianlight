@@ -16,6 +16,7 @@
 - **来源与提示**：气泡与角色中枢显示「AI 回复 / 本地回复」；失败按稳定错误码给中文提示（未配置模型、缺少凭据、余额不足、限流、超时、宿主不可用）。
 - **角色中枢 provider 选择**：默认「跟随 DSH 默认模型」，选项来自客户端 `remote.llm.listProviders()`；模型 id 跟随 DSH 默认（方案 A）。自主思考仍用独立的 12 次/天预算，不占对话配额。
 - **同时并入「体检修复」批次**（v1.6.8 之后 20 个提交）：`HOST_API` 路由握手与 `BUILD` 解耦；设置 PUT 合并 + revision CAS（409 不丢在途编辑）；桌宠授权闭包化/会话内存/一次性 consent/导出导入剥离；宿主 WE 路由与转码生命周期加固（loopback Host 白名单、repkgPath 仅 env/config、并发/断开/防覆盖）；统一浮层栈 Esc/Tab、中枢草稿恢复、破坏性操作二次确认；视频解码释放与迟到回调守卫、fps 判定证据化、镜像 `scale` 解耦；导出/导入包一致性（内置演示媒体不计入，约省 67MiB）；SVG 解析式安全过滤 + CSP sandbox；可读性护栏滞回与低电量边沿化；主动开口/自主思考闸门与独立预算；重复代码合并/死代码清理；测试与 verify 环境确定性。记录见本地 `HANDOFF-2026-11-11-CHECKUP-FIXES.md`（仓库外）。
+- **Windows 换行与运行时稳定性**：新增仓库根 `.gitattributes`（`eol=lf`），Windows 克隆后 `build --check` 不再假失败；同时修复 `pet-agent` teardown 对 Fiber 型 `ctx.inject` 的清理（旧版每次卸载会打印 TypeError 并残留注入的 `remote.session`/`uiWorkspace` scope），并新增 A5 审计守卫与回归测试。
 - **版本号**：自本版起仓库版本与 GitHub 公开发布名称统一为 **v2.0.0**（此前的内部 `1.6.x` / 公开 `v1.0.x` 编号保留为历史）。**本项改动了宿主半：升级后必须重启 DSH 一次 + Ctrl+F5**；之后纯浏览器半改动仍只需 `Ctrl+F5`。
 
 ## v1.6.8 · 正式版：桌宠「自主思考」智能体 · 更像人的聊天

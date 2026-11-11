@@ -2,6 +2,6 @@
   "publicVersion": "v2.0.0",
   "internalVersion": "v2.0.0",
   "internalTag": "v2.0.0",
-  "internalClientSha256": "27d8d5c0cbb9c646b200a81b6b6254d091223725cefedf2eefe19a3085f80abe",
-  "note": "From v2.0.0 on the repository, the DSH install and the GitHub release share one version number. Earlier builds used internal 1.6.x / public v1.0.x labels; those tags and releases remain as history."
+  "internalClientSha256": "7d55aecce9c4b741b5d6dfca187c2c7571f4a3a164d5976fcc683605d87adca6",
+  "note": "From v2.0.0 on the repository, the DSH install and the GitHub release share one version number. This build also contains the post-2.0.0 Fiber teardown fix and the .gitattributes LF guard; earlier builds used internal 1.6.x / public v1.0.x labels and remain as history."
 }

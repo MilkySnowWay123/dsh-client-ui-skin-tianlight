@@ -86,6 +86,16 @@ v2.0.0 是 v1.6.8 标签之后第一个发布版本，因此同时包含 2026-11
 11. **气泡/中枢来源标注**：授权前发一句（本地）→「本地回复」；授权后发一句（模型）→「AI 回复」；中枢对话记录同样显示来源。
 12. **回归**：暂停/恢复、清空对话、历史记录、Agent 区、权限总览、其他卡片均不受影响；`_engines` 其他 capabilities 不变。
 
+## 7. 发布验收结果（v2.0.0）
+
+- **GitHub 下载验收（独立复核）**：tag `v2.0.0` 与 `package.json` 版本一致（`v` + `2.0.0`）；`git clone --filter=blob:none --sparse --branch v2.0.0` 11s 成功，codeload `tar.gz` HEAD 200。下载副本按 CI 同款静态链：build --check 26 片段、test 113/113（剔除 67.5 MiB 演示媒体的稀疏下载为 112/113，仅“媒体文件存在”断言缺失，补占位即 113/113）、structure --strict、audit 无阻断、check-css、verify 57 项、i18n zh=en 1369，全 PASS；`pack` 产物 39 文件 / 3,137.2 KiB，版本 2.0.0、HOST_API 2、无机器相关绝对路径。
+- **隔离安装运行（独立复核）**：全新临时 `DSH_HOME` + DSH 0.2.2-rc.1，把下载包按 bundle + junction 安装，headless Edge 验收 **32/32 PASS**：页面应用皮肤（`body[data-dsh-tianlight]`、样式与 UI 挂载、26 slots、reload 后重新应用）；`_engines?api=2` → `api:"2", build:"2.0.0", stale:false, capabilities.petLlm` 对象；`_pet-chat` JSON 契约与 400/405/`provider-not-allowed` 负例正确；**0 uncaught exception / 0 console error**（仅有排除演示媒体的预期 404）。干净 profile 无凭据时返回 `502 missing-credential`（设计内错误码，不是下载/安装缺陷）。
+- **运行中的真实 DSH Desktop 路由冒烟**：`POST /skin-tianlight/_pet-chat` 真实模型调用 200（`deepseek-account / deepseek-flash`，1.3–3.9s，`finish:"stop"`）；非法 JSON 400、错误 Content-Type 415、非 loopback Host 403。
+- **DSH 插件市场条目验收（独立复核）**：awesome-dsh-plugin 条目（PR #7956 merged，后由 #14030 刷新）通过全部规则——文件名/URL/name/`theme` 分类、en+zh 描述与引号规则、仓库根 `package.json` 的 `dsh.bundle.patch` + `dsh.client`、`cordis.patch.yml`、仓库未归档/含 `dsh-plugin` topic/满足年龄/非 first-party、生成的 README 行与 YAML 一致。市场 schema 无版本字段，访客安装仓库 HEAD 即 v2.0.0，**无需更新 PR**（可选仅刷新描述）。
+- **Windows 换行修复**：新增仓库根 `.gitattributes`（`* text=auto eol=lf`），避免 Windows `core.autocrlf=true` 检出把 `lib/client.js` 转成 CRLF 导致 `build --check` 假失败；安装/运行本身不受影响。
+- **运行期稳定性修复（post-2.0.0 运行矩阵发现，已并入本版）**：`pet-agent` 的 teardown 会把 `ctx.inject()` 的返回值当函数调用，而当前 DSH 返回 cordis Fiber（`.dispose()`）——旧代码每次卸载都会打印 `pet-agent:dispose TypeError: cleanup is not a function` 并残留注入的 `remote.session`/`uiWorkspace` scope。现同时支持函数与 Fiber 形状（含 rejected-promise 保护），新增 A5 审计守卫与回归测试；`npm run check` 复跑全绿。
+- 证据目录：`diag/tmp/release-verify-github/EVIDENCE.md`（下载/静态链/隔离运行）与 `diag/tmp/release-verify-market/`（市场条目逐条校验，含 PR/README/仓库元数据证据）。
+
 ## 6. 升级 / 回滚 / 仓库
 
 - 本地生效：**重启 DSH 一次 + `Ctrl+F5`**（宿主半路由 + `HOST_API`/`BUILD` bump）。

@@ -1,0 +1,6 @@
+# Keep every tracked text file LF in the repository and in every checkout.
+# Without this, a Windows clone with core.autocrlf=true rewrites lib/client.js to
+# CRLF, so `node tools/build.mjs --check` reports a false "product mismatch" even
+# though the committed bytes are correct. The installed runtime is unaffected; this
+# only makes a downloaded copy build/check identically on every platform.
+* text=auto eol=lf

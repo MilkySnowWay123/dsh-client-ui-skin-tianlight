@@ -48,3 +48,17 @@
 ## 🧾 许可
 
 - 本仓库代码 MIT；`vendor/` 内第三方组件（WebWallGL MIT、we-wallpaper MIT、wcap Unlicense）随包保留各自许可。
+
+## 🩹 运行期稳定性修复（并入本版）
+
+- 修复 pet-agent teardown 对 Fiber 型 ctx.inject() 返回值的清理：旧版每次功能卸载都会打印 pet-agent:dispose TypeError: cleanup is not a function 并残留注入的 emote.session / uiWorkspace scope；现同时支持函数与 Fiber（.dispose()）两种形状，并新增 A5 审计守卫与回归测试。
+- 新增仓库根 .gitattributes（* text=auto eol=lf）：Windows core.autocrlf=true 检出不再把 lib/client.js 转成 CRLF，
+ode tools/build.mjs --check 不会假失败（安装/运行本来不受影响）。
+
+## 🧪 发布验收（独立复核）
+
+- **GitHub 下载**：tag 2.0.0 与 package.json 版本一致；git clone --filter=blob:none --sparse 11s 成功、codeload 	ar.gz HEAD 200。下载副本按 CI 同款链路全绿：build --check 26 片段、test 113/113、structure --strict、audit 无阻断、check-css、verify 57 项、i18n zh=en 1369；pack 产物 39 文件 / 3,137 KiB、版本 2.0.0、HOST_API 2、无机器路径。
+- **隔离安装与运行**：全新临时 DSH_HOME + DSH 0.2.2-rc.1，把下载包安装为 bundle + junction，headless Edge 验收 **32/32 PASS**：皮肤应用（ody[data-dsh-tianlight]、样式/UI/26 slots、reload 后重新应用）；_engines?api=2 → pi:"2", build:"2.0.0", stale:false, capabilities.petLlm 对象；_pet-chat 契约与负例正确；**0 uncaught exception / 0 console error**（仅排除演示媒体的预期 404）。干净 profile 无凭据时返回 502 missing-credential（设计内错误码）。
+- **真实 DSH Desktop 冒烟**：POST /skin-tianlight/_pet-chat 真实模型调用 200（deepseek-account / deepseek-flash，1.3–3.9s，inish:"stop"）；坏 JSON 400、错误 Content-Type 415、非 loopback Host 403。
+- **DSH 插件市场条目**：awesome-dsh-plugin 条目（PR #7956 merged，后由 #14030 刷新）通过全部规则（文件名/URL/name/theme 分类/双语描述与引号、根 package.json 的 dsh.bundle.patch + dsh.client、cordis.patch.yml、仓库元数据、生成的 README 行一致）；市场无版本字段，访客安装仓库 HEAD 即 v2.0.0，**无需更新 PR**（可选仅刷新描述）。
+- **已知非阻塞项**：sparse 下载未拉取 57MB 演示媒体（按 git blob OID 校验完整性，真实视频/PNG 播放未覆盖）；本地 Node 24 验证与 CI Node 20/22 存在版本差异（CI 已全绿）。
