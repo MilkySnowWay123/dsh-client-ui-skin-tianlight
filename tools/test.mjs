@@ -4622,7 +4622,7 @@ test('default appearance keeps only appearance keys and points the wallpaper at 
 
 test('default appearance is applied only on a fresh install and is reachable from the role hub', () => {
   assert.match(CLIENT_SOURCE, /function tl5ApplyDefaultAppearance\(\)/, 'client must expose the default-appearance writer')
-  assert.match(CLIENT_SOURCE, /localBefore\.length === 0 && remoteHasValues === false/, 'fresh-install guard must inspect local and host state')
+  assert.match(CLIENT_SOURCE, /Object\.keys\(localBefore\)\.length === 0 && remoteHasValues === false/, 'fresh-install guard must inspect local and host state')
   assert.match(CLIENT_SOURCE, /data-tl-hub-appearance-reset/, 'role hub must expose the restore-default-appearance button')
   assert.match(CLIENT_SOURCE, /hub\.appearance\.reset/)
 })

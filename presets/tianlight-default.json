@@ -10,8 +10,8 @@
     "tianlight.glass": "0.98",
     "tianlight.glassDepth": "off",
     "tianlight.font.family": "{\"size\":14,\"ui\":\"system\",\"code\":\"system\",\"weight\":\"normal\",\"lead\":\"normal\",\"track\":\"normal\"}",
-    "tianlight.effects": "{\"enabled\":true,\"parallax\":false,\"parallaxStrength\":0.4,\"click\":false,\"clickStyle\":\"ripple\",\"ambience\":\"none\",\"ambienceDensity\":0,\"transition\":\"fade\",\"transitionMs\":600,\"budget\":\"auto\"}",
-    "tianlight.context": "{\"enabled\":true,\"timeOfDay\":true,\"manualPeriod\":\"auto\",\"focusLink\":false,\"focusDim\":40,\"focusBlur\":6,\"adaptive\":true,\"adaptiveLocked\":false}",
+    "tianlight.effects": "{\"enabled\":true,\"parallax\":false,\"parallaxStrength\":0.4,\"click\":false,\"clickStyle\":\"ripple\",\"ambience\":\"none\",\"ambienceDensity\":0.5,\"transition\":\"fade\",\"transitionMs\":600,\"budget\":\"auto\"}",
+    "tianlight.context": "{\"enabled\":true,\"timeOfDay\":false,\"manualPeriod\":\"auto\",\"focusLink\":false,\"focusDim\":40,\"focusBlur\":6,\"adaptive\":true,\"adaptiveLocked\":false}",
     "tianlight.legibility": "{\"enabled\":true,\"threshold\":4.5,\"boost\":0.12}",
     "tianlight.playback": "{\"speed\":1,\"flip\":false,\"paused\":false,\"filter\":{\"on\":false,\"brightness\":100,\"contrast\":100,\"saturate\":100}}",
     "tianlight.petMedia.v1": null

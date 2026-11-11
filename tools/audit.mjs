@@ -535,7 +535,7 @@ report(
     JSON.parse(defaultAppearanceFile.appearance['tianlight.wallpaper']).url === '/skin-tianlight/bg-4k.mp4' &&
     Object.prototype.hasOwnProperty.call(defaultAppearanceFile.appearance, 'tianlight.weather') === false &&
     source.includes('function tl5ApplyDefaultAppearance()') &&
-    source.includes('localBefore.length === 0 && remoteHasValues === false') &&
+    source.includes('Object.keys(localBefore).length === 0 && remoteHasValues === false') &&
     source.includes('data-tl-hub-appearance-reset')
     ? 'PASS'
     : 'FAIL',
