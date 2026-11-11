@@ -39,8 +39,8 @@ writeFileSync(
   [
     'Drop your own media here; the skin reads this directory at runtime.',
     '',
-    '  bg-main.mp4   wallpaper video, preferred slot (H.264 or HEVC)',
-    '  bg-4k.mp4     fallback wallpaper, must be H.264',
+    '  bg-4k.mp4     shipped demo wallpaper, H.264 3840x2160',
+    '  bg-main.mp4   optional preferred slot when you drop one in (H.264 or HEVC)',
     '  bg-1080.mp4   extra fallback',
     '  cat.png       companion art, transparent PNG, roughly 2:1',
     '',

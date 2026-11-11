@@ -490,14 +490,14 @@ Windows 开启「减少动态效果 / Reduce motion」后，皮肤省电模式�
 来源优先级从高到低：
 
 1. **手动选择**：壁纸面板 → 清单卡片（本地 / 上传 / WE 视频图片 / WE 场景 / WE 网页 / URL / ShaderToy）
-2. **自动**：`bg-main.mp4` → `bg-4k.mp4` → 其它视频 → 第一张图片 → 内置渐变
+2. **自动**：`bg-main.mp4`（若自备）→ `bg-4k.mp4` → 其它视频 → 第一张图片 → 内置渐变
 
 替换壁纸**不需要改代码**，放文件即可：
 
 ```text
 assets/
-  bg-main.mp4     ← 首选视频
-  bg-4k.mp4       ← 备选 / 4K
+  bg-4k.mp4       ← 默认自带的主视频（H.264 4K）
+  bg-main.mp4     ← 可选首选槽：自备后自动选择会优先它
   rain.webp       ← 图片也可以，会作为静态壁纸
   cat.png         ← 桌宠素材，不参与壁纸候选
 ```
@@ -635,8 +635,8 @@ node tools/release.mjs --dry-run --note "…" # 只打印计划，不写/不跑/
 - **第三方**：v0.6.0 内嵌 dsh-we-wallpaper host half（MIT，v0.4.0 @ `61ccaa2`）、wcap（Unlicense）、
   RePKG（MIT，DXT 解码实现依据）、WebWallGL（MIT）；组件、版本、归属与许可全文见
   [docs/THIRD-PARTY.md](docs/THIRD-PARTY.md)
-- **仓库完整版附带默认演示素材**：`assets/bg-main.mp4`、`assets/bg-4k.mp4`、`assets/cat.png`（约 70MB）；`assets/uploads/`、`state/`、`assets/derived/` 与其它自加素材不提交。替换或再分发前请确认你有使用权，缺失时以渐变兜底
-- 桌宠形象与视频版权归各自权利方；如果只想要轻量代码仓库，删除这三个文件即可
+- **仓库完整版附带默认演示素材**：`assets/bg-4k.mp4`、`assets/cat.png`（约 34MB）；`assets/uploads/`、`state/`、`assets/derived/` 与其它自加素材不提交。替换或再分发前请确认你有使用权，缺失时以渐变兜底
+- 桌宠形象与视频版权归各自权利方；如果只想要轻量代码仓库，删除这两个文件即可
 
 ## 已知取舍
 

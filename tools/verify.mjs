@@ -13,7 +13,7 @@ const PKG_VERSION = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8')).
 // ---------- R7: deterministic environment + no plugin-tree writes ----------
 // The host half probes `ffmpeg -version` lazily. Without pinning it, a machine that
 // happens to have ffmpeg turns the "no ffmpeg" assertions red AND lets the transcode
-// POST really spawn ffmpeg and write assets/derived/bg-main.h264.mp4 into this repo.
+// POST really spawn ffmpeg and write assets/derived/bg-4k.h264.mp4 into this repo.
 // Pin the probe to a path that cannot exist before the host module is imported, so
 // verify behaves identically on every machine (this truthfully exercises the 501
 // degradation path without touching the working tree).
@@ -393,8 +393,8 @@ check('transcode status is available and never lies about ffmpeg', () => {
 // defaults are removed), so the source name cannot resolve and the route answers 400
 // BEFORE the ffmpeg probe. Assert the correct, deterministic outcome for the tree we
 // are running in — either way the route must not create a derivative.
-const TRANSCODE_HAS_MEDIA = existsSync(join(PKG, 'assets', 'bg-main.mp4'))
-const transcodeNoFfmpeg = await call('POST', '/skin-tianlight/_transcode?name=bg-main.mp4', {}, '')
+const TRANSCODE_HAS_MEDIA = existsSync(join(PKG, 'assets', 'bg-4k.mp4'))
+const transcodeNoFfmpeg = await call('POST', '/skin-tianlight/_transcode?name=bg-4k.mp4', {}, '')
 check('transcode POST degrades safely without ffmpeg (repo-media independent)', () => {
   assert.equal(process.env.FFMPEG_PATH, FORCED_FFMPEG)
   if (TRANSCODE_HAS_MEDIA) assert.equal(transcodeNoFfmpeg.status, 501)
@@ -500,7 +500,7 @@ check('verify did not write the plugin working tree', () => {
   assert.deepEqual(TREE_CHANGES, [], 'plugin tree changed during verify: ' + TREE_CHANGES.join(', '))
 })
 check('no transcode derivative was produced in assets/derived (force-absent ffmpeg)', () => {
-  const derivative = join(PKG, 'assets', 'derived', 'bg-main.h264.mp4')
+  const derivative = join(PKG, 'assets', 'derived', 'bg-4k.h264.mp4')
   assert.equal(existsSync(derivative), false, derivative + ' must not be created')
   // The POST above may only reach the 501 "ffmpeg is not available" answer (or 400
   // "source missing" in a stripped-media tree); a 200 would mean a real transcode ran

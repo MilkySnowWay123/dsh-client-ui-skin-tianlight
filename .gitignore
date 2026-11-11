@@ -19,11 +19,10 @@ assets/derived/
 # local Wallpaper Engine roots (per-machine paths)
 we-roots.json
 
-# wallpaper / companion media: ship the three defaults in the full repo, ignore
+# wallpaper / companion media: ship the two defaults in the full repo, ignore
 # uploads and any other user-supplied media.
 assets/*
 !assets/README.md
-!assets/bg-main.mp4
 !assets/bg-4k.mp4
 !assets/cat.png
 

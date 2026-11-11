@@ -3,5 +3,5 @@
   "internalVersion": "v2.0.0",
   "internalTag": "v2.0.0",
   "internalClientSha256": "7d55aecce9c4b741b5d6dfca187c2c7571f4a3a164d5976fcc683605d87adca6",
-  "note": "From v2.0.0 on the repository, the DSH install and the GitHub release share one version number. This build also contains the post-2.0.0 Fiber teardown fix and the .gitattributes LF guard; earlier builds used internal 1.6.x / public v1.0.x labels and remain as history."
+  "note": "From v2.0.0 on the repository, the DSH install and the GitHub release share one version number. This final v2.0.0 build includes the post-2.0.0 Fiber teardown fix, the .gitattributes LF guard, the catalog description refresh, and the reduced demo wallpaper set (bg-4k.mp4 + cat.png; the HEVC 1080p bg-main.mp4 was removed). Earlier builds used internal 1.6.x / public v1.0.x labels and remain as history."
 }

@@ -1,6 +1,6 @@
 # GitHub 发布指南
 
-> 不想用命令行 git：也可以把本仓库目录里的内容拖到 GitHub 网页。仓库已包含默认演示素材 `assets/bg-main.mp4`、`assets/bg-4k.mp4`、`assets/cat.png`（约 71MB，单文件均低于 GitHub 100MB 限制）；`backup/`、`dist/`、`node_modules/` 与 `assets/uploads/` 不会进仓库。**不要**直接把开发工作目录整个拖上去，以免带上备份、临时文件和用户上传。
+> 不想用命令行 git：也可以把本仓库目录里的内容拖到 GitHub 网页。仓库已包含默认演示素材 `assets/bg-4k.mp4`、`assets/cat.png`（约 34MB，单文件均低于 GitHub 100MB 限制）；`backup/`、`dist/`、`node_modules/` 与 `assets/uploads/` 不会进仓库。**不要**直接把开发工作目录整个拖上去，以免带上备份、临时文件和用户上传。
 
 ## 前置：准备 git
 
@@ -27,14 +27,13 @@ winget install --id Git.Git -e --source winget
 完整版会带上默认素材：
 
 ```text
-assets/bg-main.mp4   37MB
 assets/bg-4k.mp4     33MB
 assets/cat.png      0.5MB
 ```
 
-`.gitignore` 仍然排除 `node_modules/`、`backup/`、`dist/`、`*.zip`、`diag.log`、`assets/uploads/` 以及除上述三个文件外的 `assets/*`。自加的其它壁纸不会被提交。`assets/uploads/` 属于**用户数据**（皮肤运行时上传的壁纸），不属于发布包；发布或迁移时请单独保留/备份。
+`.gitignore` 仍然排除 `node_modules/`、`backup/`、`dist/`、`*.zip`、`diag.log`、`assets/uploads/` 以及除上述两个文件外的 `assets/*`。自加的其它壁纸不会被提交。`assets/uploads/` 属于**用户数据**（皮肤运行时上传的壁纸），不属于发布包；发布或迁移时请单独保留/备份。
 
-约 **71MB**，单文件都低于 GitHub 100MB 限制。素材版权归各自权利方；只想要轻量代码仓库时，删除这三个文件再提交即可。`vendor/webwallgl/` 是 MIT 的 WebWallGL 3.0，随包分发请保留其 `LICENSE` 与 `README.upstream.md`。
+约 **34MB**，单文件都低于 GitHub 100MB 限制。素材版权归各自权利方；只想要轻量代码仓库时，删除这两个文件再提交即可。`vendor/webwallgl/` 是 MIT 的 WebWallGL 3.0，随包分发请保留其 `LICENSE` 与 `README.upstream.md`。
 
 ## 三、本地验证
 

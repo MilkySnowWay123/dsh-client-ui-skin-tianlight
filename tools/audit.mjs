@@ -1178,7 +1178,7 @@ report(
     verifySource.includes('const TREE_BEFORE = snapshotTree()') &&
     verifySource.includes('const TREE_AFTER = snapshotTree()') &&
     verifySource.includes('verify did not write the plugin working tree') &&
-    verifySource.includes("'assets', 'derived', 'bg-main.h264.mp4'")
+    verifySource.includes("'assets', 'derived', 'bg-4k.h264.mp4'")
     ? 'PASS'
     : 'FAIL',
   'R7: verify snapshots the plugin tree and asserts no transcode derivative was written',

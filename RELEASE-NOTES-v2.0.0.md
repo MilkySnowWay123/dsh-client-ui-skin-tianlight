@@ -62,3 +62,9 @@ ode tools/build.mjs --check 不会假失败（安装/运行本来不受影响）
 - **真实 DSH Desktop 冒烟**：POST /skin-tianlight/_pet-chat 真实模型调用 200（deepseek-account / deepseek-flash，1.3–3.9s，inish:"stop"）；坏 JSON 400、错误 Content-Type 415、非 loopback Host 403。
 - **DSH 插件市场条目**：awesome-dsh-plugin 条目（PR #7956 merged，后由 #14030 刷新）通过全部规则（文件名/URL/name/theme 分类/双语描述与引号、根 package.json 的 dsh.bundle.patch + dsh.client、cordis.patch.yml、仓库元数据、生成的 README 行一致）；市场无版本字段，访客安装仓库 HEAD 即 v2.0.0，**无需更新 PR**（可选仅刷新描述）。
 - **已知非阻塞项**：sparse 下载未拉取 57MB 演示媒体（按 git blob OID 校验完整性，真实视频/PNG 播放未覆盖）；本地 Node 24 验证与 CI Node 20/22 存在版本差异（CI 已全绿）。
+
+## Final v2.0.0 build（2026-11-11 22:10）
+
+- **默认演示素材精简**：仓库只带 `assets/bg-4k.mp4`（H.264 3840×2160）与 `assets/cat.png`，移除 HEVC 1080p 的 `assets/bg-main.mp4`（减少约 35.5MB，并去掉对系统 HEVC 解码器的依赖）；`bg-main.mp4` 仍保留为**可选自备首选槽**，放回该文件即可重新作为自动首选。
+- **插件管理器 catalog 描述更新到 v2.0.0**：宿主路由 LLM 桌宠对话、版本号统一、并入 v1.6.8 之后体检修复批次、默认素材说明。
+- 本 tag 为**更新后的最终 v2.0.0 构建**：与最初 v2.0.0 发布相比内容不同（tag 指向已更新），下载/校验请以当前 tag 指向的提交为准；旧构建可从 `backup/v2.0.0-before-asset-drop` 分支找回。

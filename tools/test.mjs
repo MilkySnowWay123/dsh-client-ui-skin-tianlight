@@ -1159,8 +1159,9 @@ await testAsync('bundle exports user uploads only and skips built-in demo media'
       false,
       'S3b: an unsafe legacy upload is never exported into a new pack',
     )
-    assert.equal(isBundleBuiltinMedia('bg-main.mp4'), true)
+    assert.equal(isBundleBuiltinMedia('bg-4k.mp4'), true)
     assert.equal(isBundleBuiltinMedia('cat.png'), true)
+    assert.equal(isBundleBuiltinMedia('bg-main.mp4'), false, 'bg-main is no longer a shipped built-in')
     assert.equal(isBundleBuiltinMedia('user-clip.mp4'), false)
     // Production defaults (real asset/upload dirs) list uploads only; the check is
     // env-independent (an empty uploads dir still passes).
@@ -1172,12 +1173,12 @@ await testAsync('bundle exports user uploads only and skips built-in demo media'
     const store = new SettingsStore(join(dir, 'state', 'settings.json'))
     const legacy = gzipSync(
       buildTarBuffer([
-        { name: 'wallpapers/bg-main.mp4', data: 'demo-bytes' },
+        { name: 'wallpapers/bg-4k.mp4', data: 'demo-bytes' },
         { name: 'wallpapers/cat.png', data: 'cat-bytes' },
         { name: 'wallpapers/uploads/mine.mp4', data: 'mine-bytes' },
         { name: 'wallpapers/uploads/pet.svg', data: '<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>' },
         // A USER upload may share a demo basename; it must still round-trip.
-        { name: 'wallpapers/uploads/bg-main.mp4', data: 'user-video' },
+        { name: 'wallpapers/uploads/bg-4k.mp4', data: 'user-video' },
         { name: 'wallpapers/uploads/cat.png', data: 'user-cat' },
         { name: 'wallpapers/uploads/unknown.bmp', data: 'skip-bytes' },
       ]),
@@ -1193,12 +1194,12 @@ await testAsync('bundle exports user uploads only and skips built-in demo media'
     const result = imported.bodyJson()
     assert.deepEqual(
       result.imported.slice().sort(),
-      ['bg-main.mp4', 'cat.png', 'mine.mp4', 'pet.svg'],
+      ['bg-4k.mp4', 'cat.png', 'mine.mp4', 'pet.svg'],
       'user media round-trips (even with a demo basename); legacy built-ins and unknown formats do not',
     )
-    assert.equal(result.skipped.some((name) => name === 'wallpapers/bg-main.mp4 (built-in media already installed)'), true, 'legacy built-in reported as skipped')
+    assert.equal(result.skipped.some((name) => name === 'wallpapers/bg-4k.mp4 (built-in media already installed)'), true, 'legacy built-in reported as skipped')
     assert.equal(result.skipped.some((name) => name === 'wallpapers/cat.png (built-in media already installed)'), true, 'legacy companion art reported as skipped')
-    assert.equal(readFileSync(join(dir, 'pool', 'bg-main.mp4'), 'utf8'), 'user-video', 'user upload keeps its own bytes (no duplicate demo)')
+    assert.equal(readFileSync(join(dir, 'pool', 'bg-4k.mp4'), 'utf8'), 'user-video', 'user upload keeps its own bytes (no duplicate demo)')
     assert.equal(readFileSync(join(dir, 'pool', 'cat.png'), 'utf8'), 'user-cat', 'user upload keeps its own bytes (no duplicate companion art)')
     assert.equal(readFileSync(join(dir, 'pool', 'mine.mp4'), 'utf8'), 'mine-bytes')
     assert.equal(existsSync(join(dir, 'staging')), false)
