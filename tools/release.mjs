@@ -76,6 +76,9 @@ const USAGE = `usage: node tools/release.mjs [patch|minor] --note "<text>" [opti
   --dry-run            print the plan + preflight result; write/commit/tag nothing
   --offline            skip the read-only 'git ls-remote' tag-immutability check
   --skip-package       do not build dist/release attachments after tagging
+  --prepare            prepare the version on dev (bump + notes + build + commit +
+                       local attachments) but do NOT create the tag; the tag is cut
+                       later from main after the acceptance matrix passes
   --help               show this help
 
 Exit codes: 0 ok, 1 refused/failed (nothing is committed or tagged on failure).`
@@ -274,6 +277,7 @@ let noteFile = null
 let explicitVersion = null
 let offline = false
 let skipPackage = false
+let prepareOnly = false
 
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index]
@@ -286,6 +290,8 @@ for (let index = 0; index < args.length; index += 1) {
     offline = true
   } else if (arg === '--skip-package') {
     skipPackage = true
+  } else if (arg === '--prepare') {
+    prepareOnly = true
   } else if (arg === '--note') {
     note = args[index + 1]
     index += 1
@@ -378,11 +384,18 @@ if (gitValue(['rev-parse', '--is-inside-work-tree']) !== 'true') {
   else {
     info.push('branch: ' + branch)
     // Branch model: `dev` is where development happens; `main` only carries released
-    // code. Pre-releases are cut from `dev`, stable releases from `main`.
+    // code. Pre-releases are cut from `dev`, stable releases from `main`. `--prepare`
+    // is the one exception: a stable version is prepared on `dev` (version bump, notes,
+    // changelog, build, local attachments — no tag), verified there, then merged to
+    // `main` where the actual tag is cut from the release commit.
     if (prerelease && branch !== 'dev') {
       problems.push('pre-release versions are cut from `dev` (development branch); current branch: ' + branch)
     } else if (!prerelease && branch !== 'main') {
-      problems.push('stable releases are cut from `main` (only released code lives there); current branch: ' + branch)
+      if (prepareOnly && branch === 'dev') {
+        info.push('prepare mode: stable version prepared on `dev`; the tag will be cut on `main` after review')
+      } else {
+        problems.push('stable releases are cut from `main` (only released code lives there); current branch: ' + branch)
+      }
     }
   }
 
@@ -480,7 +493,7 @@ plan.push('changelog: ' + (existsSync(join(ROOT, 'CHANGELOG.md')) ? 'update CHAN
 plan.push('checks: ' + CHECK_CHAIN.map((step) => 'node ' + step.slice(1).join(' ')).join(' && '))
 plan.push('snapshot: node tools/snapshot.mjs (backup/, git-ignored)')
 plan.push('commit: release: ' + tagName + (sameVersion ? ' (or skip when nothing changed)' : ''))
-plan.push('tag: annotated ' + tagName)
+plan.push(prepareOnly ? 'tag: NOT created in --prepare mode (cut later from main)' : 'tag: annotated ' + tagName)
 plan.push(
   skipPackage
     ? 'package: skipped (--skip-package)'
@@ -674,16 +687,19 @@ if (changed.length > 0) {
   console.log('\nno file changes: the manifests already hold ' + targetVersion + '; tagging HEAD directly.')
 }
 
-const tag = runGitAsRelease([
-  'tag',
-  '-a',
-  tagName,
-  '-m',
-  tagName + (noteTitle === '' ? '' : ': ' + noteTitle),
-  '-m',
-  notesContent,
-])
+const tag = prepareOnly
+  ? { status: 0, stderr: '' }
+  : runGitAsRelease([
+      'tag',
+      '-a',
+      tagName,
+      '-m',
+      tagName + (noteTitle === '' ? '' : ': ' + noteTitle),
+      '-m',
+      notesContent,
+    ])
 if (tag.status !== 0) fail('git tag failed: ' + tag.stderr.trim() + ' (the release commit exists but is not tagged)')
+if (prepareOnly) console.log('\nprepare mode: tag ' + tagName + ' NOT created (cut it from `main` after the acceptance matrix passes)')
 
 // ---------------------------------------------------------------------------
 // 7. local package + release attachments (exactly what the release CI builds)
@@ -693,10 +709,10 @@ if (skipPackage) {
 } else {
   console.log('\n\u25b6 package: node tools/pack.mjs')
   if (!runNode('pack', ['tools/pack.mjs'])) {
-    fail('packaging failed; the tag exists only locally (nothing was pushed) — delete it with `git tag -d ' + tagName + '` and fix the pack input')
+    fail('packaging failed' + (prepareOnly ? ' (prepare aborted, nothing was pushed)' : '; the tag exists only locally (nothing was pushed) — delete it with `git tag -d ' + tagName + '` and fix the pack input'))
   }
   if (!runNode('release artifacts', ['tools/release-artifacts.mjs', '--version', targetVersion, '--commit', gitValue(['rev-parse', 'HEAD'])])) {
-    fail('release attachment build failed; the tag exists only locally (nothing was pushed) — delete it with `git tag -d ' + tagName + '` and fix the package')
+    fail('release attachment build failed' + (prepareOnly ? ' (prepare aborted, nothing was pushed)' : '; the tag exists only locally (nothing was pushed) — delete it with `git tag -d ' + tagName + '` and fix the package'))
   }
 }
 
@@ -704,32 +720,51 @@ if (skipPackage) {
 // 8. report + push/rollback instructions
 // ---------------------------------------------------------------------------
 const branch = gitValue(['symbolic-ref', '--short', '-q', 'HEAD'])
-console.log('\n\u2714 release ' + tagName + ' created (local only; nothing was pushed)')
-console.log('  tag:      ' + tagName + ' (annotated)')
-console.log('  head:     ' + commitSha + (commitCreated ? ' (release commit)' : ' (pre-existing commit, no file changes)'))
-console.log('  branch:   ' + branch)
-console.log('  notes:    ' + notesFile + ' (GitHub Release body)')
-console.log('  snapshot: backup/*.' + snapshotStamp + '  +  backup/src.' + snapshotStamp)
-console.log('  changelog: CHANGELOG.md (' + targetVersion + ')')
-if (!skipPackage) console.log('  package:  dist/release/ (2 tgz + SHA256SUMS.txt + build-manifest.json)')
+if (prepareOnly) {
+  console.log('\n\u2714 prepared ' + tagName + ' on `' + branch + '` (no tag yet; nothing was pushed)')
+  console.log('  head:     ' + commitSha + (commitCreated ? ' (release commit)' : ' (pre-existing commit, no file changes)'))
+  console.log('  notes:    ' + notesFile + ' (GitHub Release body)')
+  console.log('  changelog: CHANGELOG.md (' + targetVersion + ')')
+  if (!skipPackage) console.log('  package:  dist/release/ (2 tgz + SHA256SUMS.txt + build-manifest.json)')
+  console.log('\nnext (after the acceptance matrix passes and the release is approved):')
+  console.log('  # 1) append the acceptance-matrix result table to ' + notesFile + ' and commit it on ' + branch)
+  console.log('  # 2) merge ' + branch + ' into main WITHOUT rewriting history, then on main run:')
+  console.log('  #      node tools/release.mjs --version ' + targetVersion + ' --note-file ' + notesFile)
+  console.log('  #    (version/notes already exist, so this only cuts the annotated tag on main HEAD)')
+  console.log('  # 3) push main first, then the tag:')
+  console.log('  #      git push origin main && git push origin ' + tagName)
+  console.log('\nno tag was created; if this prepare must be undone before merging:')
+  if (commitCreated) console.log('  git reset --hard ' + previousSha)
+  console.log('  git checkout -- ' + [...OWNED_FILES, notesFile].join(' '))
+  console.log('  # newly created CHANGELOG.md / ' + notesFile + ': delete them (git checkout cannot remove untracked files)')
+} else {
+  console.log('\n\u2714 release ' + tagName + ' created (local only; nothing was pushed)')
+  console.log('  tag:      ' + tagName + ' (annotated)')
+  console.log('  head:     ' + commitSha + (commitCreated ? ' (release commit)' : ' (pre-existing commit, no file changes)'))
+  console.log('  branch:   ' + branch)
+  console.log('  notes:    ' + notesFile + ' (GitHub Release body)')
+  console.log('  snapshot: backup/*.' + snapshotStamp + '  +  backup/src.' + snapshotStamp)
+  console.log('  changelog: CHANGELOG.md (' + targetVersion + ')')
+  if (!skipPackage) console.log('  package:  dist/release/ (2 tgz + SHA256SUMS.txt + build-manifest.json)')
 
-console.log('\npush (manual, after reviewing; push the branch BEFORE the tag — CI verifies the tag is reachable from it):')
-console.log('  git push origin ' + branch)
-console.log('  git push origin ' + tagName)
+  console.log('\npush (manual, after reviewing; push the branch BEFORE the tag — CI verifies the tag is reachable from it):')
+  console.log('  git push origin ' + branch)
+  console.log('  git push origin ' + tagName)
 
-console.log('\nimmutable-tag rule: once pushed, ' + tagName + ' must never be moved, recreated or deleted.')
-const fixVersion = prerelease ? 'v' + targetVersion.replace(/-.*$/, '') + '-rc.2' : 'v' + bumpVersion(targetParsed, 'patch').parts.join('.')
-console.log('  a bad release is fixed by cutting a NEW version (e.g. ' + fixVersion + '), never by re-tagging.')
-console.log('\nrollback (before pushing — the tag is still private):')
-if (commitCreated) console.log('  git reset --hard ' + previousSha)
-console.log('  git tag -d ' + tagName)
-console.log('  # if the run failed before commit, also restore the release edits:')
-console.log('  git checkout -- ' + [...OWNED_FILES, notesFile].join(' '))
-console.log('  # newly created CHANGELOG.md / ' + notesFile + ': delete them (git checkout cannot remove untracked files)')
-console.log('\nrollback (after pushing): NOT possible by design — do not delete or move the tag.')
-console.log('  publish a new patch/pre-release version and mark the bad release as superseded in its notes.')
+  console.log('\nimmutable-tag rule: once pushed, ' + tagName + ' must never be moved, recreated or deleted.')
+  const fixVersion = prerelease ? 'v' + targetVersion.replace(/-.*$/, '') + '-rc.2' : 'v' + bumpVersion(targetParsed, 'patch').parts.join('.')
+  console.log('  a bad release is fixed by cutting a NEW version (e.g. ' + fixVersion + '), never by re-tagging.')
+  console.log('\nrollback (before pushing — the tag is still private):')
+  if (commitCreated) console.log('  git reset --hard ' + previousSha)
+  console.log('  git tag -d ' + tagName)
+  console.log('  # if the run failed before commit, also restore the release edits:')
+  console.log('  git checkout -- ' + [...OWNED_FILES, notesFile].join(' '))
+  console.log('  # newly created CHANGELOG.md / ' + notesFile + ': delete them (git checkout cannot remove untracked files)')
+  console.log('\nrollback (after pushing): NOT possible by design — do not delete or move the tag.')
+  console.log('  publish a new patch/pre-release version and mark the bad release as superseded in its notes.')
+}
 
 console.log('\nrestore paths:')
 console.log('  backup/' + snapshotStamp + ' / backup/src.' + snapshotStamp + ' = this release state')
 console.log('  npm run restore                = restore the NEWEST snapshot (this release state)')
-console.log('  git checkout ' + tagName + '    = inspect the tagged tree')
+if (!prepareOnly) console.log('  git checkout ' + tagName + '    = inspect the tagged tree')
