@@ -2,6 +2,14 @@
 // variables, listener/timer inventory, and lifecycle ordering in apply().
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import {
+  DSH_COMPAT_MUST_MATCH,
+  DSH_COMPAT_MUST_NOT_MATCH,
+  DSH_COMPAT_RANGE,
+  LEGACY_BROAD_RANGE,
+  OFFICIAL_PEER_PACKAGES,
+  satisfies,
+} from './compat.mjs'
 
 const FILE = fileURLToPath(new URL('../lib/client.js', import.meta.url))
 const source = fs.readFileSync(FILE, 'utf8')
@@ -483,6 +491,7 @@ report(
 
 // ---- 15. v1.6.3: display name is 天光 (no legacy 遐蝶) + DSH 0.2.0/0.2.1/0.2.2 declared ----
 const skinManifest = JSON.parse(fs.readFileSync(fileURLToPath(new URL('../skin.json', import.meta.url)), 'utf8'))
+const packageManifest = JSON.parse(fs.readFileSync(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf8'))
 const readmeText = fs.readFileSync(fileURLToPath(new URL('../README.md', import.meta.url)), 'utf8')
 report(
   skinManifest.name === '天光' &&
@@ -496,10 +505,23 @@ report(
 report(
   Array.isArray(skinManifest.dshCompatibilityTested) &&
     ['0.2.0-rc.2', '0.2.1-rc.5', '0.2.2-rc.1'].every((version) => skinManifest.dshCompatibilityTested.includes(version)) &&
-    skinManifest.dshCompatibilityRange === '>=0.2.0-rc.1 <0.3.0'
+    skinManifest.dshCompatibilityRange === DSH_COMPAT_RANGE &&
+    packageManifest.engines?.dsh === DSH_COMPAT_RANGE &&
+    OFFICIAL_PEER_PACKAGES.every((name) => packageManifest.peerDependencies?.[name] === DSH_COMPAT_RANGE)
     ? 'PASS'
     : 'FAIL',
   'v1.6.3 declares DSH 0.2.0 / 0.2.1 / 0.2.2 compatibility (checked in the multi-version matrix)',
+)
+report(
+  DSH_COMPAT_MUST_MATCH.every((version) => satisfies(version, DSH_COMPAT_RANGE)) &&
+    DSH_COMPAT_MUST_NOT_MATCH.every((version) => satisfies(version, DSH_COMPAT_RANGE) === false) &&
+    // regression evidence for the bug this guarded: the old broad range silently
+    // excluded every 0.2.1-* / 0.2.2-* prerelease build under default semver.
+    satisfies('0.2.1-rc.5', LEGACY_BROAD_RANGE) === false &&
+    satisfies('0.3.0-rc.1', DSH_COMPAT_RANGE) === false
+    ? 'PASS'
+    : 'FAIL',
+  'v2.0.1 DSH range has explicit prerelease branches (0.2.x incl. rc/alpha matches; 0.3.x blocked)',
 )
 
 // ---- 16. v1.6.4: AI chat in the pet menu + per-look action packs + visible media filenames ----

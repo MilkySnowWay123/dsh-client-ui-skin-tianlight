@@ -518,7 +518,7 @@ assets/
 
 | 项 | 说明 |
 |---|---|
-| 支持范围 | **DSH 0.2.0 / 0.2.1 / 0.2.2**（`>=0.2.0-rc.1 <0.3.0`），一份构建通用；矩阵见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) |
+| 支持范围 | **DSH 0.2.0 / 0.2.1 / 0.2.2**（含 rc/alpha：`>=0.2.0-rc.1 <0.2.1-0 \|\| >=0.2.1-0 <0.2.2-0 \|\| >=0.2.2-0 <0.3.0-0`），一份构建通用；0.3.x 起被 DSH 安装/启动门禁拦下；矩阵与源码证据见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) |
 | 测试版本 | 真实运行时实测：`0.2.0-rc.2`、`0.2.1-rc.5`（npm）、`0.2.2-rc.1`（npm + 本机 Desktop 实机）；`0.2.1-rc.3` Desktop 为 v0.3.0 基线 |
 | v0.5.0 验证状态 | 已整合 git `72d72fe`：724,684 字符 / 21 片段，静态链全 PASS（test 61/61）；运行时矩阵 **4/4 运行时 PASS，323/323 断言，0 console error**（web 80/80 ×3 + Desktop 83/83），旧宿主 × 新客户端降级 **17/17 PASS**；详见 [docs/RELEASE-0.5.0.md](docs/RELEASE-0.5.0.md) §4、残余风险 §9 |
 | v0.5.1 验证状态 | 已整合 git `7282d94`：768,962 字符 / 21 片段，静态链全 PASS（test 61/61）；运行时矩阵 **4/4 运行时 PASS，387/387 断言**（web 96/96 ×3 + Desktop 99/99；0 failed / 0 skipped / 0 console error），C4 默认关闭态零外部请求（0 open-meteo），旧宿主降级 17/17 PASS；详见 [docs/RELEASE-0.5.1.md](docs/RELEASE-0.5.1.md) §8 |
@@ -528,7 +528,7 @@ assets/
 | WE 集成（v0.6.0） | 宿主半新增第二路由前缀 `/api/we-wallpaper/*`（list/preview/media Range/pkg/web/scene-video 503/diagnostics/state），`_wallpapers`/`_engines` 只做 **additive**；旧宿主上 WE 路由 404 → 页面提示重启/更新，其它功能正常；场景动态缓存 **Windows-only** |
 | 行为变更（v0.5.3） | 皮肤语言显式选择**不再切换 DSH 界面语言**（DSH 语言归 DSH 设置；要跟随请选「跟随 DSH」）；C1/C2/C3/C4 默认 OFF（已持久化选择保留）；新增本地键 `tianlight.cache.known`（不参与宿主同步） |
 | 设置数据安全 | v0.5.2 起：宿主有的键权威、显式 null 仍删除、本地独有键保留并回推；导入前备份 `tianlight.backup.host` 是**本地键**（`tianlight.backup.` 前缀不参与宿主同步，256KB 上限）；⑦ 有「恢复宿主导入前备份」 |
-| 最低要求 | 支持 `dsh.client` 的版本（`0.1.5` 起）；自动桥接的正式验证范围见上 |
+| 最低要求 | DSH `>=0.2.0-rc.1 <0.3.0`（声明在 `package.json` → `engines.dsh` + 官方包 `peerDependencies`；`dsh.client` 机制自 0.1.5 起存在，但本构建只承诺 0.2.x）；自动桥接的正式验证范围见上 |
 | v0.5.0 / v0.5.1 / v0.5.2 / v0.5.3 / v0.6.0 依赖的稳定钩子 | `[data-chat-running]`（专注联动）与 locale 服务（双语）在三条线均存在；选择器桥未改，CSS 仍零哈希依赖；v0.5.1 没有新增 DSH 钩子/宿主路由（C4 只用标准 `fetch`）；v0.5.2/v0.5.3 是修复版；**v0.6.0 新增第二 webServer 前缀 `/api/we-wallpaper` + `slots` 的 `settings.section`/`sidebar.footer.action`（均为 additive，缺失时降级）** |
 | 旧宿主降级 | v0.5.0 宿主路由在旧宿主上 404 → 对应入口隐藏/退化为本地模式，既有壁纸/面板/特效功能不受影响；v0.5.1 / v0.5.2 / v0.5.3 无新路由，只有 build 标记变化；**v0.6.0 的 WE 路由在旧宿主 404 → 壁纸库页面提示「宿主半需重启/更新」，其余功能正常（该组合未真机复验，见兼容性文档）** |
 | 联网 / 隐私 | 默认**零网络请求**；唯一可选联网是 C4 天气：显式启用且已定位后只请求 Open-Meteo 公共接口（**免 API key、无账号、无遥测**，只发送城市名或坐标），失败静默保留上次观测；**v1.6.1 主界面天气胶囊只读本地 `summary()`，不新增网络请求**；其余功能完全离线 |

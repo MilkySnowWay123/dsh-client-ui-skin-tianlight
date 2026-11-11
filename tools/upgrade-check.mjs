@@ -165,6 +165,6 @@ if (failed === 0) {
   console.log('all upgrade assumptions hold')
 } else {
   console.log(`${failed} assumption(s) broken: fix the FAIL lines before shipping this build,`)
-  console.log('and update skin.json dshCompatibility if the version changed.')
+  console.log('and update skin.json dshCompatibility / dshCompatibilityRange and package.json engines.dsh + peers if the version changed.')
   process.exitCode = 1
 }

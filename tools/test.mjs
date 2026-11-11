@@ -29,6 +29,13 @@ import { buildTarBuffer, classifyBundleEntry, handleBundle, handleImport, isBund
 import { servePath } from '../lib/http-media.js'
 import { SVG_MAX_BYTES, isSafeSvgBuffer } from '../lib/media-types.js'
 import { TINY_MP4, TINY_PNG, makeMediaFixture } from './media-fixtures.mjs'
+import {
+  DSH_COMPAT_MUST_MATCH,
+  DSH_COMPAT_RANGE,
+  LEGACY_BROAD_RANGE,
+  OFFICIAL_PEER_PACKAGES,
+  satisfies,
+} from './compat.mjs'
 import { FrameCache, handleFrameCache, handleFrameCacheStatus, sniffImageType, validCacheKey } from '../lib/media-cache.js'
 import {
   buildTranscodeArgs,
@@ -4516,6 +4523,46 @@ test('v2.0.0 client half wires the built-in dsh adapter, labels and provider pic
   assert.equal(/remote\.llm\.(stream|complete|chat|prompt)/.test(CLIENT_SOURCE), false, 'no model call is attempted from the page')
   assert.equal(/require\(["']@deepseek-ai\//.test(CLIENT_SOURCE), false, 'the client bundle requires no DSH package')
   assert.equal(/from\s+["']@deepseek-ai\//.test(CLIENT_SOURCE), false, 'the client bundle imports no DSH package')
+})
+
+// ---- v2.0.1: DSH compatibility range must admit every 0.2.x build and block 0.3.x ----
+// The harness reads `engines.dsh` (0.2.1/0.2.2) or `peerDependencies` (0.2.0) with
+// includePrerelease: true; catalog/storefront consumers use plain semver. The
+// explicit `||` branches are what make both agree on rc/alpha releases.
+const SKIN_MANIFEST = JSON.parse(readFileSync(new URL('../skin.json', import.meta.url), 'utf8'))
+const PACKAGE_MANIFEST = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+
+test('DSH compatibility range matches 0.2.0/0.2.1/0.2.2 stable and prerelease builds', () => {
+  for (const version of DSH_COMPAT_MUST_MATCH) {
+    assert.equal(satisfies(version, DSH_COMPAT_RANGE), true, version + ' must match (plain semver)')
+    assert.equal(satisfies(version, DSH_COMPAT_RANGE, { includePrerelease: true }), true, version + ' must match (harness includePrerelease)')
+  }
+  for (const version of ['0.2.0-rc.2', '0.2.1-alpha.1', '0.2.1-rc.5', '0.2.2-rc.1', '0.2.2']) {
+    assert.equal(satisfies(version, DSH_COMPAT_RANGE), true, version + ' must match')
+  }
+})
+
+test('DSH compatibility range blocks 0.3.x and later (stable and prerelease)', () => {
+  for (const version of ['0.3.0-rc.1', '0.3.0-alpha.1', '0.3.0', '0.4.0']) {
+    assert.equal(satisfies(version, DSH_COMPAT_RANGE), false, version + ' must not match (plain semver)')
+    assert.equal(satisfies(version, DSH_COMPAT_RANGE, { includePrerelease: true }), false, version + ' must not match (includePrerelease)')
+  }
+})
+
+test('the compatibility declaration is identical in package.json engines, peers and skin.json', () => {
+  assert.equal(SKIN_MANIFEST.dshCompatibilityRange, DSH_COMPAT_RANGE, 'skin.json range')
+  assert.equal(PACKAGE_MANIFEST.engines.dsh, DSH_COMPAT_RANGE, 'package.json engines.dsh')
+  for (const name of OFFICIAL_PEER_PACKAGES) {
+    assert.equal(PACKAGE_MANIFEST.peerDependencies[name], DSH_COMPAT_RANGE, 'peerDependencies[' + name + ']')
+  }
+})
+
+test('regression evidence: the old broad range silently excluded 0.2.1/0.2.2 prereleases', () => {
+  for (const version of ['0.2.1-rc.5', '0.2.2-rc.1']) {
+    assert.equal(satisfies(version, LEGACY_BROAD_RANGE), false, version + ' must not match the legacy range')
+  }
+  // only the 0.2.0 tuple carried a prerelease comparator in the legacy range
+  assert.equal(satisfies('0.2.0-rc.2', LEGACY_BROAD_RANGE), true)
 })
 
 console.log(`tests: ${passed} passed, ${failures.length} failed`)
