@@ -53,7 +53,8 @@
 ## 验证
 
 - 静态链 `npm run check` 全绿：build --check 26 片段、**test 125/125**、structure --strict、audit 无阻断（新增 4 条 v2.0.1 守卫）、check-css 10 块、verify ALL CHECKS PASSED、i18n zh=en 1373。
-- 任务 7 验收矩阵（3 个 DSH 版本 × 2 种安装方式 + 默认外观截图）结果见文末表格。
+- 任务 7 验收矩阵：**12/12 组合（3 个真实 DSH 运行时 × 2 种安装形态 × 全新安装/升级）全部通过**，明细见文末表格。
+- 矩阵用的 Release tarball 内容与本地 `build-manifest.json` 指纹（version / commit / client sha256 / HOST_API）逐项一致；默认外观 11 个外观键与 `presets/tianlight-default.json` 完全一致；卸载后页面无 `data-dsh-tianlight` 属性/样式/节点。
 
 ## 安装与升级
 
@@ -67,6 +68,31 @@
 - 兼容承诺仅限 DSH `>=0.2.0-rc.1 <0.3.0`；0.3.x 起会被 DSH 兼容门禁明确拦下，需先跑兼容矩阵再放宽 `tools/compat.mjs`。
 - 卸载插件后数据目录仍保留（设计如此），需要彻底清理时手动删除 `$DSH_HOME/profiles/<profile>/tianlight/`。
 - 「恢复默认外观」只覆盖外观键，不会重置聊天、权限、天气与上传文件。
+- 默认外观是**确定性快照**：预设把 C1 时段外观（`context.timeOfDay`）固定为关闭；想要随时间变化的氛围，可在 ⑤ 情境面板自行开启。
+
+
+## 任务 7 验收矩阵（发布前实测）
+
+环境：3 个真实 DSH 运行时（隔离 `$DSH_HOME` + headless Edge CDP）× 2 种安装形态（Release tarball 内容 / git 源码检出）。每个组合依次执行「全新安装 → 从 v2.0.0 升级（卸载再安装）→ 卸载」，全部在临时 DSH_HOME 中完成（不触碰本机 live 数据）。
+
+| DSH 版本 | 安装方式 | 全新安装 | 升级保留（设置 + 上传壁纸） | 卸载无残留 |
+|---|---|---|---|---|
+| 0.2.0-rc.2 | tarball | ✅ 通过 | ✅ 通过 | ✅ 通过 |
+| 0.2.0-rc.2 | git 源码 | ✅ 通过 | ✅ 通过 | ✅ 通过 |
+| 0.2.1-rc.5 | tarball | ✅ 通过 | ✅ 通过 | ✅ 通过 |
+| 0.2.1-rc.5 | git 源码 | ✅ 通过 | ✅ 通过 | ✅ 通过 |
+| 0.2.2-rc.1 | tarball | ✅ 通过 | ✅ 通过 | ✅ 通过 |
+| 0.2.2-rc.1 | git 源码 | ✅ 通过 | ✅ 通过 | ✅ 通过 |
+
+每个组合的断言（12/12 通过）：
+
+- `body[data-dsh-tianlight]` 出现；浏览器控制台 0 error / 0 exception；
+- `GET /skin-tianlight/_fingerprint` 的 version / git commit / `lib/client.js` sha256 / HOST_API / DSH 版本 / 安装方式与本地 `build-manifest.json` 一致；
+- 全新安装：11 个外观键与 `presets/tianlight-default.json` 完全一致（截图见仓库 `screenshots/`）；
+- 升级：改过的设置（`tianlight.glass=1.13`）与上传的壁纸都保留；旧插件目录数据未删除；`<profile>/tianlight/migration.json` 迁移记录存在；
+- 卸载：DSH 正常启动，无 `data-dsh-tianlight` 属性 / 无皮肤样式表 / 无皮肤节点，控制台干净。
+
+证据：`diag/tmp/task7/runs/20261112-002931/`（`results.json` + `shots/` + `logs/`）。
 
 ## 许可
 
