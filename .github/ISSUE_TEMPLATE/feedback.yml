@@ -31,6 +31,14 @@ body:
     validations:
       required: true
   - type: input
+    id: fingerprint
+    attributes:
+      label: 版本指纹
+      description: 角色中枢 →「功能自检」或「反馈」面板 →「复制指纹」，把整行原样粘贴到这里（版本 · git commit · lib/client.js sha256 前 12 位 · HOST_API · DSH 版本 · 安装方式）
+      placeholder: 2.0.1 · 8f3a2b1c9d0e · client 7d55aecce9c4 · HOST_API 2 · DSH 0.2.2-rc.1 · tarball
+    validations:
+      required: true
+  - type: input
     id: dsh
     attributes:
       label: DSH 版本

@@ -89,7 +89,16 @@ sha256sum -c --ignore-missing SHA256SUMS.txt
 cd dsh-client-ui-skin-tianlight && sha256sum -c ../SHA256SUMS.txt --ignore-missing
 ```
 
-安装后的指纹（角色中枢 → 自检）应显示与 `build-manifest.json` 相同的 version / commit 短哈希 / clientSha256 前 12 位。
+安装后的指纹（角色中枢 → 自检 / 反馈）应显示与 `build-manifest.json` 相同的 version / commit 短哈希 / clientSha256 前 12 位 / HOST_API；
+`_fingerprint` 路由与 `build-manifest.json` 同源（`tools/pack.mjs` 写入包内 `build-info.json` 记录 commit）。
+
+安装后的文件核对：用 Release 的 `SHA256SUMS.txt` 跑
+
+```bash
+node tools/verify-install.mjs <安装后的插件目录> SHA256SUMS.txt
+```
+
+输出 `完全一致：N/N 个文件…` 即通过；否则会列出 `MISMATCH` / `MISSING` / `EXTRA`（`state/`、`uploads/` 等用户数据会被忽略）。
 
 ## 六、安装方式（给用户）
 

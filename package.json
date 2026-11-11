@@ -50,6 +50,7 @@
     "compat": "node tools/compat-matrix.mjs",
     "pack": "node tools/pack.mjs",
     "artifacts": "node tools/release-artifacts.mjs",
+    "verify-install": "node tools/verify-install.mjs",
     "snapshot": "node tools/snapshot.mjs",
     "restore": "node tools/restore.mjs",
     "agent-check": "node tools/agent-check.mjs",

@@ -559,6 +559,26 @@ report(
   'v2.0.1 user data lives in <DSH profile dir>/tianlight (survives uninstall) and legacy plugin-dir data is copied once without deleting it',
 )
 
+// ---- v2.0.1: exact build fingerprint (host route + hub panels + pack metadata) ----
+const fingerprintPackSource = fs.readFileSync(fileURLToPath(new URL('../tools/pack.mjs', import.meta.url)), 'utf8')
+const verifyInstallSource = fs.readFileSync(fileURLToPath(new URL('../tools/verify-install.mjs', import.meta.url)), 'utf8')
+const feedbackTemplateSource = fs.readFileSync(fileURLToPath(new URL('../.github/ISSUE_TEMPLATE/feedback.yml', import.meta.url)), 'utf8')
+report(
+  persistentIndexSource.includes("rest === '_fingerprint'") &&
+    persistentIndexSource.includes('buildFingerprint') &&
+    source.includes('/_fingerprint') &&
+    source.includes('data-tl-hub-fingerprint-selftest') &&
+    source.includes('data-tl-hub-fingerprint-feedback') &&
+    source.includes('hub.fingerprint.title') &&
+    fingerprintPackSource.includes('build-info.json') &&
+    verifyInstallSource.includes('export function verifyInstall') &&
+    feedbackTemplateSource.includes('id: fingerprint') &&
+    feedbackTemplateSource.includes('required: true')
+    ? 'PASS'
+    : 'FAIL',
+  'v2.0.1 fingerprint: host route + hub self-test/feedback panels + pack build-info + verify-install tool + required issue-template field',
+)
+
 // ---- 16. v1.6.4: AI chat in the pet menu + per-look action packs + visible media filenames ----
 report(
   source.includes('pet.action.chat') &&

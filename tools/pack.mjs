@@ -11,11 +11,19 @@
 //   node tools/pack.mjs --code-only     code only (no demo media, ~3 MB)
 //   node tools/pack.mjs --out <dir>     pack into another root (read-only checkouts)
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = dirname(HERE)
+
+/** git value or '' when git is unavailable (pack must still work outside a checkout). */
+function gitText(args) {
+  const result = spawnSync('git', args, { cwd: ROOT, encoding: 'utf8' })
+  if (result.status !== 0) return ''
+  return String(result.stdout ?? '').trim()
+}
 const manifest = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
 const codeOnly = process.argv.includes('--code-only')
 const outIndex = process.argv.indexOf('--out')
@@ -89,7 +97,37 @@ if (!codeOnly) {
   }
 }
 
-// 4. report
+// 4. build-info.json: the installed-build identity the role hub's self-test / feedback
+// fingerprint reads back (version, git commit, commit time). The commit DATE is used as
+// builtAt instead of "now" so re-packing the same commit is byte-identical.
+const envCommit = typeof process.env.TL_BUILD_COMMIT === 'string' ? process.env.TL_BUILD_COMMIT.trim() : ''
+const commit = /^[0-9a-f]{40,64}$/i.test(envCommit) ? envCommit.toLowerCase() : gitText(['rev-parse', 'HEAD'])
+const commitIso = commit === '' ? '' : gitText(['log', '-1', '--format=%cI'])
+const sourceEpoch = Number(process.env.SOURCE_DATE_EPOCH)
+const builtAt =
+  commitIso !== ''
+    ? commitIso
+    : Number.isSafeInteger(sourceEpoch) && sourceEpoch >= 0
+      ? new Date(sourceEpoch * 1000).toISOString()
+      : '1970-01-01T00:00:00.000Z'
+writeFileSync(
+  join(OUT, 'build-info.json'),
+  JSON.stringify(
+    {
+      schema: 1,
+      product: manifest.name,
+      version: manifest.version,
+      commit: commit === '' ? null : commit,
+      builtAt,
+      source: 'pack',
+    },
+    null,
+    2,
+  ) + '\n',
+  'utf8',
+)
+
+// 5. report
 const walk = (dir) => {
   let total = 0
   let files = 0
