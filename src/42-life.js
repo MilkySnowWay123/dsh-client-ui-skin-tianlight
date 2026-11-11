@@ -40,6 +40,9 @@
 		const LIFE_FOCUS_MINUTES = 25;
 		const LIFE_FOCUS_MAX_MINUTES = 180;
 		const LIFE_SAY_HOLD_MS = 3200;
+// S1: while the brain is paused the deferred queue is retried after this delay; the
+// 30s tick replays it once the user resumes (never during the pause).
+const LIFE_PAUSE_REPLAY_MS = 60 * 1000;
 		const LIFE_PERIODS = ["dawn", "morning", "noon", "afternoon", "dusk", "evening", "night"];
 		const LIFE_PERIOD_LINE = {
 			dawn: "life.line.dawn",
@@ -541,6 +544,19 @@
 				const now = lifeNumber(nowInput, Date.now());
 				const deferred = state.deferred;
 				if (deferred.length === 0) return { replayed: 0 };
+				// S1: a paused brain shows nothing. Keep the queue intact and let the next
+				// tick after resume replay it (pause is a presentation gate, not a drop).
+				let paused = false;
+				try {
+					paused = typeof petBrainInternal !== "undefined" && petBrainInternal !== null && petBrainInternal.isPaused() === true;
+				} catch (error) {
+					paused = false;
+				}
+				if (paused) {
+					for (const item of deferred) item.dueAt = now + LIFE_PAUSE_REPLAY_MS;
+					lifeSaveState();
+					return { replayed: 0, deferred: true };
+				}
 				const due = [];
 				const keep = [];
 				for (const item of deferred) {
@@ -554,8 +570,14 @@
 				for (const item of due) {
 					replayed += 1;
 					try {
-						const duty = globalThis.tianlightDuty;
-						if (duty !== null && duty !== undefined && typeof duty.replay === "function") duty.replay(item.action);
+						// S1: prefer the duty channel's same-closure replay bridge; the global is
+						// only a fallback for a stripped harness.
+						const bridgeReplay = companionDutyBridge.dutyReplay;
+						if (typeof bridgeReplay === "function") bridgeReplay(item.action);
+						else {
+							const duty = globalThis.tianlightDuty;
+							if (duty !== null && duty !== undefined && typeof duty.replay === "function") duty.replay(item.action);
+						}
 					} catch (error) {
 						note("life:replay", error);
 					}
@@ -722,6 +744,19 @@
 					result.reason = "focus";
 					return result;
 				}
+				// S1: the brain is the single owner of "may I speak first?" (pause,
+				// proactive grant + life gates). Read it through the same-closure bridge,
+				// never through the replaceable globalThis.tianlightPet.
+				let proactiveVerdict = null;
+				try {
+					proactiveVerdict = typeof petBrainInternal !== "undefined" && petBrainInternal !== null ? petBrainInternal.proactiveVerdict({ source: "life-proactive" }) : null;
+				} catch (error) {
+					proactiveVerdict = null;
+				}
+				if (proactiveVerdict !== null && proactiveVerdict.allowed !== true) {
+					result.reason = typeof proactiveVerdict.reason === "string" && proactiveVerdict.reason !== "" ? proactiveVerdict.reason : "proactive-denied";
+					return result;
+				}
 				if (state.budget.used >= state.budget.cap) {
 					result.reason = "budget";
 					return result;
@@ -797,7 +832,9 @@
 		}
 
 		function lifeGuessMediaKind(url) {
-			return /\.(mp4|webm|mov|m4v|mkv|avi)(\?|#|$)/i.test(String(url)) ? "video" : "image";
+			// S4: shared client media-kind detection (11-platform), with the historical
+			// "unknown -> image" fallback this function has always had.
+			return tl5MediaKindFromName(url) === "video" ? "video" : "image";
 		}
 
 		/** Rebuild a catalog URL from a persisted id (catalog may not have loaded yet). */
@@ -1283,6 +1320,7 @@
 				lifeLoadMediaSelection();
 				const previousGlobal = globalThis.tianlightLife;
 				const previousGate = companionDutyBridge.lifeGate;
+				const previousLifeBridge = companionDutyBridge.life;
 
 				// 1) bridge: the duty channel reads this on every inbound action.
 				const bridgeGate = (action) => lifeGate(action);
@@ -1379,7 +1417,11 @@
 					tryProactive: (now) => lifeTryProactive(now),
 				};
 				globalThis.tianlightLife = api;
+				// S1: same-closure bridge for the brain (petLife reads this first, so a
+				// same-page script cannot replace the life status/gates the brain trusts).
+				companionDutyBridge.life = api;
 				cleanups.push(() => {
+					if (companionDutyBridge.life === api) companionDutyBridge.life = previousLifeBridge === undefined ? null : previousLifeBridge;
 					if (globalThis.tianlightLife !== api) return;
 					if (previousGlobal === undefined) delete globalThis.tianlightLife;
 					else globalThis.tianlightLife = previousGlobal;

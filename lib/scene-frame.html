@@ -23,10 +23,14 @@
   const project = params.get("project") || "";
   const fps = Math.max(1, Math.min(60, Number(params.get("fps")) || 30));
   const startPaused = params.get("paused") === "1";
+  // R8b (REV-R6 F2): per-mount token supplied by the parent. Echo it on every message
+  // so a late message from an unmounted/reused frame can never be mistaken for the
+  // current mount's message.
+  const mountToken = params.get("token") || "";
   const stage = document.getElementById("stage");
   const post = (payload) => {
     try {
-      parent.postMessage(Object.assign({ __tlScene: true }, payload), "*");
+      parent.postMessage(Object.assign({ __tlScene: true, token: mountToken }, payload), "*");
     } catch {
       // parent may be gone; nothing useful to do
     }

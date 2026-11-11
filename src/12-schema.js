@@ -21,6 +21,15 @@
 		 *      - bootstrap 的 push 失败按需重试一次（1s，仅网络/5xx/超时）；
 		 *      - tl5Diag("settings") 记录 {localKeys, remoteKeys, pushedKeys} 计数，
 		 *        供 verifier 断言“首启全量推送 / 采纳后回推”。
+		 *   6. v0.6.1 revision 冲突检测 + 数据键隔离：
+		 *      - PUT 带 expectedRevision（本窗口最后看到的宿主 revision）。宿主不一致
+		 *        返回 409 + 当前权威完整 settings；客户端先合并、再重推自己的差异，
+		 *        不静默覆盖另一个窗口刚写的键。旧宿主只返 revision、旧客户端不带
+		 *        expectedRevision 时都保持 last-write-wins 兼容。
+		 *      - 宿主 PUT 200 现在返回合并后的完整 settings，客户端以响应为准落地
+		 *        本地镜像（不再只把 revision 推高）。
+		 *      - 聊天记录/自主念头/生活记忆/Agent 审计等“数据”键（TL5_DATA_KEYS）不参与
+		 *        宿主同步、不进导出包、导入包也不会写回宿主；它们只留在 localStorage。
 		 *
 		 * 生命周期：
 		 *   bootstrapSettingsRuntime(body)  apply() 里 await：先迁移、再接管宿主配置。
@@ -30,7 +39,7 @@
 		 *                                   关闭 BroadcastChannel、移除监听与定时器。
 		 *
 		 * 契约（其他片段依赖）：
-		 *   settingsStore.status()      -> { host, revision, pending, lastError,
+		 *   settingsStore.status()      -> { host, revision, pending, lastError, conflicts,
 		 *                                   migrated:[key], schema:{from,to},
 		 *                                   backup:boolean, recovered:number }
 		 *   settingsStore.bootstrap()   -> Promise<void>（失败不抛，退化为本地模式）
@@ -41,7 +50,8 @@
 		 *   schemaRuntime.migrate()     -> 同 report（一次会话只跑一次，幂等）
 		 *
 		 * “设置”的定义：所有 `tianlight.` / `dsh-tianlight:` 前缀的字符串键，但本机
-		 * 元数据（schema / backup / sync.revision）除外 —— 见 tl5SyncableKey()。
+		 * 元数据（schema / backup / sync.revision）与数据键（TL5_DATA_KEYS）除外 ——
+		 * 见 tl5SyncableKey()。
 		 */
 		const TL5_SCHEMA_KEY = "tianlight.schema";
 		const TL5_SCHEMA_VERSION = 5;
@@ -63,12 +73,34 @@
 		/** 只属于本机的元数据：不同步；schema/revision 由本文件单独维护。 */
 		const TL5_META_EXACT = [TL5_SCHEMA_KEY, TL5_BACKUP_KEY, TL5_SYNC_REVISION_KEY];
 		const TL5_META_PREFIXES = ["tianlight.backup.", "tianlight.sync."];
+		/**
+		 * 本机数据键（v0.6.1）：聊天记录、自主念头、生活记忆与 Agent 审计日志属于
+		 * “数据”，不是设置。它们可能很大（聊天记录本身就很容易超过宿主 256KB 上限，
+		 * 一旦超限整批 PUT 都会被 413 拒绝），而且只应留在写出它的浏览器里：不参与
+		 * 宿主镜像、不进入导出包、导入包也不会把它们写回宿主。键名保持不变（改名
+		 * 会让已有数据失联），宿主 lib/settings-store.js 的 DATA_SETTING_KEYS 与这里
+		 * 一一对应（tools/audit.mjs 断言两份清单一致）。
+		 */
+		const TL5_DATA_KEYS = [
+			"tianlight.petChats.v1",
+			"tianlight.petMind.v1",
+			"tianlight.life.v1",
+			"tianlight.pet.agent.v1",
+			"tianlight.cache.known",
+		];
+		function tl5DataKey(key) {
+			return TL5_DATA_KEYS.indexOf(key) >= 0;
+		}
 		/** 导入（bootstrap 的 GET）超时按契约 1200ms；PUT 允许更大一点。 */
 		const TL5_HOST_TIMEOUT_MS = 1200;
 		const TL5_HOST_WRITE_TIMEOUT_MS = 4000;
 		const TL5_MIRROR_DEBOUNCE_MS = 300;
 		const TL5_MIRROR_RETRY_MS = 3000;
 		const TL5_MIRROR_RETRY_MAX = 2;
+		/** 写冲突（409）后的重推次数上限：合并宿主快照后重算差异再推一次。 */
+		const TL5_CONFLICT_RETRY_MAX = 1;
+		/** 镜像批次遇到 409 的最大重试次数；超过后保留本地更新等下一次同步。 */
+		const TL5_MIRROR_CONFLICT_MAX = 2;
 		const TL5_BC_NAME = "tianlight.settings";
 		/** 语言模式；与 13-i18n.js 的 LANGUAGE_MODES 同值（那里是 let/const，不能前置读取）。 */
 		const TL5_LANGUAGE_MODES = ["auto", "zh", "en"];
@@ -199,6 +231,9 @@
 			for (const prefix of TL5_META_PREFIXES) {
 				if (key.startsWith(prefix)) return false;
 			}
+			// v0.6.1: per-browser data (chat / thoughts / life memory / audit) never
+			// travels through the host mirror or a bundle; it stays in localStorage.
+			if (tl5DataKey(key)) return false;
 			for (const prefix of TL5_SETTINGS_PREFIXES) {
 				// 前缀本身不是键（宿主 lib/settings-store.js 也把 "tianlight." 判为 400）。
 				if (key.length > prefix.length && key.startsWith(prefix)) return true;
@@ -226,8 +261,12 @@
 
 		/** 旧版壁纸可能只有 url；按扩展名猜一个 kind（读侧仍会把未知 kind 兜成 video）。 */
 		function tl5GuessMediaKind(url) {
+			// S4: shared client media-kind detection; `.bmp` stays image here because old
+			// settings may reference it even though the upload sink no longer accepts it.
+			const kind = tl5MediaKindFromName(url);
+			if (kind === "image") return "image";
 			const path = String(url).split("?")[0].split("#")[0].toLowerCase();
-			if (/\.(png|jpe?g|webp|gif|avif|bmp|svg)$/.test(path)) return "image";
+			if (/\.bmp$/.test(path)) return "image";
 			return "video";
 		}
 
@@ -766,6 +805,17 @@
 		const settingsState = {
 			host: false,
 			revision: tl5ReadSyncRevision(),
+			/** 宿主最近一次报告的 revision（乐观锁 expectedRevision 的基准）。 */
+			hostRevision: 0,
+			/**
+			 * REV-R3 B1: the last authoritative host snapshot we have seen
+			 * (`key -> string|null`), or null before the first GET/PUT reply. A 409
+			 * merge uses it to tell "the host changed this key under us" from "the
+			 * conflict was on a different key"; only the former lets the host win.
+			 */
+			knownRemote: null,
+			/** 本会话写冲突（409）次数，仅诊断用。 */
+			conflicts: 0,
 			pending: 0,
 			lastError: "",
 			/** 宿主 404/405/501：路由不存在（旧版本宿主），不要每次写入都重试。 */
@@ -795,6 +845,8 @@
 			queue: new Map(),
 			inFlight: 0,
 			retries: 0,
+			/** 本批次连续写冲突（409）次数；成功一次即清零。 */
+			conflicts: 0,
 		};
 		/** 对齐运行时状态时置位：写入本地但不进镜像队列（值本来就来自宿主/迁移）。 */
 		let settingsSuppressMirror = false;
@@ -806,6 +858,8 @@
 				revision: settingsState.revision,
 				pending: settingsState.pending,
 				lastError: settingsState.lastError,
+				/** 本会话写冲突次数（409）：0 表示没有别的窗口抢写过。 */
+				conflicts: settingsState.conflicts,
 				migrated: report.migrated,
 				schema: { from: report.from, to: report.to },
 				/** 是否存在 tianlight.backup.host 备份（面板“恢复宿主导入前备份”按钮）。 */
@@ -829,6 +883,20 @@
 		}
 
 		/**
+		 * 宿主设置协议 `_settings`（v0.5.0 起；v0.6.1 additive 扩展）：
+		 *   GET   200 { ok, schemaVersion, revision, updatedAt, settings }
+		 *   PUT   body { revision?, expectedRevision?, settings }
+		 *     - expectedRevision（可选）＝本客户端“最后看到的宿主 revision”。
+		 *       与宿主当前一致才写入并返回 200 { ok, revision, updatedAt, settings }
+		 *       （settings 是合并后的权威完整镜像，客户端以它落地本地）；
+		 *       不一致返回 409 { ok:false, conflict:true, revision, updatedAt, settings }，
+		 *       settings 是宿主当前权威快照；客户端先合并它，再用新 revision 重推自己
+		 *       的本地差异（不会静默覆盖另一个窗口刚写的键）。
+		 *     - 旧客户端不带 expectedRevision → 宿主保持 last-write-wins（兼容）；
+		 *     - 旧宿主 200 只返 { revision, updatedAt }，没有 settings 字段 →
+		 *       客户端走兼容分支，只采纳 revision（保持 v0.5.2 行为）。
+		 *   DELETE 200 { ok, revision, updatedAt, settings:{} }
+		 *
 		 * 一次宿主请求。所有失败（网络、超时、非 2xx、坏 JSON）都折叠成
 		 * { ok:false, status, error }，调用方不需要 try/catch。
 		 */
@@ -855,16 +923,28 @@
 					cache: "no-store",
 				});
 				const status = Number(response?.status ?? 0);
-				if (response === null || response === undefined || response.ok !== true) {
-					return { ok: false, status: status, error: "host:" + String(status === 0 ? "network" : status) };
+				if (response === null || response === undefined) {
+					return { ok: false, status: 0, error: "host:network", data: null };
+				}
+				if (response.ok !== true) {
+					// 409 carries the host's authoritative settings so the caller can
+					// merge and retry; parse the error body when the host sent JSON.
+					let errorData = null;
+					try {
+						const parsed = await response.json();
+						if (tl5IsPlainObject(parsed)) errorData = parsed;
+					} catch {
+						errorData = null;
+					}
+					return { ok: false, status: status, error: "host:" + String(status === 0 ? "network" : status), data: errorData };
 				}
 				let data = null;
 				try {
 					data = await response.json();
 				} catch {
-					return { ok: false, status: status, error: "host:bad-json" };
+					return { ok: false, status: status, error: "host:bad-json", data: null };
 				}
-				if (tl5IsPlainObject(data) === false) return { ok: false, status: status, error: "host:bad-json" };
+				if (tl5IsPlainObject(data) === false) return { ok: false, status: status, error: "host:bad-json", data: null };
 				return { ok: true, status: status, data: data };
 			} catch (error) {
 				const aborted = controller !== null && controller.signal !== undefined && controller.signal.aborted === true;
@@ -1048,15 +1128,26 @@
 		 *     清空用户本地设置。调用方随后会把本地独有键 push 回宿主（宿主变超集）；
 		 *   - 落地前若真的会改本地值，先把改动前的本地可同步键备份到
 		 *     tianlight.backup.host（面板可一键恢复）。
+		 * options.respectQueue：PUT 响应里的权威快照落地时，本地仍在去抖队列里的键
+		 * 是更新的本地编辑，不能被稍旧的快照覆盖（否则会丢刚改的值）。
+		 * options.protectKeys：REV-R3 B1——409 合并时传入“在途中”的 batch 键集合，
+		 * 这些键由冲突解决逻辑（settingsResolveConflictBatch）逐个判定后再落地，
+		 * 不能被快照直接回滚。
 		 * 返回真正变化的键（用于 tianlight:settings 事件与诊断）。
 		 */
-		function applyHostSettings(remoteMap) {
+		function applyHostSettings(remoteMap, options) {
 			const storage = tl5Storage();
 			if (storage === null) return [];
+			const protectQueue = options !== null && typeof options === "object" && options.respectQueue === true;
+			const protectKeys =
+				options !== null && typeof options === "object" && options.protectKeys instanceof Set ? options.protectKeys : null;
+			const skipKey = (key) =>
+				(protectQueue === true && settingsMirror.queue.has(key)) || (protectKeys !== null && protectKeys.has(key));
 			const changedKeys = [];
 			// 1) 只读地算出会变化哪些键（决定是否需要备份），不先动任何值。
 			for (const key of Object.keys(remoteMap)) {
 				if (tl5SyncableKey(key) === false) continue;
+				if (skipKey(key)) continue;
 				const value = remoteMap[key];
 				if (value !== null && typeof value !== "string") continue;
 				let current = null;
@@ -1088,6 +1179,117 @@
 			settingsState.pending = settingsMirror.queue.size + settingsMirror.inFlight;
 			settingsNotify();
 			return changedKeys;
+		}
+
+		/**
+		 * 采纳 PUT 响应里的权威快照（协议 v0.6.1）。
+		 * - 宿主返回 settings → 先记录 knownRemote（下一次 409 的对比基准），再按
+		 *   v0.5.2 规则落地本地（respectQueue：本地待推送的更新编辑优先；
+		 *   options.protectKeys：在途 batch 键留给冲突解决逻辑，见 REV-R3 B1）；
+		 * - 旧宿主只返 revision → 只采纳 revision（兼容分支，返回 null）。
+		 * 返回宿主快照的本地投影（旧宿主/坏响应为 null）。
+		 */
+		function settingsAdoptPutResponse(data, options) {
+			if (tl5IsPlainObject(data) === false) return null;
+			const revision = Math.max(0, Math.floor(Number(data.revision) || 0));
+			settingsState.hostRevision = revision;
+			if (revision > settingsState.revision) settingsState.revision = revision;
+			tl5WriteSyncRevision(settingsState.revision);
+			if (tl5IsPlainObject(data.settings) === false) return null;
+			const remoteMap = sanitizeRemoteSettings(data.settings);
+			// Record the authoritative snapshot BEFORE applying it: callers pass their
+			// pre-conflict knownRemote separately, and this becomes the next baseline.
+			settingsSetKnownRemote(remoteMap);
+			applyHostSettings(remoteMap, {
+				respectQueue: true,
+				protectKeys: options !== null && typeof options === "object" && options.protectKeys instanceof Set ? options.protectKeys : null,
+			});
+			return remoteMap;
+		}
+
+		/**
+		 * 409 合并后把本窗口这一批本地编辑重新排进镜像队列。
+		 * 只重排“仍然等于本地当前值”的键：如果合并进来的宿主快照已经把同名键改成
+		 * 另一个窗口刚写的值，就保留宿主值（再推回旧值等于静默覆盖他人改动）。
+		 */
+		function settingsReapplyBatch(batch) {
+			const storage = tl5Storage();
+			for (const pair of batch) {
+				const key = pair[0];
+				const value = pair[1];
+				if (tl5SyncableKey(key) === false) continue;
+				let current = null;
+				try {
+					current = storage === null ? null : storage.getItem(key);
+				} catch {
+					continue;
+				}
+				if (current !== value) continue;
+				settingsMirror.queue.set(key, value);
+			}
+			settingsState.pending = settingsMirror.queue.size + settingsMirror.inFlight;
+		}
+
+		/** 宿主快照键值读取（区分“不存在”与“显式 null 墓碑”）。 */
+		function settingsSnapshotHas(map, key) {
+			return map !== null && map !== undefined && tl5IsPlainObject(map) && Object.prototype.hasOwnProperty.call(map, key);
+		}
+
+		function settingsSnapshotValue(map, key) {
+			return settingsSnapshotHas(map, key) ? map[key] : undefined;
+		}
+
+		/** 记录最近一次已知的宿主权威快照（浅拷贝；null 表示还没见过宿主）。 */
+		function settingsSetKnownRemote(map) {
+			settingsState.knownRemote = map === null || map === undefined ? null : { ...map };
+		}
+
+		/**
+		 * REV-R3 B1: the in-flight batch keeps priority over a 409 snapshot for keys
+		 * the host did NOT change. `batch` is [key,value] pairs (null = our tombstone).
+		 * Returns the pairs that must be retried.
+		 */
+		function settingsResolveConflictBatch(batch, adopted, knownBefore) {
+			const keep = [];
+			const hostWins = {};
+			for (const pair of batch) {
+				const key = pair[0];
+				const value = pair[1];
+				if (tl5SyncableKey(key) === false) continue;
+				const hostValue = settingsSnapshotValue(adopted, key);
+				const knownValue = settingsSnapshotValue(knownBefore, key);
+				if (hostValue === knownValue) {
+					// The host still holds the value we last saw for this key: the 409
+					// came from another key, so our local edit must survive and retry.
+					keep.push([key, value]);
+					continue;
+				}
+				// Another window really changed this key: host value wins (never
+				// overwrite it). `undefined` means the host removed the key, i.e. a
+				// tombstone for the local mirror.
+				hostWins[key] = hostValue === undefined ? null : hostValue;
+			}
+			const winners = Object.keys(hostWins);
+			if (winners.length > 0) {
+				// R8 (REV-R3B M-1): a key the user edited AGAIN while this request was in
+				// flight has already been re-queued by the local mirror; applying the older
+				// host value over it would lose that newest local edit. Leave those keys to
+				// the normal queue/retry path (last-local-write wins with the new revision).
+				const hostOnly = {};
+				for (const key of winners) {
+					if (settingsMirror.queue.has(key)) continue;
+					hostOnly[key] = hostWins[key];
+				}
+				if (Object.keys(hostOnly).length > 0) {
+					// Reuse the v0.5.2 adoption path (backup + notify + queue cleanup).
+					applyHostSettings(hostOnly);
+				}
+			}
+			// Kept keys were protected from adoption, so the local value is still ours;
+			// re-queue them (settingsReapplyBatch also skips a key a newer local edit
+			// already replaced, preserving last-local-write).
+			settingsReapplyBatch(keep);
+			return keep;
 		}
 
 		/**
@@ -1127,39 +1329,81 @@
 
 		/**
 		 * 把本地与宿主的差异 PUT 上去（宿主按 key merge：字符串覆盖、null 删除）。
-		 * 失败只重试一次（1s，且仅网络/5xx/超时），4xx/路由缺失不重试。
-		 * 返回 { ok, pushedKeys, retried }；pushedKeys 含 null 墓碑条数。
+		 * 协议 v0.6.1：带 expectedRevision；宿主回 409 时先合并它返回的权威快照，
+		 * 再重算差异并重推一次（TL5_CONFLICT_RETRY_MAX），不会静默覆盖另一个窗口
+		 * 刚写的键。网络/超时/5xx 仍只重试一次；4xx/路由缺失不重试。
+		 * 返回 { ok, pushedKeys, retried, conflicts }；pushedKeys 含 null 墓碑条数。
 		 */
 		async function settingsPushDiff(local, remoteMap) {
-			const push = buildSettingsPush(local, remoteMap);
-			if (push === null) return { ok: true, pushedKeys: 0, retried: false };
+			let push = buildSettingsPush(local, remoteMap);
+			if (push === null) return { ok: true, pushedKeys: 0, retried: false, conflicts: 0 };
 			const pushedKeys = Object.keys(push).length;
-			const send = () => settingsRequest("PUT", { revision: settingsState.revision, settings: push }, TL5_HOST_WRITE_TIMEOUT_MS);
-			let put = await send();
 			let retried = false;
-			if (put.ok === false && tl5SettingsPushRetryable(put)) {
-				retried = true;
-				await tl5Delay(TL5_PUSH_RETRY_DELAY_MS);
-				put = await send();
+			let conflicts = 0;
+			for (;;) {
+				const payload = () => ({
+					revision: settingsState.revision,
+					expectedRevision: settingsState.hostRevision,
+					settings: push,
+				});
+				const send = () => settingsRequest("PUT", payload(), TL5_HOST_WRITE_TIMEOUT_MS);
+				let put = await send();
+				if (put.ok === false && retried === false && tl5SettingsPushRetryable(put)) {
+					retried = true;
+					await tl5Delay(TL5_PUSH_RETRY_DELAY_MS);
+					put = await send();
+				}
+				if (put.ok === true) {
+					settingsAdoptPutResponse(put.data);
+					settingsState.host = true;
+					settingsState.hostRouteMissing = false;
+					settingsState.lastError = "";
+					return { ok: true, pushedKeys, retried, conflicts };
+				}
+				if (put.status === 409) {
+					conflicts += 1;
+					settingsState.conflicts += 1;
+					// REV-R3 B1: the reply snapshot may still hold the OLD host value of a
+					// key we are pushing (the conflict came from another key). Capture the
+					// pre-conflict baseline, adopt while protecting our in-flight push keys,
+					// then let the host win only for keys it actually changed.
+					const knownBefore = settingsState.knownRemote;
+					const pushKeys = new Set(Object.keys(push));
+					const adopted = settingsAdoptPutResponse(put.data, { protectKeys: pushKeys });
+					settingsState.host = true;
+					if (adopted === null || conflicts > TL5_CONFLICT_RETRY_MAX) {
+						// 宿主没给可合并的快照，或冲突持续：本批放弃重推，本地值继续生效，
+						// 下一个同步周期（bootstrap/立即同步/新编辑）会再试。
+						settingsState.lastError = "host:conflict";
+						return { ok: false, pushedKeys, retried, conflicts };
+					}
+					const hostWins = {};
+					for (const key of pushKeys) {
+						const hostValue = settingsSnapshotValue(adopted, key);
+						if (hostValue === settingsSnapshotValue(knownBefore, key)) continue;
+						hostWins[key] = hostValue === undefined ? null : hostValue;
+					}
+					if (Object.keys(hostWins).length > 0) applyHostSettings(hostWins);
+					// 合并了另一个窗口的改动之后重算差异：本地独有/未被宿主改动的键仍在
+					// 差异里（会重推），被宿主改过的键已落地为宿主值（不再推回旧值）。
+					const nextPush = buildSettingsPush(collectLocalSettings(), adopted);
+					if (nextPush === null) {
+						settingsState.lastError = "";
+						return { ok: true, pushedKeys, retried, conflicts };
+					}
+					push = nextPush;
+					continue;
+				}
+				settingsState.lastError = put.error;
+				if (put.status === 404 || put.status === 405 || put.status === 501) {
+					settingsState.host = false;
+					settingsState.hostRouteMissing = true;
+				} else if (put.status === 400 || put.status === 412 || put.status === 413) {
+					// 宿主拒绝本批（键/大小/版本冲突）：本批放弃，本地值继续生效。
+					settingsState.host = true;
+				}
+				return { ok: false, pushedKeys, retried, conflicts };
 			}
-			if (put.ok === true) {
-				const revision = Math.max(0, Math.floor(Number(put.data.revision) || 0));
-				if (revision > settingsState.revision) settingsState.revision = revision;
-				tl5WriteSyncRevision(settingsState.revision);
-				settingsState.host = true;
-				settingsState.hostRouteMissing = false;
-				settingsState.lastError = "";
-				return { ok: true, pushedKeys, retried };
-			}
-			settingsState.lastError = put.error;
-			if (put.status === 404 || put.status === 405 || put.status === 501) {
-				settingsState.host = false;
-				settingsState.hostRouteMissing = true;
-			} else if (put.status === 400 || put.status === 412 || put.status === 413) {
-				// 宿主拒绝本批（键/大小/版本冲突）：本批放弃，本地值继续生效。
-				settingsState.host = true;
-			}
-			return { ok: false, pushedKeys, retried };
 		}
 
 		/**
@@ -1202,6 +1446,12 @@
 			}
 			const remoteMap = sanitizeRemoteSettings(remote.settings);
 			const remoteRevision = Math.max(0, Math.floor(Number(remote.revision) || 0));
+			// REV-R3 B1: the GET snapshot is the baseline a later 409 compares against.
+			settingsSetKnownRemote(remoteMap);
+			// Optimistic-lock base: the revision the host just reported. The local
+			// watermark (settingsState.revision) may be higher after a host reset, and
+			// sending that as expectedRevision would make every PUT conflict.
+			settingsState.hostRevision = remoteRevision;
 			const remoteSchema = Number(remote.schemaVersion);
 			settingsState.host = true;
 			settingsState.hostRouteMissing = false;
@@ -1267,6 +1517,10 @@
 				tl5WriteSyncRevision(revision);
 				settingsNotify();
 			}
+			// Another window confirmed a host-authorized revision: it is the best
+			// optimistic-lock base for this window's next PUT (a window that only ever
+			// listened would otherwise send a stale expectedRevision and eat a 409).
+			if (data.host === true && revision > settingsState.hostRevision) settingsState.hostRevision = revision;
 		}
 
 		function settingsOnStorage(event) {
@@ -1278,6 +1532,10 @@
 					settingsState.revision = revision;
 					settingsNotify();
 				}
+				// REV-R3 M1: without BroadcastChannel the storage event is the only place
+				// a same-browser window learns the confirmed host revision. Raise the
+				// optimistic-lock base too, or every next PUT would eat a needless 409.
+				if (revision > settingsState.hostRevision) settingsState.hostRevision = revision;
 				return;
 			}
 			if (typeof key !== "string") return;
@@ -1300,6 +1558,10 @@
 			if (tl5SyncableKey(key) === false) return;
 			const value = typeof rawValue === "string" ? rawValue : rawValue === null ? null : String(rawValue);
 			mirror.queue.set(key, value);
+			// REV-R3 M2: a fresh local edit starts a new retry budget. Without this a
+			// batch that exhausted TL5_MIRROR_CONFLICT_MAX would keep the counter above
+			// the limit and never auto-retry again.
+			mirror.conflicts = 0;
 			settingsState.pending = mirror.queue.size + mirror.inFlight;
 			settingsNotify();
 			if (mirror.timer !== 0) window.clearTimeout(mirror.timer);
@@ -1310,7 +1572,9 @@
 		}
 
 		/**
-		 * 把去抖队列 PUT 给宿主。成功则更新 revision 并 BC 广播；
+		 * 把去抖队列 PUT 给宿主。成功则采纳响应里的权威快照、更新 revision 并 BC 广播；
+		 * 409（另一个窗口先写）先合并宿主快照，再把本窗口仍未被宿主接管的编辑重排进
+		 * 队列、用新 revision 重试（TL5_MIRROR_CONFLICT_MAX 次，不静默覆盖他人改动）；
 		 * 400/412/413（宿主拒绝本批）丢弃队列但本地值继续生效；
 		 * 网络/5xx 重试 TL5_MIRROR_RETRY_MAX 次后丢弃并记录。
 		 */
@@ -1336,16 +1600,53 @@
 					settingsPostBroadcast({ revision: settingsState.revision, settings: payload, host: false });
 					ok = true;
 				} else {
-					const put = await settingsRequest("PUT", { revision: settingsState.revision, settings: payload }, TL5_HOST_WRITE_TIMEOUT_MS);
+					const put = await settingsRequest(
+						"PUT",
+						{ revision: settingsState.revision, expectedRevision: settingsState.hostRevision, settings: payload },
+						TL5_HOST_WRITE_TIMEOUT_MS,
+					);
 					if (put.ok === true) {
 						ok = true;
-						const revision = Math.max(0, Math.floor(Number(put.data.revision) || 0));
-						if (revision > settingsState.revision) settingsState.revision = revision;
-						tl5WriteSyncRevision(settingsState.revision);
+						// The reply carries the host's merged full map: adopt it instead of
+						// only raising the local counter (protocol v0.6.1).
+						settingsAdoptPutResponse(put.data);
+						mirror.conflicts = 0;
 						settingsState.host = true;
 						settingsState.hostRouteMissing = false;
 						settingsState.lastError = "";
 						settingsPostBroadcast({ revision: settingsState.revision, settings: payload, host: true });
+					} else if (put.status === 409) {
+						// Another window wrote between our last read and this PUT.
+						// REV-R3 B1: the snapshot may carry the OLD host value of keys in
+						// our in-flight batch (conflict from another key) — those keys are
+						// protected from adoption and re-queued, so our edit is never
+						// silently rolled back. Only keys the host really changed lose to
+						// the host value (never overwrite the other window).
+						mirror.conflicts += 1;
+						settingsState.conflicts += 1;
+						settingsState.host = true;
+						const knownBefore = settingsState.knownRemote;
+						const batchEntries = [...batch.entries()];
+						const adopted = settingsAdoptPutResponse(put.data, { protectKeys: new Set(batch.keys()) });
+						mirror.inFlight = 0;
+						if (adopted === null) {
+							// Old/malformed host answered 409 without a mergeable snapshot:
+							// keep the local values and let a later sync retry.
+							settingsReapplyBatch(batchEntries);
+						} else {
+							settingsResolveConflictBatch(batchEntries, adopted, knownBefore);
+						}
+						// Only an actually pending retry is an error state; a conflict fully
+						// resolved in the host's favour is consistent again.
+						settingsState.lastError = mirror.queue.size > 0 ? "host:conflict" : "";
+						if (mirror.conflicts <= TL5_MIRROR_CONFLICT_MAX && mirror.queue.size > 0 && mirror.timer === 0) {
+							mirror.timer = window.setTimeout(() => {
+								mirror.timer = 0;
+								void settingsFlushMirror().catch((error) => note("settings:mirror-conflict", error));
+							}, TL5_MIRROR_DEBOUNCE_MS);
+						}
+						settingsNotify();
+						return false;
 					} else {
 						settingsState.lastError = put.error;
 						if (put.status === 404 || put.status === 405 || put.status === 501) {
@@ -1569,7 +1870,11 @@
 				}
 				settingsMirror.queue.clear();
 				settingsMirror.inFlight = 0;
+				settingsMirror.conflicts = 0;
 				settingsState.pending = 0;
+				// REV-R3: a re-installed runtime must not compare a 409 against a stale
+				// snapshot from the previous page session.
+				settingsState.knownRemote = null;
 				if (settingsMirror.onStorage !== null) {
 					window.removeEventListener("storage", settingsMirror.onStorage);
 					settingsMirror.onStorage = null;
@@ -1671,7 +1976,21 @@
 					} else {
 						const payload = {};
 						for (const key of restoredKeys) payload[key] = map[key];
-						await settingsRequest("PUT", { revision: settingsState.revision, settings: payload }, TL5_HOST_WRITE_TIMEOUT_MS);
+						const sendRecover = () =>
+							settingsRequest(
+								"PUT",
+								{ revision: settingsState.revision, expectedRevision: settingsState.hostRevision, settings: payload },
+								TL5_HOST_WRITE_TIMEOUT_MS,
+							);
+						let recoverPut = await sendRecover();
+						if (recoverPut.ok === false && recoverPut.status === 409) {
+							// Explicit user action (restore): merge the other window's state,
+							// then re-assert the backup values on top and retry once.
+							settingsAdoptPutResponse(recoverPut.data);
+							settingsState.conflicts += 1;
+							recoverPut = await sendRecover();
+						}
+						if (recoverPut.ok === true) settingsAdoptPutResponse(recoverPut.data);
 					}
 					dispatchSettingsEvent("recover", restoredKeys);
 				}

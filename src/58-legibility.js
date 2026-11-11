@@ -93,6 +93,36 @@ body[data-dsh-tianlight][data-tl-legibility="boost"] [data-tl-font-panel] {
 		}
 
 		const legibilityState = readLegibilitySettings();
+		// S2: boost decisions are made from the ORIGINAL panel fill only. Once the guard
+		// adds `data-tl-legibility="boost"`, the computed panel background becomes the
+		// boosted solid; using it as the next input made the guard oscillate
+		// (boost -> looks fine -> un-boost -> looks low -> boost ...). The release margin
+		// is a hysteresis band: leave boost only when the original contrast is clearly
+		// above the target, so two evaluations around the threshold cannot flip-flop.
+		const LEGIBILITY_HYSTERESIS = 0.25;
+		/**
+		 * Pure decision (instrumented by tools/test.mjs): should the panel be boosted?
+		 * `ratio` MUST be the contrast computed from the original (un-boosted) fill.
+		 */
+		function legibilityShouldBoost(ratio, threshold, enabled, alreadyBoosted) {
+			if (enabled !== true) return false;
+			if (Number.isFinite(ratio) !== true || Number.isFinite(threshold) !== true) return alreadyBoosted === true;
+			if (alreadyBoosted === true) return ratio < threshold + LEGIBILITY_HYSTERESIS;
+			return ratio < threshold;
+		}
+		/**
+		 * S2b (REV-S2 F2): cache key for the original fill. It includes the base panel
+		 * token and the host's inline `--tl-panel-fill`, so a same-theme base change
+		 * (glass amount, sidebar tint, font-panel host) is visible even while boosted.
+		 */
+		function legibilityBaseCacheKey(dark, panelToken, inlineFill) {
+			// Length-prefixed join (not a bare "|" concatenation) so tokens that contain
+			// the separator cannot collide with a different (dark, token, inline) triple.
+			const theme = dark === true ? "dark" : "light";
+			const tokenText = String(panelToken ?? "");
+			const inlineText = String(inlineFill ?? "");
+			return theme.length + ":" + theme + ":" + tokenText.length + ":" + tokenText + ":" + inlineText.length + ":" + inlineText;
+		}
 		const legibilitySubscribers = new Set();
 		/** 最近一次采样的只读结果，供面板显示（不持久化）。 */
 		const legibilityStatus = {
@@ -206,6 +236,16 @@ body[data-dsh-tianlight][data-tl-legibility="boost"] [data-tl-font-panel] {
 		function installLegibilityGuard() {
 			const body = document.body;
 			if (body === null) return () => {};
+			// REV-S2 F6: an exception or hot reload can leave the boost attribute and its
+			// CSS variables on body. Start every install from a clean slate before sampling
+			// so a stale boost cannot skew the first decision.
+			try {
+				body.removeAttribute("data-tl-legibility");
+				body.style.removeProperty("--tl-legibility-solid");
+				body.style.removeProperty("--tl-legibility-shadow");
+			} catch (error) {
+				note("legibility:reset-boost", error);
+			}
 			// apply() 里 await 的宿主设置导入/ schema 迁移可能在工厂求值之后才把
 			// 权威值写进 localStorage：安装时重新读一次，多窗口与宿主导入的
 			// 阈值/开关立即生效。
@@ -219,6 +259,11 @@ body[data-dsh-tianlight][data-tl-legibility="boost"] [data-tl-font-panel] {
 			// 壁纸刚换源时视频还没解出帧：有限次重试（仍受 ≥1.5s 节流约束），
 			// 让默认状态下的 diag 也能拿到真实对比度，而不是永远停在 idle。
 			let sampleMisses = 0;
+			// S2: cached original (un-boosted) panel fill per theme. Reading the host's
+			// computed background while [data-tl-legibility="boost"] is set returns the
+			// boosted solid, which used to feed back into the decision and cause flicker.
+			let baseFill = null;
+			let baseKey = "";
 			const canvas = document.createElement("canvas");
 			canvas.width = 32;
 			canvas.height = 18;
@@ -235,7 +280,13 @@ body[data-dsh-tianlight][data-tl-legibility="boost"] [data-tl-font-panel] {
 				const controller = wallpaperController;
 				const shader = controller === null ? null : controller.shaderSwatch;
 				const still = controller === null ? null : controller.image;
-				const video = document.querySelector("[data-tl-scene] > video");
+				// R6 A: a hidden/released video (left the video channel) still has a final
+				// readyState and would keep tinting the panels from a dead frame.
+				const sceneVideo = document.querySelector("[data-tl-scene] > video");
+				const video =
+					sceneVideo !== null && sceneVideo.hidden === false && sceneVideo.currentSrc !== "" && sceneVideo.readyState >= 2
+						? sceneVideo
+						: null;
 				const target =
 					shader !== null && shader !== undefined
 						? shader
@@ -277,7 +328,46 @@ body[data-dsh-tianlight][data-tl-legibility="boost"] [data-tl-font-panel] {
 				};
 			};
 
-			/** 面板实际底色/正文色（读 computed style，失败用主题常量）。 */
+			/**
+			 * The ORIGINAL panel fill for this theme, independent of the boost attribute.
+			 * REV-S2 F2: while boosted, read the cheap inline/base tokens every evaluation
+			 * and only reuse the cached color when the token key is unchanged — so a same-
+			 * theme base change (glass slider, sidebar tint) is picked up immediately.
+			 * Once the boost is off the host's computed background is the real base and
+			 * refreshes the cache.
+			 */
+			const readBaseFill = (host, dark, fallbackFill) => {
+				let inlineFill = "";
+				if (host !== null) {
+					try {
+						inlineFill = host.style.getPropertyValue("--tl-panel-fill");
+					} catch {
+						inlineFill = "";
+					}
+				}
+				let panelToken = "";
+				try {
+					panelToken = globalThis.getComputedStyle(body).getPropertyValue("--tl-panel-fill");
+				} catch {
+					panelToken = "";
+				}
+				const key = legibilityBaseCacheKey(dark, panelToken, inlineFill);
+				if (boosted === true && baseFill !== null && baseKey === key) return baseFill;
+				let next = parseCssColor(inlineFill);
+				if (next === null) next = parseCssColor(panelToken);
+				if (next === null && boosted === false && host !== null) {
+					try {
+						next = parseCssColor(globalThis.getComputedStyle(host).backgroundColor);
+					} catch {
+						next = null;
+					}
+				}
+				baseFill = next === null ? fallbackFill : next;
+				baseKey = key;
+				return baseFill;
+			};
+
+			/** 面板实际底色/正文色（底色取原始状态，不受已提亮影响）。 */
 			const readPanelColors = (sample, dark) => {
 				const host = document.querySelector("[data-tl-wall]") ?? document.querySelector("[data-tl-font-panel]");
 				const fallbackFill = dark ? { r: 10, g: 18, b: 32, a: 0.96 } : { r: 250, g: 252, b: 255, a: 0.94 };
@@ -287,13 +377,12 @@ body[data-dsh-tianlight][data-tl-legibility="boost"] [data-tl-font-panel] {
 				if (host !== null) {
 					try {
 						const style = globalThis.getComputedStyle(host);
-						fill = parseCssColor(style.backgroundColor) ?? fallbackFill;
 						ink = parseCssColor(style.color) ?? fallbackInk;
 					} catch {
-						fill = fallbackFill;
 						ink = fallbackInk;
 					}
 				}
+				fill = readBaseFill(host, dark, fallbackFill);
 				if (fill.a < 0.05) fill = fallbackFill;
 				const composite = {
 					r: fill.r * fill.a + sample.r * (1 - fill.a),
@@ -372,16 +461,24 @@ body[data-dsh-tianlight][data-tl-legibility="boost"] [data-tl-font-panel] {
 					relativeLuminance(colors.composite.r, colors.composite.g, colors.composite.b),
 					relativeLuminance(colors.ink.r, colors.ink.g, colors.ink.b),
 				);
-				const shouldBoost = settings.enabled === true && ratio < settings.threshold;
+				// S2: decision uses the original-background ratio and a hysteresis band; the
+				// current boost state is an output that is only ever fed back as "already on".
+				const shouldBoost = legibilityShouldBoost(ratio, settings.threshold, settings.enabled, boosted);
 				let afterRatio = ratio;
-				if (shouldBoost) {
-					const solid = boostFillFor(sample, dark);
-					afterRatio = contrastRatio(
-						relativeLuminance(solid.r, solid.g, solid.b),
-						relativeLuminance(colors.ink.r, colors.ink.g, colors.ink.b),
-					);
-					applyBoost(solid, dark);
-				} else if (boosted) {
+				let solid = null;
+				if (settings.enabled === true) {
+					// F4: only report an "after" ratio when a boost is actually active or
+					// would be applied; otherwise it would be a hypothetical number.
+					if (shouldBoost === true || boosted === true) {
+						solid = boostFillFor(sample, dark);
+						afterRatio = contrastRatio(
+							relativeLuminance(solid.r, solid.g, solid.b),
+							relativeLuminance(colors.ink.r, colors.ink.g, colors.ink.b),
+						);
+					}
+					if (shouldBoost === true) applyBoost(solid, dark);
+					else if (boosted === true) clearBoost();
+				} else if (boosted === true) {
 					clearBoost();
 				}
 				const rounded = Math.round(ratio * 100) / 100;

@@ -2,6 +2,20 @@
 
 本文件由 `node tools/release.mjs --note "…"` 维护；条目按版本倒序，格式参考 Keep a Changelog。
 
+
+## [2.0.0] - 2026-11-11
+
+### 发布说明
+
+- v2.0.0：桌宠 AI 对话接入 DSH 自带 LLM（宿主路由；需重启 DSH 一次），并并入 v1.6.8 之后完成的体检修复批次（20 个提交）；自本版起仓库/DSH/GitHub 发布版本统一为 2.0.0。
+- **桌宠 AI 对话接入 DSH 自带 LLM（新，宿主半路由）**：新增 `POST /skin-tianlight/_pet-chat`（`lib/pet-chat.js`），经宿主 `ctx.llm.stream()` 调用用户在 DSH 里已配置的模型。路由约束：loopback Host（localhost/127.0.0.1/[::1]）、POST+JSON、请求体 ≤16KB、文本 ≤4000 字、**系统提示固定在服务端**、默认 `agentDefaultModel.currentSelection()`（请求可覆盖 provider/model，provider 必须在 `llm.listProviders()`）、`resolveModelInfo().reasoning.efforts[0]` 最低推理档（取不到不传）、`maxTokens = 600`、20s 截止（含 body 读取/元数据解析/流迭代）、同一时刻 1 个请求、客户端断开 abort；不传 `purpose`/`sessionId`/`tools`，不创建会话、不调用工具、不下发凭据；响应仅 `{ok,text,finish,model}` 或 `{ok:false,code}`。
+- **`_engines.capabilities.petLlm`**：`{ available, reason, provider, model }`（原因含 `no-llm-service` / `no-default-model` / `no-providers` / `unconfigured-model`）；`HOST_API` 1 → 2，旧宿主会提示重启。
+- **浏览器半内置 dsh 适配器**：宿主可用时自动注册 `{id:"dsh"}`，**仍需用户在角色中枢两步确认授权 `llm`**（提示消耗模型额度）；不覆盖用户适配器，显式 `clearLLM()` 后本页不再自动重注册；配额/长度/超时/审计沿用（60/日、6/分、1200 字、20s）。
+- **来源标注与错误提示**：对话气泡与角色中枢显示「AI 回复 / 本地回复」；失败按稳定错误码给中文提示（未配置模型、缺少凭据、余额不足、限流、超时、宿主不可用）；角色中枢新增 provider 下拉（默认跟随 DSH 默认模型，选项来自 `remote.llm.listProviders()`，模型 id 跟随默认）。自主思考保持独立 12 次/天预算、不占聊天配额、payload 无聊天记录。
+- **并入体检修复批次（v1.6.8 之后 20 个提交）**：`HOST_API` 握手与 `BUILD` 解耦；设置 PUT 合并 + revision CAS（409 不丢在途编辑）；桌宠授权闭包化/会话内存/一次性 consent/导出导入剥离；宿主 WE 路由与转码生命周期加固（loopback Host 白名单、repkgPath 仅 env/config、并发/断开/防覆盖）；统一浮层栈 Esc/Tab、中枢草稿恢复、破坏性操作两次确认；视频解码释放与迟到回调守卫、fps 判定证据化、镜像 scale 解耦；导出导入包一致性（内置演示媒体不计入）；SVG 解析式安全过滤 + CSP sandbox；可读性护栏滞回与低电量边沿化；重复代码合并/死代码清理；test/verify 环境确定性。
+- **版本与发布**：`BUILD`/`package.json`/`skin.json` = **2.0.0**，`HOST_API` = **2**（feedback 模板示例同步）；新增 [docs/RELEASE-2.0.0.md](docs/RELEASE-2.0.0.md)、`lib/pet-chat.js`；i18n 新增 9 个 `pet.chat.*` 键（zh=en **1369**）；tag 统一为 `v2.0.0`（内部/公开同号）。**本版改动了宿主半：升级后必须重启 DSH 一次 + Ctrl+F5。**
+- **验证（本地）**：`npm run check` 全绿（build --check 26/26、**test 113/113**、structure --strict、audit（新增 v2.0.0 守卫 6 条，无阻断）、check-css、verify、i18n-audit zh=en 1369）；`npm run compat` 三版本（0.2.0-rc.2 72 / 0.2.1-rc.5 77 / 0.2.2-rc.1 86 bundles）全 **COMPATIBLE**，`upgrade-check` 全过；本机 Desktop 0.2.2-rc.1 实机重启后 `_engines?api=2` 返回 `petLlm.available=true`（deepseek-account / deepseek-flash）；独立只读复核 PASS-WITH-NITS 且 findings 全部修复。
+
 ## [1.6.8] - 2026-11-10
 
 ### 发布说明

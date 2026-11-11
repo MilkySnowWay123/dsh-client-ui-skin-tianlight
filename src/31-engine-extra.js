@@ -104,6 +104,7 @@
 				"engine.adaptiveSection": "自适应降档",
 				"engine.contextOff": "智能情境模块已关闭，自适应不会动作。",
 				"engine.adaptive.staticReason": "性能自适应：视频→静态帧（平均 {fps}fps）",
+				"engine.adaptive.perfReason": "性能自适应：视频→静态帧（检测到掉帧/抖动）",
 				"engine.adaptive.fpsReason": "性能自适应：着色器限制在 {cap}fps（实测 {fps}fps）",
 				"engine.adaptiveFreezeHint": "自动降档可能冻结动态壁纸：如果画面停住，用下面的「锁定自适应」关闭它。",
 				"engine.adaptiveLine": "{label}：{value}",
@@ -170,6 +171,7 @@
 				"engine.adaptiveLock": "Lock adaptive",
 				"engine.adaptiveUnlock": "Unlock",
 				"engine.adaptive.staticReason": "Adaptive performance: video downgraded to a still frame (avg {fps} fps)",
+				"engine.adaptive.perfReason": "Adaptive performance: video downgraded to a still frame (dropped frames / stutter detected)",
 				"engine.adaptive.fpsReason": "Adaptive performance: shader capped at {cap} fps (measured {fps} fps)",
 				"engine.adaptiveFreezeHint": "Automatic downgrade can freeze the video wallpaper: if the picture stops, use “Lock adaptive” below to turn it off.",
 				"engine.adaptiveLine": "{label}: {value}",
@@ -209,6 +211,13 @@
 /* ---- B4 transitions: keyed off [data-tl-transition] on the scene ---- */
 body[data-dsh-tianlight] [data-tl-scene] {
 	--tl-tx-ms: 600ms;
+	--tl-flip: 1 1;
+}
+/* R6 D: the mirror uses the independent scale property (fed by --tl-flip), so a
+   slide/zoom transition animating transform composes with it instead of
+   overriding the flip for the whole transition. */
+body[data-dsh-tianlight] [data-tl-scene] > video {
+	scale: var(--tl-flip, 1 1);
 }
 body[data-dsh-tianlight] [data-tl-scene] > [data-tl-web] {
 	position: absolute;
@@ -407,7 +416,6 @@ body[data-dsh-tianlight][data-tl-lowpower] .tl5-audio-dot[data-tl-audio-driven] 
 		const TRANSITION_KEY = "tianlight.transition";
 		const TRANSITION_PRESETS = ["fade", "slide", "zoom", "dissolve"];
 		const TRANSITION_DEFAULTS = { preset: "fade", durationMs: 600 };
-		const transitionSubscribers = new Set();
 		/**
 		 * `base` is the state an invalid field falls back to. Without it, hand-edited or
 		 * stale storage would silently reset a valid preset to the default whenever one
@@ -463,45 +471,16 @@ body[data-dsh-tianlight][data-tl-lowpower] .tl5-audio-dot[data-tl-audio-driven] 
 			}
 			return stored;
 		}
+		/**
+		 * S4: only `read()` is consumed by the product (30-wallpaper transition preset);
+		 * `apply`/`subscribe`/`defaults` had no callers (audited + grep), so the dead
+		 * methods and their subscriber set are gone. The read/merge semantics are
+		 * unchanged (effects panel value wins when non-default, else stored preset).
+		 */
 		const transitionController = {
 			key: TRANSITION_KEY,
 			presets: TRANSITION_PRESETS.slice(),
-			defaults: () => ({ ...TRANSITION_DEFAULTS }),
 			read: readTransitionState,
-			apply: (patch) => {
-				const base = readTransitionState();
-				const next = normalizeTransition({ ...base, ...(patch === null || typeof patch !== "object" ? {} : patch) }, base);
-				try {
-					globalThis.localStorage?.setItem(TRANSITION_KEY, JSON.stringify(next));
-				} catch {
-					// persistence is optional; this session still uses the preset
-				}
-				// Mirror into the effects panel so two UIs can never disagree.
-				try {
-					if (typeof effectsController !== "undefined" && effectsController !== null && typeof effectsController.apply === "function") {
-						effectsController.apply({ transition: next.preset, transitionMs: next.durationMs });
-					}
-				} catch {
-					// an absent effects controller is fine
-				}
-				for (const listener of [...transitionSubscribers]) {
-					try {
-						listener({ ...next });
-					} catch (error) {
-						note("transition:subscriber", error);
-					}
-				}
-				tl5Diag("engine", { transition: next });
-				return next;
-			},
-			subscribe: (listener) => {
-				if (typeof listener !== "function") return () => {};
-				transitionSubscribers.add(listener);
-				listener(readTransitionState());
-				return () => {
-					transitionSubscribers.delete(listener);
-				};
-			},
 		};
 		tl5Diag("engine", { transition: readTransitionState() });
 

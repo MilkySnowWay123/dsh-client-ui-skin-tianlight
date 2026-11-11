@@ -4,8 +4,13 @@
 // package.json version". The internal development tree (tianlight) uses internal
 // versions (e.g. 1.6.2) while the public repository is labelled with its public
 // release version (e.g. 1.0.1). This tool turns an internal tree into a public
-// build: it patches the four version markers, records the internal identity in
-// INTERNAL-BUILD.json, rebuilds lib/client.js and prints the git commands to run.
+// build: it patches the three release-label markers (package.json, skin.json,
+// lib/index.js diagnostic BUILD), records the internal identity in
+// INTERNAL-BUILD.json, rebuilds lib/client.js as a consistency check and prints the
+// git commands to run. `HOST_API` (the host/client route-contract handshake) is
+// intentionally left untouched: it describes the route contract, not the release
+// label, is hand-edited only, and public builds speak the same contract as the
+// internal one. Release tooling must never assign/replace HOST_API.
 //
 // usage:
 //   node tools/public-release.mjs --dir <mirror checkout> --version 1.0.2 \
@@ -51,21 +56,20 @@ try {
     if (next === text) throw new Error('cannot patch version in ' + file)
     write(file, next)
   }
-  // host/client build handshake markers
+  // Host build marker (diagnostic identity of the public build). The client half
+  // reads it back from `_engines`; nothing bumps HOST_API here because the public
+  // and internal builds share the same route contract and must keep handshaking.
   const host = read('lib/index.js')
   const nextHost = host.replace(/const BUILD = '[^']+'/, `const BUILD = '${version}'`)
   if (nextHost === host) throw new Error('cannot patch BUILD in lib/index.js')
   write('lib/index.js', nextHost)
-  const constants = read('src/10-constants.js')
-  const nextConstants = constants.replace(/const HOST_BUILD = "[^"]+"/, `const HOST_BUILD = "${version}"`)
-  if (nextConstants === constants) throw new Error('cannot patch HOST_BUILD in src/10-constants.js')
-  write('src/10-constants.js', nextConstants)
   // optional docs examples that name the internal version
   const feedback = '.github/ISSUE_TEMPLATE/feedback.yml'
   if (existsSync(join(dir, feedback))) {
     write(feedback, read(feedback).split('v' + internalVersion).join('v' + version))
   }
-  // rebuild the product so the shipped client carries the public version markers
+  // rebuild the product as a consistency check: the shipped client must be the
+  // build of the patched sources (this tool never touches HOST_API, see the header)
   const build = spawnSync(process.execPath, [join(dir, 'tools/build.mjs')], { encoding: 'utf8' })
   if (build.status !== 0) {
     console.error(build.stdout.trim())

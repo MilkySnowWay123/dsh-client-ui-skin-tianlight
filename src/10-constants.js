@@ -10,14 +10,31 @@
 		const CSS_TAG_ID = "ui-skin-tianlight/tianlight.css";
 		const STORAGE_KEY = "dsh-tianlight:cat:v1";
 		/**
-		 * Host/client build handshake. The browser half is cached independently from the
-		 * host half (Ctrl+F5 reloads the page, not the process), so after updating the
-		 * plugin the page can run the new client against an old host whose routes are
-		 * missing. The host compares this value and reports `stale: true`, which the
-		 * panel turns into a visible "restart DSH" hint instead of a mystery network
-		 * error. Keep in sync with `BUILD` in lib/index.js.
+		 * Host/client route-contract handshake. The browser half is cached
+		 * independently from the host half (Ctrl+F5 reloads the page, not the
+		 * process), so after updating the plugin the page can run the new client
+		 * against an old host whose routes changed shape. The host compares this
+		 * value and reports `stale: true`, which the panel turns into a visible
+		 * "restart DSH" hint instead of a mystery network error. Change it ONLY
+		 * when the `lib/` route contract changes; the build number is diagnostic
+		 * (`BUILD` in lib/index.js) and must not force a restart. Keep in sync with
+		 * `HOST_API` in lib/index.js.
 		 */
-		const HOST_BUILD = "1.0.7";
+		const HOST_API = "2";
+
+		/**
+		 * Host identity last reported by `_engines`: `build` is the host's
+		 * diagnostic build number, `api` the route-contract version it speaks. The
+		 * wallpaper panel's engine probe writes it; the role hub's feedback payload
+		 * reads it. It lives in the constants region because every fragment shares
+		 * this closure and the two features must not read each other's private state.
+		 */
+		const hostIdentity = { build: "", api: "" };
+		function rememberHostIdentity(payload) {
+			if (payload === null || typeof payload !== "object") return;
+			if (typeof payload.build === "string" && payload.build !== "") hostIdentity.build = payload.build;
+			if (typeof payload.api === "string" && payload.api !== "") hostIdentity.api = payload.api;
+		}
 
 		/**
 		 * Render budget tiers, shared by the shader wallpaper, the rail mirror and the

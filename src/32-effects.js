@@ -159,6 +159,7 @@
 				"fx.frozenLowPower": "省电模式",
 				"fx.frozenReducedMotion": "系统减少动效",
 				"fx.frozenSceneFps": "壁纸帧率过低",
+				"fx.frozenScenePerf": "壁纸掉帧",
 				"fx.frozenDisabled": "总开关已关闭",
 				"fx.clickAutoOff": "点击特效已因帧开销自动关闭（{reason}）",
 				"fx.frameCost": "帧开销约 {ms}ms",
@@ -195,6 +196,7 @@
 				"fx.frozenLowPower": "low power",
 				"fx.frozenReducedMotion": "reduced motion",
 				"fx.frozenSceneFps": "wallpaper fps too low",
+				"fx.frozenScenePerf": "wallpaper dropping frames",
 				"fx.frozenDisabled": "master switch off",
 				"fx.clickAutoOff": "Click effects were auto-disabled by frame cost ({reason})",
 				"fx.frameCost": "Frame cost ~{ms}ms",
@@ -286,9 +288,11 @@
 						? t("fx.frozenReducedMotion")
 						: frozenReason === "scene-fps"
 							? t("fx.frozenSceneFps")
-							: frozenReason === "disabled"
-								? t("fx.frozenDisabled")
-								: "";
+							: frozenReason === "scene-perf"
+								? t("fx.frozenScenePerf")
+								: frozenReason === "disabled"
+									? t("fx.frozenDisabled")
+									: "";
 			const summaryParts = [];
 			if (state.parallax === true) summaryParts.push(t("fx.parallax"));
 			if (state.click === true) summaryParts.push(t("fx.click"));
@@ -537,7 +541,14 @@ body[data-dsh-tianlight] .tl-fx-readout {
 				if (effectsState.enabled !== true) return "disabled";
 				if (reducedMotion === true) return "reduced-motion";
 				if (isLowPowerActive()) return "low-power";
-				if (getScene() !== null) {
+				const scene = getScene();
+				if (scene !== null) {
+					// R6 C: a video's own frame rate is content (12fps animation, 0.5x
+					// playback), not render headroom. Only the wallpaper's explicit
+					// dropped-frame verdict may freeze the effect layer for video.
+					if (scene.dataset.tlMedia === "video") {
+						return scene.dataset.tlPerf === "low" ? "scene-perf" : "";
+					}
 					const fps = probeSceneFps(now === undefined ? performance.now() : now);
 					if (fps > 0 && fps < EFFECT_BUDGET.sceneFpsFloor) return "scene-fps";
 				}

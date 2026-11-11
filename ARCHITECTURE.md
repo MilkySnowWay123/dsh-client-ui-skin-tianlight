@@ -46,6 +46,9 @@ bundle.js         导入导出包：无依赖流式 tar.gz 读写、导入先 st
 media-cache.js    预裁剪静态帧缓存：8MB/帧、256MB 总量、按 mtime 淘汰、内容嗅探
 transcode.js      可选 ffmpeg：检测/超时/参数数组/临时文件，失败不覆盖源文件
 web-project.js    WE 网页壁纸项目发现 + 逐段路径校验 + 严格 CSP
+pet-chat.js       v2.0.0 桌宠 AI 对话宿主桥：POST `_pet-chat`（loopback/16KB/固定系统提示/
+                  maxTokens≤600/20s/单并发/断开中止），经 `ctx.llm.stream()` 调用 DSH 已配置模型；
+                  `computePetLlmCapability()` 供 `_engines.capabilities.petLlm`（可用性+原因+当前 provider/model）
 we-wallpaper/host.mjs  内嵌 MIT 的 dsh-we-wallpaper host half：Steam/WE 发现、工坊+projects 扫描、
                  依赖无关 scene.pkg/TEX 解码（4K 静态）、`/api/we-wallpaper/*` 路由族与请求围栏
 ```
@@ -74,6 +77,7 @@ we-wallpaper/host.mjs  内嵌 MIT 的 dsh-we-wallpaper host half：Steam/WE 发�
 | `_transcode?name=` | POST | 可选 ffmpeg 转码（HEVC→H.264 / GIF→MP4），缺失时 501 | **v0.5** |
 | `_transcode/status` | GET | `{ffmpeg,version}` | **v0.5** |
 | `_web-project/<root>/<dir>/...` | GET | WE 网页壁纸文件，逐段校验 + 严格 CSP（`sandbox allow-scripts`） | **v0.5** |
+| `_pet-chat` | POST | v2.0.0 桌宠 AI 对话：JSON `{text,provider?,model?}` → `{ok,text,finish,model}` 或 `{ok:false,code}`；loopback Host、≤16KB、固定系统提示、`llm.listProviders()` 校验 provider、`resolveModelInfo().reasoning.efforts[0]` 最低档、`llm.stream()`、`maxTokens≤600`、20s、单并发、断开 abort；不传 tools/sessionId/purpose、不建会话 | **v2.0.0** |
 
 ### `/api/we-wallpaper` 前缀（v0.6.0，第二前缀）
 
@@ -91,9 +95,13 @@ we-wallpaper/host.mjs  内嵌 MIT 的 dsh-we-wallpaper host half：Steam/WE 发�
 WE 路由同样有请求围栏：`dsh-app://` 与本机 origin 放行，`Sec-Fetch-Site: cross-site`/其它 Origin → 403；
 id 经扫描结果映射、逐段路径 containment（遍历 400/403），从不把原始路径/堆栈回给浏览器。
 
-`_engines` 的 `capabilities`（`settings`/`bundle`/`frameCache`/`transcode`/`webWallpapers`/**`weLibrary`**）是客户端
+`_engines` 的 `capabilities`（`settings`/`bundle`/`frameCache`/`transcode`/`webWallpapers`/**`weLibrary`**/**`petLlm`**）是客户端
 「这个入口要不要渲染」的唯一依据：**不 advertise 没挂载的能力**。旧宿主没有这些路由时客户端逐项隐藏，
 不会把 404 变成报错弹窗。所有失败路径返回 4xx/5xx 简码，不把堆栈回给浏览器。
+`petLlm` 是 v2.0.0 的可用性快照 `{available, reason, provider, model}`：同步读取可选的 `llm` /
+`agentDefaultModel` 服务（`ctx.get` + `inject` 可选模式，与 `webServer` 同一写法），不可用时给出
+`no-llm-service` / `no-default-model` / `no-providers` / `unconfigured-model` 之一；浏览器半据此
+自动注册内置 `dsh` 适配器（仍需用户显式授权 `llm`）。**本路由属于宿主半改动：更新后需重启 DSH 一次**。
 
 ## 浏览器半的分区（26 个片段 / 25 个 region）
 
@@ -104,7 +112,7 @@ id 经扫描结果映射、逐段路径 containment（遍历 400/403），从不
 | 片段 | region | 所有者 | 职责 |
 |---|---|---|---|
 | `00-envelope.js` | （外壳，无 region） | Lead | `window.__ModuleLoader__.load({ id, factory })` 单文件外壳 |
-| `10-constants.js` | constants | Lead | 路由前缀、body 属性、存储键、渲染档位、候选名单、React 引导、`HOST_BUILD` 握手 |
+| `10-constants.js` | constants | Lead | 路由前缀、body 属性、存储键、渲染档位、候选名单、React 引导；**HOST_API** 路由契约握手（只随 `lib/` 路由形状变化手改，`BUILD` 仅为诊断、发布可改） |
 | `11-platform.js` | platform | Lead | 平台注册表：模块开关/模块运行时、面板分区、CSS 块、指标总线、诊断命名空间 |
 | `12-schema.js` | schema | platform-core | schema 迁移（v5）、宿主设置同步、多窗口一致、工程面板（engineering, 700）；**v0.5.2 数据安全**：宿主子集不删本地键、导入前备份 `tianlight.backup.host`、恢复入口、首启全量推送/失败重试、`tl5Diag("settings")` 计数 |
 | `13-i18n.js` | i18n | Lead | locale 服务接入、zh/en 字典注册、`TL_T`/`useTl5I18n`、语言切换；**v0.5.2** 工厂期注册 12-schema 的 `TL5_SCHEMA_STRINGS`（静态审计可见 `settings.*`）；**v0.5.3** 显式语言只切皮肤文案（不调 `locale.setLocale`、不写宿主 locale），非 React 文案走 `data-tl-i18n-key`/`data-tl-i18n-title-key` 契约刷新；**v1.6.1** 新增天气胶囊 `weather.chip.*` zh/en 文案 |
@@ -172,8 +180,12 @@ apply(ctx)
 ```
 
 每个安装器都包在 `ctx.effect(() => factory(), label)` 里，返回的 teardown 幂等且带 label；
-`globalThis.__dshTianlightInstance` 暴露 `dispose()` / `labels()` / `disposeLabel(label)` /
+`globalThis.__dshTianlightInstance` 只暴露只读诊断/控制面：`dispose()` / `labels()` / `disposeLabel(label)` /
 `modules()` / `settings()` / `metrics()` / `diag()` / `i18n()` / 懒计算的 `features`，用于热重载与支持诊断。
+**R8（REV-R4A F1）**：该对象不再包含 live cordis `ctx`/fiber；`dispose()` 由实例闭包完成
+（先清 registry，再 `fiber.dispose()` + 效果列表兜底，幂等），避免同页脚本经
+`__dshTianlightInstance.ctx.inject([...])` 绕过 Agent 授权。旧实例（R8 之前发布的对象）仍通过其自身
+`dispose()` 或旧 `ctx.fiber` 路径被 `disposePreviousInstance()` 正确拆除。
 
 ## 设置 / schema / 多窗口数据流
 
@@ -284,7 +296,8 @@ WE 库（v0.6.0，host）--Steam 发现+扫描--> _wallpapers（末尾追加 we 
 4. `compat-matrix.mjs` —— 对任意多份 DSH 安装输出 `COMPATIBLE / INCOMPATIBLE`，
    逐版列出槽位/数据属性/类名/契约，是"同时支持 0.2.0/0.2.1/0.2.2"的可执行证明
 5. 运行时诊断 —— `__dshTianlightInstance.features` 报告当前 DSH 实际渲染的钩子层，
-   v0.5.0 增加 `.modules()` / `.settings()` / `.metrics()` / `.diag()` / `.i18n()`
+   v0.5.0 增加 `.modules()` / `.settings()` / `.metrics()` / `.diag()` / `.i18n()`；
+   **R8** 起该诊断对象只读、不含 live `ctx`/fiber（见上文 apply 生命周期）
 
 v0.5.0 新增功能只用了三条线共有的稳定钩子：`[data-chat-running]`（专注联动）、locale 服务（双语）、
 既有选择器桥（未改）。v0.6.0 的 WE 集成本质上是**加在既有 `webServer` 上的第二前缀**与 `slots` 的两个

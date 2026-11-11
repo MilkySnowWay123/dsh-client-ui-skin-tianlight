@@ -681,6 +681,9 @@ body[data-dsh-tianlight] [data-tl-bubble] code {
 			// contracts whose shape is not guaranteed across builds, and a settings
 			// panel that silently opens nothing is worse than one the skin docks itself.
 			let overlayRoot = null;
+			// R5: non-modal layer — it receives Esc only while it is the top layer and
+			// never gets a Tab trap (the DSH composer keeps its Tab order).
+			let overlayDisposer = null;
 			const host = document.createElement("div");
 			host.setAttribute("data-tl-font-panel", "");
 			host.hidden = true;
@@ -749,109 +752,57 @@ body[data-dsh-tianlight] [data-tl-bubble] code {
 				host.style.top = Math.min(maxTop, Math.max(0, host.offsetTop)) + "px";
 			};
 			window.addEventListener("resize", clampFontHost);
-			// ---- wallpaper-adaptive palette ----
-			// The wallpaper is same-origin, so drawing a frame into a canvas does not
-			// taint it and getImageData stays legal. 32x18 pixels is enough to find the
-			// dominant hue and costs nothing next to the video decode.
-			const swatch = document.createElement("canvas");
-			swatch.width = 32;
-			swatch.height = 18;
-			let swatchCtx = null;
-			try {
-				swatchCtx = swatch.getContext("2d", { willReadFrequently: true });
-			} catch {
-				swatchCtx = null;
-			}
+			// ---- wallpaper-adaptive palette (shared sampler, S4) ----
+			// The region that samples the wallpaper lives in 11-platform so the panel tint
+			// and this panel cannot drift apart again; only the output formulas differ.
 			let chromaTimer = 0;
 			const adoptWallpaperPalette = () => {
-				if (swatchCtx === null) return;
-				const still = wallpaperController === null ? null : wallpaperController.image;
-				const video = document.querySelector("[data-tl-scene] > video");
-				// A still wallpaper is not a <video>: sample the loaded Image instead; the
-				// shader snapshot is a same-origin 2D canvas and is sampled the same way.
-				const shader = wallpaperController === null ? null : wallpaperController.shaderSwatch;
-				const target =
-					shader !== null && shader !== undefined
-						? shader
-						: still !== null && still !== undefined
-							? still
-							: video;
-				if (target === null || target === undefined) return;
-				if (target === video && video.readyState < 2) return;
-				let data = null;
-				try {
-					swatchCtx.drawImage(target, 0, 0, swatch.width, swatch.height);
-					data = swatchCtx.getImageData(0, 0, swatch.width, swatch.height).data;
-				} catch {
-					return;
-				}
-				let sin = 0;
-				let cos = 0;
-				let satSum = 0;
-				let lightSum = 0;
-				let weight = 0;
-				for (let i = 0; i + 3 < data.length; i += 4) {
-					const r = data[i] / 255;
-					const g = data[i + 1] / 255;
-					const b = data[i + 2] / 255;
-					const max = Math.max(r, g, b);
-					const min = Math.min(r, g, b);
-					const delta = max - min;
-					const light = (max + min) / 2;
-					// Near-grey has no usable hue, and crushed pixels carry no design value.
-					if (delta < 0.05 || light < 0.08 || light > 0.95) continue;
-					const sat = light > 0.5 ? delta / (2 - max - min) : delta / (max + min);
-					let hue;
-					if (max === r) hue = ((g - b) / delta + (g < b ? 6 : 0)) * 60;
-					else if (max === g) hue = ((b - r) / delta + 2) * 60;
-					else hue = ((r - g) / delta + 4) * 60;
-					const rad = (hue * Math.PI) / 180;
-					// Weight the mid-tones: they carry the picture's character.
-					const w = sat * (1 - Math.abs(light - 0.55) * 1.2);
-					sin += Math.sin(rad) * w;
-					cos += Math.cos(rad) * w;
-					satSum += sat * w;
-					lightSum += light * w;
-					weight += w;
-				}
-				if (weight <= 0.001) return;
-				// Circular mean: averaging hue linearly would break across 0/360.
-				const hue = Math.round((((Math.atan2(sin, cos) * 180) / Math.PI) + 360) % 360);
-				const sat = Math.min(0.70, Math.max(0.32, (satSum / weight) * 1.3));
-				const light = lightSum / weight;
+				const palette = tl5SampleWallpaperPalette();
+				if (palette === null) return;
 				const darkMode = document.body !== null && document.body.hasAttribute(DARK_ATTR);
-				// Accent is lifted for contrast; the surface keeps the wallpaper's own
-				// value so the panel feels lit by the same light source.
 				const accentLight = darkMode ? 0.66 : 0.44;
-				const fillLight = darkMode ? Math.min(0.20, 0.10 + light * 0.10) : Math.max(0.90, 0.94 + light * 0.04);
-				host.style.setProperty("--tl-accent", "hsl(" + hue + " " + Math.round(sat * 100) + "% " + Math.round(accentLight * 100) + "%)");
+				const fillLight = darkMode ? Math.min(0.20, 0.10 + palette.light * 0.10) : Math.max(0.90, 0.94 + palette.light * 0.04);
+				host.style.setProperty("--tl-accent", "hsl(" + palette.hue + " " + Math.round(palette.sat * 100) + "% " + Math.round(accentLight * 100) + "%)");
 				host.style.setProperty(
 					"--tl-accent-soft",
-					"hsl(" + hue + " " + Math.round(sat * 100) + "% " + Math.round(accentLight * 100) + "% / 0.18)",
+					"hsl(" + palette.hue + " " + Math.round(palette.sat * 100) + "% " + Math.round(accentLight * 100) + "% / 0.18)",
 				);
 				host.style.setProperty(
 					"--tl-line-strong",
-					"hsl(" + hue + " " + Math.round(Math.min(0.5, sat) * 100) + "% " + Math.round((darkMode ? 0.62 : 0.42) * 100) + "% / 0.40)",
+					"hsl(" + palette.hue + " " + Math.round(Math.min(0.5, palette.sat) * 100) + "% " + Math.round((darkMode ? 0.62 : 0.42) * 100) + "% / 0.40)",
 				);
 				host.style.setProperty(
 					"--tl-panel-fill",
-					"hsl(" + hue + " " + Math.round(Math.min(0.42, sat * 0.55) * 100) + "% " + Math.round(fillLight * 100) + "% / calc(0.88 * var(--tl-glass-m, 1)))",
+					"hsl(" + palette.hue + " " + Math.round(Math.min(0.42, palette.sat * 0.55) * 100) + "% " + Math.round(fillLight * 100) + "% / calc(0.88 * var(--tl-glass-m, 1)))",
 				);
 			};
 			const startChroma = () => {
 				if (chromaTimer !== 0) return;
 				adoptWallpaperPalette();
-				// Re-sample while the panel is open: the wallpaper is a looping video, so
-				// its colours drift and the panel should follow them.
-				chromaTimer = globalThis.setInterval(adoptWallpaperPalette, 4000);
+				// One delayed retry covers a video that has not decoded a frame yet at open
+				// time. No polling: re-sampling a playing 4K video every 4s cost a visible
+				// periodic hitch (the wallpaper panel was fixed the same way in v0.5.2); the
+				// font panel keeps the palette it adopted, exactly like the wallpaper panel.
+				chromaTimer = globalThis.setTimeout(() => {
+					chromaTimer = 0;
+					adoptWallpaperPalette();
+				}, 1500);
 			};
 			const stopChroma = () => {
 				if (chromaTimer === 0) return;
-				globalThis.clearInterval(chromaTimer);
+				globalThis.clearTimeout(chromaTimer);
 				chromaTimer = 0;
 			};
 
 			const toggleOverlay = () => {
+				// R8b (REV-R5 F1): never open this non-modal float beneath a higher modal.
+				if (
+					host.hidden === true &&
+					typeof tl5OverlayOpenAllowed === "function" &&
+					tl5OverlayOpenAllowed("font-panel") === false
+				) {
+					return;
+				}
 				host.hidden = !host.hidden;
 				if (host.hidden) {
 					// Closing mid-drag would leave the drag armed: the pointerup lands on a
@@ -860,10 +811,26 @@ body[data-dsh-tianlight] [data-tl-bubble] code {
 					drag = null;
 					host.removeAttribute("data-tl-dragging");
 					stopChroma();
+					if (overlayDisposer !== null) {
+						try {
+							overlayDisposer();
+						} catch {
+							// the stack is already torn down
+						}
+						overlayDisposer = null;
+					}
 					return;
 				}
 				startChroma();
 				clampFontHost();
+				if (overlayDisposer === null) {
+					overlayDisposer = tl5OverlayRegister({
+						id: "font-panel",
+						modal: false,
+						root: () => host,
+						onEscape: () => toggleOverlay(),
+					});
+				}
 				if (overlayRoot !== null) return;
 				try {
 					overlayRoot = require("react-dom/client").createRoot(host);
@@ -882,6 +849,14 @@ body[data-dsh-tianlight] [data-tl-bubble] code {
 			});
 
 			return () => {
+				if (overlayDisposer !== null) {
+					try {
+						overlayDisposer();
+					} catch {
+						// the stack is already torn down
+					}
+					overlayDisposer = null;
+				}
 				if (typeof disposeSlots === "function") disposeSlots();
 				window.removeEventListener("resize", clampFontHost);
 				stopChroma();

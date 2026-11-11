@@ -21,29 +21,41 @@
 		 *     grantable.
 		 *
 		 * HARD BOUNDARY (enforced by construction, not convention):
-		 *   - this fragment performs no network I/O at all (no HTTP client, no socket,
-		 *     no beacon, no background request loop), never touches a filesystem API,
-		 *     never imports or calls a DSH service, and never reads DSH sessions,
-		 *     tasks, files or credentials;
-		 *   - the only persistent state is four localStorage keys owned by the skin:
-		 *       tianlight.pet.permissions.v1  capability bits
+		 *   - its ONLY network I/O is the user-enabled, same-origin host bridge added
+		 *     in v2.0.0: a `_engines` capability probe and
+		 *     `POST /skin-tianlight/_pet-chat` while the user has granted `llm`. It
+		 *     never contacts another origin, has no beacon and no background request
+		 *     loop, never touches a filesystem API, never imports or calls a DSH
+		 *     service directly, and never reads DSH sessions, tasks, files or
+		 *     credentials (the host route receives no session id, no tools and no
+		 *     credentials);
+		 *   - the only persistent skin state is five localStorage keys:
+		 *       tianlight.pet.permissions.v1  SAFE capability bits only (R4A: the
+		 *                                     medium/high bits are session-memory)
 		 *       tianlight.pet.pause.v1        kill switch
 		 *       tianlight.pet.ai.v1           LLM usage + daily limit
 		 *       tianlight.petMind.v1          v1.6.8 bounded private-thought store
-		 *   - the optional LLM adapter is supplied by the page owner. It is only called
-		 *     after the user grants `llm` with `{ consent: "user-explicit" }`; the
+		 *       tianlight.pet.llmProvider.v1  v2.0.0 user-chosen provider id only
+		 *   - the optional LLM adapter is supplied by the page owner (v2.0.0: the brain
+		 *     auto-registers a built-in `dsh` adapter when the host reports a usable
+		 *     model; a user-registered non-`dsh` adapter is never overwritten). It is
+		 *     only called after the user grants `llm` through the role hub's two-step confirmation
+		 *     (R4A: an internal one-shot closure ticket, never a replayable string); the
 		 *     system prompt is a fixed safety string, `messages` contains the current
 		 *     user sentence plus (v1.6.8) a bounded, skin-local context digest built
 		 *     from this skin's own chat history, memory counters and current thought —
 		 *     never DSH data/files/credentials/sessions — output is sanitized, the call
 		 *     is bounded by 20s/1200 chars and daily/minute quotas. Any failure falls
-		 *     back to the local brain and is audited as `llm-fallback`;
+		 *     back to the local brain and is audited with a stable reason code
+		 *     (`llm-fallback` remains the fallback for an adapter that reports none);
 		 *   - `agentChat` is only a permission bit plus an audit source for the
 		 *     separate src/48-pet-agent.js bridge (that bridge owns the injected
 		 *     client `remote.session` call and sends only user-typed prompts to a
-		 *     user-selected session). The brain itself still has no DSH access, and
-		 *     the forbidden `agent` capability — the pet driving tasks/tools by
-		 *     itself — remains permanently denied;
+		 *     user-selected session). R4A: the bridge authorizes via this fragment's
+		 *     closure state (`petAgentChatAllowed`); listing DSH sessions also needs
+		 *     the grant. The brain itself still has no DSH access, and the forbidden
+		 *     `agent` capability — the pet driving tasks/tools by itself — remains
+		 *     permanently denied;
 		 *   - there are no DOM listeners. The only persistent timer is the v1.6.8
 		 *     private-thinking loop (60s; it is cleared by the install disposer), and
 		 *     the per-call LLM timeout is cleared in a `finally` block.
@@ -67,9 +79,30 @@
 		 *     paused. It never drives DSH, never executes tools and adds no network
 		 *     channel of its own.
 		 *
-		 * The visible control planes are the role hub (`src/76-role-hub.js`), which
-		 * consumes `globalThis.tianlightPet` + `globalThis.tianlightPetMind` and never
-		 * mutates state on its own, and the companion speech bubble (thought bridge).
+		 * v2.0.0「桌宠 AI 对话走 DSH LLM」adds a built-in browser adapter:
+		 *   - the brain probes `_engines.capabilities.petLlm` on install, on demand and
+		 *     after a failed AI call. When the host reports a usable model it
+		 *     auto-registers the adapter `{ id: "dsh", chat }`, which POSTs only the
+		 *     bounded user content to `POST /skin-tianlight/_pet-chat` and throws an
+		 *     Error carrying a stable `code` on failure. A user-registered non-`dsh`
+		 *     adapter is never overridden, and `llm` still needs the user's explicit
+		 *     grant before anything is called;
+		 *   - the role hub writes the chosen provider through the same-closure bridge
+		 *     (`setLlmProvider`); the model always follows the DSH default (plan A),
+		 *     so there is no per-model selection. Only the provider string persists
+		 *     (`tianlight.pet.llmProvider.v1`, null/absent = follow the default);
+		 *   - a failed AI call degrades to the local brain exactly as before; the chat
+		 *     result carries an additive `llmError` stable code and
+		 *     `petLlmHintText()` localizes the user-facing hint. The existing quotas
+		 *     (60/day, 6/min, 1200 chars, 20s), permissions/consent, sanitization and
+		 *     the audit ring are unchanged, and the private mind keeps its independent
+		 *     12/day budget and chat-history-free prompt.
+		 *
+		 * The visible control planes are the role hub (`src/76-role-hub.js`) and the
+		 * companion speech bubble (thought bridge). R4A: both now call the same-closure
+		 * `petBrainInternal` bridge instead of `globalThis.tianlightPet`, so a page
+		 * script that replaces a global cannot change what the UI grants or reads.
+		 * `globalThis.tianlightPet` stays published as the documented console surface.
 		 */
 		const PET_VERSION = 1;
 		const PET_PERMISSIONS_KEY = "tianlight.pet.permissions.v1";
@@ -87,6 +120,10 @@
 		const PET_MIND_RECENT_LIMIT = 5;
 		const PET_MIND_CONTEXT_MESSAGES = 6;
 		const PET_MIND_DIGEST_MAX = 700;
+		// S1: the optional LLM inner monologue has its OWN daily budget. It never charges
+		// the user's chat quota (PET_DAILY_LIMIT_DEFAULT), so a long thinking session
+		// cannot leave the user without chat budget. 12 thoughts/day = a full day at 15m.
+		const PET_MIND_LLM_DAILY_LIMIT = 12;
 		const PET_MIND_GOAL_KEYS = ["pet.mind.goal.1", "pet.mind.goal.2", "pet.mind.goal.3"];
 		/** Bounded skin-local context digest used by the chat prompt (v1.6.8). */
 		const PET_CHAT_CONTEXT_MAX = 700;
@@ -112,6 +149,16 @@
 		/** Medium + high risk capabilities additionally need explicit user consent. */
 		const PET_CONSENT_CAPS = ["llm", "agentChat", ...PET_HIGH_CAPS];
 		/**
+		 * R4A (v0.6.1 security pass): medium/high grants are SESSION-ONLY. They are
+		 * never written to localStorage, never loaded from it and never imported, so
+		 * a page reload (or a second browser, or a recipe bundle) cannot restore a
+		 * dangerous grant. The role hub re-asks with the two-step confirmation after
+		 * every load. Safe capabilities keep persisting exactly as before.
+		 */
+		const PET_SESSION_ONLY_CAPS = ["llm", "agentChat", ...PET_HIGH_CAPS];
+		/** A UI consent ticket is single-use and expires after two minutes. */
+		const PET_CONSENT_TICKET_TTL_MS = 120000;
+		/**
 		 * The ONLY permanently forbidden capability: the pet AUTONOMOUSLY driving DSH
 		 * tasks/tools/approvals. It is different from `agentChat` (user-typed prompt
 		 * relay) and from the six high-risk capabilities (user-grantable + adapter).
@@ -136,6 +183,48 @@
 		const PET_AUDIT_MAX = 60;
 		const PET_AUDIT_DEFAULT_LIMIT = 20;
 		const PET_LLM_TIMEOUT_TOKEN = { timeout: true };
+		// ---- v2.0.0 built-in DSH LLM adapter (host bridge) ----------------------
+		// The browser cannot call a model (remote.llm only lists providers), so the only
+		// model path is the host's fixed-prompt route. These constants are shared by the
+		// capability probe, the built-in adapter and the role hub's status card.
+		const PET_HOST_LLM_ROUTE = ASSET_BASE + "/_pet-chat";
+		/** fetch-level fallback; the 20s PET_LLM_TIMEOUT_MS race in petCallLlm still wins. */
+		const PET_HOST_LLM_FETCH_TIMEOUT_MS = 25000;
+		/** Only the user's provider choice persists; null/absent = follow the DSH default. */
+		const PET_LLM_PROVIDER_KEY = "tianlight.pet.llmProvider.v1";
+		/** Stable error codes shared with the host route (unknown codes normalize to llm-error). */
+		const PET_LLM_CODES = [
+			"invalid-request",
+			"too-large",
+			"busy",
+			"unconfigured-model",
+			"provider-not-allowed",
+			"timeout",
+			"aborted",
+			"host-unavailable",
+			"missing-credential",
+			"quota",
+			"rate-limit",
+			"llm-error",
+		];
+		/** Stable code -> localized "replied locally because…" hint key. */
+		const PET_LLM_HINT_KEYS = {
+			"unconfigured-model": "pet.chat.llmHint.unconfiguredModel",
+			// An explicit provider override the host no longer knows is the same user fix:
+			// pick/configure a usable provider in the role hub (never "restart the host").
+			"provider-not-allowed": "pet.chat.llmHint.unconfiguredModel",
+			"missing-credential": "pet.chat.llmHint.missingCredential",
+			quota: "pet.chat.llmHint.quota",
+			"rate-limit": "pet.chat.llmHint.rateLimit",
+			timeout: "pet.chat.llmHint.timeout",
+			"host-unavailable": "pet.chat.llmHint.hostUnavailable",
+		};
+		/**
+		 * Host `petLlm.reason` values that mean "no usable model is configured". The host
+		 * reports `no-default-model` as well; folding it into `unconfigured-model` gives
+		 * the actionable "configure a model" hint instead of the misleading restart hint.
+		 */
+		const PET_HOST_LLM_UNCONFIGURED_REASONS = ["unconfigured-model", "no-llm-service", "no-providers", "no-default-model"];
 		const PET_PERIOD_KEYS = {
 			dawn: "pet.brain.period.dawn",
 			morning: "pet.brain.period.morning",
@@ -212,6 +301,17 @@
 				"pet.chat.ctx.thought": "我刚在想{thought}，正好你来了。",
 				"pet.chat.ctx.soft": "嗯，我在。「{topic}」可以再展开一点。",
 				"pet.chat.ctx.plain": "嗯，我听着呢。",
+				// v2.0.0: built-in DSH LLM chat — where the reply came from, and why a
+				// failed model call still answered locally (short, actionable, both languages).
+				"pet.chat.source.ai": "AI 回复",
+				"pet.chat.source.local": "本地回复",
+				"pet.chat.llmHint.unconfiguredModel": "未配置模型，已用本地回复",
+				"pet.chat.llmHint.missingCredential": "缺少凭据，已用本地回复",
+				"pet.chat.llmHint.quota": "模型额度不足，已用本地回复",
+				"pet.chat.llmHint.rateLimit": "模型限流，已用本地回复",
+				"pet.chat.llmHint.timeout": "模型响应超时，已用本地回复",
+				"pet.chat.llmHint.hostUnavailable": "宿主不可用（可能需要重启 DSH），已用本地回复",
+				"pet.chat.llmHint.default": "AI 暂时不可用，已用本地回复",
 				// v1.6.8: local inner-monologue templates (60–160 chars after assembly).
 				"pet.mind.line.period": "现在是{period}。",
 				"pet.mind.line.clock": "这会儿是 {time}。",
@@ -268,6 +368,17 @@
 				"pet.chat.ctx.thought": "I was thinking {thought}, then you arrived.",
 				"pet.chat.ctx.soft": "I'm here. Tell me more about \"{topic}\".",
 				"pet.chat.ctx.plain": "Mm, I'm listening.",
+				// v2.0.0: built-in DSH LLM chat — where the reply came from, and why a
+				// failed model call still answered locally (short, actionable, both languages).
+				"pet.chat.source.ai": "AI reply",
+				"pet.chat.source.local": "Local reply",
+				"pet.chat.llmHint.unconfiguredModel": "No model is configured; replied locally",
+				"pet.chat.llmHint.missingCredential": "Missing credentials; replied locally",
+				"pet.chat.llmHint.quota": "Model quota is exhausted; replied locally",
+				"pet.chat.llmHint.rateLimit": "The model is rate-limited; replied locally",
+				"pet.chat.llmHint.timeout": "The model timed out; replied locally",
+				"pet.chat.llmHint.hostUnavailable": "The host is unavailable (a DSH restart may be needed); replied locally",
+				"pet.chat.llmHint.default": "AI is unavailable right now; replied locally",
 				// v1.6.8: local inner-monologue templates (60–160 chars after assembly).
 				"pet.mind.line.period": "It's {period} right now.",
 				"pet.mind.line.clock": "It's {time}.",
@@ -289,6 +400,294 @@
 			},
 		});
 
+		// ---- v2.0.0 built-in DSH LLM adapter (host bridge) ----------------------
+		// The browser half cannot call a model (`remote.llm` only lists providers), so
+		// this is the only model path: a narrow same-origin host route whose system
+		// prompt is fixed server-side. The implementation sits right after the strings
+		// and the route constant so tools/audit.mjs can assert the whole capability
+		// surface (probe, adapter, hints, AI/local labels) as one bounded, identifiable
+		// unit; the module state it uses is declared further below.
+		//
+		// Privacy/security: the payload is only the bounded user sentence (+ the existing
+		// skin-local context digest) that petCallLlm already built — no DSH session id,
+		// no tools, no files, no credentials. The host decides availability; this half
+		// only mirrors the answer and never grants `llm` by itself (the user still needs
+		// the explicit consent token through the role hub), never overrides a user
+		// adapter, and always falls back to the local brain on failure.
+
+		/** Normalize any adapter/host error code to the stable route vocabulary. */
+		function petNormalizeLlmCode(value) {
+			try {
+				const code = typeof value === "string" ? value.trim().toLowerCase() : "";
+				return PET_LLM_CODES.indexOf(code) >= 0 ? code : "llm-error";
+			} catch (error) {
+				return "llm-error";
+			}
+		}
+
+		/** One stable Error for every adapter failure (`petCallLlm` reads `error.code`). */
+		function petLlmError(code) {
+			const normalized = petNormalizeLlmCode(code);
+			const error = new Error("pet-llm:" + normalized);
+			error.code = normalized;
+			return error;
+		}
+
+		/** Normalize the host `capabilities.petLlm` answer into the cached status shape. */
+		function petHostLlmNormalize(value) {
+			const source = value !== null && typeof value === "object" ? value : {};
+			const available = source.available === true;
+			const reason = typeof source.reason === "string" ? petClipText(source.reason.trim(), 64) : "";
+			return {
+				checked: true,
+				available,
+				reason: available === true ? (reason === "" ? "available" : reason) : reason === "" ? "unknown" : reason,
+				provider: typeof source.provider === "string" ? petClipText(source.provider.trim(), 128) : "",
+				model: typeof source.model === "string" ? petClipText(source.model.trim(), 128) : "",
+			};
+		}
+
+		/** Defensive copy of the cached host capability (never a live reference). */
+		function petHostLlmStatus() {
+			try {
+				return {
+					checked: petHostLlm.checked === true,
+					available: petHostLlm.available === true,
+					reason: typeof petHostLlm.reason === "string" ? petHostLlm.reason : "unknown",
+					provider: typeof petHostLlm.provider === "string" ? petHostLlm.provider : "",
+					model: typeof petHostLlm.model === "string" ? petHostLlm.model : "",
+				};
+			} catch (error) {
+				return { checked: false, available: false, reason: "unknown", provider: "", model: "" };
+			}
+		}
+
+		/** `"dsh"` = auto-registered built-in adapter, `"adapter"` = user adapter, `"none"`. */
+		function petLlmRouting() {
+			try {
+				if (petAdapter === null) return "none";
+				return petAdapter.id === "dsh" ? "dsh" : "adapter";
+			} catch (error) {
+				return "none";
+			}
+		}
+
+		/**
+		 * Probe `_engines.capabilities.petLlm` and mirror the answer. Never rejects and
+		 * never throws: a failed/old host is cached as `host-unavailable` (one DSH restart
+		 * may be needed after updating the plugin) and clears a previously auto-registered
+		 * built-in adapter. A user-registered non-`dsh` adapter is never touched. Triggered
+		 * by install, by the role hub (`refreshHostLlm`) and in the background after a
+		 * failed AI call (so a host restart recovers without a page reload).
+		 */
+		async function petHostLlmProbe() {
+			// Only a real page can call the relative host route. A bare Node harness (the
+			// Node smoke suite evaluates this bundle with a minimal window stub and a global
+			// fetch) must degrade to "host unavailable" silently instead of logging a
+			// relative-URL TypeError on every install.
+			let pageLocation = null;
+			try {
+				pageLocation = typeof window !== "undefined" && window !== null ? window.location : null;
+			} catch (error) {
+				pageLocation = null;
+			}
+			if (
+				typeof fetch !== "function" ||
+				pageLocation === null ||
+				typeof pageLocation !== "object" ||
+				typeof pageLocation.href !== "string" ||
+				pageLocation.href === ""
+			) {
+				petHostLlm = { checked: true, available: false, reason: "host-unavailable", provider: "", model: "" };
+				if (petAdapter !== null && petAdapter.id === "dsh") petAdapter = null;
+				return petHostLlmStatus();
+			}
+			let next = { checked: true, available: false, reason: "host-unavailable", provider: "", model: "" };
+			try {
+				const response = await fetch(ASSET_BASE + "/_engines?api=" + encodeURIComponent(HOST_API), { cache: "no-store" });
+				// A real browser Response always carries `ok`; only an explicit HTTP failure is
+				// rejected here (an old/partial host body is handled by the JSON checks below).
+				if (response === null || typeof response !== "object" || response.ok === false) throw new Error("host-unavailable");
+				let payload = null;
+				try {
+					payload = typeof response.json === "function" ? await response.json() : null;
+				} catch (error) {
+					payload = null;
+				}
+				if (payload === null || typeof payload !== "object") throw new Error("host-unavailable");
+				// Keep the existing stale-host / restart diagnostics accurate from the answer.
+				rememberHostIdentity(payload);
+				const capabilities = payload.capabilities !== null && typeof payload.capabilities === "object" ? payload.capabilities : null;
+				const petLlm = capabilities !== null && capabilities.petLlm !== null && typeof capabilities.petLlm === "object" ? capabilities.petLlm : null;
+				if (petLlm !== null) next = petHostLlmNormalize(petLlm);
+			} catch (error) {
+				note("pet-brain:host-llm-probe", error);
+				next = { checked: true, available: false, reason: "host-unavailable", provider: "", model: "" };
+			}
+			petHostLlm = next;
+			if (next.available === true) {
+				// Auto-register into an EMPTY slot only: a user-registered adapter is never
+				// overridden, whichever id it uses.
+				if (petAdapter === null && petLlmAutoSuppressed !== true) petAdapter = { id: "dsh", chat: petHostLlmChat };
+			} else if (petAdapter !== null && petAdapter.id === "dsh") {
+				petAdapter = null;
+			}
+			return petHostLlmStatus();
+		}
+
+		/**
+		 * Built-in `{ id:"dsh", chat }` adapter for `petCallLlm`. `payload.system` is
+		 * IGNORED on purpose: the system prompt is fixed on the host side. Only the
+		 * bounded content string and (when the user chose one) the provider id are sent;
+		 * the model always follows the DSH default (plan A). Every failure throws an
+		 * Error with a stable `code`; petChat exposes it as the additive `llmError`.
+		 */
+		async function petHostLlmChat(payload) {
+			const messages = payload !== null && typeof payload === "object" && Array.isArray(payload.messages) ? payload.messages : [];
+			const first = messages.length > 0 && messages[0] !== null && typeof messages[0] === "object" ? messages[0].content : "";
+			const text = typeof first === "string" ? first : "";
+			if (text === "") throw petLlmError("invalid-request");
+			const body = { text };
+			// Plan A: provider only; never send a model id (the host uses its default).
+			if (petLlmProvider !== null) body.provider = petLlmProvider;
+			let timer = 0;
+			let controller = null;
+			try {
+				if (typeof fetch !== "function") throw petLlmError("host-unavailable");
+				if (typeof AbortController === "function") controller = new AbortController();
+				timer = window.setTimeout(() => {
+					// The 20s brain-side race is the outer deadline; this 25s abort only
+					// releases the socket/reader of an abandoned call.
+					try {
+						if (controller !== null) controller.abort();
+					} catch (error) {
+						// abort is best-effort
+					}
+				}, PET_HOST_LLM_FETCH_TIMEOUT_MS);
+				const request = {
+					method: "POST",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify(body),
+				};
+				if (controller !== null) request.signal = controller.signal;
+				const response = await fetch(PET_HOST_LLM_ROUTE, request);
+				let data = null;
+				try {
+					data = response !== null && typeof response === "object" && typeof response.json === "function" ? await response.json() : null;
+				} catch (error) {
+					data = null;
+				}
+				if (data !== null && typeof data === "object" && data.ok === true && typeof data.text === "string") return data.text;
+				// The host only ever answers `{ok:false, code}`; map anything else defensively.
+				if (data !== null && typeof data === "object" && typeof data.code === "string") throw petLlmError(data.code);
+				const status = response !== null && typeof response === "object" ? Number(response.status) : 0;
+				if (status === 404 || status === 405 || status === 501) throw petLlmError("host-unavailable");
+				throw petLlmError("llm-error");
+			} catch (error) {
+				const code = error !== null && typeof error === "object" && typeof error.code === "string" ? error.code : "";
+				if (PET_LLM_CODES.indexOf(code) >= 0) throw error;
+				const name = error !== null && typeof error === "object" && typeof error.name === "string" ? error.name : "";
+				throw petLlmError(name === "AbortError" ? "timeout" : "host-unavailable");
+			} finally {
+				if (timer !== 0) {
+					try {
+						window.clearTimeout(timer);
+					} catch (error) {
+						// the timeout already fired; nothing to clear
+					}
+				}
+			}
+		}
+
+		/**
+		 * A granted `llm` capability with no adapter at all means the host exposes no
+		 * usable model (or this browser half shipped before the host was restarted). The
+		 * host's own reason decides which hint the bubble shows; nothing was called, so
+		 * no quota is consumed and no audit entry is written for it.
+		 */
+		function petHostLlmUnavailableCode() {
+			try {
+				if (PET_HOST_LLM_UNCONFIGURED_REASONS.indexOf(petHostLlm.reason) >= 0) return "unconfigured-model";
+			} catch (error) {
+				// fall through to the generic host reason
+			}
+			return "host-unavailable";
+		}
+
+		/** Stable code -> i18n key (unknown codes fall back to the generic hint). */
+		function petLlmHintKey(code) {
+			const normalized = petNormalizeLlmCode(typeof code === "string" ? code : "");
+			const key = Object.prototype.hasOwnProperty.call(PET_LLM_HINT_KEYS, normalized) ? PET_LLM_HINT_KEYS[normalized] : "";
+			return key !== "" ? key : "pet.chat.llmHint.default";
+		}
+
+		/** Localized "replied locally because…" hint shared by the bubble and hub. */
+		function petLlmHintText(code) {
+			try {
+				return TL_T(petLlmHintKey(code));
+			} catch (error) {
+				return TL_T("pet.chat.llmHint.default");
+			}
+		}
+
+		/** Persisted provider choice (a plain string; null = follow the DSH default). */
+		function petReadLlmProvider() {
+			try {
+				const storage = petStorage();
+				if (storage === null) return null;
+				const raw = storage.getItem(PET_LLM_PROVIDER_KEY);
+				if (typeof raw !== "string") return null;
+				const provider = raw.trim();
+				if (provider === "" || provider.length > 128) return null;
+				return provider;
+			} catch (error) {
+				return null;
+			}
+		}
+
+		function petSaveLlmProvider() {
+			try {
+				const storage = petStorage();
+				if (storage === null) return;
+				if (petLlmProvider === null) {
+					if (typeof storage.removeItem === "function") storage.removeItem(PET_LLM_PROVIDER_KEY);
+				} else {
+					storage.setItem(PET_LLM_PROVIDER_KEY, petLlmProvider);
+				}
+			} catch (error) {
+				note("pet-brain:llm-provider-save", error);
+			}
+		}
+
+		/**
+		 * Plan A: the role hub selects only a PROVIDER (the model always follows the DSH
+		 * default). `null`/"" = follow the default; a string is trimmed and capped at 128
+		 * chars. Returns `{ok:true, provider}` or `{ok:false, reason:"invalid-provider"}`.
+		 */
+		function petSetLlmProvider(value) {
+			try {
+				if (value === null || value === undefined || value === "") {
+					petLlmProvider = null;
+					petSaveLlmProvider();
+					return { ok: true, provider: null };
+				}
+				if (typeof value !== "string") return { ok: false, reason: "invalid-provider" };
+				const provider = value.trim();
+				if (provider === "") {
+					petLlmProvider = null;
+					petSaveLlmProvider();
+					return { ok: true, provider: null };
+				}
+				if (provider.length > 128) return { ok: false, reason: "invalid-provider" };
+				petLlmProvider = provider;
+				petSaveLlmProvider();
+				return { ok: true, provider };
+			} catch (error) {
+				note("pet-brain:set-llm-provider", error);
+				return { ok: false, reason: "internal-error" };
+			}
+		}
+
 		// ---- module state -------------------------------------------------------
 		// One brain per page. Persisted bits are re-read on install; the ring log and
 		// the rate windows live in memory only (they are diagnostics, not facts).
@@ -297,11 +696,36 @@
 		let petPauseAt = 0;
 		let petGrants = {};
 		let petAdapter = null;
+		/**
+		 * v2.0.0: last cached `_engines.capabilities.petLlm` answer. `reason` is the host's
+		 * own availability reason ("unknown" before the first probe); provider/model are
+		 * the host's CURRENT DSH default selection (informational only — the model always
+		 * follows that default). `checked` distinguishes "not probed yet" from "unavailable".
+		 */
+		let petHostLlm = { checked: false, available: false, reason: "unknown", provider: "", model: "" };
+		/** The provider id the user picked in the role hub; null = follow the DSH default. */
+		let petLlmProvider = null;
+		/**
+		 * v2.0.0: after an explicit `clearLLM()` the page keeps honouring that choice for
+		 * its lifetime; only a page reload lets the host capability probe auto-register
+		 * the built-in adapter again. Without this flag the next background probe would
+		 * silently undo the user's "detach the model" action.
+		 */
+		let petLlmAutoSuppressed = false;
 		// Adapters for the six HIGH-risk capabilities (network/files/shell/approve/
 		// message/install), registered by the user/host at runtime. Functions are kept
-		// in memory only and are never persisted; a reload clears the adapters while
-		// the granted permission bits stay as the user left them.
+		// in memory only and are never persisted. R4A: a reload clears the adapters
+		// AND the medium/high grants (session-only), so both must be re-established
+		// after every load; only safe capability bits persist.
 		let petCapabilityAdapters = {};
+		/**
+		 * R4A: one-shot consent ticket for a medium/high grant. The role hub obtains
+		 * it through `petRequestUiConsent()` in this same closure immediately before
+		 * calling `grant`; the grant accepts ONLY that object identity, never a fixed
+		 * string. A same-page script can replace any global, but it cannot reach this
+		 * closure variable or mint a ticket for the UI.
+		 */
+		let petConsentTicket = null;
 		let petAi = { dayKey: "", usedToday: 0, dailyLimit: PET_DAILY_LIMIT_DEFAULT };
 		let petTurns = 0;
 		let petTodayTurns = 0;
@@ -417,6 +841,12 @@
 			return grants;
 		}
 
+		/**
+		 * Load persisted grants. R4A: only SAFE capabilities are trusted from disk;
+		 * medium/high bits (llm / agentChat / the six high-risk ones) are session-only
+		 * and always start false, no matter what localStorage or an imported recipe
+		 * says. This is the "reload requires re-authorization" boundary in code.
+		 */
 		function petLoadPermissions() {
 			const grants = petDefaultGrants();
 			try {
@@ -425,9 +855,11 @@
 				// Accept both the nested shape this build writes and a flat map.
 				const source = raw.granted !== null && typeof raw.granted === "object" ? raw.granted : raw;
 				if (source === null || typeof source !== "object") return grants;
-				for (const cap of PET_GRANTABLE_CAPS) {
+				for (const cap of PET_SAFE_CAPS) {
 					if (typeof source[cap] === "boolean") grants[cap] = source[cap];
 				}
+				// Any legacy medium/high bit in storage is ignored on purpose; the next
+				// save rewrites the document with safe bits only.
 			} catch (error) {
 				note("pet-brain:permissions-load", error);
 			}
@@ -436,11 +868,34 @@
 
 		function petSavePermissions() {
 			const persisted = {};
-			for (const cap of PET_GRANTABLE_CAPS) persisted[cap] = petGrants[cap] === true;
-			// The permanently forbidden capability is never written: the code path that
-			// could grant it does not exist, so persisting it would only create false
-			// state.
-			petWriteJson(PET_PERMISSIONS_KEY, { version: PET_VERSION, granted: persisted });
+			for (const cap of PET_SAFE_CAPS) persisted[cap] = petGrants[cap] === true;
+			// R4A: medium/high grants live in this page's memory only. Persisting them
+			// would let a reload / another browser read a stale "already allowed" bit,
+			// which is exactly the hole this pass closes. The permanently forbidden
+			// capability is never written either (no code path can grant it).
+			petWriteJson(PET_PERMISSIONS_KEY, { version: PET_VERSION, granted: persisted, sessionOnly: PET_SESSION_ONLY_CAPS.slice() });
+		}
+
+		/**
+		 * R4A migration: if an older build persisted medium/high bits (or a recipe
+		 * import wrote them into localStorage), rewrite the document with safe bits
+		 * only. Only writes when a legacy bit is actually present, so a normal reload
+		 * does not churn the synced settings revision.
+		 */
+		function petScrubPersistedPermissions() {
+			try {
+				const raw = petReadJson(PET_PERMISSIONS_KEY);
+				if (raw === null || typeof raw !== "object") return;
+				const source = raw.granted !== null && typeof raw.granted === "object" ? raw.granted : raw;
+				if (source === null || typeof source !== "object") return;
+				let legacy = false;
+				for (const cap of PET_SESSION_ONLY_CAPS) {
+					if (typeof source[cap] === "boolean") legacy = true;
+				}
+				if (legacy === true) petSavePermissions();
+			} catch (error) {
+				note("pet-brain:permissions-scrub", error);
+			}
 		}
 
 		function petPermissionMap() {
@@ -452,16 +907,29 @@
 			return map;
 		}
 
+		/**
+		 * Permission matrix for the role hub. R4A: adapter-based capabilities carry
+		 * `adapter:true|false` so the UI can say "no adapter (not enabled)" instead of
+		 * claiming a plain "granted" for something that has no implementation. The
+		 * skin itself never calls `invokeCapability`; a grant is only a gate.
+		 */
 		function petPermissionRows() {
 			const rows = [];
 			for (const cap of PET_SAFE_CAPS) {
 				rows.push({ id: cap, granted: petGrants[cap] === true, grantable: true, risk: "safe" });
 			}
 			for (const cap of PET_MEDIUM_CAPS) {
-				rows.push({ id: cap, granted: petGrants[cap] === true, grantable: true, risk: "medium" });
+				const adapter = cap === "llm" ? petAdapter !== null : undefined;
+				rows.push({ id: cap, granted: petGrants[cap] === true, grantable: true, risk: "medium", adapter });
 			}
 			for (const cap of PET_HIGH_CAPS) {
-				rows.push({ id: cap, granted: petGrants[cap] === true, grantable: true, risk: "high" });
+				rows.push({
+					id: cap,
+					granted: petGrants[cap] === true,
+					grantable: true,
+					risk: "high",
+					adapter: Object.prototype.hasOwnProperty.call(petCapabilityAdapters, cap),
+				});
 			}
 			for (const cap of PET_FORBIDDEN_CAPS) {
 				rows.push({ id: cap, granted: false, grantable: false, risk: "forbidden" });
@@ -485,13 +953,47 @@
 		}
 
 		/**
+		 * R4A: mint the one-shot consent ticket the role hub passes to `grant`.
+		 * Read-only callers cannot reach this function: it is a same-closure declaration
+		 * and is NOT published on `globalThis.tianlightPet`. The ticket is consumed by
+		 * the next successful `grant` and expires quickly, so a stale ticket cannot be
+		 * replayed by a script that somehow observed one.
+		 */
+		function petRequestUiConsent(cap) {
+			const id = petCapabilityRequest(cap);
+			if (PET_CONSENT_CAPS.indexOf(id) < 0) return null;
+			petConsentTicket = { cap: id, at: Date.now() };
+			return petConsentTicket;
+		}
+
+		function petConsentTicketValid(ticket, id) {
+			if (ticket === null || typeof ticket !== "object") return false;
+			if (ticket !== petConsentTicket) return false; // object identity, never a shape/string
+			if (ticket.cap !== id) return false;
+			if (Date.now() - ticket.at > PET_CONSENT_TICKET_TTL_MS) return false;
+			return true;
+		}
+
+		/**
+		 * R4A: the DSH-Agent bridge authorizes through THIS closure state, never via
+		 * `globalThis.tianlightPet` (a same-page script can replace any global). The
+		 * bridge fragment (src/48-pet-agent.js) calls these two functions directly.
+		 */
+		function petAgentChatAllowed() {
+			return petInstalled === true && petPaused !== true && petGranted("agentChat") === true;
+		}
+
+		function petAgentPaused() {
+			return petPaused === true;
+		}
+
+		/**
 		 * Grant a capability. The permanently forbidden `agent` capability and unknown
 		 * ids are rejected before any state is touched. Safe capabilities toggle
-		 * freely; medium + high risk capabilities additionally require the UI's
-		 * explicit consent token — this is deliberately not something code can infer
-		 * from context. The consent token is a UI contract (defence against accidental
-		 * self-granting flows), not a cryptographic secret: the real boundary is that
-		 * those capabilities start OFF and no code path grants them without this call.
+		 * freely; medium + high risk capabilities additionally require the one-shot
+		 * consent ticket minted by `petRequestUiConsent()` from the role hub (R4A).
+		 * The ticket is an object identity inside this closure, not a fixed string:
+		 * before R4A any page script could replay `{consent:"user-explicit"}`.
 		 */
 		function petGrant(cap, options) {
 			try {
@@ -505,19 +1007,19 @@
 					return { ok: false, reason: "unknown-capability" };
 				}
 				if (PET_CONSENT_CAPS.indexOf(id) >= 0) {
-					const consent =
-						options !== null && typeof options === "object"
-							? options.consent
-							: typeof options === "string"
-								? options
-								: undefined;
-					if (consent !== "user-explicit") {
+					const consent = options !== null && typeof options === "object" ? options.consent : undefined;
+					if (petConsentTicketValid(consent, id) === false) {
 						petAudit("grant", id, false, { reason: "consent-required" });
 						return { ok: false, reason: "consent-required" };
 					}
+					// One-shot even if the grant below throws.
+					petConsentTicket = null;
 				}
 				petGrants[id] = true;
-				petSavePermissions();
+				// R4A: only safe bits are persisted. A session-only grant changes no
+				// persisted state, so writing the document here would churn the synced
+				// settings revision for nothing.
+				if (PET_SAFE_CAPS.indexOf(id) >= 0) petSavePermissions();
 				petAudit("grant", id, true, {});
 				return { ok: true, capability: id, granted: true };
 			} catch (error) {
@@ -538,7 +1040,8 @@
 					return { ok: false, reason: "unknown-capability" };
 				}
 				petGrants[id] = false;
-				petSavePermissions();
+				// R4A: session-only caps are not persisted (see petGrant).
+				if (PET_SAFE_CAPS.indexOf(id) >= 0) petSavePermissions();
 				petAudit("revoke", id, true, {});
 				return { ok: true, capability: id, granted: false };
 			} catch (error) {
@@ -727,6 +1230,15 @@
 
 		// ---- read-only bridges to the skin's own engines -----------------------
 		function petLife() {
+			try {
+				// S1: prefer the life engine's same-closure bridge; the global is only a
+				// fallback for a stripped harness. This keeps pause/quiet/focus gates
+				// authoritative even if a page script replaces globalThis.tianlightLife.
+				const bridgeLife = companionDutyBridge.life;
+				if (bridgeLife !== null && bridgeLife !== undefined && typeof bridgeLife.status === "function") return bridgeLife;
+			} catch (error) {
+				// missing bridge: fall through to the documented global
+			}
 			try {
 				const life = globalThis.tianlightLife;
 				return life !== null && life !== undefined && typeof life === "object" ? life : null;
@@ -951,6 +1463,8 @@
 		function petClearLLM() {
 			try {
 				petAdapter = null;
+				// An explicit detach wins over the capability probe until the next reload.
+				petLlmAutoSuppressed = true;
 				return { ok: true, adapter: null };
 			} catch (error) {
 				return { ok: false, reason: "internal-error" };
@@ -982,7 +1496,10 @@
 		async function petCallLlm(text, now, options) {
 			const adapter = petAdapter;
 			if (adapter === null) return { ok: false, reason: "no-adapter" };
-			petChargeLlm(now);
+			// S1: an LLM inner monologue is charged against the mind's own budget
+			// (`meter:"mind"`); it must never touch the user's chat quota.
+			const meter = options !== null && typeof options === "object" && options.meter === "mind" ? "mind" : "chat";
+			if (meter === "chat") petChargeLlm(now);
 			let timer = 0;
 			try {
 				let content = text;
@@ -1005,14 +1522,19 @@
 				});
 				const call = Promise.resolve().then(() => adapter.chat(payload));
 				const result = await Promise.race([call, timeout]);
-				if (result === PET_LLM_TIMEOUT_TOKEN) return { ok: false, reason: "timeout" };
-				if (typeof result !== "string") return { ok: false, reason: "invalid-reply" };
+				// v2.0.0: every failure also carries a stable `code` so petChat can expose
+				// the additive `llmError` / localized hint. The `reason` strings are kept
+				// unchanged for the existing audit and the private-mind path.
+				if (result === PET_LLM_TIMEOUT_TOKEN) return { ok: false, reason: "timeout", code: "timeout" };
+				if (typeof result !== "string") return { ok: false, reason: "invalid-reply", code: "llm-error" };
 				const reply = petSanitizeLlmReply(result);
-				if (reply === "") return { ok: false, reason: "empty-reply" };
+				if (reply === "") return { ok: false, reason: "empty-reply", code: "llm-error" };
 				return { ok: true, reply };
 			} catch (error) {
 				note("pet-brain:llm", error);
-				return { ok: false, reason: "adapter-error" };
+				// The built-in dsh adapter throws an Error carrying a stable `code`; a
+				// user adapter without one is a generic llm-error (unknown codes normalize).
+				return { ok: false, reason: "adapter-error", code: petNormalizeLlmCode(error !== null && typeof error === "object" ? error.code : "") };
 			} finally {
 				if (timer !== 0) {
 					try {
@@ -1140,6 +1662,11 @@
 		 * `options` is internal only (the documented global API is `chat(text)`):
 		 * `{ includeContext:false }` tells the LLM prompt builder that the caller
 		 * already embedded its own bounded context (the v1.6.8 mind prompt).
+		 *
+		 * v2.0.0: the result additionally carries `llmError` (a stable code like
+		 * `timeout`/`missing-credential`, or null). It is set only when an AI call failed
+		 * or when `llm` is granted but no adapter/model exists; quota fallbacks keep the
+		 * historical `llmError:null` behaviour. No existing field or branch changed.
 		 */
 		async function petChat(input, options) {
 			try {
@@ -1158,7 +1685,12 @@
 				}
 				let reply = null;
 				let source = "local";
-				const llmWanted = petGranted("llm") === true && petAdapter !== null;
+				// v2.0.0 (additive): the stable reason code when an AI attempt failed - or
+				// when `llm` is granted but the host exposes no model at all. null on
+				// success, on quota fallback and on every denied/never-attempted path.
+				let llmError = null;
+				const llmGranted = petGranted("llm") === true;
+				const llmWanted = llmGranted === true && petAdapter !== null;
 				if (llmWanted) {
 					const quota = petLlmQuota(now);
 					if (quota.ok === true) {
@@ -1168,12 +1700,24 @@
 							source = "llm";
 							petAudit("llm", "llm", true, { source: "llm", chars: reply.length });
 						} else {
-							// Timeout/exception/quota: the contract is "audit llm-fallback, answer locally".
-							petAudit("llm", "llm", false, { reason: "llm-fallback" });
+							// Adapter failure: audit the stable code (the historical
+							// "llm-fallback" string stays the fallback), answer locally.
+							llmError = typeof attempt.code === "string" && attempt.code !== "" ? petNormalizeLlmCode(attempt.code) : "llm-error";
+							petAudit("llm", "llm", false, { reason: llmError });
+							// A failure can mean the host restarted or lost its model: re-probe in
+							// the background so a built-in adapter recovers without a reload.
+							void petHostLlmProbe();
 						}
 					} else {
+						// Quota fallback keeps the existing behaviour: local reply, no llmError.
 						petAudit("llm", "llm", false, { reason: quota.reason });
 					}
+				} else if (llmGranted === true && petAdapter === null) {
+					// The user granted `llm` but the brain has no adapter: the host exposes no
+					// usable model (or shipped before a DSH restart). Nothing was called, so no
+					// quota is consumed; the result still explains why the reply is local.
+					llmError = petHostLlmUnavailableCode();
+					void petHostLlmProbe();
 				}
 				if (reply === null) {
 					if (petLocalRateOk(now) !== true) return petChatDenied("rate-limit");
@@ -1189,7 +1733,9 @@
 				}
 				petRecordReply(now, source, reply.length);
 				petAudit("chat", "chat", true, { source, chars: reply.length, reason: truncated ? "truncated" : undefined });
-				return { ok: true, reply, text: reply, source };
+				// Additive v2.0.0 field (`llmError`); every pre-existing field keeps its
+				// meaning. The bubble/hub show petLlmHintText(llmError) when it is non-null.
+				return { ok: true, reply, text: reply, source, llmError };
 			} catch (error) {
 				note("pet-brain:chat", error);
 				return petChatDenied("internal-error");
@@ -1236,7 +1782,7 @@
 					return { ok: false, reply: "", text: "", source: "local", denied: true, spoken: false, reason: "companion-off" };
 				}
 				petAudit("say", "chat", true, { source: result.source, chars: bubble.length, reason: truncated ? "truncated" : undefined });
-				return { ok: true, reply: result.reply, text: result.reply, source: result.source, spoken: true };
+				return { ok: true, reply: result.reply, text: result.reply, source: result.source, spoken: true, llmError: typeof result.llmError === "string" ? result.llmError : null };
 			} catch (error) {
 				note("pet-brain:say", error);
 				return { ok: false, reply: "", text: "", source: "local", denied: true, spoken: false, reason: "internal-error" };
@@ -1256,6 +1802,11 @@
 					dailyLimit: petNonNegativeInt(petAi.dailyLimit, PET_DAILY_LIMIT_DEFAULT),
 					remaining: 0,
 					minuteRemaining: 0,
+					// v2.0.0 (additive): same shape as petStatus(); a status failure must not
+					// claim the host is available, so the host block is the static unknown one.
+					provider: petLlmProvider,
+					routing: petLlmRouting(),
+					host: { checked: false, available: false, reason: "unknown", provider: "", model: "" },
 				},
 				permissions: petPermissionMap(),
 				memory: { turns: petNonNegativeInt(petTurns, 0), todayTurns: petNonNegativeInt(petTodayTurns, 0) },
@@ -1281,6 +1832,11 @@
 						dailyLimit,
 						remaining: Math.max(0, dailyLimit - usedToday),
 						minuteRemaining: Math.max(0, PET_MINUTE_CALL_LIMIT - petLlmMinuteCount(now)),
+						// v2.0.0 (additive): plan A provider choice + adapter routing + the
+						// cached host capability snapshot (read by the role hub AI card).
+						provider: petLlmProvider,
+						routing: petLlmRouting(),
+						host: petHostLlmStatus(),
 					},
 					permissions: petPermissionMap(),
 					memory: { turns: petTurns, todayTurns: petTodayTurns },
@@ -1323,11 +1879,11 @@
 		}
 
 		/**
-		 * The single "may I speak first?" check used by the life engine / hub.
-		 * Returns false when the brain is paused, the proactive capability is
-		 * revoked, or the life engine is muted/quiet/asleep/focused/out of budget.
+		 * S1: pure "may I speak first?" verdict (no audit side effect). Shared by the
+		 * audit-emitting petMaybeProactive() and same-closure callers (life engine,
+		 * mind speech). Checks pause, the proactive grant and the life gates.
 		 */
-		function petMaybeProactive(context) {
+		function petProactiveVerdict(context) {
 			try {
 				const now = Date.now();
 				petEnsureDay(now);
@@ -1367,8 +1923,25 @@
 					}
 				}
 				void context;
-				petAudit("proactive-check", "proactive", allowed, { reason: reason === "" ? undefined : reason });
-				return allowed;
+				return { allowed, reason };
+			} catch (error) {
+				note("pet-brain:proactive-verdict", error);
+				return { allowed: false, reason: "internal-error" };
+			}
+		}
+
+		/**
+		 * The single "may I speak first?" check used by the life engine / hub.
+		 * Returns false when the brain is paused, the proactive capability is
+		 * revoked, or the life engine is muted/quiet/asleep/focused/out of budget.
+		 */
+		function petMaybeProactive(context) {
+			try {
+				const verdict = petProactiveVerdict(context);
+				petAudit("proactive-check", "proactive", verdict.allowed === true, {
+					reason: verdict.reason === "" ? undefined : verdict.reason,
+				});
+				return verdict.allowed === true;
 			} catch (error) {
 				note("pet-brain:proactive", error);
 				return false;
@@ -1555,6 +2128,10 @@
 				enabled: false,
 				intervalMin: PET_MIND_DEFAULT_INTERVAL,
 				autonomousSpeech: true,
+				// S1: LLM inner monologue is a separate explicit opt-in with its own budget;
+				// the default mind is local-template only (zero network, zero quota).
+				llmAssist: false,
+				llm: { dayKey: "", used: 0 },
 				thoughts: [],
 				lastThinkAt: 0,
 			};
@@ -1597,7 +2174,13 @@
 				state.enabled = raw.enabled === true;
 				state.intervalMin = petMindInterval(raw.intervalMin);
 				state.autonomousSpeech = raw.autonomousSpeech !== false;
+				state.llmAssist = raw.llmAssist === true;
 				state.lastThinkAt = petNonNegativeInt(raw.lastThinkAt, 0);
+				const savedLlm = raw.llm !== null && typeof raw.llm === "object" ? raw.llm : null;
+				state.llm = {
+					dayKey: savedLlm !== null && typeof savedLlm.dayKey === "string" ? savedLlm.dayKey : "",
+					used: savedLlm !== null ? petNonNegativeInt(savedLlm.used, 0) : 0,
+				};
 				if (Array.isArray(raw.thoughts)) {
 					for (const entry of raw.thoughts) {
 						if (state.thoughts.length >= PET_MIND_THOUGHT_MAX) break;
@@ -1626,6 +2209,11 @@
 					enabled: state.enabled === true,
 					intervalMin: petMindInterval(state.intervalMin),
 					autonomousSpeech: state.autonomousSpeech === true,
+					llmAssist: state.llmAssist === true,
+					llm: {
+						dayKey: state.llm !== null && typeof state.llm === "object" && typeof state.llm.dayKey === "string" ? state.llm.dayKey : "",
+						used: state.llm !== null && typeof state.llm === "object" ? petNonNegativeInt(state.llm.used, 0) : 0,
+					},
 					thoughts: state.thoughts.slice(0, PET_MIND_THOUGHT_MAX),
 					lastThinkAt: petNonNegativeInt(state.lastThinkAt, 0),
 				});
@@ -1686,16 +2274,48 @@
 			}
 		}
 
+		/** S1: the mind's own LLM day budget (separate from the user's chat quota). */
+		function petMindLlmBudget(nowInput) {
+			const now = petNumber(nowInput, Date.now());
+			const today = petDayKey(now);
+			if (petMindState.llm === null || typeof petMindState.llm !== "object") petMindState.llm = { dayKey: today, used: 0 };
+			if (petMindState.llm.dayKey !== today) {
+				petMindState.llm.dayKey = today;
+				petMindState.llm.used = 0;
+			}
+			const used = petNonNegativeInt(petMindState.llm.used, 0);
+			return {
+				dayKey: today,
+				used,
+				dailyLimit: PET_MIND_LLM_DAILY_LIMIT,
+				remaining: Math.max(0, PET_MIND_LLM_DAILY_LIMIT - used),
+			};
+		}
+
+		/** Charge one mind LLM attempt (attempt-based, like the user chat quota). */
+		function petMindLlmCharge(nowInput) {
+			const budget = petMindLlmBudget(nowInput);
+			if (budget.remaining <= 0) return false;
+			petMindState.llm.used = budget.used + 1;
+			petMindSave();
+			return true;
+		}
+
 		function petMindStatus() {
 			try {
 				const doc = petMindDocument();
 				const intervalMin = petMindInterval(petMindState.intervalMin);
+				const llmBudget = petMindLlmBudget(Date.now());
 				return {
 					version: PET_MIND_VERSION,
 					installed: petInstalled === true,
 					enabled: petMindState.enabled === true,
 					intervalMin,
 					autonomousSpeech: petMindState.autonomousSpeech === true,
+					llmAssist: petMindState.llmAssist === true,
+					llmUsedToday: llmBudget.used,
+					llmDailyLimit: llmBudget.dailyLimit,
+					llmRemaining: llmBudget.remaining,
 					thoughtCount: petMindState.thoughts.length,
 					lastThinkAt: petNonNegativeInt(petMindState.lastThinkAt, 0),
 					lastThought: petMindLastThought(),
@@ -1713,6 +2333,10 @@
 					enabled: false,
 					intervalMin: PET_MIND_DEFAULT_INTERVAL,
 					autonomousSpeech: true,
+					llmAssist: false,
+					llmUsedToday: 0,
+					llmDailyLimit: PET_MIND_LLM_DAILY_LIMIT,
+					llmRemaining: PET_MIND_LLM_DAILY_LIMIT,
 					thoughtCount: 0,
 					lastThinkAt: 0,
 					lastThought: null,
@@ -1747,6 +2371,7 @@
 				petMindState.enabled = true;
 				if (opts.intervalMin !== undefined) petMindState.intervalMin = petMindInterval(opts.intervalMin);
 				if (opts.autonomousSpeech !== undefined) petMindState.autonomousSpeech = opts.autonomousSpeech === true;
+				if (opts.llmAssist !== undefined) petMindState.llmAssist = opts.llmAssist === true;
 				petMindSave();
 				petMindNotify();
 				return { ok: true, status: petMindStatus() };
@@ -1846,14 +2471,10 @@
 				);
 				if (context.focus === true) lines.push("The user is in a focus session right now.");
 				if (context.quiet === true) lines.push("Quiet hours are active.");
-				if (context.messages.length > 0) {
-					const recent = [];
-					for (const message of context.messages) recent.push(message.role + ": " + petClipText(message.text, 40));
-					lines.push("Recent skin-local chat (oldest first): " + recent.join(" | "));
-				}
-				if (context.lastUserTopic !== "") lines.push("Recent topic from the user: " + context.lastUserTopic);
-				if (context.lastPetText !== "") lines.push("My previous line: " + context.lastPetText);
-				if (context.recentThoughts.length > 0) lines.push("My recent thoughts (do not repeat): " + context.recentThoughts.join(" | "));
+				// S1 privacy: the LLM inner-monologue payload carries NO skin-local chat
+				// history, no user topic, no previous chat line and no previous thought
+				// (a thought may echo the user's words). Only this moment's bounded trigger
+				// context is sent: local time/period, memory counters, focus/quiet and goal.
 				lines.push("A small private goal: " + TL_T(context.goalKey) + ".");
 				return petClipText(lines.join("\n"), PET_MIND_DIGEST_MAX);
 			} catch (error) {
@@ -1949,17 +2570,31 @@
 			const doc = petMindDocument();
 			if (doc !== null && doc.hidden === true) return "hidden";
 			if (petMindLowPower() === true) return "lowpower";
+			// S1: autonomous thinking observes the life rhythm too. Quiet hours, sleep and
+			// an active focus session suppress thinking (the same gates as proactive
+			// speech); the skip is recorded as a reason and consumes no budget.
+			const life = petLifeStatus();
+			if (life !== null) {
+				if (life.quiet === true) return "quiet-hours";
+				if (life.awake === false) return "asleep";
+				const focus = life.focus !== null && typeof life.focus === "object" ? life.focus : null;
+				if (focus !== null && focus.active === true) return "focus";
+			}
 			return "";
 		}
 
-		/** LLM path is available only through the normal gated brain chat path. */
+		/**
+		 * S1: the LLM inner monologue is available only with its OWN explicit opt-in and
+		 * its own daily budget. It never borrows the user's chat quota; the local-template
+		 * path is the default and the fallback when the mind budget is exhausted.
+		 */
 		function petMindLlmReady() {
 			try {
 				if (petInstalled !== true || petPaused === true) return false;
-				if (petGranted("chat") !== true) return false;
+				if (petMindState.llmAssist !== true) return false;
 				if (petGranted("llm") !== true || petAdapter === null) return false;
-				const quota = petLlmQuota(Date.now());
-				return quota !== null && typeof quota === "object" && quota.ok === true;
+				const budget = petMindLlmBudget(Date.now());
+				return budget.remaining > 0;
 			} catch (error) {
 				return false;
 			}
@@ -2029,15 +2664,22 @@
 				let text = "";
 				if (petMindLlmReady() === true) {
 					try {
-						// Same gated brain path as user chat: pause/quota/audit/sanitize apply.
-						const prompt = PET_MIND_PROMPT + "\n\nLocal context:\n" + petMindDigest(context);
-						const attempt = await petChat(prompt, { includeContext: false });
+						// S1: own opt-in + own daily budget; charged against the mind meter only.
+						// Privacy: petMindDigest() deliberately carries no chat history.
+						const prompt = PET_MIND_PROMPT + "\n\nBounded local context:\n" + petMindDigest(context);
+						const charged = petMindLlmCharge(now);
+						const attempt = charged === true ? await petCallLlm(prompt, now, { includeContext: false, meter: "mind" }) : null;
+						if (charged === true) {
+							petAudit("llm", "llm", attempt !== null && attempt.ok === true, {
+								source: "pet-mind",
+								reason: attempt !== null && attempt.ok === true ? undefined : attempt !== null && typeof attempt.reason === "string" ? attempt.reason : "mind-budget",
+							});
+						}
 						if (petInstalled !== true) return { ok: false, reason: "disabled" };
 						if (
 							attempt !== null &&
 							typeof attempt === "object" &&
 							attempt.ok === true &&
-							attempt.source === "llm" &&
 							typeof attempt.reply === "string"
 						) {
 							const normalized = petMindNormalizeThought(attempt.reply, context);
@@ -2110,13 +2752,73 @@
 			subscribe: (listener) => petMindSubscribe(listener),
 		};
 
+		/**
+		 * S1: same-closure mind bridge for the role hub (never the replaceable
+		 * `globalThis.tianlightPetMind`). Shape is deliberately the same as the public
+		 * mind API so the hub is a read-through control surface.
+		 */
+		const petMindInternalApi = Object.freeze({
+			version: PET_MIND_VERSION,
+			status: () => petMindStatus(),
+			enable: (options) => petMindEnable(options),
+			disable: () => petMindDisable(),
+			thinkNow: () => petMindThink("manual"),
+			lastThought: () => petMindLastThought(),
+			thoughts: () => petMindThoughts(),
+			clearThoughts: () => petMindClearThoughts(),
+			subscribe: (listener) => petMindSubscribe(listener),
+			setLlmAssist: (on) => petMindEnable({ llmAssist: on === true }),
+		});
+
+		/**
+		 * R4A: the skin's own UI (role hub in src/76-role-hub.js, companion chat in
+		 * src/40-companion.js) reads and controls the brain through THIS same-closure
+		 * object instead of `globalThis.tianlightPet`. A same-page script can replace
+		 * the global, but it cannot see or mutate this object, so it cannot influence
+		 * which capabilities the UI grants or what the agent bridge authorizes.
+		 * `globalThis.tianlightPet` stays published for the documented console contract
+		 * (status/permissions/audit/safe grants); the medium/high grant gate is the
+		 * closure-owned consent ticket either way.
+		 */
+		const petBrainInternal = Object.freeze({
+			version: PET_VERSION,
+			status: () => petStatus(),
+			permissions: () => petPermissionRows(),
+			grant: (cap, options) => petGrant(cap, options),
+			revoke: (cap) => petRevoke(cap),
+			requestConsent: (cap) => petRequestUiConsent(cap),
+			chat: (text) => petChat(text),
+			say: (text) => petSay(text),
+			setLLM: (adapter) => petSetLLM(adapter),
+			clearLLM: () => petClearLLM(),
+			// v2.0.0: built-in host LLM state for the role hub AI card (read-through only;
+			// `globalThis.tianlightPet` deliberately stays unchanged / minimal).
+			hostLlm: () => petHostLlmStatus(),
+			refreshHostLlm: () => petHostLlmProbe(),
+			setLlmProvider: (provider) => petSetLlmProvider(provider),
+			setCapabilityAdapter: (cap, adapter) => petSetCapabilityAdapter(cap, adapter),
+			clearCapabilityAdapter: (cap) => petClearCapabilityAdapter(cap),
+			invokeCapability: (cap, input) => petInvokeCapability(cap, input),
+			pause: () => petPause(),
+			resume: () => petResume(),
+			audit: (limit) => petAuditRead(limit),
+			recordExternal: (entry) => petRecordExternal(entry),
+			maybeProactive: (context) => petMaybeProactive(context),
+			// S1: same-closure bridges used by the life engine and role hub.
+			proactiveVerdict: (context) => petProactiveVerdict(context),
+			isPaused: () => petPaused === true,
+			mind: petMindInternalApi,
+		});
+
 		// ---- install / dispose --------------------------------------------------
 		/**
 		 * Publish `globalThis.tianlightPet` (version 1) and, since v1.6.8,
 		 * `globalThis.tianlightPetMind` (version 1). The previous globals, if any, are
 		 * saved and restored by the disposer; the brain owns no DOM and no listeners.
 		 * Its only persistent timer is the 60s private-thinking loop, which is cleared
-		 * here and is inert until the user enables the mind.
+		 * here and is inert until the user enables the mind. v2.0.0: install also
+		 * restores the persisted provider choice and fires one async `_engines` probe;
+		 * that probe owns no timer/listener of its own and cannot block or fail install.
 		 */
 		function installPetBrain() {
 			const previous = globalThis.tianlightPet;
@@ -2126,9 +2828,18 @@
 			try {
 				petInstalled = true;
 				petGrants = petLoadPermissions();
+				// R4A: drop any legacy medium/high bits from the persisted document (the
+				// load above never trusted them; this keeps future saves/exports clean).
+				petScrubPersistedPermissions();
 				petPaused = petLoadPause();
 				petAi = petLoadAi();
 				petAdapter = null;
+				// v2.0.0: restore the user's provider choice (null = follow the DSH default)
+				// and forget the previous page's host capability answer; the probe below
+				// refreshes it asynchronously without blocking install.
+				petLlmProvider = petReadLlmProvider();
+				petLlmAutoSuppressed = false;
+				petHostLlm = { checked: false, available: false, reason: "unknown", provider: "", model: "" };
 				petCapabilityAdapters = {};
 				petTurns = 0;
 				petTodayTurns = 0;
@@ -2159,7 +2870,10 @@
 					pause: () => petPause(),
 					resume: () => petResume(),
 					audit: (limit) => petAuditRead(limit),
-					recordExternal: (entry) => petRecordExternal(entry),
+					// R8 (REV-R4A F3): recordExternal is internal-only. Exposing it on the
+					// documented global let a same-page script flood the ring with forged
+					// entries and push the real allow/deny history out; the agent bridge now
+					// calls petBrainInternal.recordExternal (same closure) instead.
 					maybeProactive: (context) => petMaybeProactive(context),
 				};
 				globalThis.tianlightPet = api;
@@ -2175,6 +2889,10 @@
 						note("pet-mind:timer", error);
 					}
 				}
+				// v2.0.0: probe the host's built-in LLM capability once after install. The
+				// probe never rejects and never blocks install; a missing/old host simply
+				// leaves the brain on its local path (the role hub can refresh it later).
+				void petHostLlmProbe();
 			} catch (error) {
 				note("pet-brain:install-failed", error);
 				petInstalled = false;

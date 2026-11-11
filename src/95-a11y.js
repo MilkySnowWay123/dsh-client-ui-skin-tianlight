@@ -2,14 +2,13 @@
 		/**
 		 * D6 键盘与无障碍（type-i18n 工作流）：
 		 *
-		 *   - 壁纸面板 / 排版面板打开时：给宿主加 role="dialog" + aria-modal +
-		 *     aria-label，Tab / Shift+Tab 在面板内循环，焦点进入第一个控件；
-		 *     关闭时移除语义并把焦点还给触发按钮（Alt+W 行为仍由 70-sidebar
-		 *     自己处理，本片段不重复）；
-		 *   - 直播区 [data-tl-a11y-live] 播报面板开关与分区展开/收起；
-		 *   - 全局快捷键集中在 TL5_SHORTCUTS 注册表；这里只新增 Alt+T
-		 *     （打开/关闭排版面板），帮助分区（id "a11y"，order 860）列出全部
-		 *     快捷键与焦点行为；
+		 *   - R5 起 Esc / Tab 的归属由 src/11-platform.js 的统一浮层栈决定：Esc 只关闭
+		 *     栈顶浮层，Tab 焦点循环只对栈顶的模态浮层生效。本片段不再自己 capture
+		 *     Esc / Tab，也不对非模态的排版浮窗（90-font）做焦点陷阱；
+		 *   - 壁纸面板 / 角色中枢 / WE 库 / 宠物聊天等浮层在各自的打开/关闭路径登记；
+		 *     这里只保留：dialog 语义、打开/关闭播报、关闭后焦点归还、直播区播报；
+		 *   - 全局快捷键集中在 TL5_SHORTCUTS 注册表：Alt+W（壁纸面板）、Alt+T（排版
+		 *     面板）；输入框/编辑器内不触发，且忽略 event.repeat（按住不会反复开关）；
 		 *   - 只补属性，不改产品自身 DOM 语义；所有监听器在 disposer 里成对移除。
 		 */
 		registerTl5Strings({
@@ -18,9 +17,9 @@
 				"a11y.summaryValue": "快捷键",
 				"a11y.altWDesc": "打开 / 关闭壁纸面板",
 				"a11y.altTDesc": "打开 / 关闭排版面板",
-				"a11y.escDesc": "关闭当前面板",
-				"a11y.tabDesc": "在当前面板内循环焦点",
-				"a11y.trapNote": "面板打开时焦点被限制在面板内（Tab / Shift+Tab 循环）；Esc 关闭后焦点回到触发按钮。",
+				"a11y.escDesc": "关闭最上层面板",
+				"a11y.tabDesc": "在模态面板内循环焦点",
+				"a11y.trapNote": "Esc 只关闭最上层面板；壁纸面板、角色中枢、WE 库会做 Tab 焦点循环。排版浮窗与宠物聊天是非模态的，不 trap、也不会抢走 DSH 输入框的 Tab。",
 				"a11y.liveNote": "面板打开 / 关闭与分区展开 / 收起会通过读屏实时播报。",
 				"a11y.dialogWall": "壁纸面板",
 				"a11y.dialogFont": "排版面板",
@@ -35,9 +34,9 @@
 				"a11y.summaryValue": "Shortcuts",
 				"a11y.altWDesc": "Open / close the wallpaper panel",
 				"a11y.altTDesc": "Open / close the typography panel",
-				"a11y.escDesc": "Close the current panel",
-				"a11y.tabDesc": "Cycle focus inside the current panel",
-				"a11y.trapNote": "While a panel is open, Tab / Shift+Tab cycle inside it; Esc closes it and returns focus to the trigger.",
+				"a11y.escDesc": "Close the topmost panel",
+				"a11y.tabDesc": "Cycle focus inside the modal panel",
+				"a11y.trapNote": "Esc closes only the topmost panel; the wallpaper panel, role hub and WE library trap Tab inside themselves. The typography float and the pet chat are non-modal: they neither trap Tab nor steal it from the DSH composer.",
 				"a11y.liveNote": "Panel open/close and section expand/collapse are announced to screen readers.",
 				"a11y.dialogWall": "Wallpaper panel",
 				"a11y.dialogFont": "Typography panel",
@@ -148,7 +147,7 @@ body[data-dsh-tianlight] .tl5-a11y-note {
 				{ keys: "Tab / Shift+Tab", desc: t("a11y.tabDesc") },
 			];
 			for (const shortcut of tl5Shortcuts()) {
-				if (shortcut.id === "font-panel" || shortcut.labelKey === "") continue;
+				if (shortcut.id === "font-panel" || shortcut.id === "wallpaper-panel" || shortcut.labelKey === "") continue;
 				rows.push({ keys: shortcut.keys, desc: t(shortcut.labelKey) });
 			}
 			return React.createElement(
@@ -281,7 +280,10 @@ body[data-dsh-tianlight] .tl5-a11y-note {
 			const applyDialogSemantics = (host) => {
 				try {
 					host.setAttribute("role", "dialog");
-					host.setAttribute("aria-modal", "true");
+					// R5: only a modal surface claims aria-modal. The typography float is a
+					// non-modal window; the shared overlay stack never traps Tab for it.
+					if (host === wallHost) host.setAttribute("aria-modal", "true");
+					else host.removeAttribute("aria-modal");
 					host.setAttribute("aria-label", hostLabel(host));
 				} catch (error) {
 					note("a11y:dialog", error);
@@ -296,26 +298,6 @@ body[data-dsh-tianlight] .tl5-a11y-note {
 					// disconnected hosts do not need cleanup
 				}
 			};
-			/** Esc / 快捷键统一从触发按钮点击关闭，复用各分区自己的关闭路径。 */
-			const closeHost = (host) => {
-				if (host !== null && host === fontHost) {
-					const close = host.querySelector("[data-tl-font-close]");
-					if (close !== null) {
-						close.click();
-						return;
-					}
-					const trigger = triggerFor(host);
-					if (trigger !== null) trigger.click();
-					return;
-				}
-				const scrim = document.querySelector("[data-tl-wall-scrim]");
-				if (scrim !== null) {
-					scrim.click();
-					return;
-				}
-				const handle = document.querySelector("[data-tl-wall-handle]");
-				if (handle !== null) handle.click();
-			};
 			const onHostOpen = (host) => {
 				const active = document.activeElement;
 				returnFocus.set(
@@ -326,7 +308,15 @@ body[data-dsh-tianlight] .tl5-a11y-note {
 				applyDialogSemantics(host);
 				setTriggerExpanded(host, true);
 				announce(TL_T("a11y.announceOpen", { name: hostLabel(host) }));
-				focusFirst(host, 0);
+				// R5/R8b: a non-modal float must not steal focus; the modal wallpaper panel
+				// still focuses its first control (the overlay stack then traps Tab) — unless
+				// a higher modal is already on top (R8b layering fence: never focus under it).
+				if (
+					host === wallHost &&
+					(typeof tl5OverlayModalAbove !== "function" || tl5OverlayModalAbove("wallpaper-panel") === null)
+				) {
+					focusFirst(host, 0);
+				}
 			};
 			const onHostClose = (host) => {
 				clearPendingFocus(host);
@@ -391,20 +381,16 @@ body[data-dsh-tianlight] .tl5-a11y-note {
 					returnFocus.delete(host);
 				}
 			};
-			const activeHost = () => {
-				for (let index = openOrder.length - 1; index >= 0; index -= 1) {
-					const host = openOrder[index];
-					if (host !== null && host.isConnected === true && isHostOpen(host)) return host;
-				}
-				return null;
-			};
 
-			// ---- global shortcuts (Alt+W stays owned by 70-sidebar) ----
+			// ---- global shortcuts (R5: the registry owns Alt+W and Alt+T) ----
 			const disposeShortcut = registerTl5Shortcut({
 				id: "font-panel",
 				keys: "alt+t",
 				labelKey: "a11y.altTDesc",
 				run: () => {
+					// R8b (REV-R5 F1): never open the non-modal float under a higher modal
+					// (role hub / WE library); it would be invisible but grab the stack top.
+					if (typeof tl5OverlayOpenAllowed === "function" && tl5OverlayOpenAllowed("font-panel") === false) return;
 					const host = document.querySelector("[data-tl-font-panel]");
 					if (host === null) {
 						announce(TL_T("a11y.altTUnavailable"));
@@ -425,65 +411,69 @@ body[data-dsh-tianlight] .tl5-a11y-note {
 					trigger.click();
 				},
 			});
+			// R5: Alt+W moved out of 70-sidebar into the shared shortcut registry so the
+			// repeat/editable-target guards apply in one place.
+			const disposeWallpaperShortcut = registerTl5Shortcut({
+				id: "wallpaper-panel",
+				keys: "alt+w",
+				labelKey: "a11y.altWDesc",
+				run: () => {
+					// R8b (REV-R5 F1): same layering fence as Alt+T — do not put the panel
+					// beneath an already-open higher modal.
+					if (typeof tl5OverlayOpenAllowed === "function" && tl5OverlayOpenAllowed("wallpaper-panel") === false) return;
+					const trigger = document.querySelector("[data-tl-wall-handle]");
+					if (trigger !== null) trigger.click();
+				},
+			});
+
+			/**
+			 * R5/R8b: shortcuts must never fire while the user is typing. `composedPath()[0]`
+			 * is the real target through shadow DOM; any contenteditable except "false",
+			 * role=textbox and native form controls count as an editor.
+			 */
+			const isEditableShortcutTarget = (event) => {
+				try {
+					const path = event !== null && event !== undefined && typeof event.composedPath === "function" ? event.composedPath() : [];
+					const rawTarget = path.length > 0 ? path[0] : event === null || event === undefined ? null : event.target;
+					const target = rawTarget !== null && rawTarget !== undefined && rawTarget.nodeType === 1 ? rawTarget : null;
+					if (target === null) return false;
+					if (target.isContentEditable === true) return true;
+					if (typeof target.closest !== "function") return false;
+					return (
+						target.closest(
+							'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]',
+						) !== null
+					);
+				} catch {
+					return false;
+				}
+			};
 
 			const onKeyDown = (event) => {
 				if (event.defaultPrevented === true) return;
-				if (event.altKey === true || event.ctrlKey === true || event.metaKey === true) {
-					for (const shortcut of [...TL5_SHORTCUTS]) {
-						if (shortcut.key === "") continue;
-						if (
-							event.altKey !== shortcut.alt ||
-							event.ctrlKey !== shortcut.ctrl ||
-							event.metaKey !== shortcut.meta ||
-							event.shiftKey !== shortcut.shift
-						) {
-							continue;
-						}
-						if (String(event.key ?? "").toLowerCase() !== shortcut.key) continue;
-						event.preventDefault();
-						try {
-							shortcut.run(event);
-						} catch (error) {
-							note("a11y:shortcut", error);
-						}
-						return;
+				if (event.repeat === true) return;
+				if (event.altKey !== true && event.ctrlKey !== true && event.metaKey !== true) return;
+				// A shortcut pressed inside an input/editor is the user typing, not a
+				// global toggle: leave the key to the field.
+				if (isEditableShortcutTarget(event) === true) return;
+				for (const shortcut of [...TL5_SHORTCUTS]) {
+					if (shortcut.key === "") continue;
+					if (
+						event.altKey !== shortcut.alt ||
+						event.ctrlKey !== shortcut.ctrl ||
+						event.metaKey !== shortcut.meta ||
+						event.shiftKey !== shortcut.shift
+					) {
+						continue;
 					}
-					return;
-				}
-				const host = activeHost();
-				if (host === null) return;
-				if (event.key === "Escape") {
-					event.preventDefault();
-					event.stopPropagation();
-					closeHost(host);
-					return;
-				}
-				if (event.key !== "Tab") return;
-				const items = focusables(host);
-				if (items.length === 0) {
-					event.preventDefault();
-					return;
-				}
-				const first = items[0];
-				const last = items[items.length - 1];
-				const current = document.activeElement;
-				const inside = current !== null && current !== undefined && typeof host.contains === "function" && host.contains(current) === true;
-				if (event.shiftKey === true) {
-					if (inside === false || current === first) {
-						event.preventDefault();
-						try {
-							last.focus();
-						} catch {
-							// element vanished between reads
-						}
-					}
-				} else if (inside === false || current === last) {
+					if (String(event.key ?? "").toLowerCase() !== shortcut.key) continue;
 					event.preventDefault();
 					try {
-						first.focus();
-					} catch {
-						// element vanished between reads
+						shortcut.run(event);
+					} catch (error) {
+						note("a11y:shortcut", error);
 					}
+					return;
 				}
 			};
 
@@ -539,6 +529,7 @@ body[data-dsh-tianlight] .tl5-a11y-note {
 				window.removeEventListener("keydown", onKeyDown);
 				document.removeEventListener("toggle", onToggle, true);
 				if (typeof disposeShortcut === "function") disposeShortcut();
+				if (typeof disposeWallpaperShortcut === "function") disposeWallpaperShortcut();
 				if (typeof unsubscribeI18n === "function") unsubscribeI18n();
 				if (liveTimer !== 0) {
 					window.clearTimeout(liveTimer);

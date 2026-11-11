@@ -22,6 +22,14 @@
 		 * All calls are defensive: the service may be unmounted, the Host may be
 		 * older, or the reply stream may be shaped differently — the chat then
 		 * degrades to "sent, open the session to read" instead of failing hard.
+		 *
+		 * R4A security pass (v0.6.1): authorization is read from the brain fragment's
+		 * closure state (`petAgentChatAllowed`), never from a replaceable global; the
+		 * `agentChat` grant is session-memory only (reload = re-authorize); listing
+		 * DSH sessions also requires it; and the only thing published on
+		 * `globalThis.tianlightPetAgent` is a frozen read-only status/audit surface —
+		 * connect/chat/list live in the same-closure `petAgentInternal` the role hub
+		 * calls directly.
 		 */
 		const PET_AGENT_VERSION = 1;
 		const PET_AGENT_KEY = "tianlight.pet.agent.v1";
@@ -105,14 +113,15 @@
 			return "day";
 		}
 
+		/**
+		 * R4A: authorization is decided from the brain's CLOSURE state in
+		 * src/44-pet-brain.js, never by reading a replaceable global. A same-page
+		 * script can overwrite `globalThis.tianlightPet` (or this fragment's read-only
+		 * global) but it cannot change `petGrants` / `petPaused`.
+		 */
 		function petAgentPermitted() {
 			try {
-				const brain = globalThis.tianlightPet;
-				if (brain === null || brain === undefined) return false;
-				const status = brain.status();
-				if (status === null || status === undefined || status.paused === true) return false;
-				const permissions = status.permissions;
-				return permissions !== null && permissions !== undefined && permissions.agentChat === true;
+				return petAgentChatAllowed() === true;
 			} catch (error) {
 				note("pet-agent:permission", error);
 				return false;
@@ -123,7 +132,10 @@
 			petAgentAudit.unshift(entry);
 			if (petAgentAudit.length > PET_AGENT_AUDIT_MAX) petAgentAudit.length = PET_AGENT_AUDIT_MAX;
 			try {
-				globalThis.tianlightPet?.recordExternal?.({
+				// Same-closure audit path (src/44-pet-brain.js). The pre-R4A code called
+				// `globalThis.tianlightPet.recordExternal`, which a same-page script could
+				// replace to suppress or forge audit entries.
+				petRecordExternal({
 					action: "agent",
 					cap: "agentChat",
 					ok: entry.ok === true,
@@ -149,7 +161,13 @@
 			return petAgentRemoteSession;
 		}
 
+		/**
+		 * List the user's DSH sessions. R4A: this also requires the `agentChat`
+		 * capability — session titles/working directories are user data, and the
+		 * pre-R4A code exposed the list with no grant at all.
+		 */
 		async function petAgentListSessions() {
+			if (!petAgentPermitted()) return { ok: false, reason: "permission", sessions: [] };
 			const remote = petAgentRemote();
 			if (remote === null || remote === undefined || typeof remote.list !== "function") {
 				return { ok: false, reason: "agent-unavailable", sessions: [] };
@@ -179,6 +197,12 @@
 			const state = petAgentEnsureState();
 			const remote = petAgentRemote();
 			const permission = petAgentPermitted();
+			let paused = false;
+			try {
+				paused = petAgentPaused() === true;
+			} catch {
+				paused = false; // a stripped harness must still render a status
+			}
 			return {
 				version: PET_AGENT_VERSION,
 				available: remote !== null && typeof remote === "object" && typeof remote.prompt === "function",
@@ -186,7 +210,6 @@
 				sessionId: state.sessionId,
 				sessionTitle: state.title,
 				targetMode: state.targetMode,
-				sessions: [],
 				budget: {
 					cap: state.cap,
 					used: state.used,
@@ -196,7 +219,7 @@
 				pending: petAgentPending,
 				lastError: petAgentLastError,
 				permission,
-				paused: globalThis.tianlightPet?.status?.()?.paused === true,
+				paused,
 			};
 		}
 
@@ -418,6 +441,9 @@
 		}
 
 		function petAgentOpenSession() {
+			// R8 (REV-R4A F4): opening the connected session is part of the Agent channel;
+			// it needs the same session-only agentChat grant as connect/chat/list.
+			if (!petAgentPermitted()) return { ok: false, reason: "permission" };
 			const state = petAgentEnsureState();
 			if (state.sessionId === null) return { ok: false, reason: "not-connected" };
 			try {
@@ -446,12 +472,36 @@
 			return petAgentWorkspace;
 		}
 
+		/** Bounded read projection shared by the read-only global and the closure API. */
+		function petAgentAuditSlice(limit) {
+			const size = Number.isFinite(Number(limit)) ? Math.max(0, Math.min(PET_AGENT_AUDIT_MAX, Math.floor(Number(limit)))) : 10;
+			return petAgentAudit.slice(0, size);
+		}
+
+		/**
+		 * R4A: same-closure API for the role hub. The privileged methods (connect /
+		 * list / chat / disconnect / open) live HERE only; `globalThis.tianlightPetAgent`
+		 * is a frozen read-only status surface (see installPetAgent). A same-page
+		 * script that replaces any global therefore cannot reach them. Every privileged
+		 * method still re-checks `petAgentPermitted()` on each call.
+		 */
+		const petAgentInternal = Object.freeze({
+			status: () => petAgentStatus(),
+			refreshSessions: () => petAgentRefreshSessions(),
+			connect: (options) => petAgentConnect(options),
+			disconnect: () => petAgentDisconnect(),
+			chat: (text) => petAgentChat(text),
+			openSession: () => petAgentOpenSession(),
+			audit: (limit) => petAgentAuditSlice(limit),
+		});
+
 		function installPetAgent(ctx) {
 			const cleanups = [];
 			petAgentCtx = ctx ?? null;
 			petAgentState = petAgentReadState();
 			petAgentAudit = [];
 			petAgentLastError = null;
+			let readOnlyApi = null;
 			let disposed = false;
 			const dispose = () => {
 				if (disposed) return;
@@ -469,13 +519,15 @@
 						note("pet-agent:dispose", error);
 					}
 				}
-				if (globalThis.tianlightPetAgent !== null && globalThis.tianlightPetAgent?.__petAgent === true) {
+				// Only the read-only surface this instance published is removed.
+				if (readOnlyApi !== null && globalThis.tianlightPetAgent === readOnlyApi) {
 					try {
 						delete globalThis.tianlightPetAgent;
 					} catch (error) {
 						note("pet-agent:delete-global", error);
 					}
 				}
+				readOnlyApi = null;
 				petAgentCtx = null;
 			};
 			try {
@@ -506,21 +558,17 @@
 					});
 					cleanups.push(disposeWorkspace);
 				}
-				const api = {
-					__petAgent: true,
+				// R4A: publish ONLY a frozen read-only status surface. Privileged methods
+				// live in the same-closure `petAgentInternal` object the role hub uses;
+				// keeping connect/chat off every global removes the pre-R4A entry point
+				// while diagnostics (99-apply) and the docs' status contract still work.
+				readOnlyApi = Object.freeze({
+					__petAgentReadOnly: true,
 					version: PET_AGENT_VERSION,
 					status: () => petAgentStatus(),
-					refreshSessions: () => petAgentRefreshSessions(),
-					connect: (options) => petAgentConnect(options),
-					disconnect: () => petAgentDisconnect(),
-					chat: (text) => petAgentChat(text),
-					openSession: () => petAgentOpenSession(),
-					audit: (limit) => {
-						const size = Number.isFinite(Number(limit)) ? Math.max(0, Math.min(PET_AGENT_AUDIT_MAX, Math.floor(Number(limit)))) : 10;
-						return petAgentAudit.slice(0, size);
-					},
-				};
-				globalThis.tianlightPetAgent = api;
+					audit: (limit) => petAgentAuditSlice(limit),
+				});
+				globalThis.tianlightPetAgent = readOnlyApi;
 				return dispose;
 			} catch (error) {
 				note("pet-agent:install-failed", error);

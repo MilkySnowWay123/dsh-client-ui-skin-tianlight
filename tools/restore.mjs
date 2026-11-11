@@ -25,6 +25,7 @@ const TARGETS = {
   transcode: join(ROOT, 'lib', 'transcode.js'),
   webproject: join(ROOT, 'lib', 'web-project.js'),
   wehost: join(ROOT, 'lib', 'we-wallpaper', 'host.mjs'),
+  petchat: join(ROOT, 'lib', 'pet-chat.js'),
 }
 const extFor = (dest) =>
   dest.endsWith('.json') ? 'json' : dest.endsWith('.html') ? 'html' : dest.endsWith('.mjs') ? 'mjs' : 'js'

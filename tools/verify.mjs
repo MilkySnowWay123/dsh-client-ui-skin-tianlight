@@ -1,5 +1,6 @@
 import { Readable, Writable } from 'node:stream'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import assert from 'node:assert/strict'
 import { dirname, join } from 'node:path'
@@ -8,6 +9,60 @@ const PKG = dirname(dirname(fileURLToPath(import.meta.url)))
 /** Read the expected host build from package.json so a version bump cannot leave
  *  the handshake assertion pinned to an old value. */
 const PKG_VERSION = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8')).version
+
+// ---------- R7: deterministic environment + no plugin-tree writes ----------
+// The host half probes `ffmpeg -version` lazily. Without pinning it, a machine that
+// happens to have ffmpeg turns the "no ffmpeg" assertions red AND lets the transcode
+// POST really spawn ffmpeg and write assets/derived/bg-main.h264.mp4 into this repo.
+// Pin the probe to a path that cannot exist before the host module is imported, so
+// verify behaves identically on every machine (this truthfully exercises the 501
+// degradation path without touching the working tree).
+const ORIGINAL_FFMPEG_PATH = process.env.FFMPEG_PATH
+const FORCED_FFMPEG = join(tmpdir(), 'tl-verify-no-ffmpeg-' + process.pid, 'ffmpeg-must-not-exist')
+process.env.FFMPEG_PATH = FORCED_FFMPEG
+
+/**
+ * Snapshot the parts of the plugin tree a route could conceivably write
+ * (defaults, user uploads, transcode derivatives). Only names/sizes/mtimes are
+ * recorded: the shipped 4K videos stay untouched and this stays fast.
+ */
+const WATCHED_TREES = ['assets', join('assets', 'uploads'), join('assets', 'derived')]
+function snapshotTree() {
+  const snapshot = new Map()
+  const visit = (abs, rel) => {
+    let entries = []
+    try {
+      entries = readdirSync(abs, { withFileTypes: true })
+    } catch {
+      return
+    }
+    entries.sort((a, b) => a.name.localeCompare(b.name))
+    for (const entry of entries) {
+      const childAbs = join(abs, entry.name)
+      const childRel = rel + '/' + entry.name
+      let stat = null
+      try {
+        stat = statSync(childAbs)
+      } catch {
+        continue
+      }
+      snapshot.set(childRel, entry.isDirectory() ? 'dir' : String(stat.size) + ':' + String(stat.mtimeMs))
+      if (entry.isDirectory()) visit(childAbs, childRel)
+    }
+  }
+  for (const rel of WATCHED_TREES) visit(join(PKG, rel), rel)
+  return snapshot
+}
+function diffTrees(before, after) {
+  const changes = []
+  for (const [path, signature] of before) {
+    if (after.has(path) === false) changes.push('removed ' + path)
+    else if (after.get(path) !== signature) changes.push('changed ' + path)
+  }
+  for (const path of after.keys()) if (before.has(path) === false) changes.push('added ' + path)
+  return changes
+}
+const TREE_BEFORE = snapshotTree()
 let failures = 0
 const check = (label, fn) => {
   try {
@@ -70,9 +125,46 @@ check('manifest 200 + asset list', () => {
   assert.ok(Array.isArray(value.assets), 'assets must be an array')
 })
 
-// assets/ is gitignored, so CI has no wallpaper videos. README.md is the one
-// file that is always committed under assets/ and it exercises the same
-// HEAD/Range path without writing a fixture.
+// ---------- R4B: Host allowlist (DNS-rebinding fence) ----------
+// A malicious site rebound to 127.0.0.1 makes Origin === Host; only a loopback
+// Host name is accepted. A missing Host is a non-browser caller (curl/HTTP-1.0).
+const forgedHost = await call('GET', '/skin-tianlight/_manifest', { host: 'evil.example:58733' })
+check('R4B: a foreign Host header is rejected', () => {
+  assert.equal(forgedHost.status, 403)
+})
+const forgedHostSameOrigin = await call('GET', '/skin-tianlight/_manifest', {
+  origin: 'http://evil.example:58733',
+  host: 'evil.example:58733',
+})
+check('R4B: Origin === Host is not enough when the Host is not loopback', () => {
+  assert.equal(forgedHostSameOrigin.status, 403)
+})
+// R8b (REV-R4B 2): both fences check the Host allowlist BEFORE trusting the desktop
+// app scheme; a dsh-app:// Origin must not smuggle a forged Host past the fence.
+const appForgedHost = await call('GET', '/skin-tianlight/_manifest', {
+  origin: 'dsh-app://app',
+  host: 'evil.example:58733',
+})
+check('R8b: dsh-app Origin cannot bypass the Host allowlist', () => {
+  assert.equal(appForgedHost.status, 403)
+})
+const appLoopbackHost = await call('GET', '/skin-tianlight/_manifest', {
+  origin: 'dsh-app://app',
+  host: '127.0.0.1:58733',
+})
+check('R8b: desktop app Origin with a loopback Host is accepted', () => {
+  assert.equal(appLoopbackHost.status, 200)
+})
+for (const host of ['127.0.0.1:58733', 'localhost:58733', '[::1]:58733']) {
+  const allowed = await call('GET', '/skin-tianlight/_manifest', { host })
+  check('R4B: loopback Host accepted: ' + host, () => {
+    assert.equal(allowed.status, 200)
+  })
+}
+
+// assets/README.md is always committed even when the shipped 4K media is absent
+// (some distributions strip large files); it exercises the same HEAD/Range path
+// without writing a fixture.
 const RANGE_NAME = 'README.md'
 const head = await call('HEAD', '/skin-tianlight/' + RANGE_NAME)
 const headLength = Number(head.headers['content-length'])
@@ -146,22 +238,50 @@ check('missing upload yields 404', () => {
 })
 
 // ---------- optional WebWallGL scene channel ----------
-const engines = await call('GET', '/skin-tianlight/_engines?build=' + PKG_VERSION)
-check('engine status reports the vendored WebWallGL + matches the client build', () => {
+// No handshake parameters: the host reports its identity but has nothing to compare.
+const engines = await call('GET', '/skin-tianlight/_engines')
+const engineState = JSON.parse(engines.body.toString('utf8'))
+check('engine status reports the vendored WebWallGL + the host build/API identity', () => {
   assert.equal(engines.status, 200)
-  const value = JSON.parse(engines.body.toString('utf8'))
-  assert.equal(value.build, PKG_VERSION)
-  // The host/client handshake: a client that states the same build is not stale.
-  assert.equal(value.stale, false)
-  assert.equal(value.webwallgl, true)
-  assert.equal(value.adapter, true)
-  assert.ok(value.upload && value.upload.max >= 512 * 1024 * 1024, 'upload.max')
-  assert.equal(value.upload.writable, true)
+  assert.equal(engineState.build, PKG_VERSION)
+  assert.equal(typeof engineState.api, 'string')
+  assert.ok(engineState.api !== '', 'api marker')
+  assert.equal(engineState.stale, undefined)
+  assert.equal(engineState.webwallgl, true)
+  assert.equal(engineState.adapter, true)
+  assert.ok(engineState.upload && engineState.upload.max >= 512 * 1024 * 1024, 'upload.max')
+  assert.equal(engineState.upload.writable, true)
+})
+// R7: the ffmpeg probe is pinned before the host module is imported, so this check
+// (and the transcode ones below) answer the same on a developer machine WITH ffmpeg
+// and on CI without it.
+check('R7: verify pins ffmpeg to a guaranteed-absent path (deterministic on any machine)', () => {
+  assert.equal(process.env.FFMPEG_PATH, FORCED_FFMPEG)
+  assert.equal(engineState.ffmpeg, false, 'host probe must be the pinned absent binary')
+})
+// The two halves ship separately: a drifted marker must fail here, not in the page.
+check('browser and host halves agree on the HOST_API route contract', () => {
+  const clientSource = readFileSync(join(PKG, 'lib', 'client.js'), 'utf8')
+  const match = clientSource.match(/const HOST_API = "([^"]+)"/)
+  assert.ok(match !== null, 'client HOST_API constant missing from lib/client.js')
+  assert.equal(match[1], engineState.api)
+})
+const apiEngines = await call('GET', '/skin-tianlight/_engines?api=' + encodeURIComponent(engineState.api))
+check('engine status is fresh when the client speaks the same route contract', () => {
+  assert.equal(JSON.parse(apiEngines.body.toString('utf8')).stale, false)
+})
+const apiMovedEngines = await call('GET', '/skin-tianlight/_engines?api=' + encodeURIComponent(engineState.api + '-next'))
+check('engine status flags a stale host when the route contract moves', () => {
+  assert.equal(JSON.parse(apiMovedEngines.body.toString('utf8')).stale, true)
+})
+// Legacy fallback: clients shipped before HOST_API still state their build number.
+const legacyEngines = await call('GET', '/skin-tianlight/_engines?build=' + PKG_VERSION)
+check('legacy build handshake still matches a same-build host', () => {
+  assert.equal(JSON.parse(legacyEngines.body.toString('utf8')).stale, false)
 })
 const staleEngines = await call('GET', '/skin-tianlight/_engines?build=0.2.1')
-check('engine status flags a stale host after an update', () => {
-  const value = JSON.parse(staleEngines.body.toString('utf8'))
-  assert.equal(value.stale, true)
+check('legacy build handshake still flags a stale host after an update', () => {
+  assert.equal(JSON.parse(staleEngines.body.toString('utf8')).stale, true)
 })
 const engineHead = await call('HEAD', '/skin-tianlight/_engine/webwallgl.js')
 check('engine script is served as JavaScript with a size', () => {
@@ -190,7 +310,7 @@ check('scene project refuses a non-asset extension', () => {
 // happy-path writes are covered by tools/test.mjs temp dirs and the runtime lab.
 check('engine status advertises the v0.5.1 capabilities', () => {
   const value = JSON.parse(engines.body.toString('utf8'))
-  assert.equal(value.ffmpeg, false, 'ffmpeg must not be assumed present')
+  assert.equal(value.ffmpeg, false, 'ffmpeg is pinned absent by verify (see R7 check above)')
   assert.ok(value.cache && Number.isInteger(value.cache.entries) && Number.isInteger(value.cache.bytes), 'cache status')
   assert.ok(value.settings && Number.isInteger(value.settings.revision), 'settings revision')
   assert.equal(typeof value.webProjects, 'number')
@@ -224,16 +344,61 @@ check('settings PUT rejects out-of-scope keys without writing', () => {
   assert.equal(settingsBadKey.status, 400)
 })
 
+// v0.6.1 optimistic concurrency (read-only probe): a deliberately stale
+// expectedRevision must be answered with 409 + the authoritative state, and must
+// never write. The token is far in the future so concurrent host activity cannot
+// accidentally make it valid.
+const settingsBeforeConflict = JSON.parse(settingsGet.body.toString('utf8'))
+const staleExpectedRevision = Number(settingsBeforeConflict.revision) + 1000
+const settingsConflict = await call(
+  'PUT',
+  '/skin-tianlight/_settings',
+  { 'content-type': 'application/json' },
+  JSON.stringify({ expectedRevision: staleExpectedRevision, settings: { 'tianlight.__verify_probe': 'x' } }),
+)
+check('settings PUT rejects a stale expectedRevision with 409 + current state', () => {
+  assert.equal(settingsConflict.status, 409)
+  const value = JSON.parse(settingsConflict.body.toString('utf8'))
+  assert.equal(value.ok, false)
+  assert.equal(value.conflict, true)
+  assert.ok(Number.isInteger(value.revision) && value.revision >= 0)
+  assert.ok(value.settings !== null && typeof value.settings === 'object' && Array.isArray(value.settings) === false)
+  assert.equal(Object.prototype.hasOwnProperty.call(value.settings, 'tianlight.__verify_probe'), false)
+})
+const settingsBadExpected = await call(
+  'PUT',
+  '/skin-tianlight/_settings',
+  { 'content-type': 'application/json' },
+  JSON.stringify({ expectedRevision: 'soon', settings: {} }),
+)
+check('settings PUT rejects a malformed expectedRevision', () => {
+  assert.equal(settingsBadExpected.status, 400)
+})
+const settingsAfterConflict = await call('GET', '/skin-tianlight/_settings')
+check('the rejected settings conflict did not write', () => {
+  const value = JSON.parse(settingsAfterConflict.body.toString('utf8'))
+  assert.ok(Number.isInteger(value.revision) && value.revision >= Number(settingsBeforeConflict.revision))
+  assert.equal(Object.prototype.hasOwnProperty.call(value.settings, 'tianlight.__verify_probe'), false)
+})
+
 const transcodeStatus = await call('GET', '/skin-tianlight/_transcode/status')
 check('transcode status is available and never lies about ffmpeg', () => {
   assert.equal(transcodeStatus.status, 200)
   const value = JSON.parse(transcodeStatus.body.toString('utf8'))
   assert.equal(typeof value.ffmpeg, 'boolean')
+  assert.equal(process.env.FFMPEG_PATH, FORCED_FFMPEG, 'the probe runs against the pinned absent binary')
   assert.equal(value.ffmpeg, false)
 })
+// R7/REV-R7: a stripped-media distribution keeps only assets/README.md (the big
+// defaults are removed), so the source name cannot resolve and the route answers 400
+// BEFORE the ffmpeg probe. Assert the correct, deterministic outcome for the tree we
+// are running in — either way the route must not create a derivative.
+const TRANSCODE_HAS_MEDIA = existsSync(join(PKG, 'assets', 'bg-main.mp4'))
 const transcodeNoFfmpeg = await call('POST', '/skin-tianlight/_transcode?name=bg-main.mp4', {}, '')
-check('transcode POST degrades to 501 without ffmpeg', () => {
-  assert.equal(transcodeNoFfmpeg.status, 501)
+check('transcode POST degrades safely without ffmpeg (repo-media independent)', () => {
+  assert.equal(process.env.FFMPEG_PATH, FORCED_FFMPEG)
+  if (TRANSCODE_HAS_MEDIA) assert.equal(transcodeNoFfmpeg.status, 501)
+  else assert.equal(transcodeNoFfmpeg.status, 400, 'stripped media: source missing -> 400 before any transcode')
 })
 
 const cacheStatus = await call('GET', '/skin-tianlight/_frame-cache/status')
@@ -326,6 +491,27 @@ check('skin.json passes the manager catalog rules', () => {
     }
   }
 })
+
+// ---------- R7: the verification run itself must not mutate the plugin tree ----------
+const TREE_AFTER = snapshotTree()
+const TREE_CHANGES = diffTrees(TREE_BEFORE, TREE_AFTER)
+check('verify did not write the plugin working tree', () => {
+  assert.equal(process.env.FFMPEG_PATH, FORCED_FFMPEG, 'the pinned probe must stay in force for the whole run')
+  assert.deepEqual(TREE_CHANGES, [], 'plugin tree changed during verify: ' + TREE_CHANGES.join(', '))
+})
+check('no transcode derivative was produced in assets/derived (force-absent ffmpeg)', () => {
+  const derivative = join(PKG, 'assets', 'derived', 'bg-main.h264.mp4')
+  assert.equal(existsSync(derivative), false, derivative + ' must not be created')
+  // The POST above may only reach the 501 "ffmpeg is not available" answer (or 400
+  // "source missing" in a stripped-media tree); a 200 would mean a real transcode ran
+  // and wrote into the repo.
+  assert.equal(transcodeNoFfmpeg.status, TRANSCODE_HAS_MEDIA ? 501 : 400)
+})
+
+// Leave the caller's environment exactly as it was found (tests/other tools may
+// import this script's environment in the same shell).
+if (ORIGINAL_FFMPEG_PATH === undefined) delete process.env.FFMPEG_PATH
+else process.env.FFMPEG_PATH = ORIGINAL_FFMPEG_PATH
 
 console.log(failures === 0 ? '\nALL CHECKS PASSED' : `\n${failures} CHECK(S) FAILED`)
 process.exitCode = failures === 0 ? 0 : 1

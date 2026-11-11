@@ -28,7 +28,7 @@ writeFileSync(join(OUT, 'package.json'), JSON.stringify(pkg, null, 2) + '\n', 'u
 for (const name of ['skin.json', 'cordis.patch.yml']) {
   copyFileSync(join(ROOT, name), join(OUT, name))
 }
-for (const name of ['index.js', 'client.js']) {
+for (const name of ['index.js', 'client.js', 'pet-chat.js']) {
   copyFileSync(join(ROOT, 'lib', name), join(OUT, 'lib', name))
 }
 copyFileSync(join(ROOT, 'README.md'), join(OUT, 'README.md'))

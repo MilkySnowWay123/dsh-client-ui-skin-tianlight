@@ -1979,9 +1979,15 @@ body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catmenu] {
 }
 
 /* ---- v1.0.0 liquid glass depth: off / frosted / soft / real ----
-   The treatment lives on the scene layer (behind the product UI): a specular
-   gradient + backdrop blur/saturation over the wallpaper. "off" adds nothing, so
-   the v0.7 look and the energy profile are unchanged by default. */
+   The treatment lives on the scene layer (behind the product UI) as a STATIC
+   surface stack: tiled grain + cool tint + diagonal sheen + top-left specular.
+   R2 energy pass: the live backdrop-filter is gone from this layer.
+   Blurring the whole viewport behind a playing 4K wallpaper re-ran the blur for
+   every decoded video frame, for a treatment the period-adaptive overlay
+   (--tl-period-dim 0.02-0.04) usually made nearly invisible. A static gradient /
+   grain veil costs nothing per frame. Glass on the product's own bounded surfaces
+   (composer, menus, pills) keeps its blur; those are small layers, not a
+   full-screen composite. */
 body[data-dsh-tianlight] {
 	--tl-liquid-blur: 0px;
 	--tl-liquid-sat: 1;
@@ -2061,26 +2067,13 @@ body[data-dsh-tianlight] [data-tl-scene]::after {
 	opacity: 1;
 	background-image: var(--tl-liquid-surface);
 	background-size: var(--tl-liquid-surface-size);
-	-webkit-backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
-	backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
 }
 body[data-dsh-tianlight][data-tl-glass-effective="off"] [data-tl-scene]::after {
 	display: none;
 }
-body[data-dsh-tianlight][data-tl-lowpower] [data-tl-scene]::after {
-	animation: none !important;
-	-webkit-backdrop-filter: blur(2px) saturate(1.04);
-	backdrop-filter: blur(2px) saturate(1.04);
-}
-@keyframes tl-liquid-sheen {
-	0% { transform: translate3d(-1.5%, 0, 0); }
-	100% { transform: translate3d(1.5%, 0, 0); }
-}
-@media (prefers-reduced-motion: no-preference) {
-	body[data-dsh-tianlight][data-tl-glass-effective="real"] [data-tl-scene]::after {
-		animation: tl-liquid-sheen 22s ease-in-out infinite alternate;
-	}
-}
+/* The scene layer is a static veil at every depth now, so low power has nothing
+   extra to flatten here; the panel glass rules below keep their own low-power
+   override. */
 /* v1.5.0: make the selected depth visible on the product's own glass surfaces too
    (the wallpaper scene is optional, so a scene-only effect can look like "nothing
    happened"). These are the same glass pills/panels that already use the
@@ -2125,9 +2118,9 @@ body[data-dsh-tianlight][data-tl-lowpower] [data-tl-rheo][data-tl-rheo-empty] {
    - targets are runtime-stamped data-tl-* anchors or stable ARIA roles, never a DSH
      build-hash class name;
    - large panels (sidebar / settings / wall / hub panel) get NO extra live
-     backdrop-filter: one blur layer per viewport is the budget, and these surfaces
-     already paint their own fill or sit behind the product mask blur. A second
-     full-size blur would re-composite on every video frame;
+     backdrop-filter: the only full-size blur left is the scene-less fallback node
+     (and that one exists on a bare page), while these surfaces already paint their
+     own fill. A second full-size blur would re-composite on every video frame;
    - the transcript bubble list is fill + highlight only: one live blur per bubble
      would re-composite the wallpaper behind every message of a long session;
    - input controls get a hairline plus a specular top edge only, never a filter: the
@@ -2167,8 +2160,9 @@ body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], 
    The sidebar column is the one place the depth adds a fill on purpose: it is a
    product surface that otherwise stays fully transparent, and "glass everywhere"
    is the point of this preset. The fill is mixed down so the wallpaper still reads
-   through it. No extra backdrop-filter on these panels: one large blur layer is the
-   budget, and the scene/fallback layer already owns it. */
+   through it. No extra backdrop-filter on these panels: the scene-less fallback
+   node owns the one full-size blur, and a second one would re-composite the
+   wallpaper behind every frame. */
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar], [data-tl-sidebar-col]) {
 	background-color: color-mix(in srgb, var(--tl-glass-fill) 62%, transparent) !important;
 	background-image: var(--tl-liquid-surface) !important;

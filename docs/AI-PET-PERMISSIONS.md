@@ -1,16 +1,17 @@
 # AI 桌宠权限规范（v1.6.0）
 
-> 角色：天光桌宠的「大脑」。目标：**真的能对话、有生活感、有主动性、并能接入 DSH Agent**，但它的**权利被严格限定、且最终由你控制**。v1.4.0 权限模型：safe 六项默认；`llm`/`agentChat` 需显式同意；**network/files/shell/approve/message/install 六项高风险改为可显式授权**（皮肤无内置实现，需你注册能力适配器才会被调用，全程审计、可撤销）；**`agent`（驱动 DSH）永久禁止**。v1.6.0 在**权限模型与语义完全不变**的前提下整体上调下列硬上限数值（见 §2/§3、§4.5），默认关闭、显式授权、审计、驱动 DSH 永久禁止全部不变。本文是实现与验收依据；对应代码 `src/44-pet-brain.js` + `src/48-pet-agent.js`，UI 在**角色中枢**（唯一入口：右键桌宠 / 桌宠菜单「角色中枢」）。
+> 角色：天光桌宠的「大脑」。目标：**真的能对话、有生活感、有主动性、并能接入 DSH Agent**，但它的**权利被严格限定、且最终由你控制**。v1.4.0 权限模型：safe 六项默认；`llm`/`agentChat` 需显式同意；**network/files/shell/approve/message/install 六项高风险改为可显式授权**（皮肤无内置实现，需你注册能力适配器才会被调用，全程审计、可撤销）；**`agent`（驱动 DSH）永久禁止**。v1.6.0 在**权限模型与语义完全不变**的前提下整体上调下列硬上限数值（见 §2/§3、§4.5），默认关闭、显式授权、审计、驱动 DSH 永久禁止全部不变。**R4A 安全收口**（本文件已同步）：`llm`/`agentChat`/六项高风险授权改为**仅当前页面会话内存**（刷新/重载/换浏览器后需在角色中枢重新授权，加载与导入包都丢弃旧权限位）；显式同意由角色中枢内部的一次性闭包凭据完成，不再接受固定字符串；列出 DSH 会话也要求 `agentChat`。本文是实现与验收依据；对应代码 `src/44-pet-brain.js` + `src/48-pet-agent.js`，UI 在**角色中枢**（唯一入口：右键桌宠 / 桌宠菜单「角色中枢」）。
 
 ## 1. 设计原则
 
 1. **白名单**：只有下表的能力可用；不在表内的一律拒绝。
 2. **最小权限**：默认只给“安静陪伴”所需的最小集合；LLM、Agent、六项高风险全部默认关闭。
-3. **显式授权**：medium/high 能力必须由用户在中枢里二次确认，调用 `grant(cap,{consent:"user-explicit"})`；可随时撤销。
+3. **显式授权**：medium/high 能力必须由用户在中枢里二次确认，可随时撤销。**R4A**：确认瞬间由中枢向大脑申请一次性内部凭据（闭包对象、一次性消费、2 分钟过期），`grant()` 只接受该对象身份；固定字符串 `{consent:"user-explicit"}` 不再生效——同页面脚本无法伪造凭据。
 4. **只硬禁一条**：「驱动 DSH」（`agent`）在代码层永久禁止、不可授予；其余高风险改为“用户可授权 + 适配器执行 + 审计”的模式（v1.4.0）。
 5. **可审计**：每次放行/拒绝/适配器调用写审计（动作、能力、结果、原因、来源、字符数），环形 60 条，UI 展示最近 8 条。
 6. **可暂停**：全局暂停开关（击杀开关），暂停后不回复、不调适配器，持久化。
 7. **无内置危险实现**：皮肤不包含联网/文件/命令/审批/消息/安装的实现；授权只是闸门，执行必须由你另行注册能力适配器。
+8. **R4A 会话内存**：medium/high 授权只保存在当前页面会话内存中，不写 localStorage、不从 localStorage 读、不进入导出包、导入包会被丢弃；刷新/重载后重新授权。
 
 ## 2. 能力矩阵
 
@@ -22,7 +23,7 @@
 | `media` | safe | ✅ | 可撤销 | 读取/切换桌宠形象（只读本地壁纸库目录，≤32MiB） |
 | `remind` | safe | ✅ | 可撤销 | 把职责提醒交给皮肤气泡（不代你审批） |
 | `proactive` | safe | ✅ | 可撤销 | 允许生活引擎在预算内主动开口 |
-| `llm` | medium | ❌ | **需显式同意** | 调用用户提供的适配器；日 60（上限 120）/分钟 6/输入 1000/输出 1200 字/20s 超时 |
+| `llm` | medium | ❌ | **需显式同意** | 调用 DSH 默认模型（v2.0.0 内置 `dsh` 适配器，走宿主 `/skin-tianlight/_pet-chat`）或你提供的适配器；日 60（上限 120）/分钟 6/输入 1000/输出 1200 字/20s 超时 |
 | `agentChat` | medium | ❌ | **需显式同意**（v1.2.0） | 把**用户手动输入**的话发给用户选定/新建的 DSH Agent 会话并显示回复；无自动触发、无审批/取消/附件、不驱动任务；日 ≤30（可调 1..100）/输入 ≤1000 字/回复 ≤120s/同时 1 条 |
 | `network` | **high** | ❌ | **需显式同意**（v1.4.0） | 直接联网；皮肤无内置实现，仅在你注册能力适配器后、已授权时由适配器执行；每次调用审计 |
 | `files` | **high** | ❌ | **需显式同意**（v1.4.0） | 读写文件；同上，需适配器 |
@@ -32,7 +33,7 @@
 | `install` | **high** | ❌ | **需显式同意**（v1.4.0） | 安装插件/改系统；同上，需适配器 |
 | `agent` | forbidden | ❌ | **永久禁止** | 桌宠**自主驱动 DSH** 会话/任务/工具——强烈永久禁止，代码层拒授（与 `agentChat` 不同） |
 
-持久化键：`tianlight.pet.permissions.v1`（授权位）、`tianlight.pet.pause.v1`（暂停）、`tianlight.pet.ai.v1`（LLM 配额/用量）。全部只存本地。
+持久化：safe 六项、暂停（`tianlight.pet.pause.v1`）、LLM 配额/用量（`tianlight.pet.ai.v1`）存本地；`tianlight.pet.permissions.v1` 只写 safe 六项。**`llm` / `agentChat` / `network` / `files` / `shell` / `approve` / `message` / `install` 的授权只保存在当前页面会话内存**：不写 localStorage、不从 localStorage 读、不进入导出包；导入包里的权限键会在合并前被丢弃；刷新/重载/换浏览器后必须重新授权，DSH 会话列表也会在重新授权前不可用。
 
 ## 3. 硬上限（LLM）
 
@@ -42,15 +43,38 @@
 | 速率 | 每分钟 ≤6 次 |
 | 输入 | 用户文本 ≤1000 字（超长截断并审计） |
 | 输出 | ≤1200 字；去 HTML 标签/控制字符 |
-| 超时 | 20s，超时/异常自动回退本地大脑并审计 `llm-fallback` |
-| 系统提示 | 固定安全人格串：无执行权限、不索取隐私/凭据、不输出 HTML、不要求危险操作、≤maxChars |
-| 上下文 | **只发送当前这一句用户输入**；绝不发送 DSH 会话内容、工作区文件、凭据、历史消息 |
-| 适配器 | 必须由用户/宿主显式注册；同一时刻一个；`id` 必填；可随时 `clearLLM()` |
+| 超时 | 20s，超时/异常自动回退本地大脑；v2.0.0 起审计 `reason` 带上稳定错误码（`timeout` / `missing-credential` / `quota` / `rate-limit` 等） |
+| 系统提示 | 固定安全人格串：无执行权限、不索取隐私/凭据、不输出 HTML、不要求危险操作、≤maxChars；v2.0.0 的内置 DSH 通道把系统提示固定在**宿主半**，浏览器无法改写 |
+| 上下文 | **只发送当前这一句用户输入**（v1.6.8 起可加 ≤700 字的皮肤本地聊天摘要）；绝不发送 DSH 会话内容、工作区文件、凭据、历史消息 |
+| 适配器 | 用户/宿主可显式注册；v2.0.0 起宿主报告可用时皮肤自动注册内置 `dsh` 适配器（见 §3.2，仍需你显式授权 `llm`）；同一时刻一个；`id` 必填；可随时 `clearLLM()`（显式清除后本页不再自动重新注册，刷新页面恢复） |
+
+### 3.1 自主思考的独立预算与隐私（S1 收口，v1.6.8 行为修正）
+
+- **默认只用本地模板**：桌宠的定时念头 / 「现在想一下」默认不联网、不调用你的 LLM 适配器、不消耗任何 LLM 配额；本地模板只读取皮肤自己的内存/生活状态，不发送任何数据。
+- **静默/睡眠/专注会抑制思考**：定时 tick 与自动路径先过「已启用 + 页面可见 + 非低电量 + AI 未暂停 + 不在静默时段 + 不在睡眠时段 + 无进行中的专注」；被抑制时只记录跳过原因（`quiet-hours` / `asleep` / `focus`），**不消耗任何配额**，也不产生念头。
+- **LLM 自主思考是独立开关 + 独立日预算**：默认关闭；用户必须在「角色中枢 → 自主思考」里单独勾选，并使用独立预算 **12 次/天**（`PET_MIND_LLM_DAILY_LIMIT`），**永远不会占用/耗尽你聊天用的 60 次日配额**；预算用完自动回退本地模板，聊天不受影响。
+- **LLM 念头的 payload 不含聊天记录**：只发送此刻的有界触发语境（本地时间/时段、记忆计数、专注/静默状态、当前小目标），**不发送**最近聊天记录、用户原话/话题、上一句桌宠台词或上一个念头；手动聊天继续使用 §3 的「有界上下文」路径（v1.6.8 的皮肤本地聊天摘要，≤700 字，仅在用户聊天时发送）。
+- **自主开口仍然受限**：念头要说出口还必须同时通过 `proactive` 授权 + AI 未暂停 + 生活的静默/睡眠/专注闸门与主动开口预算；暂停期间不产生/不显示任何主动气泡，延迟队列会延后到恢复后再按预算回放。
+
+## 3.2 内置 DSH 模型通道（Host LLM，v2.0.0）
+
+浏览器半的 `remote.llm` 只有 `listProviders / listConfigurableProviders / discoverModels` 三个只读方法，**不能直接调用模型**；因此 v2.0.0 在宿主半新增一条窄路由，让桌宠用 DSH 自己已配置的模型回答：
+
+- **路由**：`POST /skin-tianlight/_pet-chat`，只接受 loopback Host（localhost / 127.0.0.1 / [::1]）、POST + JSON、请求体 ≤16KB、文本 ≤4000 字；同时只处理 1 个请求；客户端断开即 abort；整通 20s 截止。
+- **调用哪条模型**：默认读 `agentDefaultModel.currentSelection()`（即 DSH 默认模型）；角色中枢可以只选择一个 **provider**（默认「跟随 DSH 默认模型」），**模型 id 永远跟随 DSH 默认选择**；请求里的 provider 必须出现在 `llm.listProviders()` 中，否则拒绝。若你选的 provider 不支持 DSH 默认模型 id（例如自建网关的模型目录不同），宿主模型解析会失败 → 气泡提示「未配置模型，已用本地回复」，切回「跟随默认」即可。
+- **可随时断开**：显式调用 `clearLLM()` 后，本页面内不会再有后台探测把内置 `dsh` 适配器自动注册回来（刷新页面后才恢复自动注册）；撤销 `llm` 授权则只停止调用、不影响适配器。
+- **参数固定**：系统提示是宿主半的常量；`purpose`/`sessionId`/`tools` 一律不传（不会创建会话、不会调用工具）；`maxTokens ≤600`；有推理档位时自动取 `reasoning.efforts[0]`（最低档），没有就不传。
+- **凭据不下发**：宿主进程内的 `ctx.llm.stream()` 直接用 DSH 已配置的凭据，浏览器只拿到 `{ ok, text, finish, model }` 或 `{ ok:false, code }`；皮肤不读取、不保存任何 API Key。
+- **仍要你授权**：内置适配器只有在你于「角色中枢 → AI」两步确认授予 `llm` 后才会被调用；授权提示会明确写「会消耗你的模型额度」。配额/长度/超时/审计与 §3 完全一致，失败回退本地大脑并显示原因。
+- **来源标注**：对话气泡与角色中枢的对话记录会显示「AI 回复」或「本地回复」；出错时按稳定错误码提示中文原因：未配置模型 / 缺少凭据 / 余额不足（`quota`）/ 限流 / 超时 / 宿主不可用。
+- **可用性**：`_engines.capabilities.petLlm` 返回 `{ available, reason, provider, model }`；不可用时角色中枢显示具体原因（未配置模型、宿主无 LLM 服务、宿主不可用等），气泡回退「本地回复」。
+- **需要重启一次 DSH**：本项改动了宿主半（`lib/index.js` / `lib/pet-chat.js`），更新插件后必须重启 DSH Desktop 一次；只刷新页面不够。之后浏览器半的改动仍只需 `Ctrl+F5`。
 
 ## 3.5 高风险能力（high，v1.4.0）
 
-- 默认关闭；`grant(cap,{consent:"user-explicit"})` 才授权，中枢两步确认 + 警告；`revoke` 随时。
-- **皮肤不内置实现**：只有你调用 `setCapabilityAdapter(cap, {id, run})` 注册适配器后，`invokeCapability(cap, input)` 才能在“已授权 + 未暂停 + 适配器存在”时调用它；否则拒绝（`permission` / `adapter-missing` / `paused`）。
+- 默认关闭；只有角色中枢的两步确认能授权（内部一次性凭据），`revoke` 随时；**授权仅本页面会话有效**。
+- **皮肤不内置实现**：只有你调用 `setCapabilityAdapter(cap, {id, run})` 注册适配器后，`invokeCapability(cap, input)` 才能在“已授权 + 未暂停 + 适配器存在”时调用它；否则拒绝（`permission` / `adapter-missing` / `paused`）。皮肤自身**从不自动调用** `invokeCapability`。
+- 中枢的权限总览按真实状态显示：已授权但没有适配器 → “无适配器（未启用）”；已授权且有适配器 → “已授权（仅手动调用）”。不会再把一个没有任何实现的授权显示成单纯的“已授权”。
 - 调用与拒绝都写审计 `action:"capability"`，不记录输入原文；适配器异常 → `adapter-error`，不抛出到皮肤。
 - 适配器函数只存内存、不持久化；`invokeCapability` 不会替你自动调用任何东西（无定时器、无钩子）。
 - **`agent`（驱动 DSH）不在此列**：永久禁止，连授权入口都没有。
@@ -58,7 +82,7 @@
 ## 4. LLM 适配器契约
 
 ```js
-// 由你（或宿主插件）在页面里注册；皮肤自身不联网。
+// 由你（或宿主插件）在页面里注册；皮肤自身不直连外网（v2.0.0 的内置 DSH 通道只是把这一句发给宿主路由，由宿主进程用 DSH 已配置的模型凭据完成调用）。
 window.tianlightPetLLM = {
   id: "my-local-llm-adapter",
   async chat({ system, messages, maxChars, timeoutMs }) {
@@ -67,12 +91,17 @@ window.tianlightPetLLM = {
     return "……"
   },
 }
-// 再在「角色中枢 → AI」里打开 LLM 授权（或控制台）：
+// 再在「角色中枢 → AI」里点两次确认授权 LLM。
+// R4A：授权只在本页面会话内有效；刷新/重载后需重新授权。控制台的
+// window.tianlightPet.grant("llm", { consent: "user-explicit" }) 已不再有效——
+// 明文同意串可被任意同页脚本重放，现在只有中枢内部的“一次性闭包凭据”能授权。
 await window.tianlightPet.setLLM(window.tianlightPetLLM)
-window.tianlightPet.grant("llm", { consent: "user-explicit" })
+// 查看状态（只读）：window.tianlightPet.status().llm.granted
 ```
 
 > 适配器是**用户自己的信任边界**：它可以联网/读文件，那是适配器实现者的责任；皮肤只保证“调不调、发什么、发多少、何时停”。
+>
+> v2.0.0：宿主报告 `capabilities.petLlm.available === true` 时，皮肤会自动注册内置 `dsh` 适配器（调用宿主 `_pet-chat`，见 §3.2）。你手动 `setLLM()` 的适配器优先，不会被覆盖；注册适配器本身不授权，仍需在角色中枢两步确认 `llm`。
 
 ## 4.5 DSH Agent 接入（`agentChat`，v1.2.0）的额外规范
 
@@ -80,7 +109,8 @@ window.tianlightPet.grant("llm", { consent: "user-explicit" })
 
 | 规则 | 实现 |
 |---|---|
-| 默认关闭 | `agentChat` 默认 false，必须在「角色中枢 → AI Agent」两步确认授权（`{consent:"user-explicit"}`），可随时撤销/断开 |
+| 默认关闭 | `agentChat` 默认 false，必须在「角色中枢 → AI Agent」两步确认授权（中枢内部一次性凭据；**仅本页面会话有效，重载后重新授权**），可随时撤销/断开 |
+| 列会话也要授权 | R4A：列出 DSH 会话（标题/工作目录/运行状态）同样要求 `agentChat`；未授权时返回 `permission`，不暴露会话列表 |
 | 用户触发 | 只有中枢里的发送按钮能调用；无定时器、无生活/职责钩子、无自动任务 |
 | 用户选目标 | 新建“桌宠会话”或从会话列表选一个现有会话；目标持久化、可断开 |
 | 只读回复 | 只调用 list/create/prompt/follow；**绝不** cancel/approve/attachment；不替你点任何审批 |
@@ -92,21 +122,22 @@ window.tianlightPet.grant("llm", { consent: "user-explicit" })
 
 ## 5. 审计
 
-每条记录：`{ at, action, cap, ok, reason?, source?, chars? }`；`action ∈ chat|say|grant|revoke|llm|pause|resume|proactive-check|agent|capability`。通过 `window.tianlightPet.audit(20)` 查看；UI「角色中枢 → 审计」展示最近 8 条。审计为内存环形 60 条（重载页面后清零，不上传、不持久化）；不记录用户原文。配额按**调用尝试**计数（失败也消耗，防滥用）。`agentChat` 的发送/失败/连接与高风险适配器的调用由受校验的 `recordExternal()` / 内部路径写入同一环形（只写元数据，不写用户原文）。
+每条记录：`{ at, action, cap, ok, reason?, source?, chars? }`；`action ∈ chat|say|grant|revoke|llm|pause|resume|proactive-check|agent|capability`。通过 `window.tianlightPet.audit(20)` 查看；UI「角色中枢 → 审计」展示最近 8 条。审计为内存环形 60 条（重载页面后清零，不上传、不持久化）；不记录用户原文。配额按**调用尝试**计数（失败也消耗，防滥用）。R4A：`agentChat` 的发送/失败/连接与高风险适配器的调用由皮肤内部的同闭包路径（`petRecordExternal`）写入同一环形，不再经过可被同页脚本替换的 `globalThis.tianlightPet`（只写元数据，不写用户原文）。**R8：`recordExternal` 是内部路径，不在公开的 `window.tianlightPet` 上**——写入审计环的唯一公开入口仍是只读的 `audit()`，避免同页脚本伪造/洪泛审计把真实记录挤掉。**S1：LLM 自主念头以 `action:"llm"`、`source:"pet-mind"` 记录一次尝试，额度独立于聊天日配额。**
 
 ## 6. 用户控制面
 
 - **桌宠是唯一入口**（v1.3.0 起不再有独立设置页/侧栏按钮）：**右键桌宠**，或点桌宠 → 菜单「角色中枢」，打开全屏角色中枢。
-- **角色中枢**：生活状态、生活节奏设置（静默/额度/作息/虚拟时钟）、AI 区（暂停/恢复、授权/撤销 LLM、看适配器、看对话）、**AI Agent 区**（`agentChat` 授权两步确认、选择目标会话、连接/断开/打开、预算/状态/风险提示）、权限总览（7 项永久禁止只读）、审计。
-- **控制台**：`window.tianlightPet.status() / permissions() / grant() / revoke() / chat("…") / pause() / audit()`，以及 `window.tianlightPetAgent.*`、`window.tianlightRoleHub.open()`。
+- **角色中枢**：生活状态、生活节奏设置（静默/额度/作息/虚拟时钟）、AI 区（暂停/恢复、授权/撤销 LLM、看适配器、看对话、**v2.0.0 起可选择模型 provider（默认跟随 DSH 默认模型，模型 id 不单独选）**、对话记录显示「AI 回复/本地回复」）、**自主思考区**（启用/暂停、间隔、自主开口、**LLM 自主思考独立开关与用量/额度**、现在想一下、清空想法；静默/睡眠/专注时跳过并显示原因）、**AI Agent 区**（`agentChat` 授权两步确认、选择目标会话、连接/断开/打开、预算/状态/风险提示）、权限总览（7 项永久禁止只读）、审计。
+- **控制台**：`window.tianlightPet.status() / permissions() / revoke() / chat("…") / pause() / audit()`；safe 能力可用 `grant()`。R4A：medium/high 授权只能经角色中枢（控制台没有内部凭据），`window.tianlightPetAgent` 只剩只读 `status()` / `audit()`（连接、列会话、发送均不在全局暴露，由中枢内部闭包 API 调用）、`window.tianlightRoleHub.open()`。
 - **高风险能力**：中枢权限总览可逐个授权/撤销（两步确认 + 警告）；适配器注册用 `setCapabilityAdapter(cap,{id,run})`，调用用 `invokeCapability(cap,input)`（详见 §3.5）。
-- 实例诊断：`__dshTianlightInstance.life() / pet() / agent() / hub() / glass() / duty()`。
+- 实例诊断：`__dshTianlightInstance.life() / pet() / agent() / hub() / glass() / duty()`。**R8**：诊断对象是只读方法面，不再包含 live cordis `ctx`/fiber（teardown 由实例闭包持有），同页脚本无法经它 `inject` 服务绕过授权。
 
 ## 7. 明确不做（当前边界）
 
-- 皮肤**不含**联网/文件/命令/审批/消息/安装的内置实现；high 权限授权后也只会在你注册适配器时调用你的代码（审计、可撤销）。`agent`（自主驱动 DSH）永久禁止。
+- 皮肤**不含**联网/文件/命令/审批/消息/安装的内置实现（v2.0.0 的内置 DSH 模型通道是「宿主既有 LLM 服务的一层窄调用」，不是皮肤自建网络栈：浏览器只请求本机宿主路由，外网请求与凭据都在宿主进程内由 DSH 完成）；high 权限授权后也只会在你注册适配器时调用你的代码（审计、可撤销）。`agent`（自主驱动 DSH）永久禁止。
 - 不读取你其它会话的内容，不读取任务/审批状态，不代审批；只在你**明确连接**的那个会话里发送你**手写**的问题，并读取该轮 Agent 回复（v1.2.0 `agentChat`）。
 - 不替用户执行任何操作、不操作 DSH 工具、不修改设置之外的文件。
-- LLM 适配器需用户/宿主提供；未注册时 AI 桌宠 = 本地大脑（仍可对话、有生活感、有记忆）。
+- LLM 适配器需用户/宿主提供；v2.0.0 起宿主报告可用时皮肤自动内置 `dsh` 适配器（用 DSH 默认模型，仍需你授权 `llm`）；未注册/未授权时 AI 桌宠 = 本地大脑（仍可对话、有生活感、有记忆）。
+- 内置 `dsh` 通道**不创建 DSH 会话、不调用工具、不读取你的会话内容**：只发一句有界用户文本（v1.6.8 起可带 ≤700 字、只属于本皮肤的聊天摘要）+ 固定系统提示给模型，模型回复仅用于气泡/中枢展示。
 - Agent 的回复依赖 DSH 会话流；解析失败时会明确显示“已发送，打开会话查看”，不伪造。
 - 真浏览器级验收（隔离 DSH + headless Edge）受本会话沙箱限制，harness 就绪待非沙箱环境补跑；Node 级契约冒烟覆盖权限矩阵与硬上限。

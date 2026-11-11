@@ -35,6 +35,9 @@ const TARGETS = {
   // /api/we-wallpaper routes). Kept as a source module, so a rollback that only
   // restored index.js would otherwise import a missing file.
   wehost: 'lib/we-wallpaper/host.mjs',
+  // v2.0.0: the pet AI chat host bridge (index.js imports it, so it must roll back
+  // together with index.js or the restored host half would fail to load).
+  petchat: 'lib/pet-chat.js',
 }
 const extFor = (rel) =>
   rel.endsWith('.json') ? 'json' : rel.endsWith('.html') ? 'html' : rel.endsWith('.mjs') ? 'mjs' : 'js'

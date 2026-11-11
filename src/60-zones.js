@@ -256,7 +256,13 @@
 				) {
 					const shaderOn = document.querySelector("[data-tl-scene][data-tl-shader-on]") !== null;
 					const still = wallpaperController === null ? null : wallpaperController.image;
-					const video = document.querySelector("[data-tl-scene] > video");
+					// R6 A: a hidden/released scene video (the channel was left) must not be
+					// mirrored from its stale last frame; treat it as "no main source".
+					const sceneVideo = document.querySelector("[data-tl-scene] > video");
+					const video =
+						sceneVideo !== null && sceneVideo.hidden === false && sceneVideo.currentSrc !== "" && sceneVideo.readyState >= 2
+							? sceneVideo
+							: null;
 					// A rail-specific file wins; otherwise the rail mirrors the main media. A
 					// WebGL canvas cannot be read reliably from another task (the drawing buffer
 					// is cleared after compositing), so an independent shader lets the main
@@ -296,7 +302,9 @@
 								surface.drawImage(source, dx, dy, dw, dh);
 							}
 						}
-					} else if (shaderOn && railSource === null) {
+					} else if (source === null || (shaderOn && railSource === null)) {
+						// R6 A: no readable main channel (video released/hidden, or WebGL canvas
+						// not readable from another task): clear the stale mirror frame.
 						surface.clearRect(0, 0, canvas.width, canvas.height);
 					}
 				}

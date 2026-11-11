@@ -30,7 +30,6 @@ const OWNED_FILES = [
   'package.json',
   'skin.json',
   'CHANGELOG.md',
-  'src/10-constants.js',
   'lib/index.js',
   'lib/client.js',
 ]
@@ -381,7 +380,11 @@ plan.push(
     ? 'version: keep ' + currentVersion + ' (tag the current manifest)'
     : 'version: ' + currentVersion + ' -> ' + targetVersion + ' (in package.json' + (existsSync(join(ROOT, 'skin.json')) ? ' + skin.json' : '') + ')',
 )
-plan.push('build markers: src/10-constants.js HOST_BUILD and lib/index.js BUILD -> ' + (sameVersion ? 'unchanged' : targetVersion))
+plan.push(
+  'build marker: lib/index.js BUILD -> ' +
+    (sameVersion ? 'unchanged' : targetVersion) +
+    ' (HOST_API is a route-contract version and is edited by hand only)',
+)
 plan.push('product: rebuild lib/client.js with node tools/build.mjs')
 plan.push('changelog: ' + (existsSync(join(ROOT, 'CHANGELOG.md')) ? 'update CHANGELOG.md' : 'create CHANGELOG.md') + ' (' + tagName + ')')
 plan.push('checks: ' + CHECK_CHAIN.map((step) => 'node ' + step.slice(1).join(' ')).join(' && '))
@@ -465,18 +468,11 @@ if (!sameVersion) {
     }
   }
 
-  // Build markers: the client half and the host half compare these so a stale host
-  // process is visible instead of silently serving old routes. Keep them at the
-  // release version; the product is rebuilt below because the client marker lives in src/.
-  const constantsPath = join(ROOT, 'src', '10-constants.js')
-  if (existsSync(constantsPath)) {
-    const text = readText('src/10-constants.js')
-    const next = text.replace(/(const HOST_BUILD = ")[^"]+(";)/, '$1' + targetVersion + '$2')
-    if (next !== text) {
-      writeText('src/10-constants.js', next)
-      changes.push('src/10-constants.js')
-    }
-  }
+  // Build marker: `BUILD` is the host's diagnostic build number (it is reported by
+  // `_engines` and stamped into the bundle manifest), so it follows the release.
+  // The handshake marker `HOST_API` is deliberately NOT rewritten here: it only
+  // changes when the lib/ route contract changes, otherwise a browser-half-only
+  // release would ask users to restart DSH again for no reason.
   const hostIndexPath = join(ROOT, 'lib', 'index.js')
   if (existsSync(hostIndexPath)) {
     const text = readText('lib/index.js')

@@ -19,16 +19,27 @@
 		/**
 		 * Tear one instance down completely.
 		 *
-		 * The owning cordis FIBER is the authoritative teardown: disposing it runs every
-		 * registered effect as one transaction, which also unregisters the slot cells the
-		 * rheostat/font controls live in. Disposing only the effect list (the previous
-		 * approach) removed the DOM hosts but left the slot-rendered cells mounted — a
-		 * re-apply then produced two reasoning sliders and two font buttons. The effect
-		 * list stays as a fallback for a context whose fiber is not reachable.
+		 * R8 (REV-R4A F1): NEW instances publish only a closure-owned `dispose()` and
+		 * never expose the live cordis `ctx`/fiber on `globalThis` (a same-page script
+		 * could otherwise reach the live context through the diagnostics registry and
+		 * inject services such as `remote.session`, bypassing the Agent authorization
+		 * model). This helper stays for OLD instances that may still be sitting in the
+		 * registry after a hot reload: they carry their own `ctx` (pre-R8 shape) or
+		 * their own `dispose()` closure.
 		 */
 		function teardownInstance(instance) {
 			if (instance === undefined || instance === null) return;
 			if (globalThis[INSTANCE_REGISTRY_KEY] === instance) globalThis[INSTANCE_REGISTRY_KEY] = null;
+			// R8+ object: its own closure owns ctx/fiber/effects. Delegate instead of
+			// duplicating the teardown bookkeeping.
+			if ((instance.ctx === undefined || instance.ctx === null) && typeof instance.dispose === "function") {
+				try {
+					instance.dispose();
+				} catch (error) {
+					note("apply:dispose-failed", error);
+				}
+				return;
+			}
 			const fiber = instance.ctx === undefined ? undefined : instance.ctx.fiber;
 			if (fiber !== undefined && fiber !== null && typeof fiber.dispose === "function") {
 				try {
@@ -47,6 +58,18 @@
 		function disposePreviousInstance() {
 			const previous = globalThis[INSTANCE_REGISTRY_KEY];
 			if (previous === undefined || previous === null) return;
+			// Each instance owns its teardown: a pre-R8 registry object disposes its own
+			// ctx.fiber, an R8 object disposes through its closure. The generic helper is
+			// only a fallback for an exotic registry value (e.g. a half-written object).
+			if (typeof previous.dispose === "function") {
+				try {
+					previous.dispose();
+				} catch (error) {
+					note("apply:previous-dispose-failed", error);
+				}
+				if (globalThis[INSTANCE_REGISTRY_KEY] === previous) globalThis[INSTANCE_REGISTRY_KEY] = null;
+				return;
+			}
 			teardownInstance(previous);
 		}
 
@@ -149,11 +172,37 @@
 					};
 				};
 
-				const instance = {
-					// Diagnostics only: lets the console inspect the owning context/fiber.
-					ctx,
+				// R8 (REV-R4A F1): the owning cordis ctx/fiber stays inside this closure. The
+				// published diagnostics object below deliberately has no `ctx` property, so a
+				// same-page script cannot reach the live context and inject services
+				// (remote.session etc.) through the registry object.
+				// Teardown clears the registry first, disposes the owning fiber (transactional:
+				// it also unregisters every slot cell), then the effect list as a fallback —
+				// idempotent, so a later cordis disposal is a no-op instead of a double free.
+				const ownerCtx = ctx;
+				let instanceTornDown = false;
+				let instance = null;
+				const teardownOwnedInstance = () => {
+					if (instanceTornDown === true) return;
+					instanceTornDown = true;
+					if (globalThis[INSTANCE_REGISTRY_KEY] === instance) globalThis[INSTANCE_REGISTRY_KEY] = null;
+					const fiber = ownerCtx === undefined || ownerCtx === null ? undefined : ownerCtx.fiber;
+					if (fiber !== undefined && fiber !== null && typeof fiber.dispose === "function") {
+						try {
+							fiber.dispose();
+						} catch (error) {
+							note("apply:fiber-dispose-failed", error);
+						}
+					}
+					try {
+						if (instance !== null && typeof instance.disposeEffects === "function") instance.disposeEffects();
+					} catch (error) {
+						note("apply:dispose-failed", error);
+					}
+				};
+				instance = {
 					dispose() {
-						teardownInstance(instance);
+						teardownOwnedInstance();
 					},
 					/** Effect-list teardown only; `dispose()` is the public entry point. */
 					disposeEffects() {

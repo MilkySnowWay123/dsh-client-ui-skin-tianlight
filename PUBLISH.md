@@ -102,7 +102,7 @@ npm run upgrade               # upgrade-check + resolve-selectors
 > 适用于 `github-upload/`（GitHub 镜像仓库）。`.github/workflows/check.yml` 的 `package (tag)` 任务会校验 **tag 必须等于 `v` + package.json 的 version**；不匹配会让 tag 的 CI 变红，也不会上传发行包。
 
 - **内部仓库 `tianlight/`** 使用内部版本号（v1.6.x），内部 tag 继续按内部版本打。
-- **公开仓库（GitHub 镜像）** 使用公开版本号（v1.0.x）：`package.json` / `skin.json` / `lib/index.js` 的 `BUILD` / `src/10-constants.js` 的 `HOST_BUILD` 都改成公开版本，并重新 `node tools/build.mjs` 生成 `lib/client.js`；同时写入 `INTERNAL-BUILD.json` 记录对应的内部版本/tag/内部构建 sha，避免追溯困难。
+- **公开仓库（GitHub 镜像）** 使用公开版本号（v1.0.x）：改**三处**发布标记——`package.json` / `skin.json` / `lib/index.js` 的 `BUILD`——然后重新 `node tools/build.mjs` 生成 `lib/client.js`；同时写入 `INTERNAL-BUILD.json` 记录对应的内部版本/tag/内部构建 sha，避免追溯困难。**`HOST_API`（宿主/客户端路由契约握手）是手改的路由版本，发布工具不改它**：公开/内部构建说同一个路由契约；原 `src/10-constants.js` 的 `HOST_BUILD` 已由 `HOST_API` 取代并在发布时保持不动。
 - 公开 tag 与公开版本一一对应（例如 tag `v1.0.1` ↔ package version `1.0.1`），这样 CI 的 static + package 两个 job 全绿，并自动产出 `dist/` 发行包 artifact。
 - 内部 tag（如 `v1.6.2`）也可以留在公开仓库里作为构建来源记录，它们的 CI 同样通过（tag 等于其所在提交的包版本）。
 
@@ -113,7 +113,7 @@ npm run upgrade               # upgrade-check + resolve-selectors
 node tools/public-release.mjs --dir <镜像目录> --version 1.0.2 --internal-version 1.6.3 --internal-tag v1.6.3 --internal-sha <内部 client 的 sha256>
 ```
 
-该工具会改四处版本标记、写入 `INTERNAL-BUILD.json`、重新构建 `lib/client.js`，并打印后续的静态链、`node tools/pack.mjs`、commit/tag/push 命令（工具本身不执行 git）。
+该工具会改**三处**发布标记（`package.json` / `skin.json` / `lib/index.js` 的 `BUILD`；`HOST_API` 不碰）、写入 `INTERNAL-BUILD.json`、重新构建 `lib/client.js`（一致性校验：产物必须由被改过的源码生成），并打印后续的静态链、`node tools/pack.mjs`、commit/tag/push 命令（工具本身不执行 git）。
 
 ### 为什么这样做
 

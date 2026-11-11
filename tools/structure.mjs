@@ -116,6 +116,31 @@ if (client.includes('[data-tl-companion]')) {
   violations.push('dead host selector [data-tl-companion] is back (the companion host is [data-tl-cat])')
 }
 
+// 2c. R8 (REV-R4A F1): the published diagnostics object must not expose the live
+// cordis ctx/fiber (a page script could inject remote.session past every gate), and
+// teardown must be closure-owned. Keep both the fix and the compatibility path.
+// R8c (REV-R8 F3): slice the WHOLE literal (anchor to the registry assignment), not a
+// fixed-length window — an injected `ctx` later in the object must not escape the guard.
+const instanceLiteralAt = applyBody.indexOf('instance = {')
+const instanceRegistryAt = applyBody.indexOf('globalThis[INSTANCE_REGISTRY_KEY] = instance')
+if (instanceLiteralAt < 0 || instanceRegistryAt <= instanceLiteralAt) {
+  violations.push('R8: cannot locate the full instance literal (instance = { ... registry assignment)')
+} else {
+  const instanceLiteral = applyBody.slice(instanceLiteralAt, instanceRegistryAt)
+  if (/(?:^|\n)\s*ctx\s*,/.test(instanceLiteral) || /\bctx:\s*ctx\b/.test(instanceLiteral)) {
+    violations.push('R8: the published __dshTianlightInstance object exposes the live cordis ctx again')
+  }
+}
+if (/__dshTianlightInstance\s*\.\s*ctx\b/.test(client)) {
+  violations.push('R8: the product calls __dshTianlightInstance.ctx (live ctx must not be reachable)')
+}
+if (!applyBody.includes('const ownerCtx = ctx;') || !applyBody.includes('teardownOwnedInstance')) {
+  violations.push('R8: apply() lost the closure-owned instance teardown (ctx/fiber must stay in the closure)')
+}
+if (!client.includes('instance.ctx === undefined') || !client.includes('previous.dispose()')) {
+  violations.push('R8: legacy-instance teardown compatibility (pre-R8 ctx objects / own dispose) is missing')
+}
+
 // 3. the try/catch boundary must still wrap the effect registrations
 if (!/try \{[\s\S]{0,12000}installStyles/.test(applyBody)) {
   violations.push('apply() lost its try/catch boundary (a skin defect could fail the plugin fibre)')

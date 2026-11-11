@@ -99,6 +99,11 @@
 				"settings.budget": "渲染预算",
 				"settings.budgetHint": "只读：当前帧率/抖动/档位/缓存/特效开销；降档原因见情境分区。",
 				"settings.diag": "诊断",
+				"lib.engine.unreachable": "无法连接宿主：网络错误或宿主尚未就绪；请稍后重试，或点「重新检测」",
+				"lib.engine.unreachableShort": "无法连接宿主",
+				"hub.perm.sessionOnly": "LLM、Agent 会话与六项高风险授权只在本页面会话内有效：刷新或重载后需在角色中枢重新授权（安全收口后不再持久化）。",
+				"hub.perm.stateNoAdapter": "无适配器（未启用）",
+				"hub.perm.stateManual": "已授权（仅手动调用）",
 			},
 			en: {
 				"common.on": "On",
@@ -161,6 +166,11 @@
 				"settings.budget": "Render budget",
 				"settings.budgetHint": "Read-only: fps, jitter, tier, cache, effect cost; downgrade reasons live in Smart context.",
 				"settings.diag": "Diagnostics",
+				"lib.engine.unreachable": "Cannot reach the host: network error or the host is not ready yet — retry shortly, or click Re-detect.",
+				"lib.engine.unreachableShort": "Host unreachable",
+				"hub.perm.sessionOnly": "LLM, Agent chat and the six high-risk capabilities are granted for this page session only: after a refresh or reload, allow them again in the role hub (they are no longer persisted).",
+				"hub.perm.stateNoAdapter": "No adapter (not enabled)",
+				"hub.perm.stateManual": "Allowed (manual call only)",
 			},
 		};
 

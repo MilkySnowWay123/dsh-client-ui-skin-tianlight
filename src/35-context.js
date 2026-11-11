@@ -1884,6 +1884,8 @@ body[data-dsh-tianlight] [data-tl-group="context"] .tl-fx-hint {
 			let weatherRetryUsed = false;
 			let weatherRequestToken = 0;
 			let weatherScheduleKey = "";
+			/** 最近一次天气请求的开始时间：切回可见时只按间隔决定是否补一次请求。 */
+			let lastWeatherFetchAt = 0;
 			const weatherAborters = new Set();
 			const weatherTimeouts = new Set();
 
@@ -1999,12 +2001,23 @@ body[data-dsh-tianlight] [data-tl-group="context"] .tl-fx-hint {
 					void fetchWeather("retry");
 				}, WEATHER_RETRY_MS);
 			};
+			/**
+			 * 天气值是否与上次持久化的快照相同（忽略采样时间 at）。
+			 * 自动请求（interval / 切回可见 / 失败重试）在值没变时不得重写
+			 * tianlight.weather：那会进设置镜像 → 每切换一次窗口就多一次 PUT 并抬高
+			 * revision（report §4 的“天气冗余写”）。只有用户显式刷新才允许只更新时间。
+			 */
+			const weatherValuesEqual = (left, right) => {
+				if (left === null || left === undefined || right === null || right === undefined) return false;
+				return left.code === right.code && left.temperatureC === right.temperatureC && left.isDay === right.isDay;
+			};
 			const fetchWeather = async (source) => {
 				if (alive === false) return false;
 				if (typeof AbortController !== "function") return false;
 				const state = weatherController.state();
 				if (state.enabled !== true || weatherHasLocation() !== true) return false;
 				if (source !== "retry") weatherRetryUsed = false;
+				lastWeatherFetchAt = Date.now();
 				const token = (weatherRequestToken += 1);
 				const request = weatherOpenRequest();
 				try {
@@ -2025,6 +2038,14 @@ body[data-dsh-tianlight] [data-tl-group="context"] .tl-fx-hint {
 						return false;
 					}
 					weatherRetryUsed = false;
+					// A tab switch / interval tick that learns nothing new must not write
+					// the synced snapshot (that write mirrors a PUT and bumps revisions).
+					const currentWeather = weatherController.state();
+					const unchanged = currentWeather.lastError === "" && weatherValuesEqual(currentWeather.last, last);
+					if (unchanged && source !== "manual") {
+						applyWeatherAmbience(last.code, last.isDay);
+						return true;
+					}
 					weatherController.apply({ last, lastError: "" });
 					applyWeatherAmbience(last.code, last.isDay);
 					return true;
@@ -2216,9 +2237,17 @@ body[data-dsh-tianlight] [data-tl-group="context"] .tl-fx-hint {
 					return;
 				}
 				reconcile(false);
-				// C4: refresh immediately when the tab becomes visible again; ticks that
-				// happened while hidden were skipped (no background network traffic).
-				reconcileWeather(true);
+				// C4: ticks that happened while hidden were skipped (no background network
+				// traffic). Only refresh when the last request is older than the configured
+				// interval, so a plain window switch cannot request the same weather again
+				// (nor write the synced snapshot / bump the settings revision).
+				const weatherState = weatherController.state();
+				if (weatherState.enabled === true && weatherHasLocation() === true) {
+					const interval = WEATHER_INTERVALS.includes(Number(weatherState.intervalMin)) ? Number(weatherState.intervalMin) : 30;
+					if (lastWeatherFetchAt === 0 || Date.now() - lastWeatherFetchAt >= interval * 60000) {
+						void fetchWeather("visible");
+					}
+				}
 			};
 			const unsubscribe = contextController.subscribe(() => reconcile(true));
 			document.addEventListener("visibilitychange", onVisibilityChange);

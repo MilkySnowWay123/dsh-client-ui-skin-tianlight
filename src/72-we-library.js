@@ -539,7 +539,6 @@
 			diagnostics: "/api/we-wallpaper/diagnostics",
 		};
 		const WE_LAST_KEY = "tianlight.we.last";
-		const WE_RECENT_KEY = "tianlight.recent";
 		const WE_CACHE_TTL_MS = 15000;
 		const WE_FETCH_TIMEOUT_MS = 8000;
 		const WE_POLL_INTERVAL_MS = 900;
@@ -821,6 +820,8 @@
 			};
 		}
 		function weRememberUrl(url) {
+			// S4: one shared recent-usage list (the wallpaper panel owns the same key);
+			// the panel's writer is the authoritative implementation when installed.
 			if (typeof url !== "string" || url === "") return;
 			try {
 				if (typeof globalThis.rememberWallpaper === "function") {
@@ -828,17 +829,9 @@
 					return;
 				}
 			} catch {
-				// fall through to the shared recent-list write
+				// fall through to the closure-shared writer
 			}
-			try {
-				const key = WE_RECENT_KEY;
-				const raw = JSON.parse(globalThis.localStorage?.getItem(key) ?? "null");
-				const current = Array.isArray(raw) ? raw.filter((entry) => typeof entry === "string" && entry !== "") : [];
-				const next = [url, ...current.filter((entry) => entry !== url)].slice(0, 64);
-				globalThis.localStorage?.setItem(key, JSON.stringify(next));
-			} catch {
-				// usage order is a convenience, never a requirement
-			}
+			tl5RememberRecent(url);
 		}
 		function weStoreLast(id) {
 			try {
@@ -847,15 +840,6 @@
 				// persistence is optional
 			}
 		}
-		function weReadLast() {
-			try {
-				const value = globalThis.localStorage?.getItem(WE_LAST_KEY);
-				return typeof value === "string" ? value : "";
-			} catch {
-				return "";
-			}
-		}
-
 		/* ================= 数据流：list / apply / scene generate ================= */
 		function weRefreshList(force) {
 			if (weListRequest !== null) return weListRequest;
@@ -1418,25 +1402,6 @@
 		}
 
 		/* ================= 控制器（面板/诊断可读；两个入口共用） ================= */
-		const weLibraryController = {
-			endpoints: () => ({ ...WE_ENDPOINTS }),
-			read: () => weSnapshot(),
-			state: () => weSnapshot(),
-			refresh: (force) => weRefreshList(force === true),
-			applyById: (id) => {
-				const item = weFindItem(typeof id === "string" ? id : "");
-				return item === null ? false : weApplyItem(item);
-			},
-			generate: (id) => weGenerateScene(typeof id === "string" ? id : ""),
-			open: () => {
-				if (typeof weOpenOverlay === "function") {
-					weOpenOverlay();
-					return true;
-				}
-				return false;
-			},
-			subscribe: (listener) => weSubscribe(listener),
-		};
 
 		/* ================= installWeLibrary(ctx) ================= */
 		/**
@@ -1449,6 +1414,9 @@
 			let overlayHost = null;
 			let overlayRoot = null;
 			let overlayOpen = false;
+			// R5: while the WE library overlay is open it is a modal layer on the shared
+			// stack; Esc closes the TOP layer (this one), then the wallpaper panel below.
+			let overlayDisposer = null;
 			let disposeSlots = () => {};
 
 			const ensureOverlayHost = () => {
@@ -1481,6 +1449,14 @@
 					}
 				}
 				if (overlayHost !== null) overlayHost.hidden = true;
+				if (overlayDisposer !== null) {
+					try {
+						overlayDisposer();
+					} catch {
+						// the stack is already torn down
+					}
+					overlayDisposer = null;
+				}
 			};
 			const openOverlay = () => {
 				if (disposed) return false;
@@ -1501,18 +1477,19 @@
 				}
 				// Opening the library is the only moment it needs fresh data.
 				void weRefreshList(false);
+				if (overlayDisposer === null) {
+					overlayDisposer = tl5OverlayRegister({
+						id: "we-library-overlay",
+						modal: true,
+						root: () => host,
+						onEscape: () => closeOverlay(),
+					});
+				}
 				tl5Diag("engine", { weLibraryOverlay: "open" });
 				return true;
 			};
 			weOpenOverlay = openOverlay;
 
-			const onKeyDown = (event) => {
-				if (overlayOpen === false) return;
-				const key = event !== null && event !== undefined ? event.key : "";
-				if (key !== "Escape" && key !== "Esc") return;
-				if (typeof event.preventDefault === "function") event.preventDefault();
-				closeOverlay();
-			};
 			/**
 			 * Panel/library entry event. Mark the event handled only when the overlay
 			 * really opened: the panel then shows its success note instead of the
@@ -1523,7 +1500,6 @@
 				if (opened === true && event !== null && event !== undefined && typeof event.preventDefault === "function") event.preventDefault();
 				return opened;
 			};
-			window.addEventListener("keydown", onKeyDown);
 			window.addEventListener("tianlight:open-wallpaper-library", onOpenRequest);
 
 			/*
@@ -1679,7 +1655,6 @@
 				if (disposed) return;
 				disposed = true;
 				if (weOpenOverlay === openOverlay) weOpenOverlay = null;
-				window.removeEventListener("keydown", onKeyDown);
 				window.removeEventListener("tianlight:open-wallpaper-library", onOpenRequest);
 				closeOverlay();
 				if (overlayRoot !== null) {

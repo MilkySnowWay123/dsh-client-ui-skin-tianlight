@@ -41,13 +41,15 @@
 				"lib.shareLong": "链接较长（含着色器源码），部分聊天工具可能截断。",
 				"lib.shareBuildFail": "生成分享链接失败：{reason}",
 				"lib.bundleTitle": "导入 / 导出包",
-				"lib.bundleHint": "包内含设置、配方与上传的壁纸；导出由宿主直接流式打包，不经过浏览器内存。",
+				"lib.bundleHint": "包内含设置、配方和你上传的壁纸（assets/uploads，含 svg/avif，导入端同样支持；svg 必须是静态图片，不能含脚本/外链）。随插件发布的内置演示素材不重复打包（包更小），导入时也会跳过旧包里的内置素材；导出由宿主直接流式打包，不经过浏览器内存。",
 				"lib.bundleExport": "导出包",
 				"lib.bundleExportBusy": "准备下载…",
 				"lib.bundleExportStarted": "已开始下载。若浏览器提示 404，说明宿主半还是旧版本，重启 DSH 后重试。",
 				"lib.bundleExportFail": "导出失败：{reason}",
 				"lib.bundleImport": "导入包",
 				"lib.bundleImporting": "导入中…",
+				"lib.bundleImportConfirmNote": "导入会合并包里的设置、配方与壁纸，可能覆盖当前配置；再次点击「确认导入」选择文件。",
+				"lib.bundleImportConfirmAction": "确认导入…",
 				"lib.bundleImportDone": "导入完成：新增 {imported} 个，跳过 {skipped} 个",
 				"lib.bundleImportSettings": "设置已写入宿主，刷新页面后统一生效",
 				"lib.bundleImportFail": "导入失败：{reason}",
@@ -405,13 +407,15 @@
 				"lib.shareLong": "The link is long (it embeds shader source); some chat tools may truncate it.",
 				"lib.shareBuildFail": "Could not build the share link: {reason}",
 				"lib.bundleTitle": "Bundle import / export",
-				"lib.bundleHint": "The bundle holds settings, recipes and uploaded wallpapers; the host streams the export without buffering it in the page.",
+				"lib.bundleHint": "The bundle holds settings, recipes and the wallpapers YOU uploaded (assets/uploads, including svg/avif — the importer accepts them too; SVG must be a passive image with no scripts or external references). Demo media shipped with the plugin is not re-packaged (smaller bundles) and is skipped when importing older bundles; the host streams the export without buffering it in the page.",
 				"lib.bundleExport": "Export bundle",
 				"lib.bundleExportBusy": "Preparing download…",
 				"lib.bundleExportStarted": "Download started. A 404 means the host half is still the old build — restart DSH and retry.",
 				"lib.bundleExportFail": "Export failed: {reason}",
 				"lib.bundleImport": "Import bundle",
 				"lib.bundleImporting": "Importing…",
+				"lib.bundleImportConfirmNote": "Importing merges the bundle's settings, recipes and wallpapers and may overwrite the current config; click “Confirm import” again to pick the file.",
+				"lib.bundleImportConfirmAction": "Confirm import…",
 				"lib.bundleImportDone": "Import finished: {imported} added, {skipped} skipped",
 				"lib.bundleImportSettings": "Settings were saved on the host; reload the page to apply them",
 				"lib.bundleImportFail": "Import failed: {reason}",
@@ -1019,18 +1023,15 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 }
 `);
 
-		/** v0.5.0 面板「最近使用」顺序：只记录用户主动选中的壁纸，供排序使用。 */
-		const PANEL_RECENT_KEY = "tianlight.recent";
+		/**
+		 * v0.5.0 面板「最近使用」顺序：只记录用户主动选中的壁纸，供排序使用。
+		 * S4: the list itself is shared with the WE library (11-platform tl5ReadRecent /
+		 * tl5RememberRecent) so two writers cannot overwrite each other's semantics.
+		 */
 		/** v0.5.2: one silent list retry before the panel reports a failure (~1.2s). */
 		const PANEL_LIST_RETRY_MS = 1200;
 		function readPanelRecent() {
-			try {
-				const raw = JSON.parse(globalThis.localStorage?.getItem(PANEL_RECENT_KEY) ?? "null");
-				if (!Array.isArray(raw)) return [];
-				return [...new Set(raw.filter((url) => typeof url === "string" && url !== ""))].slice(0, 64);
-			} catch {
-				return [];
-			}
+			return tl5ReadRecent();
 		}
 
 		/**
@@ -1277,15 +1278,9 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 				const [recentUrls, setRecentUrls] = React.useState(() => readPanelRecent());
 				const rememberWallpaper = (url) => {
 					if (typeof url !== "string" || url === "") return;
-					setRecentUrls((current) => {
-						const next = [url, ...current.filter((entry) => entry !== url)].slice(0, 64);
-						try {
-							globalThis.localStorage?.setItem(PANEL_RECENT_KEY, JSON.stringify(next));
-						} catch {
-							// usage order is a convenience, never a requirement
-						}
-						return next;
-					});
+					// S4: one shared recent-list implementation (also used by the WE library);
+					// the panel mirrors the returned order into React state.
+					setRecentUrls(tl5RememberRecent(url));
 				};
 				// Optional engine availability, fetched once: the WE tab tells the truth
 				// about scene support instead of rendering a dead card.
@@ -1293,22 +1288,29 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 				const [engineProbe, setEngineProbe] = React.useState(0);
 				React.useEffect(() => {
 					let alive = true;
-					// The build query is a host/client handshake: a host started from an older
-					// plugin build answers `stale: true`, which the panel surfaces as a
-					// "restart DSH" hint instead of a bare network error on upload.
-					void fetch(ASSET_BASE + "/_engines?build=" + encodeURIComponent(HOST_BUILD), { cache: "no-store" })
+					// The api query is the host/client route-contract handshake: a host that
+					// speaks a different contract answers `stale: true`, which the panel
+					// surfaces as a "restart DSH" hint instead of a bare network error. The
+					// host build number is diagnostics only, so a browser-half update no
+					// longer demands a restart.
+					void fetch(ASSET_BASE + "/_engines?api=" + encodeURIComponent(HOST_API), { cache: "no-store" })
 						.then((response) => (response.ok ? response.json() : null))
 						.then((value) => {
-							if (alive) setEngine(value ?? { webwallgl: false, adapter: false, sceneProjects: 0, stale: true });
+							rememberHostIdentity(value);
+							if (alive) setEngine(value ?? { webwallgl: false, adapter: false, sceneProjects: 0, unreachable: true });
 						})
 						.catch(() => {
-							if (alive) setEngine({ webwallgl: false, adapter: false, sceneProjects: 0, stale: true });
+							// A failed request is NOT "host too old": the host may be healthy and
+							// the network (or a reload) transiently broken. Track it separately so
+							// the panel never tells the user to restart DSH for a network blip.
+							if (alive) setEngine({ webwallgl: false, adapter: false, sceneProjects: 0, unreachable: true });
 						});
 					return () => {
 						alive = false;
 					};
 				}, [engineProbe]);
 				const hostStale = engine !== null && engine.stale === true;
+				const hostUnreachable = engine !== null && engine.unreachable === true;
 				// ---- ShaderToy-style GLSL editor ----
 				const [shader, setShader] = React.useState(() => shaderController.read());
 				const [shaderStatus, setShaderStatus] = React.useState("");
@@ -1928,6 +1930,9 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 				const [importBusy, setImportBusy] = React.useState(false);
 				const [importPct, setImportPct] = React.useState(0);
 				const [importNote, setImportNote] = React.useState("");
+				// R5: importing merges settings/recipes/wallpapers (destructive), so the
+				// label arms first and the file picker only opens on the second click.
+				const [importArmed, setImportArmed] = React.useState(false);
 				const hostCapabilities =
 					engine !== null && typeof engine.capabilities === "object" && engine.capabilities !== null
 						? engine.capabilities
@@ -1956,9 +1961,11 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 					setBundleNote(t("lib.bundleExportBusy"));
 					try {
 						// The host streams the tar.gz straight to the browser: a plain anchor
-						// download never buffers the archive in page memory.
+						// download never buffers the archive in page memory. The query that
+						// used to carry the client build marker is gone: the host ignores
+						// `_bundle` search parameters and the route contract is the handshake.
 						const link = document.createElement("a");
-						link.href = ASSET_BASE + "/_bundle?build=" + encodeURIComponent(HOST_BUILD);
+						link.href = ASSET_BASE + "/_bundle";
 						link.download = "tianlight-bundle-" + new Date().toISOString().slice(0, 10) + ".tgz";
 						link.rel = "noopener";
 						document.body.appendChild(link);
@@ -1975,6 +1982,7 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 					const file = input.files !== null && input.files.length > 0 ? input.files[0] : null;
 					// Clear immediately so picking the same file twice still fires onChange.
 					input.value = "";
+					setImportArmed(false);
 					if (file === null || importBusy) return;
 					if (/\.(tgz|tar\.gz)$/i.test(file.name) === false && /gzip/.test(file.type) === false) {
 						setImportNote(t("lib.bundleImportType"));
@@ -2085,9 +2093,8 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 					// ordinary image CDN links fail).
 					const clean = url.split(/[?#]/)[0];
 					let kind = draftKind === "image" ? "image" : draftKind === "video" ? "video" : null;
-					if (kind === null && /\.(png|jpe?g|webp|avif|gif|svg)$/i.test(clean)) kind = "image";
-					else if (kind === null && /\.(mp4|webm|mov|m4v)$/i.test(clean)) kind = "video";
-					else if (kind === null) kind = await probeUrlKind(url);
+					if (kind === null) kind = tl5MediaKindFromName(clean);
+					if (kind === null) kind = await probeUrlKind(url);
 					if (kind === null) {
 						setDraftBusy(false);
 						setDraftNote(t("lib.url.notMedia"));
@@ -2277,16 +2284,22 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 						setUploadNote(t("lib.upload.hostStale"));
 						return;
 					}
+					if (hostUnreachable) {
+						setUploadNote(t("lib.engine.unreachable"));
+						return;
+					}
 					if (engine !== null && engine.upload !== undefined && engine.upload.writable === false) {
 						setUploadNote(t("lib.upload.notWritable"));
 						return;
 					}
-					if (file.size > uploadLimit) {
-						setUploadNote(t("lib.upload.tooBigPrefix") + uploadLimitMb + t("lib.upload.tooBigSuffix"));
-						return;
-					}
-					if (/\.(mp4|m4v|mov|webm|png|jpe?g|webp|avif|gif|svg)$/i.test(file.name) === false) {
-						setUploadNote(t("lib.upload.types"));
+					// S4: shared upload pre-flight (same format set/limits as the role hub).
+					const uploadVerdict = tl5ValidateUploadFile(file, uploadLimit);
+					if (uploadVerdict.ok !== true) {
+						if (uploadVerdict.code === "too-big") {
+							setUploadNote(t("lib.upload.tooBigPrefix") + uploadLimitMb + t("lib.upload.tooBigSuffix"));
+						} else {
+							setUploadNote(t("lib.upload.types"));
+						}
 						return;
 					}
 					setUploadBusy(true);
@@ -3161,9 +3174,13 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 								React.createElement(
 									"span",
 									{ className: "tl-wall-hint" },
-									hostStale ? t("lib.upload.hostStaleShort") : "≤" + uploadLimitMb + t("lib.upload.limitSuffix"),
+									hostStale
+										? t("lib.upload.hostStaleShort")
+											: hostUnreachable
+												? t("lib.engine.unreachableShort")
+												: "≤" + uploadLimitMb + t("lib.upload.limitSuffix"),
 								),
-								hostStale
+								hostStale || hostUnreachable
 									? React.createElement(
 											"button",
 											{
@@ -4505,8 +4522,28 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 											importSupported
 												? React.createElement(
 														"label",
-														{ className: "tl-wall-upload", "data-busy": importBusy ? "" : undefined, title: t("lib.bundleImport") },
-														importBusy ? t("lib.bundleImporting") : t("lib.bundleImport"),
+														{
+															className: "tl-wall-upload",
+															"data-busy": importBusy ? "" : undefined,
+															"data-tl-import-armed": importArmed ? "true" : undefined,
+															title: importArmed ? t("lib.bundleImportConfirmNote") : t("lib.bundleImport"),
+															onClick: (event) => {
+																if (importArmed === true) {
+																	setImportArmed(false);
+																	return;
+																}
+																// First click only arms the destructive import; the picker
+																// opens on the second click.
+																event.preventDefault();
+																setImportArmed(true);
+																setImportNote(t("lib.bundleImportConfirmNote"));
+															},
+														},
+														importBusy
+															? t("lib.bundleImporting")
+															: importArmed
+																? t("lib.bundleImportConfirmAction")
+																: t("lib.bundleImport"),
 														React.createElement("input", {
 															type: "file",
 															accept: ".tgz,.tar.gz,application/gzip,application/x-gzip",
@@ -4608,6 +4645,9 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 			let root = null;
 			let open = false;
 			let tintTimer = 0;
+			// R5: one entry in the shared overlay stack while the panel is open, so Esc
+			// closes the top layer and the modal Tab trap belongs to the stack.
+			let overlayDisposer = null;
 			// v0.5.0 D3: a validated #tl= recipe waiting for the user's explicit decision.
 			// Read once at install (page load with a shared link) and re-read on each open
 			// by the panel; a decision clears both this and the hash.
@@ -4618,82 +4658,23 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 			// were touched.
 			const shareRejectedAtLoad = hashAtInstall.startsWith("#tl=") && pendingShare === null;
 
-			// ---- background tinted by the wallpaper's own hue ----
-			const swatch = document.createElement("canvas");
-			swatch.width = 32;
-			swatch.height = 18;
-			let swatchCtx = null;
-			try {
-				swatchCtx = swatch.getContext("2d", { willReadFrequently: true });
-			} catch {
-				swatchCtx = null;
-			}
+			// ---- background tinted by the wallpaper's own hue (shared sampler, S4) ----
 			const tintPanel = () => {
-				if (swatchCtx === null) return;
-				const still = wallpaperController === null ? null : wallpaperController.image;
-				const video = document.querySelector("[data-tl-scene] > video");
-				// The shader snapshot is a 2D canvas copied in the render task, so it stays
-				// readable even though the WebGL buffer is not preserved.
-				const shader = wallpaperController === null ? null : wallpaperController.shaderSwatch;
-				const target =
-					shader !== null && shader !== undefined
-						? shader
-						: still !== null && still !== undefined
-							? still
-							: video;
-				if (target === null || target === undefined) return;
-				if (target === video && video.readyState < 2) return;
-				let data = null;
-				try {
-					swatchCtx.drawImage(target, 0, 0, swatch.width, swatch.height);
-					data = swatchCtx.getImageData(0, 0, swatch.width, swatch.height).data;
-				} catch {
-					return;
-				}
-				let sin = 0;
-				let cos = 0;
-				let satSum = 0;
-				let lightSum = 0;
-				let weight = 0;
-				for (let i = 0; i + 3 < data.length; i += 4) {
-					const r = data[i] / 255;
-					const g = data[i + 1] / 255;
-					const b = data[i + 2] / 255;
-					const max = Math.max(r, g, b);
-					const min = Math.min(r, g, b);
-					const delta = max - min;
-					const light = (max + min) / 2;
-					if (delta < 0.05 || light < 0.08 || light > 0.95) continue;
-					const sat = light > 0.5 ? delta / (2 - max - min) : delta / (max + min);
-					let hue;
-					if (max === r) hue = ((g - b) / delta + (g < b ? 6 : 0)) * 60;
-					else if (max === g) hue = ((b - r) / delta + 2) * 60;
-					else hue = ((r - g) / delta + 4) * 60;
-					const rad = (hue * Math.PI) / 180;
-					const w = sat * (1 - Math.abs(light - 0.55) * 1.2);
-					sin += Math.sin(rad) * w;
-					cos += Math.cos(rad) * w;
-					satSum += sat * w;
-					lightSum += light * w;
-					weight += w;
-				}
-				if (weight <= 0.001) return;
-				const hue = Math.round((((Math.atan2(sin, cos) * 180) / Math.PI) + 360) % 360);
-				const sat = Math.min(0.70, Math.max(0.32, (satSum / weight) * 1.3));
-				const light = lightSum / weight;
+				const palette = tl5SampleWallpaperPalette();
+				if (palette === null) return;
 				const dark = document.body !== null && document.body.hasAttribute(DARK_ATTR);
 				// Deliberately saturated: at 12-20% saturation on a 94%-light surface the
 				// panel looked untinted, which is the bug this replaced.
 				const fillLight = dark ? 0.15 : 0.90;
-				const fillSat = Math.round(Math.min(0.52, Math.max(0.18, sat)) * 100);
-				const fill = "hsl(" + hue + " " + fillSat + "% " + Math.round(fillLight * 100) + "% / max(0.96, calc(0.94 * var(--tl-glass-m, 1))))";
+				const fillSat = Math.round(Math.min(0.52, Math.max(0.18, palette.sat)) * 100);
+				const fill = "hsl(" + palette.hue + " " + fillSat + "% " + Math.round(fillLight * 100) + "% / max(0.96, calc(0.94 * var(--tl-glass-m, 1))))";
 				host.style.setProperty("--tl-panel-fill", fill);
 				// The edge handle carries the same tint, so the wallpaper colour is visible
 				// even with the panel closed.
 				handle.style.setProperty("--tl-panel-fill", fill);
 				host.style.setProperty(
 					"--tl-accent",
-					"hsl(" + hue + " " + Math.round(sat * 100) + "% " + Math.round((dark ? 0.66 : 0.44) * 100) + "%)",
+					"hsl(" + palette.hue + " " + Math.round(palette.sat * 100) + "% " + Math.round((dark ? 0.66 : 0.44) * 100) + "%)",
 				);
 			};
 			const startTint = () => {
@@ -4904,7 +4885,29 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 					// a failing render must not keep the panel in a half-open state
 				}
 			};
+			/**
+			 * Closing unmounts the panel's React tree instead of only hiding the host.
+			 * A hidden tree keeps every partition mounted: the panel's 1.8s media/fps
+			 * observer, the audio section's 100ms beat timer, the engine section's 2s
+			 * poll, the context section's 2s readout interval and the engineering
+			 * section's settings/metrics subscriptions all kept running behind a closed
+			 * panel (the reported "the skin still uses CPU after closing it").
+			 * `root.render(null)` runs every effect cleanup and leaves the root reusable;
+			 * the next open re-renders a fresh tree through the key above, and the
+			 * persistent state lives in controllers/localStorage (re-read on mount).
+			 */
+			const unmountPanel = () => {
+				if (root === null) return;
+				try {
+					root.render(null);
+				} catch {
+					// a failing unmount must not keep the panel in a half-open state
+				}
+			};
 			const setOpen = (next) => {
+				// R8b (REV-R5 F1): opening underneath a higher modal would be invisible yet
+				// steal the keyboard stack top; the open entry points no-op instead.
+				if (next === true && typeof tl5OverlayOpenAllowed === "function" && tl5OverlayOpenAllowed("wallpaper-panel") === false) return;
 				open = next;
 				if (open) {
 					host.setAttribute("data-tl-open", "");
@@ -4915,32 +4918,37 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 					// Re-clamp against the current viewport before showing.
 					applyX(Math.min(offset, maxOffset()));
 					renderPanel();
+					if (overlayDisposer === null) {
+						overlayDisposer = tl5OverlayRegister({
+							id: "wallpaper-panel",
+							modal: true,
+							root: () => host,
+							onEscape: () => setOpen(false),
+						});
+					}
 				} else {
 					host.removeAttribute("data-tl-open");
 					scrim.removeAttribute("data-tl-open");
 					handle.removeAttribute("data-tl-hidden");
 					stopTint();
 					audioController.stop(TL_T("lib.audio.stoppedOnClose"));
+					// Stop every partition timer/subscription: unmount, do not hide.
+					unmountPanel();
+					if (overlayDisposer !== null) {
+						try {
+							overlayDisposer();
+						} catch {
+							// the stack is already torn down
+						}
+						overlayDisposer = null;
+					}
 				}
 			};
 			const onScrim = () => setOpen(false);
 			const onHandle = () => setOpen(!open);
-			// The edge tab can be covered by the DSH sidebar / Windows taskbar.
-			// A keyboard route must exist independently of that tab's position.
-			const onKey = (event) => {
-				if (event.altKey && event.ctrlKey === false && event.metaKey === false && (event.key === "w" || event.key === "W")) {
-					event.preventDefault();
-					setOpen(!open);
-					return;
-				}
-				// Esc is the standard way out of a panel. Only claimed while the panel is open,
-				// so dialogs and menus elsewhere keep their own Esc behaviour.
-				if (event.key === "Escape" && open) {
-					event.preventDefault();
-					event.stopPropagation();
-					setOpen(false);
-				}
-			};
+			// Alt+W is registered in the TL5_SHORTCUTS registry (95-a11y), which ignores
+			// key auto-repeat and editable targets; Esc is owned by the overlay stack.
+			// This fragment only keeps the viewport re-clamp below.
 			// A cached offset goes stale when the viewport shrinks: a panel pinned to the
 			// right edge would sit outside the window until the next drag.
 			const onResize = () => {
@@ -4950,14 +4958,20 @@ body[data-dsh-tianlight] [data-tl-wall] .tl-wall-badge-hint {
 			};
 			scrim.addEventListener("click", onScrim);
 			handle.addEventListener("click", onHandle);
-			window.addEventListener("keydown", onKey, true);
 			window.addEventListener("resize", onResize);
 			applyX(0);
 
 			return () => {
+				if (overlayDisposer !== null) {
+					try {
+						overlayDisposer();
+					} catch {
+						// the stack is already torn down
+					}
+					overlayDisposer = null;
+				}
 				scrim.removeEventListener("click", onScrim);
 				handle.removeEventListener("click", onHandle);
-				window.removeEventListener("keydown", onKey, true);
 				window.removeEventListener("resize", onResize);
 				document.removeEventListener("pointerdown", onDragStart, true);
 				document.removeEventListener("pointermove", onDragMove, true);

@@ -591,6 +591,20 @@
 				return normalizePlayback(null);
 			}
 		}
+		/** R6 D: does this engine compose the independent `scale` property with transform? */
+		let individualScaleSupported = null;
+		function supportsIndividualScale() {
+			if (individualScaleSupported !== null) return individualScaleSupported;
+			try {
+				individualScaleSupported =
+					typeof globalThis.CSS !== "undefined" &&
+					typeof globalThis.CSS.supports === "function" &&
+					globalThis.CSS.supports("scale", "-1 1") === true;
+			} catch {
+				individualScaleSupported = false;
+			}
+			return individualScaleSupported;
+		}
 		function applyPlayback(scene, value) {
 			const video = scene === null || scene === undefined ? null : scene.querySelector("video");
 			if (video !== null) {
@@ -599,8 +613,21 @@
 				} catch {
 					// some browsers refuse rate changes before metadata; retry on play
 				}
-				if (value.flip) video.style.transform = "scaleX(-1) translateZ(0)";
-				else video.style.removeProperty("transform");
+				// R6 D: mirroring must not live in `transform` any more: slide/zoom
+				// transition keyframes also animate transform and used to override the
+				// flip for the whole transition. The independent `scale` property (via a
+				// CSS variable) composes with the animated transform instead.
+				if (supportsIndividualScale()) {
+					if (value.flip) scene.style.setProperty("--tl-flip", "-1 1");
+					else scene.style.setProperty("--tl-flip", "1 1");
+					video.style.removeProperty("transform");
+				} else if (value.flip) {
+					// Legacy engine without individual transforms: keep the old inline flip;
+					// only such engines lose the mirror during a transition.
+					video.style.transform = "scaleX(-1) translateZ(0)";
+				} else {
+					video.style.removeProperty("transform");
+				}
 			}
 			if (scene === null || scene === undefined) return;
 			const filter = value.filter;
@@ -1269,6 +1296,53 @@
 			const message = error !== null && error !== undefined && error.message ? String(error.message) : TL_T("audio.unknownError");
 			return { code: "failed", reason: TL_T(system ? "audio.failedSystem" : "audio.failedMic", { reason: message }) };
 		}
+
+		/**
+		 * S4: shared tail for both capture sources: build the analyser graph, honour a
+		 * cancelled start token and publish the active state. Only the acquisition
+		 * method, fft settings and failure copy differ between mic and system audio.
+		 */
+		async function attachAudioGraph(Context, stream, token, options) {
+			let context = null;
+			try {
+				context = new Context();
+				const source = context.createMediaStreamSource(stream);
+				const analyser = context.createAnalyser();
+				analyser.fftSize = options.fftSize;
+				analyser.smoothingTimeConstant = options.smoothing;
+				source.connect(analyser);
+				await context.resume();
+				if (token !== audioToken) {
+					try {
+						void context.close();
+					} catch {
+						// closing is best effort
+					}
+					return { cancelled: true };
+				}
+				audioStream = stream;
+				audioContext = context;
+				audioSource = source;
+				audioAnalyser = analyser;
+				audioData = new Uint8Array(analyser.fftSize);
+				audioActive = true;
+				audioBusy = false;
+				audioMode = options.mode;
+				audioFailure = "";
+				audioReason = "";
+				audioLevel = 0;
+				bindAudioVisibility();
+				notifyAudio();
+				return { ok: true, mode: options.mode };
+			} catch (error) {
+				try {
+					void context?.close();
+				} catch {
+					// closing is best effort
+				}
+				return { error };
+			}
+		}
 		async function startAudio() {
 			if (audioActive) return { ok: true };
 			if (audioBusy) return { ok: false, reason: TL_T("audio.micBusy") };
@@ -1293,7 +1367,6 @@
 			audioReason = "";
 			notifyAudio();
 			let stream = null;
-			let context = null;
 			try {
 				stream = await media.getUserMedia({ audio: true });
 				if (token !== audioToken) {
@@ -1306,41 +1379,12 @@
 					}
 					return { ok: false, reason: TL_T("audio.cancelled") };
 				}
-				context = new Context();
-				const source = context.createMediaStreamSource(stream);
-				const analyser = context.createAnalyser();
-				analyser.fftSize = 1024;
-				analyser.smoothingTimeConstant = 0.75;
-				source.connect(analyser);
-				await context.resume();
-				if (token !== audioToken) {
-					for (const track of stream.getTracks()) {
-						try {
-							track.stop();
-						} catch {
-							// cancelled start must release the mic
-						}
-					}
-					try {
-						void context.close();
-					} catch {
-						// closing is best effort
-					}
+				const attached = await attachAudioGraph(Context, stream, token, { fftSize: 1024, smoothing: 0.75, mode: "mic" });
+				if (attached.cancelled === true) {
+					releaseMediaStream(stream);
 					return { ok: false, reason: TL_T("audio.cancelled") };
 				}
-				audioStream = stream;
-				audioContext = context;
-				audioSource = source;
-				audioAnalyser = analyser;
-				audioData = new Uint8Array(analyser.fftSize);
-				audioActive = true;
-				audioBusy = false;
-				audioMode = "mic";
-				audioFailure = "";
-				audioReason = "";
-				audioLevel = 0;
-				bindAudioVisibility();
-				notifyAudio();
+				if (attached.error !== undefined) throw attached.error;
 				return { ok: true, mode: "mic" };
 			} catch (error) {
 				for (const track of stream?.getTracks() ?? []) {
@@ -1349,11 +1393,6 @@
 					} catch {
 						// a failed start must release the mic
 					}
-				}
-				try {
-					void context?.close();
-				} catch {
-					// closing is best effort
 				}
 				releaseAudio();
 				if (token === audioToken) {
@@ -1434,7 +1473,6 @@
 			audioFailure = "";
 			notifyAudio();
 			let stream = null;
-			let context = null;
 			try {
 				stream = await globalThis.navigator.mediaDevices.getDisplayMedia({ audio: true, video: true });
 				if (token !== audioToken) {
@@ -1467,44 +1505,16 @@
 					notifyAudio();
 					return { ok: false, code: "no-device", reason: audioReason };
 				}
-				context = new Context();
-				const source = context.createMediaStreamSource(stream);
-				const analyser = context.createAnalyser();
-				analyser.fftSize = 2048;
-				analyser.smoothingTimeConstant = 0.8;
-				source.connect(analyser);
-				await context.resume();
-				if (token !== audioToken) {
+				const attached = await attachAudioGraph(Context, stream, token, { fftSize: 2048, smoothing: 0.8, mode: "system" });
+				if (attached.cancelled === true) {
 					releaseMediaStream(stream);
-					try {
-						void context.close();
-					} catch {
-						// closing is best effort
-					}
 					return { ok: false, code: "cancelled", reason: TL_T("audio.cancelled") };
 				}
-				audioStream = stream;
-				audioContext = context;
-				audioSource = source;
-				audioAnalyser = analyser;
-				audioData = new Uint8Array(analyser.fftSize);
-				audioActive = true;
-				audioBusy = false;
-				audioMode = "system";
-				audioFailure = "";
-				audioReason = "";
-				audioLevel = 0;
-				bindAudioVisibility();
-				notifyAudio();
+				if (attached.error !== undefined) throw attached.error;
 				note("audio:system-started", { tracks: audioTracks.length });
 				return { ok: true, mode: "system" };
 			} catch (error) {
 				releaseMediaStream(stream);
-				try {
-					void context?.close();
-				} catch {
-					// closing is best effort
-				}
 				releaseAudio();
 				if (token !== audioToken) return { ok: false, code: "cancelled", reason: TL_T("audio.cancelled") };
 				const failure = audioFailureOf(error, "system");
@@ -2057,6 +2067,11 @@
 		 */
 		const ADAPTIVE_LOW_FPS = 15;
 		const ADAPTIVE_HIGH_JITTER = 180;
+		/** R6 C: a video's own frame rate is content, not render headroom. Downgrade only
+		 * on dropped-frame/gap evidence; 0.5x playback and low-fps animations are fine. */
+		const ADAPTIVE_VIDEO_DROP_RATIO = 0.12;
+		const ADAPTIVE_VIDEO_DROP_MIN = 3;
+		const ADAPTIVE_VIDEO_GAP_MS = 320;
 		const ADAPTIVE_LOW_STREAK = 5;
 		const ADAPTIVE_LOW_SPAN_MS = 10000;
 		const ADAPTIVE_RECOVER_FPS = 28;
@@ -2065,6 +2080,9 @@
 		const ADAPTIVE_PROBE_MAX_SAMPLES = 15;
 		function adaptiveSampleIsLow(sample) {
 			if (sample === null || typeof sample !== "object") return false;
+			// R6 C: for video the probe already decides from dropped frames / gap evidence;
+			// presented fps alone (0.5x playback, a 12fps animation) is not a problem.
+			if (typeof sample.perfLow === "boolean") return sample.perfLow === true;
 			const fps = Number(sample.fps);
 			const jitter = Number(sample.jitter);
 			if (!Number.isFinite(fps)) return false;
@@ -2093,7 +2111,7 @@
 			const sample = source.sample !== null && typeof source.sample === "object" ? source.sample : null;
 			if (sample === null) return { action: "none" };
 			const low = adaptiveSampleIsLow(sample);
-			const healthy = Number(sample.fps) >= ADAPTIVE_RECOVER_FPS;
+			const healthy = typeof sample.perfLow === "boolean" ? sample.perfLow !== true : Number(sample.fps) >= ADAPTIVE_RECOVER_FPS;
 			const streak = Math.max(0, Math.round(Number(source.lowStreak) || 0));
 			const span = Math.max(0, now - (Number(source.lowSince) || 0));
 			const samples = Math.max(0, Math.round(Number(source.samples) || 0));
@@ -2556,6 +2574,10 @@
 			let shaderRenderer = null;
 			let shaderActive = false;
 			let currentChoice = null;
+			// R6 B: monotonically increasing origin token. Every async load callback checks
+			// it so a late success/failure from an older request cannot overwrite a newer
+			// selection (and a within-generation re-render still updates normally).
+			let sourceGeneration = 0;
 			let lastGoodChoice = null;
 			let shaderRaf = 0;
 			let shaderLast = 0;
@@ -2571,6 +2593,16 @@
 			let fpsFrames = 0;
 			let fpsLastFrame = 0;
 			let fpsMaxGap = 0;
+			// R6 C: playback-quality counters at the start of the current fps window; their
+			// deltas are the dropped-frame evidence used instead of raw presented fps.
+			let fpsQualityTotal = 0;
+			let fpsQualityDropped = 0;
+			// R8b (REV-R6 F1): quality counters are element-lifetime totals, so a new
+			// probe window snapshots them first and the FIRST window only establishes the
+			// baseline (no dropped-frame verdict) — otherwise accumulated history from a
+			// previous source/element state looked like a fresh burst of dropped frames.
+			let fpsQualityPrimed = false;
+			let fpsQualityWindows = 0;
 			let stillSeekHandler = null;
 			let stillMetaHandler = null;
 			// Playback ownership. A pause has an owner: the user (survives visibility),
@@ -2612,6 +2644,7 @@
 			let adaptiveLowSince = 0;
 			let adaptiveLastFps = 0;
 			let adaptiveLastJitter = 0;
+			let adaptiveLastPerfLow = false;
 			let adaptiveGateKey = "";
 			let shaderFrameTicks = 0;
 			let shaderWindowStart = 0;
@@ -2629,6 +2662,37 @@
 					video.removeEventListener("loadedmetadata", stillMetaHandler);
 					stillMetaHandler = null;
 				}
+			};
+			/**
+			 * R6 A: release the video decoder when the scene stops showing a video.
+			 * `hidden` alone keeps a 4K decoder and its buffered data alive. Clearing
+			 * `src` + `load()` frees them; the next video switch reassigns `src`, so
+			 * switching back still reloads normally. All samplers (58/60/70/90) also
+			 * skip a hidden/released video.
+			 */
+			const releaseVideo = () => {
+				// R8b (REV-R6 F3): drop the current source generation's handlers too.
+				unbindVideoEvents();
+				try {
+					video.pause();
+				} catch {
+					// a detached element cannot throw anything worth surfacing
+				}
+				video.hidden = true;
+				video.removeAttribute("data-tl-ready");
+				video.removeAttribute("data-tl-perf");
+				clearStillHandlers();
+				video.removeAttribute("src");
+				try {
+					video.load();
+				} catch {
+					// releasing a detached media element is best effort
+				}
+				stopFpsProbe();
+				scene.removeAttribute("data-tl-fps");
+				scene.removeAttribute("data-tl-jitter");
+				scene.removeAttribute("data-tl-perf");
+				publishSceneStatus({ fps: 0, jitter: 0 });
 			};
 			// A 32x18 2D copy made in the same task as the draw: the WebGL buffer is not
 			// preserved, so this is the only reliable source for the panel tint/sidebar.
@@ -2741,6 +2805,10 @@
 			let sceneFrameActive = false;
 			let sceneFrameTimer = 0;
 			let sceneFrameLastStats = 0;
+			// R8b (REV-R6 F2): one token per scene mount; the adapter echoes it and the
+			// parent rejects late messages from an older mount (about:blank reuse).
+			let sceneFrameToken = "";
+			let sceneFrameMountSeq = 0;
 			const postSceneFrame = (payload) => {
 				if (sceneFrameActive === false) return;
 				try {
@@ -2759,6 +2827,10 @@
 				sceneFrameActive = false;
 				clearSceneFrameTimer();
 				sceneFrameLastStats = 0;
+				// R8b (REV-R6 F2): invalidate the mount token before navigating away, so a
+				// message queued by the old document cannot match the about:blank frame.
+				sceneFrameToken = "";
+				if (sceneFrame.dataset !== undefined) delete sceneFrame.dataset.tlSceneToken;
 				sceneFrame.hidden = true;
 				scene.removeAttribute("data-tl-scene-fps");
 				scene.removeAttribute("data-tl-fps");
@@ -2771,6 +2843,7 @@
 			const failSceneFrame = (reason) => {
 				if (sceneFrameActive === false) return;
 				const failed = currentChoice;
+				const failGeneration = sourceGeneration;
 				stopSceneFrame();
 				report("error", "error", reason);
 				if (
@@ -2785,7 +2858,8 @@
 				// No known-good source: let the automatic chain pick a playable wallpaper
 				// instead of leaving the scene gradient behind a failure message.
 				void resolveAutoWallpaper().then((fallback) => {
-					if (fallback !== null && (failed === null || fallback.url !== failed.url)) applyWallpaper(fallback);
+					// R6 B: a slow automatic fallback must not replace a newer selection.
+					if (failGeneration === sourceGeneration && fallback !== null && (failed === null || fallback.url !== failed.url)) applyWallpaper(fallback);
 				});
 			};
 			const onSceneMessage = (event) => {
@@ -2793,6 +2867,8 @@
 				if (event.source !== sceneFrame.contentWindow) return;
 				const data = event.data;
 				if (data === null || typeof data !== "object" || data.__tlScene !== true) return;
+				// R8b (REV-R6 F2): only the current mount's token is accepted.
+				if (sceneFrameToken === "" || data.token !== sceneFrameToken) return;
 				if (data.type === "ready") {
 					clearSceneFrameTimer();
 					sceneFrameLastStats = performance.now();
@@ -2845,12 +2921,17 @@
 				const fps = effectiveShaderFps();
 				const paused = userPaused || hasLowPower() || document.hidden;
 				scene.setAttribute("data-tl-scene-fps", String(fps));
+				sceneFrameMountSeq += 1;
+				sceneFrameToken = "s" + String(sceneFrameMountSeq) + "-" + Date.now().toString(36);
+				sceneFrame.dataset.tlSceneToken = sceneFrameToken;
 				sceneFrame.src =
 					ASSET_BASE +
 					"/_scene-frame?project=" +
 					encodeURIComponent(choice.url) +
 					"&fps=" +
 					String(fps) +
+					"&token=" +
+					encodeURIComponent(sceneFrameToken) +
 					(paused ? "&paused=1" : "");
 			};
 
@@ -2900,6 +2981,15 @@
 				if (loadedSrc === "" || loadedSrc.startsWith("about:")) return;
 				clearWebTimer();
 				if (currentChoice === null || currentChoice.kind !== "web") return;
+				// R6 B: a late load from a previous web choice (about:blank / old project)
+				// must not mark the new one ready. Compare against the expected absolute URL.
+				let expectedSrc = "";
+				try {
+					expectedSrc = new URL(webWallpaperSrc(currentChoice.url), globalThis.location?.href ?? "http://localhost/").href;
+				} catch {
+					expectedSrc = "";
+				}
+				if (expectedSrc === "" || loadedSrc !== expectedSrc) return;
 				lastGoodChoice = currentChoice;
 				webParked = false;
 				scene.dataset.tlWidth = String(Math.round(globalThis.innerWidth || 0));
@@ -2920,6 +3010,7 @@
 			const failWebWallpaper = (reason) => {
 				if (webActive === false && webParked === false) return;
 				const failed = currentChoice;
+				const failGeneration = sourceGeneration;
 				stopWebWallpaper();
 				report("error", "error", reason);
 				if (
@@ -2934,7 +3025,8 @@
 				// No known-good source: the automatic chain must replace the failure, never a
 				// blank scene gradient behind an error message.
 				void resolveAutoWallpaper().then((fallback) => {
-					if (fallback !== null && (failed === null || fallback.url !== failed.url)) applyWallpaper(fallback);
+					// R6 B: don't let a slow fallback overtake a newer user selection.
+					if (failGeneration === sourceGeneration && fallback !== null && (failed === null || fallback.url !== failed.url)) applyWallpaper(fallback);
 				});
 			};
 			const mountWebWallpaper = (choice) => {
@@ -2969,10 +3061,11 @@
 						// Only a definitive "route/file missing" fails here; a host that
 						// answers HEAD with 405 must still get its chance via the iframe load.
 						if (response.status !== 404 && response.status !== 410 && response.status !== 501) return;
-						if (currentChoice !== null && currentChoice.url === choice.url) failWebWallpaper("web-http-" + response.status);
+						// R6 B: a late HEAD reply for an older web choice must not fail a newer one.
+						if (currentChoice === choice) failWebWallpaper("web-http-" + response.status);
 					})
 					.catch(() => {
-						if (currentChoice !== null && currentChoice.url === choice.url) failWebWallpaper("web-http");
+						if (currentChoice === choice) failWebWallpaper("web-http");
 					});
 				webTimer = window.setTimeout(() => failWebWallpaper("web-timeout"), 20000);
 				try {
@@ -3232,7 +3325,7 @@
 			 * v0.5.3: every park resets the probe clock, so a failed probe re-parks and then
 			 * waits the full 5 minute cooldown instead of chaining downgrades.
 			 */
-			function downgradeVideoToStatic(fps, jitter, why) {
+			function downgradeVideoToStatic(fps, jitter, why, perfLow) {
 				const wasStill = adaptiveStill;
 				adaptiveStill = true;
 				adaptiveStillAt = performance.now();
@@ -3241,7 +3334,12 @@
 				adaptiveLowSince = 0;
 				adaptiveHigh = 0;
 				adaptiveSamples = 0;
-				const reason = TL_T("engine.adaptive.staticReason", { fps: Math.round(fps) });
+				// R6 C: a dropped-frame downgrade must not claim "low fps" (the source may
+				// legitimately be 12fps); the reason names the real evidence instead.
+				const reason =
+					perfLow === true
+						? TL_T("engine.adaptive.perfReason")
+						: TL_T("engine.adaptive.staticReason", { fps: Math.round(fps) });
 				try {
 					video.pause();
 				} catch {
@@ -3280,7 +3378,9 @@
 				if (currentChoice !== null && currentChoice.kind === "video" && video.paused === false) {
 					const fps = Number(scene.dataset.tlFps) || 0;
 					const jitter = Number(scene.dataset.tlJitter) || 0;
-					return fps > 0 ? { fps, jitter } : null;
+					// R6 C: the probe's dropped-frame verdict travels with the sample; the
+					// sampler must not treat a low source frame rate as a slow renderer.
+					return fps > 0 ? { fps, jitter, perfLow: scene.dataset.tlPerf === "low" } : null;
 				}
 				return null;
 			}
@@ -3336,6 +3436,7 @@
 				if (sample !== null) {
 					adaptiveLastFps = Number(sample.fps) || 0;
 					adaptiveLastJitter = Number(sample.jitter) || 0;
+					adaptiveLastPerfLow = typeof sample.perfLow === "boolean" ? sample.perfLow : false;
 					adaptiveSamples += 1;
 					if (adaptiveSampleIsLow(sample)) {
 						if (adaptiveLow === 0) adaptiveLowSince = now;
@@ -3344,7 +3445,9 @@
 						adaptiveLow = 0;
 						adaptiveLowSince = 0;
 					}
-					adaptiveHigh = Number(sample.fps) >= ADAPTIVE_RECOVER_FPS ? adaptiveHigh + 1 : 0;
+					const sampleHealthy =
+						typeof sample.perfLow === "boolean" ? sample.perfLow !== true : Number(sample.fps) >= ADAPTIVE_RECOVER_FPS;
+					adaptiveHigh = sampleHealthy ? adaptiveHigh + 1 : 0;
 				}
 				const decision = adaptiveDecision({
 					eligible: gate.eligible,
@@ -3376,7 +3479,7 @@
 				}
 				if (decision.action === "probe-fail") {
 					// Re-park; downgradeVideoToStatic resets stillAt => full new cooldown.
-					downgradeVideoToStatic(adaptiveLastFps, adaptiveLastJitter, "probe-failed");
+					downgradeVideoToStatic(adaptiveLastFps, adaptiveLastJitter, "probe-failed", adaptiveLastPerfLow);
 					return;
 				}
 				if (decision.action === "recover") {
@@ -3385,7 +3488,7 @@
 					return;
 				}
 				if (decision.action === "downgrade") {
-					downgradeVideoToStatic(adaptiveLastFps, adaptiveLastJitter, "sustained-low");
+					downgradeVideoToStatic(adaptiveLastFps, adaptiveLastJitter, "sustained-low", adaptiveLastPerfLow);
 					return;
 				}
 				if (currentChoice.kind === "shader" && (decision.action === "limit-shader" || decision.action === "raise-shader")) {
@@ -3663,12 +3766,44 @@
 				fpsFrames = 0;
 				fpsLastFrame = 0;
 				fpsMaxGap = 0;
+				fpsQualityTotal = 0;
+				fpsQualityDropped = 0;
+				fpsQualityPrimed = false;
+				fpsQualityWindows = 0;
 			};
+			/**
+			 * R6 C: measure presented frames AND playback-quality evidence. The source's
+			 * own frame rate is content (a 12fps animation, a 24fps clip at 0.5x), so raw
+			 * presented fps must never be the downgrade signal. `data-tl-perf="low"` is
+			 * set only for real dropped-frame / huge-gap evidence; 32-effects keys its
+			 * freeze decision off that attribute instead of the fps floor.
+			 */
 			const startFpsProbe = () => {
 				if (typeof video.requestVideoFrameCallback !== "function" || fpsHandle !== 0 || video.paused) return;
+				if (fpsQualityPrimed === false) {
+					// R8b (REV-R6 F1): take the baseline at the start of a new probe window.
+					try {
+						const base = typeof video.getVideoPlaybackQuality === "function" ? video.getVideoPlaybackQuality() : null;
+						fpsQualityTotal = base === null || base === undefined ? 0 : Math.max(0, Math.floor(Number(base.totalVideoFrames) || 0));
+						fpsQualityDropped = base === null || base === undefined ? 0 : Math.max(0, Math.floor(Number(base.droppedVideoFrames) || 0));
+					} catch {
+						fpsQualityTotal = 0;
+						fpsQualityDropped = 0;
+					}
+					fpsQualityPrimed = true;
+					fpsQualityWindows = 0;
+				}
 				const probe = (now) => {
 					fpsHandle = 0;
-					if (video.paused || document.hidden) return;
+					if (
+						currentChoice === null ||
+						currentChoice.kind !== "video" ||
+						video.hidden === true ||
+						video.paused ||
+						document.hidden
+					) {
+						return;
+					}
 					// Frames are flowing again: a previous stall report must not stick.
 					if (scene.dataset.tlPlay === "stalled") report("playing", "playing");
 					lastFrameAt = now;
@@ -3684,11 +3819,52 @@
 					fpsFrames += 1;
 					const elapsed = now - fpsStart;
 					if (elapsed >= 1000) {
-						const fps = Math.max(0, Math.round((fpsFrames * 1000) / elapsed));
+						const presented = Math.max(0, Math.round((fpsFrames * 1000) / elapsed));
+						const rate = Number.isFinite(video.playbackRate) && video.playbackRate > 0 ? video.playbackRate : 1;
+						// Normalize by speed: a 24fps clip at 0.5x presents 12 frames/s, which is
+						// not a performance problem.
+						const sourceFps = rate === 1 ? presented : Math.max(0, Math.round(presented / rate));
 						const jitter = Math.max(0, Math.round(fpsMaxGap));
-						scene.dataset.tlFps = String(fps);
+						let total = 0;
+						let dropped = 0;
+						try {
+							const quality = typeof video.getVideoPlaybackQuality === "function" ? video.getVideoPlaybackQuality() : null;
+							if (quality !== null && quality !== undefined) {
+								total = Math.max(0, Math.floor(Number(quality.totalVideoFrames) || 0));
+								dropped = Math.max(0, Math.floor(Number(quality.droppedVideoFrames) || 0));
+							}
+						} catch {
+							total = 0;
+							dropped = 0;
+						}
+						const deltaTotal = Math.max(0, total - fpsQualityTotal);
+						const deltaDropped = Math.max(0, dropped - fpsQualityDropped);
+						fpsQualityTotal = total;
+						fpsQualityDropped = dropped;
+						// R8b (REV-R6 F1): the first window after a (re)baseline only records
+						// the counters; judging starts from the second window.
+						if (fpsQualityWindows === 0) {
+							fpsQualityWindows = 1;
+							scene.dataset.tlFps = String(sourceFps);
+							scene.dataset.tlJitter = String(jitter);
+							publishSceneStatus({ fps: sourceFps, jitter });
+							fpsStart = now;
+							fpsFrames = 0;
+							fpsMaxGap = 0;
+							fpsHandle = video.requestVideoFrameCallback(probe);
+							return;
+						}
+						fpsQualityWindows += 1;
+						const expectedGap = sourceFps > 0 ? 1000 / sourceFps : 0;
+						const gapEvidence = expectedGap > 0 && jitter > Math.max(ADAPTIVE_VIDEO_GAP_MS, expectedGap * 4);
+						const dropEvidence =
+							deltaTotal >= 30 && deltaDropped >= ADAPTIVE_VIDEO_DROP_MIN && deltaDropped / deltaTotal > ADAPTIVE_VIDEO_DROP_RATIO;
+						const perfLow = gapEvidence || dropEvidence;
+						scene.dataset.tlFps = String(sourceFps);
 						scene.dataset.tlJitter = String(jitter);
-						publishSceneStatus({ fps, jitter });
+						if (perfLow) scene.dataset.tlPerf = "low";
+						else scene.removeAttribute("data-tl-perf");
+						publishSceneStatus({ fps: sourceFps, jitter });
 						fpsStart = now;
 						fpsFrames = 0;
 						fpsMaxGap = 0;
@@ -3698,6 +3874,8 @@
 				fpsHandle = video.requestVideoFrameCallback(probe);
 			};
 			const onLoaded = () => {
+				// R6 B: ignore a load event that belongs to a channel we already left.
+				if (currentChoice === null || currentChoice.kind !== "video" || video.hidden === true) return;
 				// A resolution switch keeps the playback position instead of restarting the
 				// video from zero; only a real wallpaper change starts at the beginning.
 				if (pendingSeekTo !== null) {
@@ -3735,6 +3913,7 @@
 				start();
 			};
 			const onPlaying = () => {
+				if (currentChoice === null || currentChoice.kind !== "video" || video.hidden === true) return;
 				releaseHeldFrame();
 				lastFrameAt = performance.now();
 				playBlocked = false;
@@ -3743,9 +3922,13 @@
 				startFpsProbe();
 			};
 			const onPause = () => {
+				if (currentChoice === null || currentChoice.kind !== "video" || video.hidden === true) return;
 				stopFpsProbe();
 				scene.removeAttribute("data-tl-fps");
 				scene.removeAttribute("data-tl-jitter");
+				// R6 C: a paused video has no dropped-frame verdict; leaving a stale "low"
+				// would keep the effect layer frozen for no measured reason.
+				scene.removeAttribute("data-tl-perf");
 				publishSceneStatus({ fps: 0, jitter: 0 });
 				// C3 paused the video itself; the reason must survive this event.
 				if (adaptiveStill) {
@@ -3758,10 +3941,15 @@
 				else report(video.ended ? "ended" : "paused", "paused");
 			};
 			const onWaiting = () => {
+				if (currentChoice === null || currentChoice.kind !== "video" || video.hidden === true) return;
 				if (userPaused || hasLowPower() || document.hidden) return;
 				report("loading", "buffering");
 			};
 			const onError = () => {
+				// R6 B: a released/retired video must not trigger the fallback chain.
+				if (currentChoice === null || currentChoice.kind !== "video" || video.hidden === true) return;
+				const src = video.getAttribute("src");
+				if (src === null || src === "") return;
 				const code = video.error?.code;
 				stopFpsProbe();
 				scene.removeAttribute("data-tl-fps");
@@ -3872,12 +4060,36 @@
 				}
 			};
 
-			video.addEventListener("loadeddata", onLoaded);
-			video.addEventListener("playing", onPlaying);
-			video.addEventListener("pause", onPause);
-			video.addEventListener("waiting", onWaiting);
-			video.addEventListener("canplay", start);
-			video.addEventListener("error", onError);
+			// R8b (REV-R6 F3): per-source-generation video event binding. The old code
+			// registered handlers once with the element, so an event emitted by the previous
+			// source could act on the next one during a switch (A→B window).
+			let videoEventBinding = null;
+			const unbindVideoEvents = () => {
+				if (videoEventBinding === null) return;
+				for (const [name, handler] of Object.entries(videoEventBinding.handlers)) {
+					video.removeEventListener(name, handler);
+				}
+				videoEventBinding = null;
+			};
+			const bindVideoEvents = (generation) => {
+				unbindVideoEvents();
+				const guard = (handler) => (event) => {
+					// First line: the event must belong to the source that installed the binding.
+					if (generation !== sourceGeneration) return;
+					handler(event);
+				};
+				const handlers = {
+					loadeddata: guard(onLoaded),
+					playing: guard(onPlaying),
+					pause: guard(onPause),
+					waiting: guard(onWaiting),
+					canplay: guard(start),
+					error: guard(onError),
+				};
+				for (const [name, handler] of Object.entries(handlers)) video.addEventListener(name, handler);
+				videoEventBinding = { generation, handlers };
+			};
+
 			document.addEventListener("visibilitychange", onVisibility);
 			window.addEventListener("pointerdown", onUserGesture, { capture: true, passive: true });
 			window.addEventListener("keydown", onUserGesture, { capture: true });
@@ -3892,12 +4104,9 @@
 					window.clearInterval(watchdogTimer);
 					watchdogTimer = 0;
 				}
-				video.removeEventListener("loadeddata", onLoaded);
-				video.removeEventListener("playing", onPlaying);
-				video.removeEventListener("pause", onPause);
-				video.removeEventListener("waiting", onWaiting);
-				video.removeEventListener("canplay", start);
-				video.removeEventListener("error", onError);
+				// R8b: the per-source-generation binding owns the video handlers; removing
+				// them here is what the static listener pairing sees as the matching remove.
+				unbindVideoEvents();
 				document.removeEventListener("visibilitychange", onVisibility);
 				window.removeEventListener("pointerdown", onUserGesture, { capture: true });
 				window.removeEventListener("keydown", onUserGesture, { capture: true });
@@ -3909,14 +4118,20 @@
 
 			const applyWallpaper = (choice, options) => {
 				if (!scene.isConnected) return;
+				// R6 B: all async callbacks capture this token; anything that resolves after
+				// a newer applyWallpaper() is stale and must not touch the scene.
+				sourceGeneration += 1;
+				const generation = sourceGeneration;
 				clearRetry();
 				stopFpsProbe();
 				scene.removeAttribute("data-tl-fps");
 				scene.removeAttribute("data-tl-jitter");
+				scene.removeAttribute("data-tl-perf");
 				requestTransition();
 				// C3: a new source gets a clean adaptive baseline (silent: the old source is
 				// on its way out and must not be resumed just to be replaced).
 				clearAdaptive("source-switch", true);
+				adaptiveLastPerfLow = false;
 				shaderFrameTicks = 0;
 				shaderWindowStart = 0;
 				shaderLastPaint = 0;
@@ -3936,6 +4151,8 @@
 					currentChoice = null;
 					stopSceneFrame();
 					stopWebWallpaper();
+					// R6 A: no source at all still releases the video decoder.
+					releaseVideo();
 					applyVariantDatasets(null);
 					scene.removeAttribute("data-tl-media");
 					scene.removeAttribute("data-tl-width");
@@ -3978,9 +4195,8 @@
 					stopShaderLoop();
 					shaderCanvas.hidden = true;
 					scene.removeAttribute("data-tl-shader-on");
-					video.pause();
-					video.hidden = true;
-					video.removeAttribute("data-tl-ready");
+					// R6 A: leaving the video channel releases its decoder, not just hides it.
+					releaseVideo();
 					heldFrame = "";
 					photo.hidden = true;
 					photo.removeAttribute("data-tl-ready");
@@ -4002,9 +4218,8 @@
 					stopShaderLoop();
 					shaderCanvas.hidden = true;
 					scene.removeAttribute("data-tl-shader-on");
-					video.pause();
-					video.hidden = true;
-					video.removeAttribute("data-tl-ready");
+					// R6 A: scene channel does not use the video element; release it.
+					releaseVideo();
 					heldFrame = "";
 					photo.hidden = true;
 					photo.removeAttribute("data-tl-ready");
@@ -4017,8 +4232,8 @@
 					return;
 				}
 				if (choice.kind === "shader") {
-					video.pause();
-					video.hidden = true;
+					// R6 A: the shader canvas replaces the video; free the decoder.
+					releaseVideo();
 					heldFrame = "";
 					photo.hidden = true;
 					photo.removeAttribute("data-tl-ready");
@@ -4030,7 +4245,10 @@
 						// No WebGL: fall back to the normal catalog instead of a blank scene.
 						report("error", "error", "no-webgl");
 						note("shader:no-webgl", {});
-						void resolveAutoWallpaper().then(applyWallpaper);
+						const fallbackGeneration = generation;
+						void resolveAutoWallpaper().then((fallback) => {
+							if (fallbackGeneration === sourceGeneration) applyWallpaper(fallback);
+						});
 						return;
 					}
 					shaderParams = readShaderSettings();
@@ -4044,7 +4262,10 @@
 							stopShaderLoop();
 							shaderCanvas.hidden = true;
 							scene.removeAttribute("data-tl-shader-on");
-							void resolveAutoWallpaper().then(applyWallpaper);
+							const fallbackGeneration = generation;
+							void resolveAutoWallpaper().then((fallback) => {
+								if (fallbackGeneration === sourceGeneration) applyWallpaper(fallback);
+							});
 							return;
 						}
 						shaderSource = shaderParams.source;
@@ -4080,8 +4301,8 @@
 				if (wallpaperController !== null) wallpaperController.shaderSwatch = null;
 				const file = choice.url.slice(choice.url.lastIndexOf("/") + 1);
 				if (choice.kind === "image") {
-					video.pause();
-					video.hidden = true;
+					// R6 A: the still-image channel replaces the video; free the decoder.
+					releaseVideo();
 					heldFrame = "";
 					report("loading", "loading");
 					photo.hidden = false;
@@ -4092,6 +4313,9 @@
 					// layer before the bytes arrive.
 					const probe = new Image();
 					probe.onload = () => {
+						// R6 B: a late image from an older request must not flip the scene to
+						// "ready" (or overwrite the new source's width/height/last-good).
+						if (generation !== sourceGeneration) return;
 						if (probe.naturalWidth > 0 && probe.naturalHeight > 0) {
 							scene.dataset.tlWidth = String(probe.naturalWidth);
 							scene.dataset.tlHeight = String(probe.naturalHeight);
@@ -4105,6 +4329,7 @@
 						report("ready", "ready");
 					};
 					probe.onerror = () => {
+						if (generation !== sourceGeneration) return;
 						report("error", "error", "image-decode");
 						// AVIF/SVG/WebP support varies; fall back to the last good wallpaper
 						// instead of leaving a blank still layer.
@@ -4145,6 +4370,9 @@
 				const stillToken = videoStillToken;
 				video.autoplay = still === null && userPaused === false;
 				if (userPaused) report("paused", "paused", "user");
+				// R8b (REV-R6 F3): bind this source's handlers BEFORE the src change; the
+				// previous binding is removed, so late A events cannot touch B.
+				bindVideoEvents(sourceGeneration);
 				video.src = choice.url;
 				video.load();
 				// Which file actually won: readable from devtools when diagnosing decode.
@@ -4217,7 +4445,10 @@
 				// The catalog decides the encode: waiting for it once means the very first
 				// mount already uses the window-appropriate variant (no reload on start).
 				await readCatalog();
-				applyWallpaper(await resolveWallpaper());
+				const initial = await resolveWallpaper();
+				// R6 B: a wallpaper the user picked while the catalog was still loading
+				// must win over the boot-time automatic resolution.
+				if (currentChoice === null) applyWallpaper(initial);
 			})();
 
 			return () => {

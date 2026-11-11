@@ -103,6 +103,36 @@ expect('panel fill has a legibility floor', css.includes('max(0.96, calc(0.88 * 
 expect('no unresolved template placeholder', !css.includes('${'))
 expect('no stray backtick', !css.includes('`'))
 
+// ---- R2 energy pass: the scene layer is a static veil, never a live full-viewport blur.
+// A backdrop-filter on [data-tl-scene]::after re-composites the whole viewport on every
+// decoded wallpaper frame; the static grain/gradient surface must stay so the depth
+// still reads on screen. Panel-level glass is a bounded surface and keeps its blur.
+const sceneAfterRules = [...blanked.matchAll(/([^{}]+\[data-tl-scene\]::after[^{}]*)\{([^{}]*)\}/g)]
+const sceneAfterLive = sceneAfterRules.filter((match) => /(?:-webkit-)?backdrop-filter\s*:/.test(match[2]))
+expect(
+  'scene layer paints a static veil, not a live full-viewport backdrop-filter',
+  sceneAfterRules.length > 0 && sceneAfterLive.length === 0,
+  sceneAfterLive.map((match) => match[1].trim()).join(' | '),
+)
+expect(
+  'scene layer keeps the static liquid-glass surface (colour / grain veil)',
+  sceneAfterRules.some((match) => /background-image\s*:/.test(match[2])),
+)
+expect(
+  'no infinite animation repaints the scene layer',
+  sceneAfterRules.every((match) => /animation\s*:[^;]*infinite/.test(match[2]) === false),
+)
+expect('the removed 22s scene-sheen keyframes are gone', css.includes('@keyframes tl-liquid-sheen') === false)
+// The depth presets still drive the product's own glass: a live blur must remain on at
+// least the composer / menu / model surfaces, otherwise the depth change became a no-op.
+const liveBlurRules = [...blanked.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((match) => /(?:-webkit-)?backdrop-filter\s*:/.test(match[2]))
+expect(
+  'bounded product glass keeps a live blur (composer / menu / model)',
+  liveBlurRules.some((match) => /\[data-tl-composer\]::before/.test(match[1])) &&
+    liveBlurRules.some((match) => /\[data-tl-menu\]/.test(match[1])) &&
+    liveBlurRules.some((match) => /\[data-tl-model\]/.test(match[1])),
+)
+
 console.log('\nCSS blocks: ' + blocks.length + ', total ' + css.length + ' chars')
 console.log(failures === 0 ? 'ALL CSS CHECKS PASSED' : failures + ' CSS CHECK(S) FAILED')
 process.exitCode = failures === 0 ? 0 : 1

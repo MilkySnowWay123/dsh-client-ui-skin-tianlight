@@ -49,9 +49,11 @@
 		// ---- v1.0.0 liquid-glass depth: off / frosted / soft / real ----
 		/**
 		 * The depth is a semantic preset over the scene layer: `off` keeps the v0.7
-		 * look (no extra compositing), the three on-levels add a specular + blur
-		 * treatment between the wallpaper and the product UI (the `[data-tl-scene]`
-		 * layer, painted by the stylesheet ::after). The effective level degrades
+		 * look (no extra compositing), the three on-levels add a static specular +
+		 * grain/tint treatment between the wallpaper and the product UI (the
+		 * `[data-tl-scene]` layer, painted by the stylesheet ::after). The painting is
+		 * deliberately static: the R2 energy pass removed the full-viewport live blur
+		 * that used to re-composite on every video frame. The effective level degrades
 		 * automatically under low power / 15fps so the energy promise holds.
 		 * v1.6.0: when the scene layer is absent (wallpaper module off) a fixed
 		 * data-tl-liquid-fallback node paints the same depth recipe; it is created and

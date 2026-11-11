@@ -34,7 +34,9 @@
 		// `{ ok: false, reason: "companion-off" }` instead of throwing.
 		// v1.1: `lifeGate(action)` is registered by the life-rhythm engine (same closure)
 		// and may defer an interrupt; null / non-function means "no gate" (v0.7 behavior).
-		const companionDutyBridge = { api: null, lifeGate: null };
+		// S1: `life` (the internal life API) and `dutyReplay` (the internal replay path)
+		// are same-closure bridges so the brain/life never read a replaceable global.
+		const companionDutyBridge = { api: null, lifeGate: null, life: null, dutyReplay: null };
 		const DUTY_CHANNEL_VERSION = 1;
 		const DUTY_EVENT = "tianlight:duty";
 		const DUTY_ACTION_EVENT = "tianlight:duty-action";
@@ -1533,10 +1535,14 @@
 			let chatOpen = false;
 			let chatBusy = false;
 			let chatStatusKey = "";
+			// R5: chat/history are non-modal layers in the shared overlay stack (Esc reaches
+			// the top one; no Tab trap so the DSH composer keeps its own focus order).
+			let chatOverlayDisposer = null;
 			// v1.6.7: the history panel is the composer's sibling surface; both are
 			// mutually exclusive and own a single transient edit row.
 			let historyOpen = false;
 			let histEditMsgId = "";
+			let historyOverlayDisposer = null;
 			let disposed = false;
 
 			/** Effective pack of the look currently painted (null when the API is missing). */
@@ -1611,6 +1617,14 @@
 				// The two panels share the space above the pet: opening one closes the other.
 				if (historyOpen === true) closeHistory();
 				chatOpen = true;
+				if (chatOverlayDisposer === null) {
+					chatOverlayDisposer = tl5OverlayRegister({
+						id: "pet-chat",
+						modal: false,
+						root: () => chat,
+						onEscape: () => closeChat(),
+					});
+				}
 				root.dataset.tlChatOpen = "";
 				chat.hidden = false;
 				chat.setAttribute("aria-hidden", "false");
@@ -1635,6 +1649,14 @@
 			};
 			const closeChat = () => {
 				chatOpen = false;
+				if (chatOverlayDisposer !== null) {
+					try {
+						chatOverlayDisposer();
+					} catch {
+						// the stack is already torn down
+					}
+					chatOverlayDisposer = null;
+				}
 				delete root.dataset.tlChatOpen;
 				delete root.dataset.tlChatFlip;
 				chat.hidden = true;
@@ -1824,6 +1846,14 @@
 				// Mutual exclusion with the composer keeps one readable surface above the pet.
 				if (chatOpen === true) closeChat();
 				historyOpen = true;
+				if (historyOverlayDisposer === null) {
+					historyOverlayDisposer = tl5OverlayRegister({
+						id: "pet-history",
+						modal: false,
+						root: () => hist,
+						onEscape: () => closeHistory(),
+					});
+				}
 				histEditMsgId = "";
 				root.dataset.tlHistOpen = "";
 				hist.hidden = false;
@@ -1843,6 +1873,14 @@
 			};
 			const closeHistory = () => {
 				historyOpen = false;
+				if (historyOverlayDisposer !== null) {
+					try {
+						historyOverlayDisposer();
+					} catch {
+						// the stack is already torn down
+					}
+					historyOverlayDisposer = null;
+				}
 				histEditMsgId = "";
 				delete root.dataset.tlHistOpen;
 				delete root.dataset.tlHistFlip;
@@ -1935,12 +1973,39 @@
 			hist.addEventListener("pointerdown", (event) => {
 				if (event !== null && event !== undefined && typeof event.stopPropagation === "function") event.stopPropagation();
 			});
-			/** Show a chat answer in the say bubble: longer hold + the wide-bubble marker. */
-			const sayChat = (reply) => {
+			/**
+			 * v2.0.0: one-line hint for a model failure that fell back to a local reply.
+			 * The pet brain (src/44-pet-brain.js, same closure) owns the localized copy;
+			 * without it the turn still reads "本地回复" and the hint is simply omitted.
+			 */
+			const companionLlmHintText = (code) => {
+				if (typeof code !== "string" || code === "") return "";
+				try {
+					if (typeof petLlmHintText === "function") {
+						const hint = petLlmHintText(code);
+						if (typeof hint === "string" && hint !== "") return hint;
+					}
+				} catch (error) {
+					note("companion:llm-hint", error);
+				}
+				return "";
+			};
+			/**
+			 * Show a chat answer in the say bubble: longer hold + the wide-bubble marker.
+			 * v2.0.0 first line names the source ("AI 回复" / "本地回复") so a model
+			 * fallback is never mistaken for an AI answer; a failed model call appends
+			 * one localized reason line (the bubble CSS is white-space: pre-wrap).
+			 */
+			const sayChat = (reply, source, llmError) => {
 				const text = typeof reply === "string" ? reply.trim() : "";
 				if (text === "" || !root.isConnected) return false;
-				const hold = Math.min(24000, Math.max(9000, 4000 + text.length * 30));
-				say(text, hold, true);
+				const label = source === "llm" ? TL_T("pet.chat.source.ai") : TL_T("pet.chat.source.local");
+				const lines = [label, text];
+				const hint = companionLlmHintText(llmError);
+				if (hint !== "") lines.push(hint);
+				const body = lines.join("\n");
+				const hold = Math.min(24000, Math.max(9000, 4000 + body.length * 30));
+				say(body, hold, true);
 				return true;
 			};
 			const sendChat = async () => {
@@ -1953,11 +2018,21 @@
 					return;
 				}
 				let brain = null;
+				// R4A: prefer the brain's same-closure bridge over globalThis.tianlightPet
+				// so a same-page script cannot swap the chat path. The global stays as a
+				// fallback for a stripped harness only.
 				try {
-					brain = globalThis.tianlightPet;
-				} catch (error) {
+					if (typeof petBrainInternal !== "undefined" && petBrainInternal !== null) brain = petBrainInternal;
+				} catch {
 					brain = null;
-					note("companion:chat-brain", error);
+				}
+				if (brain === null) {
+					try {
+						brain = globalThis.tianlightPet;
+					} catch (error) {
+						brain = null;
+						note("companion:chat-brain", error);
+					}
 				}
 				if (brain === null || brain === undefined || typeof brain.chat !== "function") {
 					setChatStatus("pet.chat.unavailable");
@@ -1975,7 +2050,12 @@
 								: typeof result.text === "string"
 									? result.text.trim()
 									: "";
-						if (sayChat(reply) === false) {
+						// v2.0.0: pass the brain's source + stable model-failure code through, so
+						// the bubble labels the reply and explains a local fallback. The history
+						// schema stays unchanged: recordChatTurn still stores the plain reply.
+						const replySource = typeof result.source === "string" && result.source !== "" ? result.source : "local";
+						const llmError = typeof result.llmError === "string" && result.llmError !== "" ? result.llmError : "";
+						if (sayChat(reply, replySource, llmError) === false) {
 							setChatStatus("pet.chat.failed");
 							return;
 						}
@@ -2422,19 +2502,9 @@
 			};
 			document.addEventListener("pointerdown", onDocumentPointerDown, true);
 
-			// v1.6.5: global Escape. The composer's own handlers only fire while the focus
-			// stays on it (and the panel stops propagation), so a document-level capture
-			// listener is the reliable path — pressing Escape anywhere closes the chat.
-			// v1.6.7: the same capture path closes an open history panel.
-			const onDocumentKeyDown = (event) => {
-				if (event === null || event === undefined) return;
-				if (event.key !== "Escape") return;
-				if (chatOpen !== true && historyOpen !== true) return;
-				if (typeof event.preventDefault === "function") event.preventDefault();
-				if (chatOpen === true) closeChat();
-				if (historyOpen === true) closeHistory();
-			};
-			document.addEventListener("keydown", onDocumentKeyDown, true);
+			// v1.6.5: Escape closes the chat from anywhere. R5: this is now a non-modal
+			// layer in the shared overlay stack (the stack closes only the TOP layer, so
+			// Esc in the role hub no longer also closes the pet chat underneath).
 
 			later(() => say("pet.hello", 2600), 700);
 			// v1.0.0 media ordering: apply() installs the life layer AFTER this switchable
@@ -2482,7 +2552,22 @@
 				window.removeEventListener("pointermove", onProximity);
 				window.removeEventListener("resize", onResize);
 				document.removeEventListener("pointerdown", onDocumentPointerDown, true);
-				document.removeEventListener("keydown", onDocumentKeyDown, true);
+				if (chatOverlayDisposer !== null) {
+					try {
+						chatOverlayDisposer();
+					} catch {
+						// the stack is already torn down
+					}
+					chatOverlayDisposer = null;
+				}
+				if (historyOverlayDisposer !== null) {
+					try {
+						historyOverlayDisposer();
+					} catch {
+						// the stack is already torn down
+					}
+					historyOverlayDisposer = null;
+				}
 				document.removeEventListener("tianlight:pet-actions", onPetPackChanged);
 				document.removeEventListener("tianlight:pet-media", onPetPackChanged);
 				document.removeEventListener("tianlight:pet-media", onPetMedia);
@@ -2678,6 +2763,9 @@
 				replay,
 			};
 			globalThis.tianlightDuty = publicApi;
+			// S1: internal replay bridge for the life engine (no replaceable global read).
+			const previousReplay = companionDutyBridge.dutyReplay;
+			companionDutyBridge.dutyReplay = replay;
 			const onDutyEvent = (event) => {
 				const result = send(event === null || event === undefined ? undefined : event.detail);
 				if (result.ok === false) note("duty:rejected", result.reason);
@@ -2688,6 +2776,9 @@
 				if (globalThis.tianlightDuty === publicApi) {
 					if (previous === undefined) delete globalThis.tianlightDuty;
 					else globalThis.tianlightDuty = previous;
+				}
+				if (companionDutyBridge.dutyReplay === replay) {
+					companionDutyBridge.dutyReplay = previousReplay === undefined ? null : previousReplay;
 				}
 				subscribers.clear();
 				if (companionDutyBridge.api !== null) {

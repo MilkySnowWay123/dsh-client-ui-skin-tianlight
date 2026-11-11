@@ -1,7 +1,7 @@
 {
-  "publicVersion": "v1.0.7",
-  "internalVersion": "v1.6.8",
-  "internalTag": "v1.6.8",
-  "internalClientSha256": "1188519cea4016389adef625dc2e4113e8c5fdb466f946d1ecf018397bf98958",
-  "note": "The public repository is versioned by its public release label. The same code was built internally as internalVersion; its verifier evidence and RELEASE docs are kept under docs/."
+  "publicVersion": "v2.0.0",
+  "internalVersion": "v2.0.0",
+  "internalTag": "v2.0.0",
+  "internalClientSha256": "27d8d5c0cbb9c646b200a81b6b6254d091223725cefedf2eefe19a3085f80abe",
+  "note": "From v2.0.0 on the repository, the DSH install and the GitHub release share one version number. Earlier builds used internal 1.6.x / public v1.0.x labels; those tags and releases remain as history."
 }

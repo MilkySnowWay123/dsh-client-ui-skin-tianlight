@@ -11,9 +11,11 @@
 		 * 专注/静音、液态玻璃、可替换形象（列表 + 本机上传）、AI 对话与权限/暂停、
 		 * 实验 Agent、审计。所有能力都通过既有运行时 API 调用，这里不持有第二个事实源：
 		 *   - globalThis.tianlightLife   生活节奏/专注/静音/形象（src/42-life.js）
-		 *   - globalThis.tianlightPet    AI 大脑/权限/审计（src/44-pet-brain.js）
+		 *   - petBrainInternal           AI 大脑/权限/审计（src/44-pet-brain.js 的同闭包桥；
+		 *                                R4A 起不再读可被同页脚本替换的 globalThis.tianlightPet）
 		 *   - globalThis.tianlightPetMind 自主思考引擎（src/44-pet-brain.js，v1.6.8）
-		 *   - globalThis.tianlightPetAgent 受控 DSH Agent 通道（src/48-pet-agent.js）
+		 *   - petAgentInternal           受控 DSH Agent 通道（src/48-pet-agent.js 的同闭包桥）；
+		 *                                globalThis.tianlightPetAgent 只剩只读 status/audit
 		 *   - glassDepthController       液态玻璃三档（src/57-glass.js）
 		 *   - POST ASSET_BASE/_upload    本机图片/视频上传（宿主已有路由，≤32 MiB）
 		 *
@@ -24,6 +26,7 @@
 			zh: {
 				"hub.title": "角色中枢",
 				"hub.close": "关闭",
+				"hub.draft.restored": "已恢复上次未保存的聊天 / 作息草稿。",
 				"hub.settingsHint": "生活节奏设置已并入本页，不再单独列出。",
 				"hub.loading": "载入中…",
 				"hub.unavailable": "不可用",
@@ -104,6 +107,8 @@
 				"hub.media.pack.save": "保存动作包",
 				"hub.media.pack.saved": "动作包已保存，桌宠菜单已更新。",
 				"hub.media.pack.reset": "恢复默认动作包",
+				"hub.media.pack.resetConfirm": "再次点击确认重置",
+				"hub.media.pack.resetConfirmNote": "重置会删除当前形象的自定义动作包，且无法撤销；再次点击按钮确认。",
 				"hub.media.pack.resetDone": "已恢复默认动作包。",
 				"hub.media.pack.invalid": "动作包不合法：请检查动作名或回复内容后重试。",
 				"hub.media.pack.unavailable": "桌宠动作接口未就绪，动作包暂不可编辑。",
@@ -112,12 +117,13 @@
 				"hub.upload.uploading": "上传中…",
 				"hub.upload.done": "已上传并切换：{name}",
 				"hub.upload.tooBig": "文件超过 32 MiB（{size} MiB），未上传。",
+				"hub.upload.type": "不支持的文件格式：请选择图片或视频。",
 				"hub.upload.empty": "空文件不能上传。",
 				"hub.upload.rejected": "上传被拒绝（{status}）：{reason}",
 				"hub.upload.failed": "上传失败：{reason}",
 				"hub.upload.noFetch": "当前环境不支持上传。",
 				"hub.ai.title": "AI 对话",
-				"hub.ai.hint": "桌宠只做陪伴与提醒：不联网、不读写文件、不代你操作。",
+				"hub.ai.hint": "桌宠只做陪伴与提醒：不会主动联网、读写文件或代替你操作；只有你在本页明确授权 LLM 后，对话才会用你配置的 DSH 模型（会消耗你的模型额度）。",
 				"hub.ai.pause": "暂停 AI",
 				"hub.ai.resume": "恢复 AI",
 				"hub.ai.pausedNote": "已暂停：桌宠暂不回复。",
@@ -126,12 +132,31 @@
 				"hub.ai.unavailable": "AI 大脑未接入，对话不可用。",
 				"hub.ai.adapter": "适配器：{adapter}",
 				"hub.ai.adapterNone": "未注册（本地大脑）",
+				"hub.ai.adapterDsh": "DSH 模型（{provider} / {model}）",
 				"hub.ai.llm.grant": "授权 LLM",
 				"hub.ai.llm.revoke": "撤销 LLM",
-				"hub.ai.llm.confirm": "允许桌宠调用你提供的 LLM 适配器？只发送当前这句话，且有每日、速率与超时上限。",
+				"hub.ai.llm.confirm": "允许桌宠调用你在 DSH 里配置的模型？会消耗你的模型额度；只发送当前这句话和桌宠的本地上下文，仍有每日、速率与超时上限。",
 				"hub.ai.llm.confirmShort": "再次点击确认",
 				"hub.ai.llm.granted": "已授权 LLM。",
 				"hub.ai.llm.revoked": "已撤销 LLM。",
+				"hub.ai.llm.providerLabel": "桌宠使用的模型提供方",
+				"hub.ai.llm.followDefault": "跟随 DSH 默认模型",
+				"hub.ai.llm.unknown": "未知",
+				"hub.ai.llm.providerSaved": "已更新模型提供方。",
+				"hub.ai.llm.providerFailed": "无法更新模型提供方。",
+				"hub.ai.llm.providerUnavailable": "无法读取 DSH 模型提供方列表，暂时只能跟随默认。",
+				"hub.ai.host.unconfigured-model": "未配置模型：请先在 DSH 设置里配置模型。",
+				"hub.ai.host.no-llm-service": "宿主未提供 LLM 服务。",
+				"hub.ai.host.no-providers": "宿主没有可用的模型提供方。",
+				"hub.ai.host.host-unavailable": "宿主不可用（可能需要重启 DSH 一次）。",
+				"hub.ai.host.unknown": "尚未检测到宿主模型状态。",
+				"hub.ai.llmHint.unconfiguredModel": "未配置模型，已用本地回复",
+				"hub.ai.llmHint.missingCredential": "缺少凭据，已用本地回复",
+				"hub.ai.llmHint.quota": "模型额度不足，已用本地回复",
+				"hub.ai.llmHint.rateLimit": "模型限流，已用本地回复",
+				"hub.ai.llmHint.timeout": "模型响应超时，已用本地回复",
+				"hub.ai.llmHint.hostUnavailable": "宿主不可用（可能需要重启 DSH），已用本地回复",
+				"hub.ai.llmHint.default": "AI 暂时不可用，已用本地回复",
 				"hub.ai.inputPlaceholder": "和桌宠说点什么…",
 				"hub.ai.send": "发送",
 				"hub.ai.empty": "先说一句话吧。",
@@ -141,8 +166,8 @@
 				"hub.ai.you": "你",
 				"hub.ai.pet": "桌宠",
 				"hub.ai.logEmpty": "还没有对话。",
-				"hub.ai.source.local": "本地",
-				"hub.ai.source.llm": "LLM 适配器",
+				"hub.ai.source.local": "本地回复",
+				"hub.ai.source.llm": "AI 回复",
 				"hub.ai.source.denied": "拒绝",
 				"hub.ai.reason.paused": "AI 已暂停",
 				"hub.ai.reason.permission": "权限未授权",
@@ -156,18 +181,23 @@
 				"hub.ai.reason.default": "暂时不能聊",
 				// v1.6.8「自主思考」卡片（桌宠完全智能体）。
 				"hub.mind.title": "自主思考",
-				"hub.mind.hint": "让桌宠按自己的节奏想一想。只在已启用、页面可见、非低电量且 AI 未暂停时运行；开口会占用既有主动开口预算，不联网、不执行任何操作。",
+				"hub.mind.hint": "让桌宠按自己的节奏想一想（默认本地生成，不联网）。只在已启用、页面可见、非低电量、AI 未暂停，且不在静默/睡眠/专注时段运行；开口还要过主动开口授权与既有预算。",
 				"hub.mind.enable": "启用思考",
 				"hub.mind.disable": "暂停思考",
 				"hub.mind.interval": "思考间隔",
 				"hub.mind.intervalValue": "{n} 分钟",
 				"hub.mind.speak": "自主开口",
+				"hub.mind.llm": "LLM 自主思考",
+				"hub.mind.llmHint": "用你的 LLM 适配器生成念头：独立日额度，不占聊天日配额；请求只含此刻的触发语境，不含聊天记录。关闭即回到本地模板。",
+				"hub.mind.llmBudget": "LLM 念头 {used}/{budget}（独立额度）",
 				"hub.mind.think": "现在想一下",
 				"hub.mind.thinking": "正在想…",
 				"hub.mind.thinkDone": "想到了一点。",
 				"hub.mind.thinkSpoken": "想到一点，也说给你听了。",
 				"hub.mind.thinkSkipped": "这次没有想：{reason}",
 				"hub.mind.clear": "清空想法",
+				"hub.mind.clearConfirm": "再次点击确认清空",
+				"hub.mind.clearConfirmNote": "清空后无法恢复；再次点击按钮确认。",
 				"hub.mind.cleared": "想法已清空。",
 				"hub.mind.empty": "还没有想法，点「现在想一下」试试。",
 				"hub.mind.unavailable": "自主思考引擎未就绪（请确认 AI 大脑已启用）。",
@@ -181,6 +211,10 @@
 				"hub.mind.reason.lowpower": "低电量",
 				"hub.mind.reason.busy": "正在思考",
 				"hub.mind.reason.denied": "AI 拒绝",
+				"hub.mind.reason.quiet": "静默时段",
+				"hub.mind.reason.asleep": "睡眠时段",
+				"hub.mind.reason.focus": "专注时段",
+				"hub.mind.reason.llmBudget": "LLM 念头额度已用完（聊天不受影响）",
 				"hub.mind.reason.cooldown": "还没到间隔",
 				"hub.mind.reason.internal": "内部错误",
 				"hub.mind.kind.llm": "LLM 生成",
@@ -196,7 +230,7 @@
 				"hub.perm.grant": "授权",
 				"hub.perm.grantHigh": "授权（需确认）",
 				"hub.perm.confirmHigh": "再次点击确认",
-				"hub.perm.highWarning": "高风险能力本身不内置实现：只有你在控制台/扩展里注册了对应能力适配器后，桌宠才可能在已授权时调用；每次调用都会审计，可随时撤销。驱动 DSH 永远禁止。",
+				"hub.perm.highWarning": "高风险能力本身不内置实现：未注册适配器时这里显示「无适配器（未启用）」，不会发生任何调用；即使注册了适配器，桌宠也只有在你已授权并手动调用 invokeCapability 时才会使用你的适配器。每次调用都写审计、可随时撤销。授权只在本页面会话内有效，刷新/重载后需重新授权。驱动 DSH 永远禁止。",
 				"hub.perm.mediumNote": "该能力需要显式同意；再次点击确认后生效。",
 				"hub.perm.revoke": "撤销",
 				"hub.perm.revoked": "已撤销。",
@@ -310,7 +344,7 @@
 				"hub.audit.deny": "拒绝",
 				"hub.cap.agentChat": "Agent 会话",
 				"hub.agent.title": "AI Agent（实验）",
-				"hub.agent.hint": "实验功能：只把你手动输入的这句话发到你选择的 DSH 会话；不会自动触发、不会代审批、不驱动工具。默认关闭，需显式授权。",
+				"hub.agent.hint": "实验功能：只把你手动输入的这句话发到你选择的 DSH 会话；不会自动触发、不会代审批、不驱动工具。默认关闭，需显式授权；授权只在本页面会话内有效，刷新/重载后需重新授权。",
 				"hub.agent.status.unavailable": "Agent 通道不可用（未挂载或 remote.session 不可用）。",
 				"hub.agent.status.unauthorized": "未授权：先允许「Agent 会话」。",
 				"hub.agent.status.unconnected": "未连接会话",
@@ -365,6 +399,7 @@
 			en: {
 				"hub.title": "Character hub",
 				"hub.close": "Close",
+				"hub.draft.restored": "Restored the unsaved chat / rhythm draft from last time.",
 				"hub.settingsHint": "Life-rhythm settings now live on this page; there is no separate page anymore.",
 				"hub.loading": "Loading…",
 				"hub.unavailable": "Unavailable",
@@ -445,6 +480,8 @@
 				"hub.media.pack.save": "Save action pack",
 				"hub.media.pack.saved": "Action pack saved; the pet menu is updated.",
 				"hub.media.pack.reset": "Reset action pack",
+				"hub.media.pack.resetConfirm": "Click again to reset",
+				"hub.media.pack.resetConfirmNote": "Resetting deletes the custom action pack for the current look and cannot be undone; click the button again to confirm.",
 				"hub.media.pack.resetDone": "Action pack restored to the default.",
 				"hub.media.pack.invalid": "The action pack is invalid: check the labels or replies and try again.",
 				"hub.media.pack.unavailable": "The pet action API is not ready, so the action pack cannot be edited.",
@@ -453,12 +490,13 @@
 				"hub.upload.uploading": "Uploading…",
 				"hub.upload.done": "Uploaded and applied: {name}",
 				"hub.upload.tooBig": "File is over 32 MiB ({size} MiB); not uploaded.",
+				"hub.upload.type": "Unsupported file type: pick an image or a video.",
 				"hub.upload.empty": "Empty files cannot be uploaded.",
 				"hub.upload.rejected": "Upload rejected ({status}): {reason}",
 				"hub.upload.failed": "Upload failed: {reason}",
 				"hub.upload.noFetch": "Uploading is not supported here.",
 				"hub.ai.title": "AI chat",
-				"hub.ai.hint": "The companion only chats and reminds: no network, no files, no actions.",
+				"hub.ai.hint": "The companion only chats and reminds: it never goes online, touches files or acts for you on its own. Only after you explicitly allow LLM in this page session does chat use your configured DSH model (and your model quota).",
 				"hub.ai.pause": "Pause AI",
 				"hub.ai.resume": "Resume AI",
 				"hub.ai.pausedNote": "Paused: the companion will not reply.",
@@ -467,12 +505,31 @@
 				"hub.ai.unavailable": "AI brain is unavailable; chat is off.",
 				"hub.ai.adapter": "Adapter: {adapter}",
 				"hub.ai.adapterNone": "none (local brain)",
+				"hub.ai.adapterDsh": "DSH model ({provider} / {model})",
 				"hub.ai.llm.grant": "Allow LLM",
 				"hub.ai.llm.revoke": "Revoke LLM",
-				"hub.ai.llm.confirm": "Allow the companion to call your LLM adapter? Only the current sentence is sent, with daily, rate and timeout caps.",
+				"hub.ai.llm.confirm": "Allow the companion to call the model you configured in DSH? This consumes your model quota; only the current sentence and the companion's local context are sent, with daily, rate and timeout caps.",
 				"hub.ai.llm.confirmShort": "Click again to confirm",
 				"hub.ai.llm.granted": "LLM allowed.",
 				"hub.ai.llm.revoked": "LLM revoked.",
+				"hub.ai.llm.providerLabel": "Model provider for the companion",
+				"hub.ai.llm.followDefault": "Follow the DSH default model",
+				"hub.ai.llm.unknown": "unknown",
+				"hub.ai.llm.providerSaved": "Model provider updated.",
+				"hub.ai.llm.providerFailed": "Could not update the model provider.",
+				"hub.ai.llm.providerUnavailable": "Could not read the DSH provider list; only the default is available.",
+				"hub.ai.host.unconfigured-model": "No model configured: configure one in DSH settings first.",
+				"hub.ai.host.no-llm-service": "The host exposes no LLM service.",
+				"hub.ai.host.no-providers": "The host has no available model provider.",
+				"hub.ai.host.host-unavailable": "Host unavailable (a DSH restart may be needed).",
+				"hub.ai.host.unknown": "Host model status not detected yet.",
+				"hub.ai.llmHint.unconfiguredModel": "No model is configured; replied locally",
+				"hub.ai.llmHint.missingCredential": "Missing credentials; replied locally",
+				"hub.ai.llmHint.quota": "Model quota is exhausted; replied locally",
+				"hub.ai.llmHint.rateLimit": "The model is rate-limited; replied locally",
+				"hub.ai.llmHint.timeout": "The model timed out; replied locally",
+				"hub.ai.llmHint.hostUnavailable": "The host is unavailable (a DSH restart may be needed); replied locally",
+				"hub.ai.llmHint.default": "AI is unavailable right now; replied locally",
 				"hub.ai.inputPlaceholder": "Say something to the companion…",
 				"hub.ai.send": "Send",
 				"hub.ai.empty": "Type something first.",
@@ -482,8 +539,8 @@
 				"hub.ai.you": "You",
 				"hub.ai.pet": "Pet",
 				"hub.ai.logEmpty": "No messages yet.",
-				"hub.ai.source.local": "local",
-				"hub.ai.source.llm": "LLM",
+				"hub.ai.source.local": "Local reply",
+				"hub.ai.source.llm": "AI reply",
 				"hub.ai.source.denied": "denied",
 				"hub.ai.reason.paused": "AI is paused",
 				"hub.ai.reason.permission": "Permission not granted",
@@ -497,18 +554,23 @@
 				"hub.ai.reason.default": "Not available right now",
 				// v1.6.8 autonomous thinking card (fully agentic companion).
 				"hub.mind.title": "Autonomous thinking",
-				"hub.mind.hint": "Let the companion think at its own pace. It only runs when enabled, the page is visible, no low-power mode is on and the AI is not paused; speaking uses the existing proactive budget and never touches the network or performs actions.",
+				"hub.mind.hint": "Let the companion think at its own pace (local template by default, no network). It only runs when enabled, the page is visible, no low-power mode is on, the AI is not paused, and quiet hours / sleep / focus sessions are inactive; speaking still needs the proactive grant and the existing budget.",
 				"hub.mind.enable": "Enable thinking",
 				"hub.mind.disable": "Pause thinking",
 				"hub.mind.interval": "Interval",
 				"hub.mind.intervalValue": "{n} min",
 				"hub.mind.speak": "Speak autonomously",
+				"hub.mind.llm": "LLM thinking",
+				"hub.mind.llmHint": "Generate thoughts with your LLM adapter: separate daily budget, never charged to the user chat quota; the payload carries only this moment's trigger context, no chat history. Off = local template.",
+				"hub.mind.llmBudget": "LLM thoughts {used}/{budget} (separate budget)",
 				"hub.mind.think": "Think now",
 				"hub.mind.thinking": "Thinking…",
 				"hub.mind.thinkDone": "Had a thought.",
 				"hub.mind.thinkSpoken": "Had a thought — and said it aloud.",
 				"hub.mind.thinkSkipped": "No thought this time: {reason}",
 				"hub.mind.clear": "Clear thoughts",
+				"hub.mind.clearConfirm": "Click again to clear",
+				"hub.mind.clearConfirmNote": "Clearing cannot be undone; click the button again to confirm.",
 				"hub.mind.cleared": "Thoughts cleared.",
 				"hub.mind.empty": "No thoughts yet — try \"Think now\".",
 				"hub.mind.unavailable": "The thinking engine is unavailable (make sure the AI brain is enabled).",
@@ -522,6 +584,10 @@
 				"hub.mind.reason.lowpower": "low power",
 				"hub.mind.reason.busy": "already thinking",
 				"hub.mind.reason.denied": "refused by the AI",
+				"hub.mind.reason.quiet": "quiet hours",
+				"hub.mind.reason.asleep": "sleep hours",
+				"hub.mind.reason.focus": "focus session",
+				"hub.mind.reason.llmBudget": "LLM thought budget used up (chat is unaffected)",
 				"hub.mind.reason.cooldown": "interval not reached",
 				"hub.mind.reason.internal": "internal error",
 				"hub.mind.kind.llm": "LLM",
@@ -537,7 +603,7 @@
 				"hub.perm.grant": "Allow",
 				"hub.perm.grantHigh": "Allow (confirm)",
 				"hub.perm.confirmHigh": "Click again to confirm",
-				"hub.perm.highWarning": "High-risk capabilities have no built-in implementation: the companion can only use them once you register an adapter in the console or an extension; every call is audited and you can revoke anytime. Driving DSH stays permanently denied.",
+				"hub.perm.highWarning": "High-risk capabilities have no built-in implementation: without a registered adapter the row reads “No adapter (not enabled)” and nothing can run; even with an adapter, the companion only uses it when you have allowed the capability and manually call invokeCapability. Every call is audited and you can revoke anytime. Grants last for this page session only — a reload asks again. Driving DSH stays permanently denied.",
 				"hub.perm.mediumNote": "This capability needs explicit consent; click again to confirm.",
 				"hub.perm.revoke": "Revoke",
 				"hub.perm.revoked": "Revoked.",
@@ -651,7 +717,7 @@
 				"hub.audit.deny": "denied",
 				"hub.cap.agentChat": "Agent chat",
 				"hub.agent.title": "AI Agent (experimental)",
-				"hub.agent.hint": "Experimental: only the sentence you type here is sent to the DSH session you pick; nothing is triggered automatically, nothing approves, no tools are driven. Off by default; explicit consent required.",
+				"hub.agent.hint": "Experimental: only the sentence you type here is sent to the DSH session you pick; nothing is triggered automatically, nothing approves, no tools are driven. Off by default; explicit consent required, and the grant lasts for this page session only — a reload asks again.",
 				"hub.agent.status.unavailable": "Agent channel unavailable (not mounted or remote.session is unavailable).",
 				"hub.agent.status.unauthorized": "Not allowed yet: allow Agent chat first.",
 				"hub.agent.status.unconnected": "No session connected",
@@ -716,6 +782,14 @@
 		const HUB_GLASS_LEVELS = ["off", "frosted", "soft", "real"];
 		/** Overlay root id (the hub itself; there is no sidebar/settings entry anymore). */
 		const HUB_DOM_ID = "tianlight-role-hub";
+		/**
+		 * R5: unsaved-content draft (unfinished chat line + edited rhythm fields). Esc
+		 * closes the hub but must never discard what the user typed; we persist the
+		 * draft (sessionStorage: per tab, never synced/exported) when the hub closes and
+		 * restore it on the next open. Chosen over a close-confirmation dialog because it
+		 * never blocks a modal close and cannot auto-apply half-edited/invalid values.
+		 */
+		const HUB_DRAFT_KEY = "tianlight.hub.draft.v1";
 		const HUB_PERIOD_KEYS = {
 			dawn: "hub.period.dawn",
 			morning: "hub.period.morning",
@@ -809,6 +883,31 @@
 			"companion-off": "hub.ai.reason.companionOff",
 			"internal-error": "hub.ai.reason.internal",
 		};
+		/**
+		 * plan A: a model call that fell back to a local reply surfaces one of these
+		 * stable codes (44 maps them for the bubble; the hub keeps its own copy so the
+		 * AI card still explains a fallback in a stripped harness without 44).
+		 */
+		const HUB_AI_LLM_HINT_KEYS = {
+			"unconfigured-model": "hub.ai.llmHint.unconfiguredModel",
+			"missing-credential": "hub.ai.llmHint.missingCredential",
+			quota: "hub.ai.llmHint.quota",
+			"rate-limit": "hub.ai.llmHint.rateLimit",
+			timeout: "hub.ai.llmHint.timeout",
+			"host-unavailable": "hub.ai.llmHint.hostUnavailable",
+			default: "hub.ai.llmHint.default",
+		};
+		/** Host capability reasons (`status.llm.host.reason`) → AI card adapter line. */
+		const HUB_AI_HOST_REASON_KEYS = {
+			"unconfigured-model": "hub.ai.host.unconfigured-model",
+			"no-default-model": "hub.ai.host.unconfigured-model",
+			"no-llm-service": "hub.ai.host.no-llm-service",
+			"no-providers": "hub.ai.host.no-providers",
+			"host-unavailable": "hub.ai.host.host-unavailable",
+			unknown: "hub.ai.host.unknown",
+		};
+		/** Cap on `<select>` provider options (a pathological host list must not flood). */
+		const HUB_LLM_PROVIDERS_MAX = 20;
 		/** v1.6.8 thinking engine: allowed intervals (mirrors tianlightPetMind). */
 		const HUB_MIND_INTERVALS = [5, 10, 15, 30];
 		/** Every refusal/skip reason the thinking engine can return. */
@@ -821,6 +920,10 @@
 			busy: "hub.mind.reason.busy",
 			denied: "hub.mind.reason.denied",
 			"proactive-denied": "hub.mind.reason.denied",
+			"quiet-hours": "hub.mind.reason.quiet",
+			asleep: "hub.mind.reason.asleep",
+			focus: "hub.mind.reason.focus",
+			"llm-budget": "hub.mind.reason.llmBudget",
 			cooldown: "hub.mind.reason.cooldown",
 			"internal-error": "hub.mind.reason.internal",
 			internal: "hub.mind.reason.internal",
@@ -870,7 +973,18 @@
 			}
 		}
 
+		/**
+		 * R4A: the UI reads the brain through the same-closure bridge, not
+		 * `globalThis.tianlightPet` (a same-page script can replace that global).
+		 * Falls back to the documented global only in a stripped harness where the
+		 * brain fragment is absent.
+		 */
 		function hubPetBrain() {
+			try {
+				if (typeof petBrainInternal !== "undefined" && petBrainInternal !== null) return petBrainInternal;
+			} catch {
+				// TDZ / stripped harness: fall through to the global
+			}
 			try {
 				return globalThis.tianlightPet !== null && globalThis.tianlightPet !== undefined ? globalThis.tianlightPet : null;
 			} catch {
@@ -878,8 +992,16 @@
 			}
 		}
 
-		/** v1.6.8 private-thinking engine (`src/44-pet-brain.js`); optional. */
+		/** v1.6.8 private-thinking engine; prefer the same-closure brain bridge (S1). */
 		function hubPetMind() {
+			try {
+				const brain = hubPetBrain();
+				if (brain !== null && brain.mind !== undefined && brain.mind !== null && typeof brain.mind.status === "function") {
+					return brain.mind;
+				}
+			} catch {
+				// fall through to the documented global in a stripped harness
+			}
 			try {
 				return globalThis.tianlightPetMind !== null && globalThis.tianlightPetMind !== undefined ? globalThis.tianlightPetMind : null;
 			} catch {
@@ -887,8 +1009,18 @@
 			}
 		}
 
-		/** The v1.2.0 experimental DSH Agent bridge (src/48-pet-agent.js); optional. */
+		/**
+		 * The v1.2.0 experimental DSH Agent bridge (src/48-pet-agent.js). R4A: read
+		 * the same-closure `petAgentInternal` object (privileged methods live only
+		 * there); `globalThis.tianlightPetAgent` is now a frozen read-only status
+		 * surface and is never used for connect/list/chat.
+		 */
 		function hubPetAgent() {
+			try {
+				if (typeof petAgentInternal !== "undefined" && petAgentInternal !== null) return petAgentInternal;
+			} catch {
+				// TDZ / stripped harness: fall through to the read-only global
+			}
 			try {
 				return globalThis.tianlightPetAgent !== null && globalThis.tianlightPetAgent !== undefined ? globalThis.tianlightPetAgent : null;
 			} catch {
@@ -944,6 +1076,16 @@
 				if (stage !== undefined) note(stage, error);
 				return fallback;
 			}
+		}
+
+		/**
+		 * R8 (REV-R4A F2): a synthetic (script-dispatched) click is not user consent.
+		 * Real clicks have isTrusted=true; `element.click()` from a page script does not.
+		 * Only the consent/Agent-connect/Agent-send entry points consult this — the
+		 * product's own composer is untouched.
+		 */
+		function isSyntheticUserEvent(event) {
+			return event !== undefined && event !== null && event.isTrusted === false;
 		}
 
 		/** Is the medium `agentChat` capability granted? Agent status is authoritative. */
@@ -1011,7 +1153,12 @@
 			}
 		}
 
-		/** Skin/bundle version for feedback payloads (diagnostic instance first, then BUILD). */
+		/**
+		 * Skin/host identity for feedback payloads. Diagnostic instance first, then
+		 * the host build reported on `_engines` (the client no longer carries a build
+		 * marker of its own), then the route-contract marker so a report never claims
+		 * a build number it did not read.
+		 */
 		function hubVersionString() {
 			try {
 				const instance = globalThis.__dshTianlightInstance;
@@ -1022,8 +1169,13 @@
 			} catch {
 				// diagnostics are optional
 			}
+			if (hostIdentity.build !== "") return hostIdentity.build;
+			// R8 (REV-R1 M1): `hostIdentity.api` was previously written but never read.
+			// Prefer it over the compiled HOST_API fallback so a report names the API the
+			// host actually reported, not just the contract this client was built with.
+			if (typeof hostIdentity.api === "string" && hostIdentity.api !== "") return "api " + hostIdentity.api;
 			try {
-				if (typeof HOST_BUILD === "string" && HOST_BUILD !== "") return HOST_BUILD;
+				if (typeof HOST_API === "string" && HOST_API !== "") return "api " + HOST_API;
 			} catch {
 				// the constant may be absent in a stripped harness
 			}
@@ -1128,21 +1280,24 @@
 		/**
 		 * Normalize chat() results from the parallel pet-brain implementation. The
 		 * documented contract is `chat(text)`, and the UI accepts both a plain string
-		 * reply and `{ok,text,source,denied,reason}` so the hub is not coupled to one
-		 * internal return shape.
+		 * reply and `{ok,text,source,denied,reason,llmError}` so the hub is not coupled
+		 * to one internal return shape. `llmError` is the stable code of a failed model
+		 * call whose turn fell back to a local reply (plan A); it is always a string
+		 * here so the AI card can show the matching hint.
 		 */
 		function hubChatResult(result) {
 			if (typeof result === "string") {
-				return { ok: result !== "", text: result, source: "local", reason: "" };
+				return { ok: result !== "", text: result, source: "local", reason: "", llmError: "" };
 			}
 			if (result === null || typeof result !== "object") {
-				return { ok: false, text: "", source: "denied", reason: "internal-error" };
+				return { ok: false, text: "", source: "denied", reason: "internal-error", llmError: "" };
 			}
 			const text = typeof result.text === "string" ? result.text : typeof result.reply === "string" ? result.reply : typeof result.message === "string" ? result.message : "";
 			const denied = result.denied === true || result.ok === false || (text === "" && result.ok !== true);
 			const source = denied === true ? "denied" : typeof result.source === "string" && result.source !== "" ? result.source : "local";
 			const reason = typeof result.reason === "string" ? result.reason : "";
-			return { ok: denied === false, text, source, reason };
+			const llmError = typeof result.llmError === "string" && result.llmError !== "" ? result.llmError : "";
+			return { ok: denied === false, text, source, reason, llmError };
 		}
 
 		/** Small DOM factory for the overlay (plain DOM; no React inside the dialog). */
@@ -1178,10 +1333,13 @@
 		 */
 		function installRoleHub(ctx) {
 			// The hub has no DSH slots/settings entries since v1.3.0; the pet is the entry.
-			void ctx;
+			// `ctx` is only used to resolve the read-only remote.llm provider catalog (plan A).
 			let disposed = false;
 			let openState = false;
 			let rootEl = null;
+			// R8c (REV-R8 F2): capture-phase click/change fence that disarms a pending
+			// destructive confirmation whenever the user acts anywhere else in the hub.
+			let confirmCaptureDisposer = null;
 			let ui = null;
 			let timer = 0;
 			let triggerEl = null;
@@ -1206,6 +1364,18 @@
 			let agentSessionsCache = [];
 			// v1.4.0 permission rows that are armed for their second consent click.
 			const permConfirmPending = new Map();
+			// R5 destructive actions use the same "click twice" arming pattern.
+			let packResetPending = false;
+			let mindClearPending = false;
+			// R8b (REV-R5 6): an armed destructive confirmation expires after 5s, and any
+			// other card action disarms it — so "arm, then click elsewhere, then click the
+			// same button once" can never execute a destructive action by accident.
+			let packResetArmTimer = 0;
+			let mindClearArmTimer = 0;
+			// True while the rhythm card holds edits not yet applied (draft protection).
+			let lifeDraftActive = false;
+			// The shared overlay stack disposes through this handle.
+			let overlayDisposer = null;
 			// v1.5.0 weather / selftest state.
 			let weatherBusy = false;
 			let selftestBusy = false;
@@ -1228,6 +1398,201 @@
 				}
 			};
 
+			// ---- plan A: DSH LLM provider read (the hub only chooses a provider) ----
+			// `remote.llm` is a READ-ONLY client remote namespace mounted asynchronously
+			// by api-remotes, so an eager ctx.get() at apply() time is usually undefined.
+			// The legal ways in mirror the existing remote.session resolver: the dotted
+			// "remote.llm" service key, the injected scope (+ scoped.remote.llm), or the
+			// guarded "remote" context property. Exactly one remote method is ever called:
+			// listProviders() — no model/session/prompt method is reachable from here.
+			let hubLlmServiceScope = null;
+			let hubLlmRemoteScope = null;
+			const hubLlmInjectDisposers = [];
+			/** `{ ok, providers, reason }` of the first read; null until it completes. */
+			let hubLlmProvidersCache = null;
+			let hubLlmProvidersBusy = false;
+			/** Signature guard: rebuild `<select>` options only when the data changed. */
+			let hubLlmProviderSignature = "";
+			try {
+				if (ctx !== null && ctx !== undefined && typeof ctx.inject === "function") {
+					hubLlmInjectDisposers.push(
+						ctx.inject(["remote.llm"], (scoped) => {
+							hubLlmServiceScope = scoped;
+							return () => {
+								hubLlmServiceScope = null;
+							};
+						}),
+					);
+					hubLlmInjectDisposers.push(
+						ctx.inject(["remote"], (scoped) => {
+							hubLlmRemoteScope = scoped;
+							return () => {
+								hubLlmRemoteScope = null;
+							};
+						}),
+					);
+				}
+			} catch (error) {
+				note("role-hub:llm-inject", error);
+			}
+			const hubHasListProviders = (candidate) =>
+				candidate !== null && candidate !== undefined && typeof candidate.listProviders === "function";
+			/** The `remote.llm` namespace, or null when no resolution path answers (plan A). */
+			const hubRemoteLlm = () => {
+				// 1) the dotted service key, when the loader already mounted it
+				try {
+					const direct = ctx !== null && ctx !== undefined && typeof ctx.get === "function" ? ctx.get("remote.llm") : undefined;
+					if (hubHasListProviders(direct)) return direct;
+				} catch (error) {
+					note("role-hub:llm-get", error);
+				}
+				// 2) the injected "remote.llm" scope: scoped.get(...) then scoped.remote.llm
+				if (hubLlmServiceScope !== null) {
+					try {
+						const scopedDirect = typeof hubLlmServiceScope.get === "function" ? hubLlmServiceScope.get("remote.llm") : undefined;
+						if (hubHasListProviders(scopedDirect)) return scopedDirect;
+					} catch (error) {
+						note("role-hub:llm-scoped-get", error);
+					}
+					try {
+						const scopedRemote = hubLlmServiceScope.remote?.llm;
+						if (hubHasListProviders(scopedRemote)) return scopedRemote;
+					} catch (error) {
+						note("role-hub:llm-scoped-remote", error);
+					}
+				}
+				// 3) the injected "remote" scope: scoped.remote.llm
+				if (hubLlmRemoteScope !== null) {
+					try {
+						const scopedRemote = hubLlmRemoteScope.remote?.llm;
+						if (hubHasListProviders(scopedRemote)) return scopedRemote;
+					} catch (error) {
+						note("role-hub:llm-remote-scope", error);
+					}
+				}
+				// 4) the guarded "remote" context property: ctx.get("remote")?.llm
+				try {
+					const remote = ctx !== null && ctx !== undefined && typeof ctx.get === "function" ? ctx.get("remote") : undefined;
+					if (hubHasListProviders(remote?.llm)) return remote.llm;
+				} catch (error) {
+					note("role-hub:llm-remote-get", error);
+				}
+				// 5) page-plugin contexts expose the namespace directly (`ctx.remote.llm`),
+				// which is how the shipped settings section reads the provider directory.
+				try {
+					const directRemote = ctx !== null && ctx !== undefined ? ctx.remote?.llm : undefined;
+					if (hubHasListProviders(directRemote)) return directRemote;
+				} catch (error) {
+					note("role-hub:llm-ctx-remote", error);
+				}
+				return null;
+			};
+			/**
+			 * Read the provider catalog. Never rejects and never throws: a missing
+			 * namespace or a host-side refusal degrades to `{ok:false}` so the picker can
+			 * honestly fall back to "follow the DSH default model" only.
+			 */
+			const hubListProviders = async () => {
+				const remoteLlm = hubRemoteLlm();
+				if (remoteLlm === null) return { ok: false, providers: [], reason: "unavailable" };
+				let result = null;
+				try {
+					result = await remoteLlm.listProviders();
+				} catch (error) {
+					note("role-hub:llm-providers", error);
+					return { ok: false, providers: [], reason: "error" };
+				}
+				if (result !== null && typeof result === "object" && result.ok === false) {
+					return { ok: false, providers: [], reason: typeof result.reason === "string" && result.reason !== "" ? result.reason : "unavailable" };
+				}
+				// Accepted shapes: a bare array, `{value:[...]}` (remote RPC envelope), or
+				// a tolerant `{providers:[...]}`. Anything else is a failed read.
+				const raw = Array.isArray(result) ? result : Array.isArray(result?.value) ? result.value : Array.isArray(result?.providers) ? result.providers : null;
+				if (raw === null) return { ok: false, providers: [], reason: "unexpected-result" };
+				const seen = new Set();
+				const providers = [];
+				for (const entry of raw) {
+					if (entry === null || typeof entry !== "object") continue;
+					const id = typeof entry.id === "string" ? entry.id.trim() : "";
+					if (id === "" || seen.has(id)) continue;
+					seen.add(id);
+					const name = typeof entry.name === "string" && entry.name.trim() !== "" ? entry.name.trim() : id;
+					providers.push({ id, name });
+					if (providers.length >= HUB_LLM_PROVIDERS_MAX) break;
+				}
+				return { ok: true, providers, reason: "" };
+			};
+			/** Localized fallback hint for a model-failure code; 44 owns the shared copy. */
+			const hubLlmHintText = (code) => {
+				if (typeof code !== "string" || code === "") return "";
+				try {
+					if (typeof petLlmHintText === "function") {
+						const shared = petLlmHintText(code);
+						if (typeof shared === "string" && shared !== "") return shared;
+					}
+				} catch (error) {
+					note("role-hub:llm-hint", error);
+				}
+				const kind = Object.prototype.hasOwnProperty.call(HUB_AI_LLM_HINT_KEYS, code) ? code : "default";
+				return TL_T(HUB_AI_LLM_HINT_KEYS[kind]);
+			};
+
+			// ---- R8b (REV-R5 6): destructive-confirm arming with expiry -----------------
+			const CONFIRM_ARM_TIMEOUT_MS = 5000;
+			const disarmPackReset = () => {
+				if (packResetArmTimer !== 0) {
+					window.clearTimeout(packResetArmTimer);
+					packResetArmTimer = 0;
+				}
+				packResetPending = false;
+				if (ui !== null && ui.packReset !== null && ui.packReset !== undefined) {
+					ui.packReset.textContent = TL_T("hub.media.pack.reset");
+					ui.packReset.removeAttribute("data-tl-hub-confirm");
+				}
+			};
+			const disarmMindClear = () => {
+				if (mindClearArmTimer !== 0) {
+					window.clearTimeout(mindClearArmTimer);
+					mindClearArmTimer = 0;
+				}
+				mindClearPending = false;
+				if (ui !== null && ui.mindClear !== null && ui.mindClear !== undefined) {
+					ui.mindClear.textContent = TL_T("hub.mind.clear");
+					ui.mindClear.removeAttribute("data-tl-hub-confirm");
+				}
+			};
+			/** Disarm both destructive confirmations (any other card action calls this). */
+			const disarmPendingConfirms = () => {
+				if (packResetPending === true) disarmPackReset();
+				if (mindClearPending === true) disarmMindClear();
+			};
+			const armPackReset = () => {
+				packResetPending = true;
+				if (packResetArmTimer !== 0) window.clearTimeout(packResetArmTimer);
+				packResetArmTimer = window.setTimeout(() => {
+					packResetArmTimer = 0;
+					disarmPackReset();
+				}, CONFIRM_ARM_TIMEOUT_MS);
+				if (ui !== null && ui.packReset !== null && ui.packReset !== undefined) {
+					ui.packReset.textContent = TL_T("hub.media.pack.resetConfirm");
+					ui.packReset.setAttribute("data-tl-hub-confirm", "true");
+				}
+				setPackStatus(TL_T("hub.media.pack.resetConfirmNote"));
+			};
+			const armMindClear = () => {
+				mindClearPending = true;
+				if (mindClearArmTimer !== 0) window.clearTimeout(mindClearArmTimer);
+				mindClearArmTimer = window.setTimeout(() => {
+					mindClearArmTimer = 0;
+					disarmMindClear();
+				}, CONFIRM_ARM_TIMEOUT_MS);
+				if (ui !== null && ui.mindClear !== null && ui.mindClear !== undefined) {
+					ui.mindClear.textContent = TL_T("hub.mind.clearConfirm");
+					ui.mindClear.setAttribute("data-tl-hub-confirm", "true");
+				}
+				setMindNote(TL_T("hub.mind.clearConfirmNote"));
+			};
+
 			// ---- close / focus / Esc ------------------------------------------------
 			const restoreFocus = (target) => {
 				if (target === null || target === undefined || typeof target.focus !== "function") return;
@@ -1238,6 +1603,19 @@
 				}
 			};
 			const close = () => {
+				// R5: closing (Esc included) persists unfinished chat / rhythm edits first, so
+				// a single Esc can never silently discard them; reopening restores the draft.
+				saveHubDraft();
+				// R8b (REV-R5 6): closing also clears the destructive-confirm timers/arms.
+				if (packResetArmTimer !== 0) {
+					window.clearTimeout(packResetArmTimer);
+					packResetArmTimer = 0;
+				}
+				if (mindClearArmTimer !== 0) {
+					window.clearTimeout(mindClearArmTimer);
+					mindClearArmTimer = 0;
+				}
+				lifeDraftActive = false;
 				llmPending = false;
 				agentPermPending = false;
 				agentBusy = false;
@@ -1245,21 +1623,25 @@
 				mindBusy = false;
 				mediaApplying = false;
 				loadedPack = null;
+				packResetPending = false;
+				mindClearPending = false;
 				permConfirmPending.clear();
 				const win = hubBrowserWindow();
 				if (timer !== 0) {
 					if (win !== null) win.clearInterval(timer);
 					timer = 0;
 				}
-				if (win !== null) {
-					try {
-						win.removeEventListener("keydown", onKeyDown);
-					} catch (error) {
-						setLastError("close-listener", error);
-					}
-				}
 				const previousFocus = triggerEl;
 				triggerEl = null;
+				// R8c (REV-R8 F2): the capture fence lives exactly as long as the panel.
+				if (confirmCaptureDisposer !== null) {
+					try {
+						confirmCaptureDisposer();
+					} catch {
+						// the panel DOM is going away anyway
+					}
+					confirmCaptureDisposer = null;
+				}
 				if (rootEl !== null) {
 					try {
 						rootEl.remove();
@@ -1270,9 +1652,22 @@
 				}
 				ui = null;
 				openState = false;
+				// R5: leave the shared stack; if another layer was registered on top of the
+				// hub in the meantime, removing this entry keeps that layer's position.
+				if (overlayDisposer !== null) {
+					try {
+						overlayDisposer();
+					} catch {
+						// the stack is already torn down
+					}
+					overlayDisposer = null;
+				}
 				// Reopening the hub builds a fresh <select>; the cached render signature
 				// must not suppress the first fill (v1.2 A73 regression guard).
 				agentTargetSignature = "";
+				// plan A: same guard for the provider picker built by the new overlay. The
+				// provider-list result stays cached (one read per install, not per open).
+				hubLlmProviderSignature = "";
 				try {
 					if (typeof document !== "undefined" && document !== null && document.body !== null && document.body !== undefined) {
 						document.body.removeAttribute("data-tl-hub-open");
@@ -1281,17 +1676,6 @@
 					setLastError("close-attr", error);
 				}
 				restoreFocus(previousFocus);
-			};
-			const onKeyDown = (event) => {
-				if (openState !== true) return;
-				const key = event !== null && event !== undefined ? event.key : "";
-				if (key !== "Escape" && key !== "Esc") return;
-				try {
-					if (typeof event.preventDefault === "function") event.preventDefault();
-				} catch {
-					// preventDefault is best effort
-				}
-				close();
 			};
 
 			// ---- status card --------------------------------------------------------
@@ -1382,7 +1766,7 @@
 					setLifeNote(TL_T("hub.life.unavailable"));
 					return;
 				}
-				if (force !== true && isLifeConfigEditing()) return;
+				if (force !== true && (isLifeConfigEditing() || lifeDraftActive === true)) return;
 				const status = hubTry(() => life.status?.(), null, "life-config-status");
 				const config = status !== null && typeof status === "object" && status.config !== null && typeof status.config === "object" ? status.config : null;
 				if (config === null) {
@@ -1413,6 +1797,7 @@
 					TL_T("hub.life.lastSeen", { time: hubDateTime(memory.lastSeenAt) });
 			};
 			const applyLifeConfig = () => {
+				disarmPendingConfirms();
 				const life = hubLifeEngine();
 				if (ui === null) return;
 				if (life === null || typeof life.configure !== "function") {
@@ -1448,9 +1833,116 @@
 					return;
 				}
 				setLifeNote(invalid === true ? TL_T("hub.life.invalid") : TL_T("hub.life.saved"));
+				if (invalid !== true) {
+					lifeDraftActive = false;
+					clearHubLifeDraft();
+				}
 				refreshStatus();
-				refreshLifeConfig(true);
+				// R5: an invalid apply must not overwrite what the user is editing with the
+				// last saved config (it stays a draft); a valid apply reloads the saved values.
+				refreshLifeConfig(invalid !== true);
 				refreshAi();
+			};
+
+			// ---- R5 unsaved-content draft (Esc/close must never discard input) ----------
+			/**
+			 * Drafts live in sessionStorage on purpose: per-tab, never mirrored to the host
+			 * settings store and never exported in a bundle (the localStorage settings
+			 * mirror would sync a `tianlight.*` key). Surviving a reload of the same tab is
+			 * enough for the close/reopen flow this protects.
+			 */
+			const hubDraftStorage = () => {
+				try {
+					const win = hubBrowserWindow();
+					return win !== null && win.sessionStorage !== undefined && win.sessionStorage !== null ? win.sessionStorage : null;
+				} catch {
+					return null;
+				}
+			};
+			const readHubDraft = () => {
+				try {
+					const storage = hubDraftStorage();
+					if (storage === null) return null;
+					const raw = storage.getItem(HUB_DRAFT_KEY);
+					if (raw === null || raw === "") return null;
+					const value = JSON.parse(raw);
+					return value !== null && typeof value === "object" && Array.isArray(value) === false ? value : null;
+				} catch {
+					return null;
+				}
+			};
+			const writeHubDraft = (draft) => {
+				try {
+					const storage = hubDraftStorage();
+					if (storage === null) return;
+					const chat = typeof draft?.chat === "string" ? draft.chat : "";
+					const life = draft?.life !== null && typeof draft?.life === "object" ? draft.life : null;
+					if (chat === "" && life === null) {
+						storage.removeItem(HUB_DRAFT_KEY);
+						return;
+					}
+					storage.setItem(HUB_DRAFT_KEY, JSON.stringify({ chat, life }));
+				} catch {
+					// draft persistence is best effort
+				}
+			};
+			/** Current rhythm-input values, or null when the card is unavailable/disabled. */
+			const lifeDraftNow = () => {
+				if (ui === null) return null;
+				const inputs = lifeConfigInputs();
+				if (inputs.length === 0 || inputs.some((input) => input.disabled === true)) return null;
+				return {
+					quietEnabled: ui.lifeQuietEnabled.checked === true,
+					quietStart: String(ui.lifeQuietStart.value ?? ""),
+					quietEnd: String(ui.lifeQuietEnd.value ?? ""),
+					budget: String(ui.lifeBudget.value ?? ""),
+					wake: String(ui.lifeWake.value ?? ""),
+					sleep: String(ui.lifeSleep.value ?? ""),
+					virtual: String(ui.lifeVirtual.value ?? ""),
+				};
+			};
+			/** Mark the rhythm card dirty (input/change listeners are attached in buildOverlay). */
+			const markLifeDraft = () => {
+				lifeDraftActive = true;
+			};
+			const saveHubDraft = () => {
+				if (ui === null) return;
+				const chat = typeof ui.chatInput?.value === "string" ? ui.chatInput.value.trim().slice(0, HUB_AI_INPUT_MAX) : "";
+				// Only persist rhythm values the user actually touched; untouched inputs
+				// mirror the engine config and would otherwise produce a false "restored".
+				writeHubDraft({ chat, life: lifeDraftActive === true ? lifeDraftNow() : null });
+			};
+			const restoreHubDraft = () => {
+				if (ui === null) return;
+				const draft = readHubDraft();
+				if (draft === null) return;
+				let restored = false;
+				if (typeof draft.chat === "string" && draft.chat !== "" && ui.chatInput !== null && ui.chatInput !== undefined) {
+					ui.chatInput.value = draft.chat.slice(0, HUB_AI_INPUT_MAX);
+					restored = true;
+				}
+				const life = draft.life !== null && typeof draft.life === "object" ? draft.life : null;
+				if (life !== null) {
+					const inputs = lifeConfigInputs();
+					if (inputs.length > 0 && inputs.every((input) => input.disabled === false)) {
+						if (typeof life.quietStart === "string") ui.lifeQuietStart.value = life.quietStart;
+						if (typeof life.quietEnd === "string") ui.lifeQuietEnd.value = life.quietEnd;
+						if (typeof life.wake === "string") ui.lifeWake.value = life.wake;
+						if (typeof life.sleep === "string") ui.lifeSleep.value = life.sleep;
+						if (typeof life.budget === "string") ui.lifeBudget.value = life.budget;
+						if (typeof life.virtual === "string") ui.lifeVirtual.value = life.virtual;
+						if (typeof life.quietEnabled === "boolean") ui.lifeQuietEnabled.checked = life.quietEnabled;
+						lifeDraftActive = true;
+						restored = true;
+					}
+				}
+				if (restored === true) setLifeNote(TL_T("hub.draft.restored"));
+			};
+			/** Drop only the rhythm part after a successful save (chat draft kept). */
+			const clearHubLifeDraft = () => {
+				const draft = readHubDraft();
+				if (draft === null) return;
+				writeHubDraft({ chat: typeof draft.chat === "string" ? draft.chat : "", life: null });
 			};
 
 			// ---- glass card ---------------------------------------------------------
@@ -1670,6 +2162,7 @@
 				}
 			};
 			const applySelectedMedia = async () => {
+				disarmPendingConfirms();
 				const life = hubLifeEngine();
 				// A switch is ignored while the catalog reloads or another switch runs.
 				if (ui === null || mediaApplying === true || mediaBusy === true) return;
@@ -1711,6 +2204,7 @@
 			};
 			/** v1.5.0 "restore default look": setMedia(null), then refresh catalog + note. */
 			const restoreDefaultMedia = async () => {
+				disarmPendingConfirms();
 				const life = hubLifeEngine();
 				if (ui === null) return;
 				if (life === null || typeof life.setMedia !== "function") {
@@ -1769,13 +2263,16 @@
 					// some browsers keep the selection; harmless
 				}
 				if (file === null || file === undefined) return;
-				const size = Number(file.size);
-				if (!Number.isFinite(size) || size <= 0) {
-					setUploadStatus(TL_T("hub.upload.empty"));
-					return;
-				}
-				if (size > HUB_UPLOAD_MAX_BYTES) {
-					setUploadStatus(TL_T("hub.upload.tooBig", { size: (size / 1024 / 1024).toFixed(1) }));
+				// S4: shared upload pre-flight (same formats/limits as the wallpaper panel).
+				const uploadVerdict = tl5ValidateUploadFile(file, HUB_UPLOAD_MAX_BYTES);
+				if (uploadVerdict.ok !== true) {
+					if (uploadVerdict.code === "too-big") {
+						setUploadStatus(TL_T("hub.upload.tooBig", { size: (Number(file.size) / 1024 / 1024).toFixed(1) }));
+					} else if (uploadVerdict.code === "type") {
+						setUploadStatus(TL_T("hub.upload.type"));
+					} else {
+						setUploadStatus(TL_T("hub.upload.empty"));
+					}
 					return;
 				}
 				ui.mediaUpload.disabled = true;
@@ -1915,6 +2412,7 @@
 			};
 			/** Save the editor into the current look's pack; the pet menu reads it next open. */
 			const savePack = async () => {
+				disarmPendingConfirms();
 				const target = ui;
 				if (target === null) return;
 				const actions = packApi();
@@ -2190,6 +2688,138 @@
 			const setAiNote = (text) => {
 				if (ui !== null) ui.aiNote.textContent = text;
 			};
+			/**
+			 * plan A: fold `status.llm` into the adapter line. Priority (Lead-approved):
+			 * (a) the host probe ran and reports itself unavailable -> explain WHY via
+			 * `hub.ai.host.<reason>` (this is what makes the "restart DSH -> unconfigured
+			 * model" case visible even though session-only `llm` grants reset on reload);
+			 * (b) the built-in host adapter is live -> provider / model; (c) a user adapter
+			 * is registered -> its id; (d) otherwise the local-only fallback. Old brains
+			 * without `routing` keep the pre-plan-A line, so the hub never regresses on a
+			 * stripped harness.
+			 */
+			const hubAdapterLine = (status) => {
+				const pet = hubPetBrain();
+				const available = pet !== null;
+				if (available !== true) return { text: TL_T("hub.ai.unavailable"), state: "unavailable" };
+				const llm =
+					status !== null && typeof status === "object" && status.llm !== null && typeof status.llm === "object" ? status.llm : null;
+				const routing = llm !== null && typeof llm.routing === "string" ? llm.routing : "";
+				const host = llm !== null && llm.host !== null && typeof llm.host === "object" ? llm.host : null;
+				const hostProvider = host !== null && typeof host.provider === "string" && host.provider !== "" ? host.provider : "";
+				const hostModel = host !== null && typeof host.model === "string" && host.model !== "" ? host.model : "";
+				const adapterId = hubAdapterId(status);
+				// (a) the host answered the probe and cannot serve a model: name the reason.
+				if (host !== null && host.checked === true && host.available !== true) {
+					const reason = typeof host.reason === "string" ? host.reason : "";
+					const known = Object.prototype.hasOwnProperty.call(HUB_AI_HOST_REASON_KEYS, reason);
+					return { text: TL_T(known ? HUB_AI_HOST_REASON_KEYS[reason] : "hub.ai.host.unknown"), state: "host" };
+				}
+				// (b) the built-in "dsh" adapter is live (the model follows the DSH default).
+				if (routing === "dsh") {
+					return {
+						text: TL_T("hub.ai.adapterDsh", {
+							provider: hostProvider === "" ? TL_T("hub.ai.llm.unknown") : hostProvider,
+							model: hostModel === "" ? TL_T("hub.ai.llm.unknown") : hostModel,
+						}),
+						state: "dsh",
+					};
+				}
+				// (c) a user-registered adapter (routing === "adapter" on the new brain; the
+				// adapter id alone on an older/partial status shape).
+				if (adapterId !== null) return { text: TL_T("hub.ai.adapter", { adapter: adapterId }), state: "adapter" };
+				// (d) no adapter at all: the companion is on the local brain.
+				return { text: TL_T("hub.ai.adapterNone"), state: "none" };
+			};
+			/**
+			 * plan A provider picker. Option 0 is always the DSH default (the model itself
+			 * follows the DSH default selection); the remaining options come from
+			 * remote.llm.listProviders() and carry `{id,name}`. Options are rebuilt only
+			 * when their content changes (the hub polls status every 4s).
+			 */
+			const renderProviderSelect = (status) => {
+				if (ui === null || ui.llmProvider === null || ui.llmProvider === undefined) return;
+				const select = ui.llmProvider;
+				const pet = hubPetBrain();
+				const canSet = pet !== null && typeof pet.setLlmProvider === "function";
+				const cache = hubLlmProvidersCache;
+				const providers = cache !== null && cache.ok === true ? cache.providers : [];
+				const llm = status !== null && typeof status === "object" && status.llm !== null && typeof status.llm === "object" ? status.llm : null;
+				const host = llm !== null && llm.host !== null && typeof llm.host === "object" ? llm.host : null;
+				const hostProvider = host !== null && typeof host.provider === "string" && host.provider !== "" ? host.provider : TL_T("hub.ai.llm.unknown");
+				const hostModel = host !== null && typeof host.model === "string" && host.model !== "" ? host.model : TL_T("hub.ai.llm.unknown");
+				const followLabel = TL_T("hub.ai.llm.followDefault") + " (" + hostProvider + " / " + hostModel + ")";
+				const selected = llm !== null && typeof llm.provider === "string" ? llm.provider : "";
+				const signature = followLabel + "|" + providers.map((provider) => provider.id).join(",") + "|" + (canSet ? "1" : "0");
+				if (signature !== hubLlmProviderSignature) {
+					hubLlmProviderSignature = signature;
+					select.textContent = "";
+					select.appendChild(hubCreate("option", { value: "" }, followLabel));
+					for (const provider of providers) select.appendChild(hubCreate("option", { value: provider.id }, provider.name));
+				}
+				// A stored provider that is missing from a failed/empty list cannot be
+				// rendered as an option; the picker honestly shows "follow default" while
+				// the brain keeps the saved choice (a later successful read restores it).
+				const known = providers.some((provider) => provider.id === selected);
+				select.value = selected !== "" && known ? selected : "";
+				select.disabled = canSet === false;
+				select.setAttribute("data-tl-hub-llm-provider-count", String(providers.length));
+				select.setAttribute(
+					"data-tl-hub-llm-provider-state",
+					cache === null ? "loading" : cache.ok === true ? (providers.length === 0 ? "empty" : "listed") : "unavailable",
+				);
+			};
+			/** One model-fallback hint line, shared by the AI note (44 localizes the copy). */
+			const setLlmHintNote = (code) => {
+				const hint = hubLlmHintText(code);
+				if (hint !== "") setAiNote(hint);
+			};
+			/** Re-read the host model capability (44 owns the probe); no-op without 44. */
+			const refreshHostLlmStatus = () => {
+				const pet = hubPetBrain();
+				if (pet === null || typeof pet.refreshHostLlm !== "function") return;
+				runAsync(async () => {
+					await hubTry(async () => pet.refreshHostLlm(), null, "llm-host-refresh");
+					refreshAi();
+				});
+			};
+			/** One debounced provider-list read per hub install (single flight, cached). */
+			const ensureLlmProviders = () => {
+				if (hubLlmProvidersBusy === true || hubLlmProvidersCache !== null) return;
+				hubLlmProvidersBusy = true;
+				runAsync(async () => {
+					try {
+						hubLlmProvidersCache = await hubListProviders();
+					} finally {
+						hubLlmProvidersBusy = false;
+					}
+					refreshAi();
+				});
+			};
+			/** Persist the chosen provider through the brain's same-closure bridge. */
+			const onProviderChange = async (event) => {
+				// R8 (REV-R4A F2): a script-dispatched change is not a user preference.
+				if (isSyntheticUserEvent(event)) return;
+				disarmPendingConfirms();
+				const pet = hubPetBrain();
+				if (pet === null || typeof pet.setLlmProvider !== "function") {
+					setAiNote(TL_T("hub.ai.llm.providerFailed"));
+					return;
+				}
+				const value =
+					ui !== null && ui.llmProvider !== null && ui.llmProvider !== undefined && typeof ui.llmProvider.value === "string"
+						? ui.llmProvider.value
+						: "";
+				let result = null;
+				try {
+					result = await pet.setLlmProvider(value === "" ? null : value);
+				} catch (error) {
+					note("role-hub:llm-provider", error);
+					result = null;
+				}
+				setAiNote(result !== null && result !== undefined && result.ok === false ? TL_T("hub.ai.llm.providerFailed") : TL_T("hub.ai.llm.providerSaved"));
+				refreshAi();
+			};
 			const appendLog = (entry) => {
 				logEntries.push(entry);
 				while (logEntries.length > HUB_LOG_MAX) logEntries.shift();
@@ -2274,7 +2904,24 @@
 					}
 					const granted = row.granted === true;
 					if (granted === true) permConfirmPending.delete(row.id);
-					line.appendChild(hubCreate("span", { className: "tl-hub-perm-state" }, granted ? TL_T("hub.perm.granted") : TL_T("hub.perm.notGranted")));
+					// R4A: adapter-based capabilities must not read as a plain "granted".
+					// LLM and the six high-risk caps only do something when the user
+					// registers an adapter (and the skin itself never invokes one), so the
+					// row says "no adapter (not enabled)" / "manual call only" instead.
+					const adapterBased = row.adapter !== undefined;
+					const hasAdapter = row.adapter === true;
+					let stateText = granted ? TL_T("hub.perm.granted") : TL_T("hub.perm.notGranted");
+					let stateKind = granted ? "granted" : "not-granted";
+					if (granted === true && adapterBased === true) {
+						if (hasAdapter === true) {
+							stateText = risk === "high" ? TL_T("hub.perm.stateManual") : TL_T("hub.perm.granted");
+							stateKind = "granted-adapter";
+						} else {
+							stateText = TL_T("hub.perm.stateNoAdapter");
+							stateKind = "granted-no-adapter";
+						}
+					}
+					line.appendChild(hubCreate("span", { className: "tl-hub-perm-state", "data-tl-hub-perm-state": stateKind }, stateText));
 					const grantable = row.grantable !== false;
 					const pending = permConfirmPending.get(row.id) === true;
 					if (granted === true) {
@@ -2285,7 +2932,10 @@
 					} else if (grantable) {
 						const label = pending === true ? TL_T("hub.perm.confirmHigh") : risk === "safe" ? TL_T("hub.perm.grant") : TL_T("hub.perm.grantHigh");
 						const button = hubCreate("button", { type: "button", className: "tl-hub-btn tl-hub-perm-btn", "data-tl-hub-perm-grant": row.id }, label);
-						button.addEventListener("click", () => runAsync(() => requestPermissionGrant(row.id, risk)));
+						button.addEventListener("click", (event) => {
+							if (isSyntheticUserEvent(event)) return;
+							runAsync(() => requestPermissionGrant(row.id, risk, event));
+						});
 						line.appendChild(button);
 						if (pending === true && (risk === "medium" || risk === "high")) {
 							line.appendChild(
@@ -2301,7 +2951,8 @@
 				}
 				if (ui.permHighWarning !== null && ui.permHighWarning !== undefined) ui.permHighWarning.hidden = hasHigh !== true;
 			};
-			const requestPermissionGrant = async (id, risk) => {
+			const requestPermissionGrant = async (id, risk, event) => {
+				if (isSyntheticUserEvent(event)) return;
 				const pet = hubPetBrain();
 				if (pet === null || typeof pet.grant !== "function") return;
 				if (risk !== "safe" && permConfirmPending.get(id) !== true) {
@@ -2312,7 +2963,20 @@
 					return;
 				}
 				permConfirmPending.delete(id);
-				const options = risk === "safe" ? undefined : { consent: "user-explicit" };
+				// R4A: the brain only accepts a one-shot consent ticket minted in its own
+				// closure (a fixed string was replayable by any page script before).
+				let options;
+				if (risk === "safe") {
+					options = undefined;
+				} else {
+					const ticket = typeof pet.requestConsent === "function" ? pet.requestConsent(id) : null;
+					if (ticket === null) {
+						setPermStatus(TL_T("hub.perm.grantFailed", { reason: TL_T("hub.agent.reason.consent") }));
+						refreshAi();
+						return;
+					}
+					options = { consent: ticket };
+				}
 				let result = null;
 				try {
 					result = await pet.grant(id, options);
@@ -2353,7 +3017,10 @@
 				}
 				refreshAi();
 			};
-			const onLlmClick = async () => {
+			const onLlmClick = async (event) => {
+				// R8 (REV-R4A F2): a script-dispatched click must not grant LLM/consent.
+				if (isSyntheticUserEvent(event)) return;
+				disarmPendingConfirms();
 				const pet = hubPetBrain();
 				if (pet === null) return;
 				const rows = await hubTry(async () => pet.permissions?.(), null, "perm-rows");
@@ -2369,7 +3036,15 @@
 					refreshAi();
 					return;
 				}
-				const result = await hubTry(async () => pet.grant?.("llm", { consent: "user-explicit" }), null, "llm-grant");
+				// R4A: same-closure one-shot consent ticket instead of a fixed string.
+				const llmTicket = typeof pet.requestConsent === "function" ? pet.requestConsent("llm") : null;
+				if (llmTicket === null) {
+					llmPending = false;
+					setAiNote(TL_T("hub.agent.reason.consent"));
+					refreshAi();
+					return;
+				}
+				const result = await hubTry(async () => pet.grant?.("llm", { consent: llmTicket }), null, "llm-grant");
 				llmPending = false;
 				setAiNote(result === null || result === undefined || result.ok !== false ? TL_T("hub.ai.llm.granted") : TL_T("hub.ai.unavailable"));
 				refreshAi();
@@ -2425,6 +3100,8 @@
 				ui.mindInterval.value = String(interval);
 				ui.mindSpeak.disabled = available === false || enabled === false;
 				ui.mindSpeak.checked = status === null || status.autonomousSpeech !== false;
+				ui.mindLlm.disabled = available === false || enabled === false;
+				ui.mindLlm.checked = status !== null && status.llmAssist === true;
 				ui.mindThink.disabled = available === false || enabled === false || mindBusy === true;
 				ui.mindClear.disabled = available === false || thoughtCount === 0;
 				ui.mindThoughts.textContent = "";
@@ -2450,13 +3127,22 @@
 				if (available === false) setMindNote(TL_T("hub.mind.unavailable"));
 				else if (brainPaused === true) setMindNote(TL_T("hub.mind.paused"));
 				else if (enabled === false) setMindNote(TL_T("hub.mind.disabledNote"));
-				else if (status !== null && Number.isFinite(status.lastThinkAt) && status.lastThinkAt > 0) {
-					setMindNote(TL_T("hub.mind.status", { n: interval, count: thoughtCount, time: hubClock(status.lastThinkAt) }));
-				} else {
-					setMindNote(TL_T("hub.mind.statusNever", { n: interval }));
+				else {
+					const budgetUsed = status !== null && Number.isFinite(status.llmUsedToday) ? Math.max(0, Math.floor(status.llmUsedToday)) : 0;
+					const budgetCap = status !== null && Number.isFinite(status.llmDailyLimit) ? Math.max(0, Math.floor(status.llmDailyLimit)) : 0;
+					const llmSuffix =
+						status !== null && status.llmAssist === true && budgetCap > 0
+							? " · " + TL_T("hub.mind.llmBudget", { used: budgetUsed, budget: budgetCap })
+							: "";
+					if (status !== null && Number.isFinite(status.lastThinkAt) && status.lastThinkAt > 0) {
+						setMindNote(TL_T("hub.mind.status", { n: interval, count: thoughtCount, time: hubClock(status.lastThinkAt) }) + llmSuffix);
+					} else {
+						setMindNote(TL_T("hub.mind.statusNever", { n: interval }) + llmSuffix);
+					}
 				}
 			};
 			const onMindToggle = async () => {
+				disarmPendingConfirms();
 				const mind = hubPetMind();
 				if (mind === null) return;
 				const status = mindStatusOf();
@@ -2468,7 +3154,8 @@
 				}
 				const interval = Number(ui !== null ? ui.mindInterval.value : 15);
 				const speak = ui !== null && ui.mindSpeak.checked === true;
-				await hubTry(async () => mind.enable?.({ intervalMin: HUB_MIND_INTERVALS.indexOf(interval) >= 0 ? interval : 15, autonomousSpeech: speak }), null, "mind-enable");
+				const llmAssist = ui !== null && ui.mindLlm.checked === true;
+				await hubTry(async () => mind.enable?.({ intervalMin: HUB_MIND_INTERVALS.indexOf(interval) >= 0 ? interval : 15, autonomousSpeech: speak, llmAssist }), null, "mind-enable");
 				refreshMind();
 			};
 			const onMindInterval = async () => {
@@ -2489,7 +3176,17 @@
 				await hubTry(async () => mind.enable?.({ autonomousSpeech: ui.mindSpeak.checked === true }), null, "mind-speak");
 				refreshMind();
 			};
+			const onMindLlm = async () => {
+				disarmPendingConfirms();
+				const mind = hubPetMind();
+				if (mind === null || ui === null) return;
+				const status = mindStatusOf();
+				if (status === null || status.enabled !== true) return;
+				await hubTry(async () => mind.enable?.({ llmAssist: ui.mindLlm.checked === true }), null, "mind-llm");
+				refreshMind();
+			};
 			const onMindThink = async () => {
+				disarmPendingConfirms();
 				const mind = hubPetMind();
 				if (mind === null || typeof mind.thinkNow !== "function" || mindBusy === true) return;
 				mindBusy = true;
@@ -2553,13 +3250,21 @@
 				ui.llmButton.disabled = !available || (llmRow !== null && llmRow.grantable === false);
 				ui.llmButton.textContent = llmPending === true ? TL_T("hub.ai.llm.confirmShort") : llmGranted ? TL_T("hub.ai.llm.revoke") : TL_T("hub.ai.llm.grant");
 				ui.llmButton.setAttribute("data-tl-hub-llm-granted", llmGranted ? "true" : "false");
-				const adapterId = hubAdapterId(status);
-				ui.adapter.textContent = available
-					? TL_T("hub.ai.adapter", { adapter: adapterId === null ? TL_T("hub.ai.adapterNone") : adapterId })
-					: TL_T("hub.ai.unavailable");
+				// plan A: one adapter line for the built-in DSH model, a custom adapter, an
+				// unavailable host (with its reason) or the local-only fallback.
+				const adapterLine = hubAdapterLine(status);
+				ui.adapter.textContent = adapterLine.text;
+				ui.adapter.setAttribute("data-tl-hub-adapter-state", adapterLine.state);
+				renderProviderSelect(status);
+				ensureLlmProviders();
 				if (!available) setAiNote(TL_T("hub.ai.unavailable"));
 				else if (paused) setAiNote(TL_T("hub.ai.pausedNote"));
 				else if (ui.aiNote.textContent === TL_T("hub.ai.pausedNote") || ui.aiNote.textContent === TL_T("hub.ai.unavailable")) setAiNote("");
+				// A failed provider-list read explains the default-only picker, but never
+				// overwrites a more recent note (typed error, saved provider, denied turn).
+				if (hubLlmProvidersCache !== null && hubLlmProvidersCache.ok !== true && ui.aiNote.textContent === "") {
+					setAiNote(TL_T("hub.ai.llm.providerUnavailable"));
+				}
 				refreshPermissions(rows);
 				renderAudit();
 			};
@@ -2647,8 +3352,7 @@
 					agentPermPending === true ? TL_T("hub.agent.perm.confirmShort") : permission === true ? TL_T("hub.agent.perm.revoke") : TL_T("hub.agent.perm.grant");
 				ui.agentPerm.setAttribute("data-tl-hub-agent-granted", permission === true ? "true" : "false");
 				ui.agentTarget.disabled = available !== true || agentBusy === true;
-				const statusSessions = agentStatusCache !== null && Array.isArray(agentStatusCache.sessions) ? agentStatusCache.sessions : [];
-				renderAgentTargets(statusSessions.length > 0 ? statusSessions : agentSessionsCache, agentStatusCache);
+				renderAgentTargets(agentSessionsCache, agentStatusCache);
 				ui.agentConnect.disabled = available !== true || permission !== true || agentBusy === true;
 				ui.agentDisconnect.disabled = connected !== true || agentBusy === true;
 				ui.agentOpen.disabled = connected !== true;
@@ -2689,7 +3393,10 @@
 				setAgentNote(TL_T("hub.agent.perm.confirm"));
 				return false;
 			};
-			const onAgentPermClick = async () => {
+			const onAgentPermClick = async (event) => {
+				// R8 (REV-R4A F2): synthetic clicks do not count as the user's consent.
+				if (isSyntheticUserEvent(event)) return;
+				disarmPendingConfirms();
 				const pet = hubPetBrain();
 				const granted = hubAgentPermission(agentStatusCache) === true;
 				if (granted === true) {
@@ -2716,11 +3423,17 @@
 				}
 				let message = TL_T("hub.agent.perm.granted");
 				try {
-					const result = await pet.grant("agentChat", { consent: "user-explicit" });
-					if (result !== null && typeof result === "object" && result.ok === false) {
-						message = TL_T("hub.agent.perm.denied", {
-							reason: hubReasonLabel(result.reason, HUB_AGENT_GRANT_REASON_KEYS, "hub.agent.reason.default"),
-						});
+					// R4A: consent is a one-shot closure ticket, not the old fixed string.
+					const ticket = typeof pet.requestConsent === "function" ? pet.requestConsent("agentChat") : null;
+					if (ticket === null) {
+						message = TL_T("hub.agent.perm.denied", { reason: hubReasonLabel("consent-required", HUB_AGENT_GRANT_REASON_KEYS, "hub.agent.reason.default") });
+					} else {
+						const result = await pet.grant("agentChat", { consent: ticket });
+						if (result !== null && typeof result === "object" && result.ok === false) {
+							message = TL_T("hub.agent.perm.denied", {
+								reason: hubReasonLabel(result.reason, HUB_AGENT_GRANT_REASON_KEYS, "hub.agent.reason.default"),
+							});
+						}
 					}
 				} catch (error) {
 					note("role-hub:agent-grant", error);
@@ -2730,7 +3443,10 @@
 				refreshAgent();
 				refreshAi();
 			};
-			const onAgentConnect = async () => {
+			const onAgentConnect = async (event) => {
+				// R8 (REV-R4A F2): connecting the Agent channel needs a real user gesture.
+				if (isSyntheticUserEvent(event)) return;
+				disarmPendingConfirms();
 				const agent = hubPetAgent();
 				if (ui === null) return;
 				if (agent === null || typeof agent.connect !== "function") {
@@ -2798,7 +3514,12 @@
 					setAgentNote(TL_T("hub.agent.open.failed", { reason: String(error?.message ?? error) }));
 				}
 			};
-			const sendChat = async () => {
+			const sendChat = async (event) => {
+				// R8 (REV-R4A F2): sending into the Agent channel is a user gesture; a
+				// script-dispatched click/keydown is ignored. The hub's own input is not a
+				// substitute for the product composer and remains untouched by this guard.
+				if (isSyntheticUserEvent(event)) return;
+				disarmPendingConfirms();
 				const pet = hubPetBrain();
 				if (ui === null || pet === null || typeof pet.chat !== "function" || chatBusy === true) return;
 				const raw = typeof ui.chatInput.value === "string" ? ui.chatInput.value : "";
@@ -2833,9 +3554,16 @@
 					} else {
 						const result = await pet.chat(text);
 						const parsed = hubChatResult(result);
+						// The log's `source` already renders as "AI 回复" / "本地回复".
 						appendLog({ role: "pet", at: Date.now(), source: parsed.source, ok: parsed.ok, text: parsed.text, reason: parsed.reason });
-						if (parsed.ok === true) setAiNote("");
-						else setAiNote(TL_T("hub.ai.denied", { reason: hubReasonLabel(parsed.reason, HUB_AI_REASON_KEYS, "hub.ai.reason.default") }));
+						if (parsed.ok === true) {
+							// plan A: a local fallback after a model failure says WHY (missing
+							// credential, quota, timeout, host restart, ...) instead of "usually off".
+							if (parsed.llmError !== "") setLlmHintNote(parsed.llmError);
+							else setAiNote("");
+						} else {
+							setAiNote(TL_T("hub.ai.denied", { reason: hubReasonLabel(parsed.reason, HUB_AI_REASON_KEYS, "hub.ai.reason.default") }));
+						}
 						ui.chatInput.value = "";
 					}
 				} catch (error) {
@@ -3282,6 +4010,21 @@
 				state.lifeApply.addEventListener("click", () => runAsync(applyLifeConfig));
 				lifeApplyRow.appendChild(state.lifeApply);
 				lifeCard.appendChild(lifeApplyRow);
+				// R5: typing in any rhythm field marks an unsaved draft so the 4s refresh
+				// never overwrites it, and closing (Esc included) persists it.
+				for (const input of [
+					state.lifeQuietEnabled,
+					state.lifeQuietStart,
+					state.lifeQuietEnd,
+					state.lifeBudget,
+					state.lifeWake,
+					state.lifeSleep,
+					state.lifeVirtual,
+				]) {
+					if (input === null || input === undefined) continue;
+					input.addEventListener("input", markLifeDraft);
+					input.addEventListener("change", markLifeDraft);
+				}
 				state.lifeMemory = hubCreate("p", { className: "tl-hub-hint", "data-tl-hub-memory": "" }, "");
 				lifeCard.appendChild(state.lifeMemory);
 				state.lifeNote = hubCreate("p", { className: "tl-hub-hint", "data-tl-hub-life-note": "", role: "status" }, "");
@@ -3470,7 +4213,16 @@
 				state.packSave = hubCreate("button", { type: "button", className: "tl-hub-btn", "data-tl-hub-pack-save": "" }, TL_T("hub.media.pack.save"));
 				state.packSave.addEventListener("click", () => runAsync(savePack));
 				state.packReset = hubCreate("button", { type: "button", className: "tl-hub-btn", "data-tl-hub-pack-reset": "" }, TL_T("hub.media.pack.reset"));
-				state.packReset.addEventListener("click", () => runAsync(resetPack));
+				// R5/R8b: destructive reset arms on the first click (5s expiry, disarmed by
+				// any other card action) and only runs on the second click.
+				state.packReset.addEventListener("click", () => {
+					if (packResetPending !== true) {
+						armPackReset();
+						return;
+					}
+					disarmPackReset();
+					runAsync(resetPack);
+				});
 				packButtons.appendChild(state.packSave);
 				packButtons.appendChild(state.packReset);
 				packSection.appendChild(packButtons);
@@ -3488,12 +4240,29 @@
 				state.pauseButton = hubCreate("button", { type: "button", "data-tl-hub-pause": "", className: "tl-hub-btn" }, TL_T("hub.ai.pause"));
 				state.pauseButton.addEventListener("click", () => runAsync(togglePause));
 				state.llmButton = hubCreate("button", { type: "button", "data-tl-hub-perm": "llm", className: "tl-hub-btn", "data-tl-hub-llm-granted": "false" }, TL_T("hub.ai.llm.grant"));
-				state.llmButton.addEventListener("click", () => runAsync(onLlmClick));
+				state.llmButton.addEventListener("click", (event) => runAsync(() => onLlmClick(event)));
 				aiRow.appendChild(state.pauseButton);
 				aiRow.appendChild(state.llmButton);
 				aiCard.appendChild(aiRow);
 				state.adapter = hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-adapter": "" }, TL_T("hub.ai.unavailable"));
 				aiCard.appendChild(state.adapter);
+				// plan A: only the provider is chosen here; the model follows the DSH
+				// default selection. The label is redrawn by the shared i18n DOM sweep.
+				const providerRow = hubCreate("div", { className: "tl-hub-row tl-hub-llm-provider-row", "data-tl-hub-llm-provider-row": "" });
+				state.llmProviderLabel = hubCreate(
+					"span",
+					{ className: "tl-hub-hint", "data-tl-i18n-key": "hub.ai.llm.providerLabel" },
+					TL_T("hub.ai.llm.providerLabel"),
+				);
+				state.llmProvider = hubCreate("select", {
+					"data-tl-hub-llm-provider": "",
+					className: "tl-hub-select",
+					"aria-label": TL_T("hub.ai.llm.providerLabel"),
+				});
+				state.llmProvider.addEventListener("change", (event) => runAsync(() => onProviderChange(event)));
+				providerRow.appendChild(state.llmProviderLabel);
+				providerRow.appendChild(state.llmProvider);
+				aiCard.appendChild(providerRow);
 				state.aiNote = hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-ai-note": "", role: "status" }, "");
 				aiCard.appendChild(state.aiNote);
 				const chatRow = hubCreate("div", { className: "tl-hub-row" });
@@ -3508,10 +4277,10 @@
 				state.chatInput.addEventListener("keydown", (event) => {
 					if (event === null || event === undefined || event.key !== "Enter") return;
 					if (typeof event.preventDefault === "function") event.preventDefault();
-					runAsync(sendChat);
+					runAsync(() => sendChat(event));
 				});
 				state.chatSend = hubCreate("button", { type: "button", "data-tl-hub-chat-send": "", className: "tl-hub-btn" }, TL_T("hub.ai.send"));
-				state.chatSend.addEventListener("click", () => runAsync(sendChat));
+				state.chatSend.addEventListener("click", (event) => runAsync(() => sendChat(event)));
 				chatRow.appendChild(state.chatInput);
 				chatRow.appendChild(state.chatSend);
 				aiCard.appendChild(chatRow);
@@ -3553,13 +4322,28 @@
 				mindSpeakBox.appendChild(state.mindSpeak);
 				mindSpeakBox.appendChild(hubCreate("span", { className: "tl-hub-mind-speak-label" }, TL_T("hub.mind.speak")));
 				mindRow.appendChild(mindSpeakBox);
+				// S1: separate opt-in for LLM inner monologue (independent daily budget).
+				const mindLlmBox = hubCreate("span", { className: "tl-hub-mind-speak", title: TL_T("hub.mind.llmHint") });
+				state.mindLlm = hubCreate("input", { type: "checkbox", "data-tl-hub-mind-llm": "" });
+				state.mindLlm.addEventListener("change", () => runAsync(onMindLlm));
+				mindLlmBox.appendChild(state.mindLlm);
+				mindLlmBox.appendChild(hubCreate("span", { className: "tl-hub-mind-speak-label" }, TL_T("hub.mind.llm")));
+				mindRow.appendChild(mindLlmBox);
 				mindCard.appendChild(mindRow);
 				const mindActionRow = hubCreate("div", { className: "tl-hub-row" });
 				state.mindThink = hubCreate("button", { type: "button", "data-tl-hub-mind-think": "", className: "tl-hub-btn" }, TL_T("hub.mind.think"));
 				state.mindThink.addEventListener("click", () => runAsync(onMindThink));
 				mindActionRow.appendChild(state.mindThink);
 				state.mindClear = hubCreate("button", { type: "button", "data-tl-hub-mind-clear": "", className: "tl-hub-btn" }, TL_T("hub.mind.clear"));
-				state.mindClear.addEventListener("click", () => runAsync(onMindClear));
+				// R5/R8b: clearing thoughts cannot be undone; arm with expiry before running.
+				state.mindClear.addEventListener("click", () => {
+					if (mindClearPending !== true) {
+						armMindClear();
+						return;
+					}
+					disarmMindClear();
+					runAsync(onMindClear);
+				});
 				mindActionRow.appendChild(state.mindClear);
 				mindCard.appendChild(mindActionRow);
 				state.mindThoughts = hubCreate("div", {
@@ -3582,13 +4366,13 @@
 				agentCard.appendChild(state.agentStatus);
 				const agentPermRow = hubCreate("div", { className: "tl-hub-row" });
 				state.agentPerm = hubCreate("button", { type: "button", "data-tl-hub-agent-perm": "", className: "tl-hub-btn", "data-tl-hub-agent-granted": "false" }, TL_T("hub.agent.perm.grant"));
-				state.agentPerm.addEventListener("click", () => runAsync(onAgentPermClick));
+				state.agentPerm.addEventListener("click", (event) => runAsync(() => onAgentPermClick(event)));
 				agentPermRow.appendChild(state.agentPerm);
 				agentCard.appendChild(agentPermRow);
 				const agentTargetRow = hubCreate("div", { className: "tl-hub-row" });
 				state.agentTarget = hubCreate("select", { "data-tl-hub-agent-target": "", className: "tl-hub-select", "aria-label": TL_T("hub.agent.target.label") });
 				state.agentConnect = hubCreate("button", { type: "button", "data-tl-hub-agent-connect": "", className: "tl-hub-btn" }, TL_T("hub.agent.connect"));
-				state.agentConnect.addEventListener("click", () => runAsync(onAgentConnect));
+				state.agentConnect.addEventListener("click", (event) => runAsync(() => onAgentConnect(event)));
 				state.agentDisconnect = hubCreate("button", { type: "button", "data-tl-hub-agent-disconnect": "", className: "tl-hub-btn" }, TL_T("hub.agent.disconnect"));
 				state.agentDisconnect.addEventListener("click", () => runAsync(onAgentDisconnect));
 				state.agentOpen = hubCreate("button", { type: "button", "data-tl-hub-agent-open": "", className: "tl-hub-btn" }, TL_T("hub.agent.open"));
@@ -3608,6 +4392,7 @@
 				const permCard = hubCreate("section", { "data-tl-hub-perms": "", className: "tl-hub-card" }, [
 					hubCreate("h3", { className: "tl-hub-card-title" }, TL_T("hub.perm.title")),
 					hubCreate("p", { className: "tl-hub-note tl-hub-hint" }, TL_T("hub.perm.hint")),
+					hubCreate("p", { className: "tl-hub-perm-note", "data-tl-hub-perm-session-only": "" }, TL_T("hub.perm.sessionOnly")),
 				]);
 				state.permHighWarning = hubCreate("p", { className: "tl-hub-perm-note", "data-tl-hub-perm-high-warning": "" }, TL_T("hub.perm.highWarning"));
 				state.permHighWarning.hidden = true;
@@ -3707,19 +4492,50 @@
 					document.body.appendChild(rootEl);
 					document.body.setAttribute("data-tl-hub-open", "");
 					openState = true;
+					// R8c (REV-R8 F2): any click/change anywhere in the hub disarms an old
+					// destructive confirmation before the card handler runs — except a click
+					// on the already-armed confirm button itself (its own handler performs the
+					// second step). Capture phase is what makes "arm → click elsewhere → click
+					// again" impossible for EVERY card action, not just the ten wired by hand.
+					const hubElement = rootEl;
+					const onAnyCardAction = (event) => {
+						const target = event !== null && event !== undefined ? event.target : null;
+						const armedButton =
+							target !== null && target !== undefined && typeof target.closest === "function"
+								? target.closest("[data-tl-hub-confirm='true']")
+								: null;
+						if (armedButton !== null) return;
+						disarmPendingConfirms();
+					};
+					hubElement.addEventListener("click", onAnyCardAction, true);
+					hubElement.addEventListener("change", onAnyCardAction, true);
+					confirmCaptureDisposer = () => {
+						hubElement.removeEventListener("click", onAnyCardAction, true);
+						hubElement.removeEventListener("change", onAnyCardAction, true);
+					};
 					const win = hubBrowserWindow();
-					if (win !== null) {
-						try {
-							win.addEventListener("keydown", onKeyDown);
-						} catch (error) {
-							setLastError("open-listener", error);
-						}
+					// R5: the shared overlay stack owns Esc/Tab for this modal. Its
+					// onEscape calls close(), which persists the draft before teardown.
+					if (overlayDisposer === null) {
+						overlayDisposer = tl5OverlayRegister({
+							id: "role-hub",
+							modal: true,
+							root: () => rootEl,
+							onEscape: () => close(),
+						});
 					}
 					refreshStatus();
+					lifeDraftActive = false;
 					refreshLifeConfig(true);
+					// Restore unfinished edits AFTER the rhythm card has been filled from
+					// the engine, otherwise the refresh would overwrite the draft.
+					restoreHubDraft();
 					refreshWeather();
 					refreshGlass();
 					refreshAi();
+					// plan A: re-probe the host model capability on every open (44 owns the
+					// probe; it degrades to a no-op when the brain build predates it).
+					refreshHostLlmStatus();
 					refreshMind();
 					refreshAgent();
 					// The pack editor is loaded after the catalog pass (sequentially, so a
@@ -3789,6 +4605,22 @@
 				if (disposed === true) return;
 				disposed = true;
 				hubTry(() => close(), null, "dispose-close");
+				// plan A: release the injected remote scopes (no listener outlives the hub).
+				// ctx.inject() returns a cordis Fiber (PromiseLike), not a disposer function;
+				// accept either shape and never let teardown throw.
+				for (const disposeLlmScope of hubLlmInjectDisposers.splice(0).reverse()) {
+					try {
+						if (typeof disposeLlmScope === "function") disposeLlmScope();
+						else if (disposeLlmScope !== null && disposeLlmScope !== undefined && typeof disposeLlmScope.dispose === "function") disposeLlmScope.dispose();
+					} catch (error) {
+						note("role-hub:llm-inject-dispose", error);
+					}
+				}
+				hubLlmServiceScope = null;
+				hubLlmRemoteScope = null;
+				hubLlmProvidersCache = null;
+				hubLlmProvidersBusy = false;
+				hubLlmProviderSignature = "";
 				try {
 					if (globalThis.tianlightRoleHub === api) {
 						if (previousGlobal === undefined) delete globalThis.tianlightRoleHub;
