@@ -364,7 +364,7 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 - **自动轮播**：顺序或随机、30 秒到 10 分钟、只轮播收藏；页面隐藏、省电或手动暂停时顺延；先准备下一张再切换，坏文件跳过；隐藏的壁纸不参与
 - **壁纸库 v2（v0.5.0）**：搜索 + 标签 facet 多选 + 排序（名称/类型/最近使用/收藏优先）+ 隐藏/恢复（只改列表，不删文件、不打断播放）；卡片显示类型、文件大小；顶部显示源分辨率、时长与实测 FPS/帧间隔抖动
 - **首开不再像“0 张”**（v0.5.2）：清单首次加载显示「加载中…」；失败先 1.2s 静默重试一次，两次失败才显示错误与行内「重试」按钮；宿主 build 过旧会提示重启 DSH。pick 视图另有「更多设置在右上『高级』」提示
-- **上传壁纸**：面板内选择图片/视频，默认上限 **512MB**（`TIANLIGHT_UPLOAD_MAX` 可调）；宿主流式落盘到 `assets/uploads/`，只接受图片/视频扩展名，同名自动加 `-1` 而不是覆盖；中文/4K 文件名会清洗成可播放的 ASCII 名
+- **上传壁纸**：面板内选择图片/视频，默认上限 **512MB**（`TIANLIGHT_UPLOAD_MAX` 可调）；宿主流式落盘到用户数据目录的 `uploads/`（v2.0.1 起位于 `$DSH_HOME/profiles/<profile>/tianlight/uploads/`），只接受图片/视频扩展名，同名自动加 `-1` 而不是覆盖；中文/4K 文件名会清洗成可播放的 ASCII 名
 - **叠加层**：A/B 两槽，预设（暗角/颗粒/光晕/扫描线）或图片（本地/URL），不透明度 + 混合 + 交换层级，纯 CSS 叠在任意壁纸之上
 - **玻璃面板（液态玻璃 v2，v1.6.1 起）**：`depth != off` 时统一覆盖全部界面——侧栏、设置面板、壁纸库、角色中枢、对话框、菜单、列表框、输入区、气泡、胶囊、提示，以及侧栏「新会话」按钮与主界面天气胶囊；v2 配方 = 更厚磨砂 + 更高饱和 + 多层 specular（左上径向 + 对角 sheen）+ 1px 亮/暗边（`--tl-liquid-rim`）+ 外柔光 + 细噪点（`--tl-liquid-grain`）+ hover/active 柔和回弹，三档 blur/sat 整体上调；**每视口只留一层模糊**（有场景用场景层、无场景用兜底层，浮层菜单与输入区沿用自身 blur；大面板与气泡不叠实时 blur，保证长会话滚动与视频流畅）；输入控件（`input`/`textarea`/`[contenteditable]`）只加描边/微高光、不加 blur；无壁纸场景时自动补一层玻璃兜底；`off` 档零变化（保持 v1.4 前观感，唯一例外是 v1.6.1 的新会话深色块修复），低电量/15fps 与减少动效自动降级
 - **亮/暗双主题**：两套 token，均保持壁纸可见
@@ -374,7 +374,7 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 - **WebWallGL 场景**：可选的 Wallpaper Engine 场景通道（内置 MIT 的 WebWallGL 3.0，`vendor/webwallgl/`），在**沙箱 iframe**里实时渲染 `project.json` + `scene.pkg`；首帧超时/引擎失败自动退回上一张可播壁纸或视频
 - **网页壁纸（A3）**：WE 目录中 `project.json` 声明 `type:"web"`（或入口 `.html`）的项目在清单出现，经 opaque-origin 沙箱 iframe 渲染；失败/20s 超时回落上一张；暂停/省电时卸载 iframe，重播放会重挂载（项目内部状态丢失）
 - **动态分辨率（A4）**：同一素材的 `name.1080` / `name.1440` / `name.4k`（及 `-1080p` 等）变体按窗口宽 × DPR 自动选择，resize 防抖后交叉淡入切换，不黑屏；变体需按文件名约定提供（不做内容探测）
-- **预裁剪缓存（A5）**：首帧按窗口比例裁剪写入宿主 `state/frame-cache/`，下次首屏用缓存图垫底；⑪ 引擎分区显示命中状态并可清空；best-effort，失败时直接实时帧
+- **预裁剪缓存（A5）**：首帧按窗口比例裁剪写入用户数据目录的 `state/frame-cache/`（v2.0.1 起位于 `$DSH_HOME/profiles/<profile>/tianlight/state/frame-cache/`），下次首屏用缓存图垫底；⑪ 引擎分区显示命中状态并可清空；best-effort，失败时直接实时帧
 - **可选转码（A6）**：本机有 ffmpeg 时对 HEVC/GIF 上传件显示「转 H.264 / MP4」，转完自动进清单；没有 ffmpeg 就隐藏；失败/超时不覆盖源文件
 - **系统音频回环（A1）**：用户手势后在系统弹窗勾选「分享音频」，采集系统/标签页音频做实时分析（不录音、不留存），驱动音频响应着色器（`u_audio`）；不支持/被拒/无设备有明确提示
 - **Now Playing（A2）**：纯只读读取 MediaSession 元数据，在 ⑩ 显示当前媒体；拿不到就静默隐藏。v0.5.1 起系统音频回环激活时，两个节拍点由**真实音频电平**（~10Hz，非 rAF）驱动；回环关闭时保留装饰性脉冲；低功耗/减少动效冻结
@@ -397,7 +397,7 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 - **导入导出包（D2）**：⑥ 导出/导入整包（`.tgz`：清单 + 设置 + 配方 + 上传壁纸）；显示导入/跳过数量，设置写入宿主后**刷新页面统一生效**，失败不丢当前配置
 - **配方分享链接（D3）**：生成 `#tl=…` 链接（配方 v2）；打开后提示「检测到共享配方」并确认后应用；非法链接只清 hash，绝不写设置
 - **模块开关**：壁纸、特效、情境、音频、桌宠、推理滑杆、排版七个模块可关；关闭即移除 DOM 与监听器，再打开重新安装
-- **宿主设置同步**：`tianlight.*` / `dsh-tianlight:*` 设置存插件目录 `state/settings.json`，跨浏览器一致；宿主不可用时自动退回本地存储
+- **宿主设置同步**：`tianlight.*` / `dsh-tianlight:*` 设置存用户数据目录的 `state/settings.json`（v2.0.1 起位于 `$DSH_HOME/profiles/<profile>/tianlight/state/settings.json`），跨浏览器一致；宿主不可用时自动退回本地存储
 - **多窗口一致**：同浏览器多窗口设置同步（最后写入者为准）
 - **设置数据安全（v0.5.2）**：宿主导入不再删除本地独有的键（宿主有的键按宿主落地、显式 null 墓碑仍删除、本地独有键保留并回推宿主）；导入前自动备份到本地键 `tianlight.backup.host`（**不参与宿主同步**），⑦ 工程分区可用「恢复宿主导入前备份」；首启全量推送、推送失败重试一次
 
@@ -435,7 +435,7 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 
 不用 Desktop 时，Web profile 也是同一种单包安装：把本包以目录链接或 `link:` 依赖放进 profile 的 `node_modules`，在 profile 的 `package.json` 里依赖本包，并在 `dsh.profile.bundles` 中登记 `@dsh-external/dsh-client-ui-skin-tianlight`。行仍由 bundle 自带的 patch 插入，不需要手写。
 
-> **v0.5.0 新增宿主能力**（设置存储 / 导入导出包 / 预裁剪缓存 / 可选转码 / 网页壁纸），所以安装或更新后需要**重启一次 DSH**；之后只改 `src/` 的浏览器半仍只需 Ctrl+F5。设置与缓存写在插件目录的 `state/`（git 忽略、per-machine），`ffmpeg` 是可选的系统命令。
+> **v0.5.0 新增宿主能力**（设置存储 / 导入导出包 / 预裁剪缓存 / 可选转码 / 网页壁纸），所以安装或更新后需要**重启一次 DSH**；之后只改 `src/` 的浏览器半仍只需 Ctrl+F5。设置与缓存从 v2.0.1 起写入 DSH profile 的用户数据目录 `<profile>/tianlight/state/`（v2.0.0 及更早在插件目录 `state/`），`ffmpeg` 是可选的系统命令。
 >
 > **v0.5.1**：没有新增宿主路由，但宿主 build 标记从 `0.5.0` → `0.5.1`。只 Ctrl+F5 时面板会提示「宿主半待重启 DSH」
 > （功能不受影响），重启一次即可消除提示。
@@ -447,6 +447,24 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 > `assets/uploads/` 是**用户数据**（面板「上传壁纸」落盘的图片/视频），`state/` 是设置与缓存，`assets/derived/` 是转码产物——都不属于发布包、不随仓库提交；发布或迁移时请自行保留/备份。发布包（`node tools/pack.mjs`，Release 附件同源）默认含代码、清单、`lib/`、`vendor/`、`presets/`、`assets/README.md` 与**随包演示素材** `assets/bg-4k.mp4`/`assets/cat.png`（显式白名单，用户自备壁纸不会进包）；上传、缓存与派生文件永不在包内。需要纯代码包时用 `node tools/pack.mjs --code-only`。
 >
 > **想恢复作者默认外观**：角色中枢 →「液态玻璃」卡片 →「恢复默认外观」（只恢复外观键：壁纸/玻璃档位/排版/特效/桌宠形象；不动聊天记录、权限、天气坐标，也不会删除你上传的壁纸文件）。首次安装且**没有任何已保存设置**时，插件会自动应用这套作者默认外观；已有设置时绝不覆盖。
+
+### 用户数据存放位置（v2.0.1 起）与手动清理
+
+宿主半的用户数据**不在插件目录里**，而是放在 DSH 管理的 profile 目录下（宿主提供的 `profileContext.dir`），
+因此升级、卸载、从市场「卸载再安装」都不会丢：
+
+```text
+$DSH_HOME/profiles/<profile>/tianlight/
+  state/            设置（settings.json）、帧缓存、Wallpaper Engine 状态与缓存、导入暂存
+  uploads/          你在面板里上传的壁纸（单文件 ≤512MB）
+  derived/          可选 ffmpeg 转码产物
+  we-roots.json     额外壁纸目录（WE 工程等，绝对路径）
+  migration.json    仅当从 v2.0.0 及更早版本升级时写入：一次性拷贝记录
+```
+
+- `$DSH_HOME` 默认 `%USERPROFILE%\.dsh`（Windows）/ `~/.dsh`；Desktop 的 profile 名是 `desktop`，Web 是 `dsh --profile <name>` 里的名字。
+- 卸载/升级**不会删除**这个目录；v2.0.0 及更早版本留在插件目录 `state/`、`assets/uploads/`、`assets/derived/`、`we-roots.json` 的数据会在新版本**首次启动时复制**过来（旧文件保留不删，方便回滚到旧版）。
+- 手动清理：退出 DSH 后删除 `$DSH_HOME/profiles/<profile>/tianlight/` 即可（会清掉设置、上传壁纸、缓存与 WE 状态）。
 
 ## 故障排查
 
@@ -570,7 +588,7 @@ node tools/hook-scan.mjs --dsh <新版本@deepseek-ai 目录>  # 升级 Desktop 
 | `--tl-content-width` / `--tl-para-gap` / `--tl-code-size` | 排版面板决定 | v0.5.0 排版增强写入的正文宽度/段距/代码字号变量 |
 
 持久化：壁纸选择、取景、玻璃、省电、收藏/标签/隐藏、排版、面板位置、播放/滤镜、轮播、桌宠、模块开关、语言、特效、情境、可读性等。
-v0.5.0 起设置由 `settingsStore` 镜像到宿主 `state/settings.json`（跨浏览器），本地 `localStorage` 仍是同步读缓存；
+v0.5.0 起设置由 `settingsStore` 镜像到宿主设置文件（v2.0.1 起为 `$DSH_HOME/profiles/<profile>/tianlight/state/settings.json`，跨浏览器），本地 `localStorage` 仍是同步读缓存；
 旧版本存储键在首次启动时迁移到 schema v5，原值备份在 `tianlight.backup.v5`。
 
 推理滑杆手感：`stiffness`（170）、`damping`（25）——越大越干脆 / 越不弹。
@@ -603,7 +621,7 @@ docs/                   发布说明、兼容性、功能清单、架构补充�
 presets/                可分享的 v0.4 / v0.5 配方 JSON
 RELEASE-NOTES-v*.md    每个版本的 GitHub Release 正文（release.mjs 生成/CI 读取）
 .github/workflows/      CI：main/dev/PR 静态链（Node 20+22）+ main 已发布守卫；v* tag 构建并发布 Release 附件
-assets/                 壁纸与桌宠素材（随包演示素材白名单；state/、assets/uploads/、assets/derived/ 为本机数据）
+assets/                 壁纸与桌宠素材（随包演示素材白名单；用户数据见「用户数据存放位置」一节，不在插件目录）
 tools/                  构建、审计、打包、Release 附件、快照、回滚、发布脚本
 ```
 
@@ -643,7 +661,7 @@ node tools/release.mjs --dry-run --version 2.0.1-rc.2 --note "…"
 ```
 
 工具要求 git 工作树干净、目标 tag 本地/远端都不存在、有 git 身份；检查失败即中止（不提交不 tag）；只做一次只读的 `git ls-remote` tag 检查（`--offline` 可跳过），push 需手动：**先推分支、再推 tag**（CI 会校验 tag 可追溯到该分支）。
-发布完成后本地会生成与 CI 同款的 `dist/release/` 4 个附件并打印 sha256；`backup/` 快照不会进入提交（gitignored），发布工具也不写 `state/`。
+发布完成后本地会生成与 CI 同款的 `dist/release/` 4 个附件并打印 sha256；`backup/` 快照不会进入提交（gitignored），发布工具也不写用户数据目录。
 
 ## 许可与素材
 
@@ -651,7 +669,7 @@ node tools/release.mjs --dry-run --version 2.0.1-rc.2 --note "…"
 - **第三方**：v0.6.0 内嵌 dsh-we-wallpaper host half（MIT，v0.4.0 @ `61ccaa2`）、wcap（Unlicense）、
   RePKG（MIT，DXT 解码实现依据）、WebWallGL（MIT）；组件、版本、归属与许可全文见
   [docs/THIRD-PARTY.md](docs/THIRD-PARTY.md)
-- **仓库完整版附带默认演示素材**：`assets/bg-4k.mp4`、`assets/cat.png`（约 34MB）；`assets/uploads/`、`state/`、`assets/derived/` 与其它自加素材不提交。替换或再分发前请确认你有使用权，缺失时以渐变兜底
+- **仓库完整版附带默认演示素材**：`assets/bg-4k.mp4`、`assets/cat.png`（约 34MB）；`assets/uploads/`、`state/`、`assets/derived/`（旧版用户数据位置）与其它自加素材不提交；v2.0.1 起用户数据在 DSH profile 目录，根本不在仓库里。替换或再分发前请确认你有使用权，缺失时以渐变兜底
 - 桌宠形象与视频版权归各自权利方；如果只想要轻量代码仓库，删除这两个文件即可
 
 ## 已知取舍
