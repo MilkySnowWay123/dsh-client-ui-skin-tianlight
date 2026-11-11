@@ -73,6 +73,54 @@
 		/** 只属于本机的元数据：不同步；schema/revision 由本文件单独维护。 */
 		const TL5_META_EXACT = [TL5_SCHEMA_KEY, TL5_BACKUP_KEY, TL5_SYNC_REVISION_KEY];
 		const TL5_META_PREFIXES = ["tianlight.backup.", "tianlight.sync."];
+
+		/**
+		 * Author default appearance (v2.0.1): exported from the author's live settings and
+		 * filtered to appearance keys only (see presets/tianlight-default.json, which
+		 * tools/test.mjs keeps identical to this constant). Applied ONLY on a fresh install
+		 * with no saved settings; existing user settings are never overwritten. The hub's
+		 * "restore default appearance" button reuses the same map.
+		 */
+		const TL5_DEFAULT_APPEARANCE_JSON = String.raw`{"tianlight.wallpaper":"{\"kind\":\"video\",\"url\":\"/skin-tianlight/bg-4k.mp4\"}","tianlight.zones":"{\"separate\":false,\"main\":{\"fit\":\"cover\",\"fx\":38,\"fy\":50,\"dim\":0,\"blur\":0,\"ratio\":\"auto\",\"zoom\":100,\"cx\":50,\"cy\":50},\"rail\":{\"fit\":\"cover\",\"fx\":50,\"fy\":50,\"dim\":16,\"blur\":0,\"url\":\"\",\"kind\":\"video\"}}","tianlight.layers":"{\"version\":2,\"slots\":[{\"kind\":\"preset\",\"preset\":\"vignette\",\"url\":\"\",\"fit\":\"cover\",\"opacity\":0.08,\"blend\":\"normal\"},{\"kind\":\"none\",\"preset\":\"none\",\"url\":\"\",\"fit\":\"cover\",\"opacity\":0,\"blend\":\"normal\"}]}","tianlight.glass":"0.98","tianlight.glassDepth":"off","tianlight.font.family":"{\"size\":14,\"ui\":\"system\",\"code\":\"system\",\"weight\":\"normal\",\"lead\":\"normal\",\"track\":\"normal\"}","tianlight.effects":"{\"enabled\":true,\"parallax\":false,\"parallaxStrength\":0.4,\"click\":false,\"clickStyle\":\"ripple\",\"ambience\":\"none\",\"ambienceDensity\":0,\"transition\":\"fade\",\"transitionMs\":600,\"budget\":\"auto\"}","tianlight.context":"{\"enabled\":true,\"timeOfDay\":true,\"manualPeriod\":\"auto\",\"focusLink\":false,\"focusDim\":40,\"focusBlur\":6,\"adaptive\":true,\"adaptiveLocked\":false}","tianlight.legibility":"{\"enabled\":true,\"threshold\":4.5,\"boost\":0.12}","tianlight.playback":"{\"speed\":1,\"flip\":false,\"paused\":false,\"filter\":{\"on\":false,\"brightness\":100,\"contrast\":100,\"saturate\":100}}","tianlight.petMedia.v1":null}`;
+
+		/** Parsed author default appearance map (raw host-compatible setting values). */
+		function tl5DefaultAppearance() {
+			try {
+				const parsed = JSON.parse(TL5_DEFAULT_APPEARANCE_JSON);
+				return tl5IsPlainObject(parsed) ? parsed : null;
+			} catch {
+				return null;
+			}
+		}
+
+		/**
+		 * Write the author default appearance into localStorage. Callers decide whether this
+		 * is allowed (fresh install / explicit hub reset); this helper only writes and never
+		 * deletes user data outside its own appearance keys. Returns keys actually changed.
+		 */
+		function tl5ApplyDefaultAppearance() {
+			const storage = tl5Storage();
+			const defaults = tl5DefaultAppearance();
+			if (storage === null || defaults === null) return 0;
+			let written = 0;
+			for (const key of Object.keys(defaults)) {
+				const raw = defaults[key];
+				try {
+					if (raw === null) {
+						if (storage.getItem(key) !== null) {
+							storage.removeItem(key);
+							written += 1;
+						}
+					} else if (storage.getItem(key) !== raw) {
+						storage.setItem(key, raw);
+						written += 1;
+					}
+				} catch {
+					// a blocked key must not stop the rest
+				}
+			}
+			return written;
+		}
 		/**
 		 * 本机数据键（v0.6.1）：聊天记录、自主念头、生活记忆与 Agent 审计日志属于
 		 * “数据”，不是设置。它们可能很大（聊天记录本身就很容易超过宿主 256KB 上限，
@@ -1425,13 +1473,19 @@
 				settingsNotify();
 				return;
 			}
+			// v2.0.1: the author default appearance is applied only when nothing was ever
+			// saved (local cache empty AND the host has no values). Remember the pre-state
+			// before any write, because the default write itself makes local non-empty.
+			const localKeysAtBootstrap = Object.keys(collectLocalSettings());
+			let defaultKeysWritten = 0;
 			const result = await settingsRequest("GET", undefined, TL5_HOST_TIMEOUT_MS);
 			if (result.ok === false) {
 				settingsState.host = false;
 				settingsState.lastError = result.error;
 				settingsState.hostRouteMissing = result.status === 404 || result.status === 405 || result.status === 501;
+				if (localKeysAtBootstrap.length === 0) defaultKeysWritten = tl5ApplyDefaultAppearance();
 				settingsSyncStats = { localKeys: Object.keys(collectLocalSettings()).length, remoteKeys: 0, pushedKeys: 0 };
-				tl5Diag("settings", { ...settingsStatus(), ...settingsSyncStats });
+				tl5Diag("settings", { ...settingsStatus(), ...settingsSyncStats, defaultKeysWritten });
 				settingsNotify();
 				return;
 			}
@@ -1439,8 +1493,9 @@
 			if (remote.ok === false) {
 				settingsState.host = false;
 				settingsState.lastError = "host:rejected";
+				if (localKeysAtBootstrap.length === 0) defaultKeysWritten = tl5ApplyDefaultAppearance();
 				settingsSyncStats = { localKeys: Object.keys(collectLocalSettings()).length, remoteKeys: 0, pushedKeys: 0 };
-				tl5Diag("settings", { ...settingsStatus(), ...settingsSyncStats });
+				tl5Diag("settings", { ...settingsStatus(), ...settingsSyncStats, defaultKeysWritten });
 				settingsNotify();
 				return;
 			}
@@ -1470,6 +1525,12 @@
 			}
 			const localBefore = collectLocalSettings();
 			const remoteHasValues = Object.keys(remoteMap).some((key) => remoteMap[key] !== null);
+			// v2.0.1 fresh install: nothing saved locally and nothing saved on the host, so
+			// seed the author default appearance before the first push below. Any existing
+			// setting (local or host) keeps this from ever overwriting the user's state.
+			if (localBefore.length === 0 && remoteHasValues === false) {
+				defaultKeysWritten = tl5ApplyDefaultAppearance();
+			}
 			// 本地缓存完全为空而宿主有值：即使 revision 不高于本地也采纳宿主。
 			// 反向（本地空 → push 一堆 null）会把宿主也清空，属于数据丢失，必须避免。
 			const adoptHost = remoteRevision > settingsState.revision || (Object.keys(localBefore).length === 0 && remoteHasValues);
@@ -1492,7 +1553,7 @@
 				pushedKeys: pushed.pushedKeys,
 			};
 			tl5RefreshBackupFlag();
-			tl5Diag("settings", { ...settingsStatus(), ...settingsSyncStats, pushRetried: pushed.retried });
+			tl5Diag("settings", { ...settingsStatus(), ...settingsSyncStats, pushRetried: pushed.retried, defaultKeysWritten });
 			settingsNotify();
 		}
 

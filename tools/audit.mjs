@@ -524,6 +524,24 @@ report(
   'v2.0.1 DSH range has explicit prerelease branches (0.2.x incl. rc/alpha matches; 0.3.x blocked)',
 )
 
+// ---- v2.0.1: author default appearance (preset file <-> embedded client constant) ----
+const defaultAppearanceFile = JSON.parse(fs.readFileSync(fileURLToPath(new URL('../presets/tianlight-default.json', import.meta.url)), 'utf8'))
+const defaultAppearanceEmbedded = /const TL5_DEFAULT_APPEARANCE_JSON = String\.raw`([^`]+)`/.exec(source)
+report(
+  defaultAppearanceFile.format === 'tianlight-default-appearance' &&
+    defaultAppearanceFile.version === 1 &&
+    defaultAppearanceEmbedded !== null &&
+    JSON.stringify(JSON.parse(defaultAppearanceEmbedded[1])) === JSON.stringify(defaultAppearanceFile.appearance) &&
+    JSON.parse(defaultAppearanceFile.appearance['tianlight.wallpaper']).url === '/skin-tianlight/bg-4k.mp4' &&
+    Object.prototype.hasOwnProperty.call(defaultAppearanceFile.appearance, 'tianlight.weather') === false &&
+    source.includes('function tl5ApplyDefaultAppearance()') &&
+    source.includes('localBefore.length === 0 && remoteHasValues === false') &&
+    source.includes('data-tl-hub-appearance-reset')
+    ? 'PASS'
+    : 'FAIL',
+  'v2.0.1 author default appearance: preset file == embedded constant, fresh-install only, hub restore present',
+)
+
 // ---- 16. v1.6.4: AI chat in the pet menu + per-look action packs + visible media filenames ----
 report(
   source.includes('pet.action.chat') &&

@@ -4565,6 +4565,64 @@ test('regression evidence: the old broad range silently excluded 0.2.1/0.2.2 pre
   assert.equal(satisfies('0.2.0-rc.2', LEGACY_BROAD_RANGE), true)
 })
 
+// ---- v2.0.1: author default appearance (presets/tianlight-default.json) ----
+const DEFAULT_APPEARANCE_FILE = JSON.parse(readFileSync(new URL('../presets/tianlight-default.json', import.meta.url), 'utf8'))
+const DEFAULT_APPEARANCE_EMBEDDED = /const TL5_DEFAULT_APPEARANCE_JSON = String\.raw`([^`]+)`/.exec(CLIENT_SOURCE)
+
+test('default appearance: the preset file and the embedded client constant are identical', () => {
+  assert.equal(DEFAULT_APPEARANCE_FILE.format, 'tianlight-default-appearance')
+  assert.equal(DEFAULT_APPEARANCE_FILE.version, 1)
+  assert.ok(DEFAULT_APPEARANCE_EMBEDDED !== null, 'client must embed TL5_DEFAULT_APPEARANCE_JSON')
+  assert.deepEqual(JSON.parse(DEFAULT_APPEARANCE_EMBEDDED[1]), DEFAULT_APPEARANCE_FILE.appearance)
+})
+
+test('default appearance keeps only appearance keys and points the wallpaper at the bundled asset', () => {
+  const keys = Object.keys(DEFAULT_APPEARANCE_FILE.appearance)
+  assert.deepEqual(keys, [
+    'tianlight.wallpaper',
+    'tianlight.zones',
+    'tianlight.layers',
+    'tianlight.glass',
+    'tianlight.glassDepth',
+    'tianlight.font.family',
+    'tianlight.effects',
+    'tianlight.context',
+    'tianlight.legibility',
+    'tianlight.playback',
+    'tianlight.petMedia.v1',
+  ])
+  for (const banned of [
+    'tianlight.weather',
+    'tianlight.pet.permissions.v1',
+    'tianlight.petChats.v1',
+    'tianlight.petMind.v1',
+    'tianlight.life.v1',
+    'tianlight.pet.agent.v1',
+    'tianlight.recent',
+    'tianlight.font.position',
+    'dsh-tianlight:cat:v1',
+    'tianlight.pet.ai.v1',
+    'tianlight.pet.llmProvider.v1',
+    'tianlight.panel.advancedSeen',
+    'tianlight.language',
+    'tianlight.modules',
+  ]) {
+    assert.equal(keys.includes(banned), false, banned + ' must not be part of the default appearance')
+  }
+  assert.deepEqual(JSON.parse(DEFAULT_APPEARANCE_FILE.appearance['tianlight.wallpaper']), {
+    kind: 'video',
+    url: '/skin-tianlight/bg-4k.mp4',
+  })
+  assert.equal(DEFAULT_APPEARANCE_FILE.appearance['tianlight.petMedia.v1'], null, 'default look = built-in cat.png')
+})
+
+test('default appearance is applied only on a fresh install and is reachable from the role hub', () => {
+  assert.match(CLIENT_SOURCE, /function tl5ApplyDefaultAppearance\(\)/, 'client must expose the default-appearance writer')
+  assert.match(CLIENT_SOURCE, /localBefore\.length === 0 && remoteHasValues === false/, 'fresh-install guard must inspect local and host state')
+  assert.match(CLIENT_SOURCE, /data-tl-hub-appearance-reset/, 'role hub must expose the restore-default-appearance button')
+  assert.match(CLIENT_SOURCE, /hub\.appearance\.reset/)
+})
+
 console.log(`tests: ${passed} passed, ${failures.length} failed`)
 for (const failure of failures) console.log('  FAIL ' + failure)
 if (failures.length > 0) process.exit(1)
