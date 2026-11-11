@@ -412,9 +412,19 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 
 本皮肤是**标准 DSH bundle**：`package.json` 的 `dsh.bundle.patch` 指向包内自带的 `cordis.patch.yml`，由它插入 `ui-skin-tianlight` 这一行；浏览器半由 `dsh.client` 提供。**只安装这一个包即可**，旧教程里的第二个 enable bundle（`@local/dsh-enable-tianlight`）已废弃，不要再装。
 
+### 从 GitHub Release 安装（预构建包，推荐）
+
+每个 tag 的 Release 都附带 4 个文件：`dsh-client-ui-skin-tianlight.tgz`（文件名不带版本号，供 `releases/latest/download` 使用）、`dsh-client-ui-skin-tianlight-<版本>.tgz`（同一份字节的副本）、`SHA256SUMS.txt`、`build-manifest.json`。
+
+1. 从 [Releases](https://github.com/MilkySnowWay123/dsh-client-ui-skin-tianlight/releases) 下载 `.tgz` 与 `SHA256SUMS.txt`，先校验（见 `PUBLISH.md` 的校验命令）。
+2. 解压：`tar -xzf dsh-client-ui-skin-tianlight.tgz` → 得到 `dsh-client-ui-skin-tianlight/` 目录（`package.json` / `skin.json` / `lib/` / `assets/` 都在其中）。
+3. 按下面「DSH Desktop」的步骤，在插件管理器里选择这个解压目录安装。
+
+> 预发布版本（版本号含 `-rc.`）在 GitHub 上标记为 Pre-release，`releases/latest/download/...` 只指向最新的**正式版**；要装预发布请从对应 tag 的 Release 页手动下载。
+
 ### DSH Desktop（0.2.0 / 0.2.1 / 0.2.2，单包安装）
 
-1. 把本仓库目录（或解包后的 `dsh-client-ui-skin-tianlight-0.6.0/` 目录）放到任意位置，建议用纯 ASCII 路径。
+1. 把本仓库目录（或 Release 解包后的 `dsh-client-ui-skin-tianlight/` 目录）放到任意位置，建议用纯 ASCII 路径。
 2. 在 DSH Desktop 的**插件管理器**里选择「安装本地目录 / Install from local folder」，指向该目录。Desktop 的 profile（本版为 `desktop`）由 Electron 管理，**不要**手动编辑 profile 目录下的 `package.json` / `cordis.patch.yml`；安装器会以 `link:` 依赖引用本包，并且只登记 `@dsh-external/dsh-client-ui-skin-tianlight` 这一条 bundle。
 3. 确认 `ui-skin-tianlight` 这一行处于 **enabled** 状态。该行由本包的 `cordis.patch.yml` 自带，profile 的 `cordis.patch.yml` 不需要、也不应该再手写同 id 的行（重复插入会重复挂载插件）。
 4. **重启 DSH Desktop**（v0.5.0 宿主半新增路由，必须重启一次）。之后只改浏览器半（`src/` → `lib/client.js`）时 Ctrl+F5 刷新即可，不用重启。
@@ -434,7 +444,7 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 > 安装/更新后必须**重启 DSH 一次**，再 Ctrl+F5；之后只改浏览器半仍 Ctrl+F5。旧宿主（仅新客户端）WE 库不可用
 > （页面提示「宿主半尚未提供壁纸库接口」），其余功能正常。
 
-> `assets/uploads/` 是**用户数据**（面板「上传壁纸」落盘的图片/视频），`state/` 是设置与缓存，`assets/derived/` 是转码产物——都不属于发布包、不随仓库提交；发布或迁移时请自行保留/备份。发布包（`node tools/pack.mjs`）默认只含代码、清单、`lib/`、`vendor/`、`presets/` 与 `assets/README.md`，不含上传、缓存与派生文件。
+> `assets/uploads/` 是**用户数据**（面板「上传壁纸」落盘的图片/视频），`state/` 是设置与缓存，`assets/derived/` 是转码产物——都不属于发布包、不随仓库提交；发布或迁移时请自行保留/备份。发布包（`node tools/pack.mjs`，Release 附件同源）默认含代码、清单、`lib/`、`vendor/`、`presets/`、`assets/README.md` 与**随包演示素材** `assets/bg-4k.mp4`/`assets/cat.png`（显式白名单，用户自备壁纸不会进包）；上传、缓存与派生文件永不在包内。需要纯代码包时用 `node tools/pack.mjs --code-only`。
 
 ## 故障排查
 
@@ -538,7 +548,7 @@ node tools/hook-scan.mjs --dsh <新版本@deepseek-ai 目录>  # 升级 Desktop 
 ```
 
 > DSH Desktop 的包在 `app.asar` 里，普通 node 读不到；本机用 Electron-as-Node 跑：
-> `set ELECTRON_RUN_AS_NODE=1` + `"D:\dsh\DeepSeek Harness.exe" tools\upgrade-check.mjs`（`DSH_PKGS_ROOT` 指向 asar 内的 `@deepseek-ai`，见 `HANDOFF-DESKTOP-INSTALL.md`）。npm 解包出来的目录可以直接 `node tools/hook-scan.mjs --dsh <目录>`。
+> `set ELECTRON_RUN_AS_NODE=1` + `"<DSH 安装目录>\DeepSeek Harness.exe" tools\upgrade-check.mjs`（`DSH_PKGS_ROOT` 指向 asar 内的 `@deepseek-ai`，见 `HANDOFF-DESKTOP-INSTALL.md`）。npm 解包出来的目录可以直接 `node tools/hook-scan.mjs --dsh <目录>`。
 
 - `FAIL` / `[MISS]` = 必须处理：皮肤可能加载失败，或某个表面失去玻璃样式。改 `src/65-bridge.js` 的探测查询（或 `hooks.mjs` 清单），**不要**把新哈希写进 CSS。
 - `WARN` = 降级：某个视觉细节失效，页面仍正常。
@@ -589,9 +599,10 @@ skin.json               皮肤管理器清单
 CHANGELOG.md            更新日志（release.mjs 维护）
 docs/                   发布说明、兼容性、功能清单、架构补充文档
 presets/                可分享的 v0.4 / v0.5 配方 JSON
-.github/workflows/      CI：Node 20 + 22 静态链；tag 打包
-assets/                 壁纸与桌宠素材（可选；state/、assets/uploads/、assets/derived/ 为本机数据）
-tools/                  构建、审计、打包、快照、回滚、发布脚本
+RELEASE-NOTES-v*.md    每个版本的 GitHub Release 正文（release.mjs 生成/CI 读取）
+.github/workflows/      CI：main/dev/PR 静态链（Node 20+22）+ main 已发布守卫；v* tag 构建并发布 Release 附件
+assets/                 壁纸与桌宠素材（随包演示素材白名单；state/、assets/uploads/、assets/derived/ 为本机数据）
+tools/                  构建、审计、打包、Release 附件、快照、回滚、发布脚本
 ```
 
 ## 开发
@@ -610,24 +621,27 @@ node tools/verify.mjs        # 路由、封装、清单、能力块契约断言
 node tools/i18n-audit.mjs    # zh/en 字典完整性：缺 key / 仅一种语言 / en 混中文即红（npm run check 已包含）
 node tools/upgrade-check.mjs # DSH 兼容性自检：模块/契约/桥接钩子（见上一节）
 node tools/hook-scan.mjs     # 桥接钩子扫描（--dsh 指定任意版本；--self-check 校验桥接同步）
-node tools/pack.mjs          # 生成可分发目录（默认不含大体积素材）
+node tools/pack.mjs          # 生成可安装目录（含随包演示素材；--code-only 为纯代码包）
+node tools/release-artifacts.mjs # 从 pack 产物生成 4 个 Release 附件（2 个 tgz / SHA256SUMS.txt / build-manifest.json）
 node tools/snapshot.mjs      # 存快照（lib 产物 + 宿主模块 + src/）
 node tools/restore.mjs       # 从 backup/ 回滚到最近快照（含 src/ 与宿主模块）
-node tools/release.mjs       # 发布：版本自增 + 静态链 + 快照 + CHANGELOG + commit + tag（见下）
+node tools/release.mjs       # 发布：版本 + RELEASE-NOTES + 静态链 + 快照 + CHANGELOG + commit + tag + 本地产物（见下）
 ```
 
 `npm run check` = `build --check + test + structure --strict + audit + check-css + verify + i18n-audit`（CI 在 Node 20 与 22 上跑同一条链，无依赖安装）。
-**发布**：`package.json` 已提供 `"release": "node tools/release.mjs"`，发布一条命令：
+**发布规则（详见 [PUBLISH.md](PUBLISH.md)）**：已发布的 tag **永不移动/重打**（发现问题发新补丁版本）；开发在 `dev` 分支，`main` 只含已发布代码（CI 校验 main HEAD 必须正好是 `v<版本>` tag）。发布用：
 
 ```bash
-npm run release -- --note "0.5.0: …"        # 默认 minor：0.4.0 -> 0.5.0
-npm run release -- patch --note "fix: …"    # 0.5.0 -> 0.5.1
-node tools/release.mjs --version 0.5.0 --note "…"   # 清单已是 0.5.0 时直接为当前版本打 tag
-node tools/release.mjs --dry-run --note "…" # 只打印计划，不写/不跑/不提交
+# 预发布：在 dev 分支，版本号带 -rc.N
+node tools/release.mjs --version 2.0.1-rc.1 --note-file notes.md
+# 正式版：把 dev 合入 main 后，在 main 分支
+node tools/release.mjs patch --note-file notes.md
+# 只预览计划（不写/不跑/不提交）
+node tools/release.mjs --dry-run --version 2.0.1-rc.2 --note "…"
 ```
 
-工具要求 git 工作树干净、目标 tag 不存在、有 git 身份；检查失败即中止（不提交不 tag）；不联网，push 需手动。
-`backup/` 快照不会进入提交（gitignored），发布工具也不写 `state/`。
+工具要求 git 工作树干净、目标 tag 本地/远端都不存在、有 git 身份；检查失败即中止（不提交不 tag）；只做一次只读的 `git ls-remote` tag 检查（`--offline` 可跳过），push 需手动：**先推分支、再推 tag**（CI 会校验 tag 可追溯到该分支）。
+发布完成后本地会生成与 CI 同款的 `dist/release/` 4 个附件并打印 sha256；`backup/` 快照不会进入提交（gitignored），发布工具也不写 `state/`。
 
 ## 许可与素材
 

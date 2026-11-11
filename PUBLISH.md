@@ -1,127 +1,122 @@
-# GitHub 发布指南
+# 发布指南（GitHub）
 
-> 不想用命令行 git：也可以把本仓库目录里的内容拖到 GitHub 网页。仓库已包含默认演示素材 `assets/bg-4k.mp4`、`assets/cat.png`（约 34MB，单文件均低于 GitHub 100MB 限制）；`backup/`、`dist/`、`node_modules/` 与 `assets/uploads/` 不会进仓库。**不要**直接把开发工作目录整个拖上去，以免带上备份、临时文件和用户上传。
+> 适用仓库：GitHub 公开仓库 `MilkySnowWay123/dsh-client-ui-skin-tianlight`（本机工作副本 `github-upload/`）。
+> 内部开发树 `tianlight/` 在发布时同步同样的工具/文档改动；发布动作本身在公开仓库进行。
 
-## 前置：准备 git
+## 一、不可破坏的发布规则
 
-任选一种安装方式（GitHub Desktop 自带 git；没有管理员权限时也可用便携版）：
+1. **已发布的 tag 永不移动、永不重打、永不删除。** tag 一旦推送，任何内容变化都必须发**新的版本号**：发现问题就发 `2.0.1`，**不要**移动或重打 `2.0.0`。
+2. **开发在 `dev` 分支进行；`main` 只包含已发布的代码。** 按源码安装的用户拿到的就是 `main` HEAD，所以 `main` 上不能有未发布提交。CI 的 `main-is-released` job 强制：push `main` 时 HEAD 必须正好是 `v<package.json 版本>` 这个 tag 指向的提交。
+3. **tag 必须等于 `v` + `package.json` 的 `version`。** 发布 CI 在干净环境先校验这一条，不匹配直接失败。
+4. **发布一律走 CI，且只使用一套打包工具**：`npm run check → node tools/pack.mjs → node tools/release-artifacts.mjs`。本地与 CI 用完全相同的工具，不存在第二套打包方式。
 
-```powershell
-winget install --id Git.Git -e --source winget
-```
+## 二、分支模型
 
-装完重开终端，确认：`git --version`
+| 分支 | 用途 | 允许的提交 |
+|---|---|---|
+| `dev` | 日常开发；**预发布**（`x.y.z-rc.N`）从这里切 | 功能 / 修复 / 文档；预发布 commit 与 tag |
+| `main` | 只含已发布代码；**正式版**从这里切 | 仅发布 commit（由发布流程产生） |
 
-## 一、仓库地址
+- **预发布**（在 `dev`）：
 
-`package.json` 里已移除原先的 `OWNER` 占位仓库字段，避免推上去后首页链接 404。想加仓库元数据，再补：
+  ```bash
+  node tools/release.mjs --version 2.0.1-rc.1 --note-file notes.md
+  git push origin dev
+  git push origin v2.0.1-rc.1
+  ```
 
-```json
-"repository": { "type": "git", "url": "git+https://github.com/<你的用户名>/dsh-client-ui-skin-tianlight.git" },
-"homepage": "https://github.com/<你的用户名>/dsh-client-ui-skin-tianlight#readme",
-"bugs": { "url": "https://github.com/<你的用户名>/dsh-client-ui-skin-tianlight/issues" }
-```
+- **正式版**：把 `dev` 合入 `main`（保留历史）→ 在 `main` 上：
 
-## 二、确认要提交什么
+  ```bash
+  node tools/release.mjs patch --note-file notes.md
+  git push origin main
+  git push origin v2.0.1
+  ```
 
-完整版会带上默认素材：
+- 发布工具会拒绝：稳定版跑在非 `main` 分支、预发布跑在非 `dev` 分支、目标 tag 已存在（本地**或远端**，只做一次只读 `git ls-remote`，`--offline` 可跳过）。
+- **先推分支、再推 tag**：发布 CI 会校验稳定版 tag 可从 `origin/main` 追溯、预发布 tag 可从 `origin/dev` 追溯。
 
-```text
-assets/bg-4k.mp4     33MB
-assets/cat.png      0.5MB
-```
+## 三、推送 `v*` tag 后 CI 做什么（干净环境）
 
-`.gitignore` 仍然排除 `node_modules/`、`backup/`、`dist/`、`*.zip`、`diag.log`、`assets/uploads/` 以及除上述两个文件外的 `assets/*`。自加的其它壁纸不会被提交。`assets/uploads/` 属于**用户数据**（皮肤运行时上传的壁纸），不属于发布包；发布或迁移时请单独保留/备份。
+`.github/workflows/release.yml`（`ubuntu-latest` + Node 20，无 npm 安装）：
 
-约 **34MB**，单文件都低于 GitHub 100MB 限制。素材版权归各自权利方；只想要轻量代码仓库时，删除这两个文件再提交即可。`vendor/webwallgl/` 是 MIT 的 WebWallGL 3.0，随包分发请保留其 `LICENSE` 与 `README.upstream.md`。
+1. 校验 tag == `v` + `package.json` version；稳定版必须可从 `origin/main` 追溯，预发布必须可从 `origin/dev` 追溯。
+2. `npm run check`（build --check / test / structure --strict / audit / check-css / verify / i18n-audit）。
+3. `node tools/pack.mjs` 生成安装目录（唯一打包入口）。
+4. `node tools/release-artifacts.mjs --commit $GITHUB_SHA` 生成并校验 4 个附件。以下任一情况**CI 失败、不发布**：
+   - 包内出现 `state/`、`assets/uploads/`、`assets/derived/`、`backup/`、`diag/`、`tools/`、`src/`、`node_modules/`、`.git`；
+   - 包内文本文件出现本机路径（用户目录、非系统盘符路径、`/home/<user>/`、`/Users/<user>/`、`DeepSeek Harness(2)`）；
+   - 包内 `package.json` 版本 ≠ tag 版本，或 HOST_API 在宿主/浏览器两半不一致；
+   - 必需文件缺失（`lib/`、清单、`presets/`、`vendor/`、随包演示素材）。
+5. 要求 `RELEASE-NOTES-v<版本>.md` 存在（Release 正文来源）。
+6. `gh release create/edit`：标题取 notes 第一行；版本号含 `-` 时自动标记 **Pre-release**；上传 4 个附件（重复运行幂等，`--clobber`）。
 
-## 三、本地验证
+分支/PR 的静态检查在 `.github/workflows/check.yml`（Node 20 + 22），另有 `main-is-released` 守卫。
 
-```powershell
-cd <本仓库目录>
-node tools/build.mjs --check
-node tools/test.mjs
-node tools/structure.mjs --strict
-node tools/audit.mjs
-node tools/check-css.mjs
-node tools/verify.mjs
-```
+## 四、Release 的 4 个附件
 
-或者一条：`npm run check`（不需要 DSH 安装，CI 里跑的就是它）
+| 文件 | 说明 |
+|---|---|
+| `dsh-client-ui-skin-tianlight.tgz` | 不带版本号的安装包，供 `releases/latest/download/dsh-client-ui-skin-tianlight.tgz` 使用。注意：GitHub 的 latest 只指向最新**正式版**，预发布不会成为 latest |
+| `dsh-client-ui-skin-tianlight-<版本>.tgz` | 与上面**同一份字节**的带版本副本 |
+| `SHA256SUMS.txt` | 包内每个文件的 sha256 + 两个 tgz 自身的 sha256（每行 `<hash>  <path>`，包内路径相对包根） |
+| `build-manifest.json` | `version` / `commit`（完整 git sha）/ `hostApi` / `clientSha256`（`lib/client.js` 的 sha256）/ `builtAt` |
 
-## 四、建库并推送
+tgz 内是单个 `dsh-client-ui-skin-tianlight/` 根目录，解压后即为插件目录（`package.json`、`skin.json`、`lib/`、`assets/`、`presets/`、`vendor/` …）。
 
-在 GitHub 网页上新建一个**空仓库**（不要勾选 README / .gitignore / license，本地已有），然后：
-
-```powershell
-cd <本仓库目录>
-git init -b main
-git add .
-git status                    # 看一眼：应当没有 assets/*.mp4、没有 backup/、没有 node_modules
-git commit -m "feat: tianlight skin for DSH web"
-git remote add origin https://github.com/<你的用户名>/dsh-client-ui-skin-tianlight.git
-git push -u origin main
-```
-
-首次推送会要求认证：用 **Personal Access Token**（GitHub → Settings → Developer settings → Tokens）当密码，或提前装好 Git Credential Manager。
-
-## 五、推上去之后会自动发生什么
-
-`.github/workflows/check.yml` 会在每次 push / PR 时用 Node 20 跑 `npm run check`：
-
-```
-test → structure → audit → check-css → verify
-```
-
-任何一项退化，仓库首页会直接显示红叉。这条 CI 不需要 DSH，所以云端也能跑；需要 DSH 的两项（`upgrade-check`、`resolve-selectors`）留在本地 `npm run upgrade`。
-
-## 六、之后的每一次改动
+## 五、本地复现与校验（与 CI 同款）
 
 ```powershell
-npm run check                 # 先确保没退化
-git add -A
-git commit -m "fix: ..."
-git push
+npm run check
+node tools/pack.mjs
+# dist/release/ 下生成 4 个附件；--commit 默认取 $GITHUB_SHA 或 git rev-parse HEAD
+node tools/release-artifacts.mjs
 ```
 
-DSH 升级后额外跑一次：
+校验下载物（Windows）：
 
 ```powershell
-npm run upgrade               # upgrade-check + resolve-selectors
+Get-FileHash .\dsh-client-ui-skin-tianlight.tgz -Algorithm SHA256
+# 与 SHA256SUMS.txt 中对应 tgz 行的值比较
 ```
 
-## 不建议做的事
+校验下载物（Linux / macOS）：
 
-- **不要让仓库包含 `backup/`**：那是本机快照，会把 100+ KB 的历史副本带进 Git 历史，且每次改都快照
-- **不要把临时日志带进仓库**：诊断路由已移除；旧目录里的 `diag.log` 也请忽略
-- **不要把 `node_modules/` 里的链接提交**：那是 junction/symlink，推上去会变成指向本机路径的坏链接
-
-## 公开仓库版本命名（CI 契约）
-
-> 适用于 `github-upload/`（GitHub 镜像仓库）。`.github/workflows/check.yml` 的 `package (tag)` 任务会校验 **tag 必须等于 `v` + package.json 的 version**；不匹配会让 tag 的 CI 变红，也不会上传发行包。
-
-- **内部仓库 `tianlight/`** 使用内部版本号（v1.6.x），内部 tag 继续按内部版本打。
-- **公开仓库（GitHub 镜像）** 使用公开版本号（v1.0.x）：改**三处**发布标记——`package.json` / `skin.json` / `lib/index.js` 的 `BUILD`——然后重新 `node tools/build.mjs` 生成 `lib/client.js`；同时写入 `INTERNAL-BUILD.json` 记录对应的内部版本/tag/内部构建 sha，避免追溯困难。**`HOST_API`（宿主/客户端路由契约握手）是手改的路由版本，发布工具不改它**：公开/内部构建说同一个路由契约；原 `src/10-constants.js` 的 `HOST_BUILD` 已由 `HOST_API` 取代并在发布时保持不动。
-- 公开 tag 与公开版本一一对应（例如 tag `v1.0.1` ↔ package version `1.0.1`），这样 CI 的 static + package 两个 job 全绿，并自动产出 `dist/` 发行包 artifact。
-- 内部 tag（如 `v1.6.2`）也可以留在公开仓库里作为构建来源记录，它们的 CI 同样通过（tag 等于其所在提交的包版本）。
-
-### 一条命令生成公开构建
-
-```powershell
-# 在公开镜像 checkout 里执行（先由内部仓库同步 tracked 文件）
-node tools/public-release.mjs --dir <镜像目录> --version 1.0.2 --internal-version 1.6.3 --internal-tag v1.6.3 --internal-sha <内部 client 的 sha256>
+```bash
+# 在下载目录：只校验两个 tgz（包内文件路径此时不存在，--ignore-missing 跳过）
+sha256sum -c --ignore-missing SHA256SUMS.txt
+# 解压出插件目录后，在插件目录内：校验包内每个文件
+cd dsh-client-ui-skin-tianlight && sha256sum -c ../SHA256SUMS.txt --ignore-missing
 ```
 
-该工具会改**三处**发布标记（`package.json` / `skin.json` / `lib/index.js` 的 `BUILD`；`HOST_API` 不碰）、写入 `INTERNAL-BUILD.json`、重新构建 `lib/client.js`（一致性校验：产物必须由被改过的源码生成），并打印后续的静态链、`node tools/pack.mjs`、commit/tag/push 命令（工具本身不执行 git）。
+安装后的指纹（角色中枢 → 自检）应显示与 `build-manifest.json` 相同的 version / commit 短哈希 / clientSha256 前 12 位。
 
-### 为什么这样做
+## 六、安装方式（给用户）
 
-- CI 的 tag/version 契约保证"发出去的 tag 一定能打包、包版本和 tag 一致"，用户从 tag 安装不会拿到版本错位的包。
-- 内部迭代仍用 v1.6.x 连续编号，公开版本用 v1.0.x 独立编号，两者通过 `INTERNAL-BUILD.json` 与 release notes 互相映射。
-### 公开 Release 自动创建
+1. 从 Release 下载 `.tgz` 与 `SHA256SUMS.txt`，按第五节校验。
+2. `tar -xzf dsh-client-ui-skin-tianlight.tgz` → 得到 `dsh-client-ui-skin-tianlight/` 目录。
+3. DSH Desktop 插件管理器 →「安装本地目录」指向该目录 → 重启 DSH 一次 → Ctrl+F5。
 
-.github/workflows/release.yml 会在每次 push 到 main 时运行（也可手动 workflow_dispatch）：它扫描仓库根目录的 RELEASE-NOTES-v*.md，对每个已存在的 tag 用仓库自带的 GITHUB_TOKEN 调用 gh release create 创建 GitHub Release（标题取文件第一行、正文用文件内容），已存在的 Release 自动跳过。
+## 七、仓库内容约定
 
-- 发布新公开版本时：把 diag/tmp/github-release-v<公开版本>.md 复制到镜像仓库根目录并命名为 RELEASE-NOTES-v<公开版本>.md，随本次 push 一起提交，Release 会自动建好。
-- 补建历史 Release：把对应 RELEASE-NOTES-*.md 放进镜像根目录后 push 一次 main（或手动 dispatch）即可，幂等。
-- 该流程只需要仓库自身的 Actions token，不需要维护者提供个人 token。
+- 完整版会带上默认演示素材（约 34MB）：`assets/bg-4k.mp4`、`assets/cat.png`。单文件均低于 GitHub 100MB 限制。
+- `.gitignore` 排除 `node_modules/`、`backup/`、`dist/`、`*.zip`、`diag.log`、`state/`、`assets/uploads/`、`assets/derived/`、`we-roots.json`，以及除默认两个文件外的 `assets/*`。
+- `assets/uploads/`（用户上传壁纸）、`state/`（设置与缓存）、`assets/derived/`（转码产物）都是**本机用户数据**，不随仓库/发布包分发；发布或迁移时请单独保留/备份。
+- `vendor/webwallgl/` 是 MIT 的 WebWallGL 3.0，随包分发请保留其 `LICENSE` 与 `README.upstream.md`。
+
+> **不要**把开发工作目录整个拖上去：不要提交 `backup/`、`dist/`、`node_modules/`、`assets/uploads/`、`state/`、`we-roots.json`。
+
+## 八、本地 git / SSH 前置
+
+- Git 任意方式安装即可（GitHub Desktop 自带 git；无管理员权限时可用便携版）。
+- 本机发布用 SSH（`git@github.com:...`）。Git for Windows 的 msys `sh.exe` 在受限沙箱里可能报 `couldn't create signal pipe`，旧脚本的做法仍然有效：
+
+  ```powershell
+  $env:GIT_SSH = 'C:\Windows\System32\OpenSSH\ssh.exe'
+  ```
+
+  发布工具本身只做一次只读 `git ls-remote`；即使 SSH 环境未配置，失败也只会给出警告，push 仍需你自己配置好认证。
+
+## 九、历史：内部/公开双版本编号（已退役）
+
+v2.0.0 起，仓库版本、GitHub Release 名称与 DSH 内安装版本统一为一个版本号。更早的流程（内部 `1.6.x` ↔ 公开 `v1.0.x` 双编号、`tools/public-release.mjs`、移动 tag）**已退役**；相关 tag 与 Release 仅作历史保留，`INTERNAL-BUILD.json` 记录最后一段映射关系。历史版本的回滚方式：重新安装上一发布版 + Ctrl+F5 + 重启 DSH。

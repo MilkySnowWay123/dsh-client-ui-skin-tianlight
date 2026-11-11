@@ -1,6 +1,15 @@
-// Builds a git/npm-friendly copy of the skin under dist/.
-// Media in assets/ is excluded by default: it is user-supplied and large.
-// Usage: node tools/pack.mjs [--with-assets]
+// Builds the distributable copy of the skin under dist/ — the ONLY packing path
+// used for releases (CI runs exactly this, then tools/release-artifacts.mjs turns
+// the directory into the .tgz/SHA256SUMS/build-manifest attachments).
+//
+// Default: a complete installable package = runtime code + manifests + presets +
+// vendor + the two git-tracked demo media files (`assets/bg-4k.mp4`,
+// `assets/cat.png`). User-supplied media (uploads/, derived/, anything else the
+// user dropped into assets/) is NEVER copied: only the explicit built-in list is.
+//
+//   node tools/pack.mjs                 complete installable package
+//   node tools/pack.mjs --code-only     code only (no demo media, ~3 MB)
+//   node tools/pack.mjs --out <dir>     pack into another root (read-only checkouts)
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -8,20 +17,27 @@ import { fileURLToPath } from 'node:url'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = dirname(HERE)
 const manifest = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
-const withAssets = process.argv.includes('--with-assets')
-// `--out <dir>` exists for environments where the package directory is not
-// writable (sandboxes, read-only checkouts): pack straight into a temp path.
+const codeOnly = process.argv.includes('--code-only')
 const outIndex = process.argv.indexOf('--out')
 const outRoot = outIndex >= 0 && process.argv[outIndex + 1] !== undefined ? process.argv[outIndex + 1] : join(ROOT, 'dist')
 const OUT = join(outRoot, `${manifest.name.replace(/^@[^/]+\//, '')}-${manifest.version}`)
 
-const MEDIA = /\.(mp4|webm|mov|m4v|png|jpe?g|webp|avif|gif|svg)$/i
+// The demo media shipped with the repository. This is an explicit allow-list so a
+// local user wallpaper can never leak into a release package.
+const BUILTIN_MEDIA = ['bg-4k.mp4', 'cat.png']
 const FILES = ['lib', 'cordis.patch.yml', 'skin.json', 'package.json', 'README.md', 'LICENSE', 'assets/README.md', 'presets', 'vendor']
 
 // 1. verify the source is distributable
 const problems = []
 for (const file of FILES) {
   if (!existsSync(join(ROOT, file))) problems.push(`missing ${file}`)
+}
+if (!codeOnly) {
+  for (const name of BUILTIN_MEDIA) {
+    if (!existsSync(join(ROOT, 'assets', name))) {
+      problems.push(`missing built-in demo media assets/${name} (use --code-only for a code-only package)`)
+    }
+  }
 }
 for (const file of ['lib/index.js', 'lib/client.js']) {
   const source = readFileSync(join(ROOT, file), 'utf8')
@@ -64,17 +80,12 @@ const outPackage = JSON.parse(readFileSync(outPackagePath, 'utf8'))
 delete outPackage.private
 writeFileSync(outPackagePath, JSON.stringify(outPackage, null, 2) + '\n', 'utf8')
 
-// 3. media (opt-in)
-let mediaCount = 0
-if (withAssets) {
-  for (const name of readdirSync(join(ROOT, 'assets'))) {
-    if (!MEDIA.test(name)) continue
+// 3. built-in media (allow-list only, never user uploads)
+let media = []
+if (!codeOnly) {
+  for (const name of BUILTIN_MEDIA) {
     cpSync(join(ROOT, 'assets', name), join(OUT, 'assets', name))
-    mediaCount += 1
-  }
-} else if (existsSync(join(OUT, 'assets'))) {
-  for (const name of readdirSync(join(OUT, 'assets'))) {
-    if (MEDIA.test(name)) rmSync(join(OUT, 'assets', name))
+    media.push(name)
   }
 }
 
@@ -97,8 +108,14 @@ const walk = (dir) => {
   return { total, files }
 }
 const stats = walk(OUT)
-writeFileSync(join(OUT, '.pack-meta.json'), JSON.stringify({ builtAt: new Date().toISOString(), media: mediaCount }, null, 2))
+// Metadata lives NEXT TO the package, not inside it: the release tarball must
+// contain exactly the installable files.
+writeFileSync(
+  join(outRoot, '.pack-meta.json'),
+  JSON.stringify({ builtAt: new Date().toISOString(), version: manifest.version, media: media.length }, null, 2) + '\n',
+)
 
 console.log('packed -> ' + OUT)
-console.log(`  files: ${stats.files}, size: ${(stats.total / 1024).toFixed(1)} KB, media: ${mediaCount || 'none'}`)
-console.log('  ready to git add / npm publish')
+console.log(`  files: ${stats.files}, size: ${(stats.total / 1024 / 1024).toFixed(1)} MiB, built-in media: ${media.length === 0 ? 'none (--code-only)' : media.join(', ')}`)
+console.log('  metadata: ' + join(outRoot, '.pack-meta.json') + ' (outside the package)')
+console.log('  next: node tools/release-artifacts.mjs   (release attachments)')

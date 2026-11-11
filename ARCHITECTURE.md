@@ -255,7 +255,7 @@ WE 库（v0.6.0，host）--Steam 发现+扫描--> _wallpapers（末尾追加 we 
 - `node tools/test.mjs`：纯逻辑回归测试（v0.6.0：**67 条** = 61 旧 + 6 条 WE fixture）
 - `node tools/i18n-audit.mjs`：zh/en 字典完整性（缺 key / 仅一种语言 / en 混 CJK 即红；zh 纯英文为报告项），已加入 `npm run check` 与 CI
 - `node tools/snapshot.mjs` / `restore.mjs`：快照含 `lib/we-wallpaper/host.mjs`（`wehost`）与 `vendor/we-wallpaper/`；
-  `pack.mjs` 分发目录带 `lib/we-wallpaper/`、`vendor/we-wallpaper/` 及许可文件
+  `pack.mjs` 分发目录带 `lib/we-wallpaper/`、`vendor/we-wallpaper/` 及许可文件（默认还带随包演示素材白名单）
 - 片段顺序只由 `build.mjs` 里的数组决定，不依赖文件系统排序
 
 ## 不变量（会被自动校验）
@@ -307,10 +307,12 @@ additive 入口，不需要新的 DSH 钩子：旧宿主缺前缀时客户端按
 
 ## 发布与回滚
 
-- `node tools/release.mjs [patch|minor] --note "…"`：版本自增（package.json + skin.json + 两处 build 标记）
-  → 完整静态链 → `backup/` 快照 → CHANGELOG 条目 → release commit → 注记 tag `vX.Y.Z`；拒绝脏树/重复 tag，不联网。
+- 发布规则（见 `PUBLISH.md`）：已发布 tag 永不移动/重打；开发在 `dev`，`main` 只含已发布代码；发版 CI 在干净环境跑 `npm run check` → `pack.mjs` → `release-artifacts.mjs`，把 2 个 tgz + `SHA256SUMS.txt` + `build-manifest.json` 作为 Release 附件发布。
+- `node tools/release.mjs [patch|minor] --note "…"`（或 `--version x.y.z[-rc.N] --note-file …`）：版本自增
+  → `RELEASE-NOTES-v<版本>.md` → 完整静态链 → `backup/` 快照 → CHANGELOG 条目 → release commit → 注记 tag `vX.Y.Z`
+  → 本地 `pack.mjs` + `release-artifacts.mjs`（打印附件 sha256）。拒绝脏树/已存在 tag/错误分支，只做一次只读 `ls-remote`。
 - `node tools/snapshot.mjs` / `node tools/restore.mjs`：手工快照与回滚（含 `src/` 与全部宿主模块）。
-- `node tools/pack.mjs`：生成可分发目录（默认不含大体积素材）。
+- `node tools/pack.mjs`：生成可安装目录（默认含随包演示素材；`--code-only` 为纯代码）。
 
 ## 长期路线
 

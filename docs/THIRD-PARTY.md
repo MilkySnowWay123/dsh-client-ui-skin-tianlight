@@ -117,8 +117,9 @@ Wallpaper Engine 场景通道使用仓库内 `vendor/webwallgl/` 的 WebWallGL 3
 
 仓库完整版附带的 `assets/bg-4k.mp4` / `assets/cat.png` 是演示素材，
 **不在 MIT 代码许可范围内**：桌宠形象与视频版权归各自权利方，替换或再分发前请确认你有使用权；
-发布包默认不含这两个文件（`node tools/pack.mjs` 只带代码、清单、`lib/`、`vendor/`、`presets/` 与
-`assets/README.md`）。
+发布包默认**包含**这两个文件（`node tools/pack.mjs` 的随包演示素材白名单，Release 附件同源；
+需要纯代码包时用 `node tools/pack.mjs --code-only`，此时只带代码、清单、`lib/`、`vendor/`、
+`presets/` 与 `assets/README.md`）。
 
 ---
 

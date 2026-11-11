@@ -14,12 +14,13 @@
 | `compat-matrix.mjs` | 多份 DSH 安装静态矩阵：逐版列出钩子层/契约/`COMPATIBLE` 判定（0.2.0 / 0.2.1 / 0.2.2） | 是 |
 | `agent-check.mjs` | 并行开发的自检：把当前片段构建到 `diag/tmp/`（不碰 `lib/client.js`），做语法 + CSS 作用域检查 | 否 |
 | `i18n-audit.mjs` | zh/en 字典完整性审计：静态引用的 key 是否两语言齐全、en 是否混入中文、zh 是否残留纯英文（`npm run check` 已包含，缺 key 即红） | 否 |
-| `public-release.mjs` | 把内部构建树转成公开版本（改四处版本标记 + `INTERNAL-BUILD.json` + 重建 `lib/client.js`），供 GitHub 镜像仓库使用（见 `PUBLISH.md`） | 否 |
-| `release.mjs` | E5 发布流水线：版本自增 / 静态链 / 快照 / CHANGELOG / 提交 / 注记 tag（`--dry-run` 可预览；不联网） | 否 |
+| `public-release.mjs` | 历史工具（内部/公开双版本编号，自 v2.0.0 起已退役）：把内部构建树改成公开版本号；现仅保留说明，新流程见 `PUBLISH.md` | 否 |
+| `release.mjs` | 发布流水线：版本 / `RELEASE-NOTES-v*.md` / 静态链 / 快照 / CHANGELOG / 提交 / 注记 tag / 本地 Release 附件；强制执行「tag 不可变 + dev/main 分支模型」，`--dry-run` 可预览，只做一次只读 `ls-remote`（`--offline` 可跳过） | 否 |
 | `hook-scan.mjs` | 对**任意 DSH 版本目录**扫描桥接钩子（`data-*` 属性 + CSS 类名后缀）；升级 Desktop 前先跑；`--self-check` 同时校验 `src/65-bridge.js` 与钩子清单同步 | 是 |
 | `hooks.mjs` | 桥接钩子清单（data-* 与类名后缀），被 `upgrade-check` / `hook-scan` / 测试共用 | 否 |
 | `resolve-selectors.mjs` | 历史工具：构建哈希选择器体检（v0.2.0 起 CSS 已无哈希依赖，仅排查旧版/外部版本时用） | 是 |
-| `pack.mjs` | 生成可分发目录 | 否 |
+| `pack.mjs` | 生成可安装目录（默认含随包演示素材白名单；`--code-only` 纯代码）；**是唯一打包入口**，CI 与本地发布都用它 | 否 |
+| `release-artifacts.mjs` | 从 `pack.mjs` 产物生成 4 个 Release 附件：不带版本号/带版本号的 tgz（同一份字节）、`SHA256SUMS.txt`、`build-manifest.json`；内置禁用路径 / 本机路径 / 版本一致性校验，失败即非零退出 | 否 |
 | `snapshot.mjs` | 存快照（产物 + 宿主模块 + `src/`）到 `backup/` | 否 |
 | `restore.mjs` | 从 `backup/` 回滚（含宿主模块与 `src/`） | 否 |
 

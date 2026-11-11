@@ -6,10 +6,13 @@ name: check
 # tools/upgrade-check.mjs, tools/hook-scan.mjs against a real install, and the
 # runtime skinlab matrix) are local-only and documented in docs/COMPATIBILITY.md —
 # CI does not have a DSH installation to inspect.
+#
+# `main` only carries released code: the `main-is-released` job requires its HEAD to
+# be exactly the v<version> release commit (tag and manifest agree). Tag pushes are
+# handled by release.yml, which runs the same static chain in a clean environment.
 on:
   push:
-    branches: [main]
-    tags: ['v*']
+    branches: [main, dev]
   pull_request:
   workflow_dispatch:
 
@@ -47,13 +50,11 @@ jobs:
       - name: i18n audit (zh/en completeness)
         run: node tools/i18n-audit.mjs
 
-  # Tag-only packaging job: a tag that does not match package.json fails here, and
-  # a matching tag produces the same distributable directory `node tools/pack.mjs`
-  # would create locally. No publishing, no network credentials.
-  package:
-    name: package (tag)
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: static
+  # HEAD of `main` must be a released commit. Source installs follow main HEAD, so an
+  # unreleased commit on main would ship unreviewed code to every source user.
+  main-is-released:
+    name: main only carries released code
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -62,13 +63,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: tag matches package.json version
+      - name: main HEAD must be the v<version> release commit
+        shell: bash
         run: |
-          node -e "const expected = 'v' + require('./package.json').version; const actual = process.env.GITHUB_REF_NAME; if (actual !== expected) { console.error('tag ' + actual + ' does not match package.json ' + expected); process.exit(1); }"
-      - name: build distributable (pack, no media)
-        run: node tools/pack.mjs
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dsh-client-ui-skin-tianlight-${{ github.ref_name }}
-          path: dist/**
-          if-no-files-found: error
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          expected="v${version}"
+          actual="$(git describe --tags --exact-match HEAD 2>/dev/null || true)"
+          if [ "${actual}" != "${expected}" ]; then
+            echo "::error::main HEAD is not the ${expected} release commit (found: '${actual}'). main only carries released code — cut releases from main through the release flow documented in PUBLISH.md."
+            exit 1
+          fi
+          echo "main HEAD is ${expected}"

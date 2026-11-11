@@ -96,9 +96,11 @@ try {
   console.log(`  ${build.stdout.trim()}`)
   console.log('next steps (inside the mirror checkout):')
   console.log(`  node tools/build.mjs --check && node tools/test.mjs && node tools/structure.mjs --strict && node tools/audit.mjs && node tools/check-css.mjs && node tools/verify.mjs && node tools/i18n-audit.mjs`)
-  console.log(`  node tools/pack.mjs`)
+  console.log(`  node tools/pack.mjs && node tools/release-artifacts.mjs`)
   console.log(`  git add -A && git commit -m "release: v${version} (public build of internal v${internalVersion})"`)
-  console.log(`  git tag -f v${version} && git push origin main && git push -f origin refs/tags/v${version}`)
+  console.log(`  git tag v${version} && git push origin main && git push origin v${version}`)
+  console.log('  # 注意：已发布的 tag 永不移动/重打；发现问题请发新补丁版本（见 PUBLISH.md）')
+  console.log('  # 该工具的双版本编号流程自 v2.0.0 起已退役，仅保留为历史工具。')
 } catch (error) {
   console.error('public-release refused: ' + (error instanceof Error ? error.message : String(error)))
   process.exit(1)

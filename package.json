@@ -44,6 +44,7 @@
     "hook-scan": "node tools/hook-scan.mjs",
     "compat": "node tools/compat-matrix.mjs",
     "pack": "node tools/pack.mjs",
+    "artifacts": "node tools/release-artifacts.mjs",
     "snapshot": "node tools/snapshot.mjs",
     "restore": "node tools/restore.mjs",
     "agent-check": "node tools/agent-check.mjs",

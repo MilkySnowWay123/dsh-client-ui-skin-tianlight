@@ -1,15 +1,21 @@
 name: release
 
-# Creates/updates the public GitHub Releases for the pushed tags from the release-note
-# files that ship in the repository root (RELEASE-NOTES-v1.0.x.md). Runs on every
-# push to main (idempotent: an existing release is edited to match its notes file, a
-# missing one is created) and can also be dispatched manually. The workflow uses the
-# repository's own GITHUB_TOKEN, so no personal token is needed to publish a release
-# after a push.
+# Builds and publishes ONE release from a pushed `v*` tag in a clean environment:
+#   npm run check -> node tools/pack.mjs -> node tools/release-artifacts.mjs
+# The four attachments (two identical tarballs, SHA256SUMS.txt, build-manifest.json)
+# are attached to a GitHub Release whose body is RELEASE-NOTES-v<version>.md.
+#
+# Contract enforced here — any violation fails the run before anything is published:
+#   - tag === 'v' + package.json version;
+#   - stable tags point into `main`; pre-release tags (x.y.z-rc.N) point into `dev`;
+#   - RELEASE-NOTES-v<version>.md exists in the tagged tree;
+#   - tools/release-artifacts.mjs refuses forbidden paths, machine-specific paths and
+#     version mismatches (it exits non-zero, so the job goes red).
+#
+# `tools/pack.mjs` is the only packing path; CI and a local release run are identical.
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    tags: ['v*']
 
 permissions:
   contents: write
@@ -19,42 +25,79 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  releases:
-    name: publish tag releases
+  publish:
+    name: build + publish release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: sync releases from RELEASE-NOTES-v*.md (idempotent)
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: tag/version + branch contract
+        shell: bash
         run: |
           set -euo pipefail
-          found=0
-          for notes in RELEASE-NOTES-v*.md; do
-            if [ ! -e "$notes" ]; then
-              continue
-            fi
-            found=1
-            tag="${notes#RELEASE-NOTES-}"
-            tag="${tag%.md}"
-            if ! git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
-              echo "skip $tag: tag not present in this checkout"
-              continue
-            fi
-            title="$(head -n 1 "$notes" | sed -e 's/^# *//' -e 's/\r$//')"
-            if gh release view "$tag" >/dev/null 2>&1; then
-              # The release may already exist (e.g. created from the tag before this
-              # workflow ran). The notes file is authoritative, so edit it back into
-              # sync instead of leaving the tag-message placeholder as the release.
-              echo "updating release $tag: $title"
-              gh release edit "$tag" --title "$title" --notes-file "$notes"
-              continue
-            fi
-            echo "creating release $tag: $title"
-            gh release create "$tag" --title "$title" --notes-file "$notes" --verify-tag
-          done
-          if [ "$found" = "0" ]; then
-            echo "no RELEASE-NOTES-v*.md files in this checkout"
+          version="$(node -p "require('./package.json').version")"
+          expected="v${version}"
+          if [ "${GITHUB_REF_NAME}" != "${expected}" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match package.json ${expected}"
+            exit 1
           fi
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main +refs/heads/dev:refs/remotes/origin/dev
+          case "${version}" in
+            *-*)
+              echo "pre-release ${version}: must be reachable from dev"
+              git merge-base --is-ancestor "${GITHUB_SHA}" origin/dev
+              ;;
+            *)
+              echo "stable ${version}: must be reachable from main (main only carries released code)"
+              git merge-base --is-ancestor "${GITHUB_SHA}" origin/main
+              ;;
+          esac
+      - name: static checks (npm run check)
+        run: npm run check
+      - name: build distributable (the only packing path)
+        run: node tools/pack.mjs
+      - name: assemble and verify release attachments
+        run: node tools/release-artifacts.mjs --commit "${GITHUB_SHA}"
+      - name: release notes file present
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          test -f "RELEASE-NOTES-v${version}.md" || {
+            echo "::error::RELEASE-NOTES-v${version}.md is missing from the tagged tree"
+            exit 1
+          }
+      - name: verify SHA256SUMS.txt (GNU coreutils)
+        run: |
+          set -euo pipefail
+          cd dist/release
+          sha256sum -c --ignore-missing SHA256SUMS.txt
+      - name: publish GitHub Release + attachments (idempotent)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          tag="v${version}"
+          notes="RELEASE-NOTES-v${version}.md"
+          title="$(head -n 1 "${notes}" | sed -e 's/^# *//' -e 's/\r$//')"
+          prerelease_flag=""
+          case "${version}" in *-*) prerelease_flag="--prerelease" ;; esac
+          if gh release view "${tag}" >/dev/null 2>&1; then
+            echo "updating release ${tag}"
+            gh release edit "${tag}" --title "${title}" --notes-file "${notes}" ${prerelease_flag}
+          else
+            echo "creating release ${tag}"
+            gh release create "${tag}" --title "${title}" --notes-file "${notes}" ${prerelease_flag}
+          fi
+          gh release upload "${tag}" \
+            "dist/release/dsh-client-ui-skin-tianlight-${version}.tgz" \
+            "dist/release/dsh-client-ui-skin-tianlight.tgz" \
+            "dist/release/SHA256SUMS.txt" \
+            "dist/release/build-manifest.json" \
+            --clobber
