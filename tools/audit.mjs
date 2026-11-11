@@ -542,6 +542,23 @@ report(
   'v2.0.1 author default appearance: preset file == embedded constant, fresh-install only, hub restore present',
 )
 
+// ---- v2.0.1: persistent user data lives in the DSH profile directory ----
+const persistentPathsSource = fs.readFileSync(fileURLToPath(new URL('../lib/host-paths.js', import.meta.url)), 'utf8')
+const persistentIndexSource = fs.readFileSync(fileURLToPath(new URL('../lib/index.js', import.meta.url)), 'utf8')
+report(
+  persistentPathsSource.includes('profileContext') &&
+    persistentPathsSource.includes('configureHostPaths') &&
+    persistentPathsSource.includes('migrateLegacyHostData') &&
+    persistentPathsSource.includes('tianlight') &&
+    persistentIndexSource.includes("ctx.get('profileContext')") &&
+    persistentIndexSource.includes('migrateLegacyHostData()') &&
+    readmeText.includes('$DSH_HOME/profiles/') &&
+    readmeText.includes('tianlight')
+    ? 'PASS'
+    : 'FAIL',
+  'v2.0.1 user data lives in <DSH profile dir>/tianlight (survives uninstall) and legacy plugin-dir data is copied once without deleting it',
+)
+
 // ---- 16. v1.6.4: AI chat in the pet menu + per-look action packs + visible media filenames ----
 report(
   source.includes('pet.action.chat') &&

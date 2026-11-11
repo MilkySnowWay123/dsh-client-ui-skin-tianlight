@@ -29,6 +29,7 @@ import { buildTarBuffer, classifyBundleEntry, handleBundle, handleImport, isBund
 import { servePath } from '../lib/http-media.js'
 import { SVG_MAX_BYTES, isSafeSvgBuffer } from '../lib/media-types.js'
 import { TINY_MP4, TINY_PNG, makeMediaFixture } from './media-fixtures.mjs'
+import { dataRootForProfile, migrateLegacyHostData } from '../lib/host-paths.js'
 import {
   DSH_COMPAT_MUST_MATCH,
   DSH_COMPAT_RANGE,
@@ -4621,6 +4622,53 @@ test('default appearance is applied only on a fresh install and is reachable fro
   assert.match(CLIENT_SOURCE, /localBefore\.length === 0 && remoteHasValues === false/, 'fresh-install guard must inspect local and host state')
   assert.match(CLIENT_SOURCE, /data-tl-hub-appearance-reset/, 'role hub must expose the restore-default-appearance button')
   assert.match(CLIENT_SOURCE, /hub\.appearance\.reset/)
+})
+
+// ---- v2.0.1: persistent user data (see lib/host-paths.js header for the DSH evidence) ----
+test('v2.0.1 persistent data root is <DSH profile dir>/tianlight', () => {
+  const profileDir = join(tmpdir(), 'tl-profile-test')
+  assert.equal(dataRootForProfile(profileDir), join(profileDir, 'tianlight'))
+  assert.equal(dataRootForProfile('   '), null)
+  assert.equal(dataRootForProfile(null), null)
+})
+
+test('v2.0.1 migration copies legacy data once, keeps the originals and records it', () => {
+  const root = mkdtempSync(join(tmpdir(), 'tl-migrate-'))
+  const legacyRoot = join(root, 'legacy')
+  mkdirSync(join(legacyRoot, 'state'), { recursive: true })
+  writeFileSync(join(legacyRoot, 'state', 'settings.json'), '{"schemaVersion":5}', 'utf8')
+  mkdirSync(join(legacyRoot, 'assets', 'uploads'), { recursive: true })
+  writeFileSync(join(legacyRoot, 'assets', 'uploads', 'a.png'), 'png', 'utf8')
+  writeFileSync(join(legacyRoot, 'we-roots.json'), '[]', 'utf8')
+  const legacy = {
+    state: join(legacyRoot, 'state'),
+    uploads: join(legacyRoot, 'assets', 'uploads'),
+    derived: join(legacyRoot, 'assets', 'derived'),
+    rootsFile: join(legacyRoot, 'we-roots.json'),
+  }
+  const targetRoot = join(root, 'data')
+  const target = {
+    state: join(targetRoot, 'state'),
+    uploads: join(targetRoot, 'uploads'),
+    derived: join(targetRoot, 'derived'),
+    rootsFile: join(targetRoot, 'we-roots.json'),
+  }
+  const first = migrateLegacyHostData({ root: targetRoot, legacy, target })
+  assert.ok(first !== null, 'a persistent root must produce a migration result')
+  assert.equal(first.actions.length, 3, 'state + uploads + we-roots.json are copied')
+  assert.equal(readFileSync(join(targetRoot, 'state', 'settings.json'), 'utf8'), '{"schemaVersion":5}')
+  assert.ok(existsSync(join(targetRoot, 'uploads', 'a.png')), 'uploaded wallpaper copied')
+  assert.ok(existsSync(join(targetRoot, 'we-roots.json')), 'we-roots.json copied')
+  // The legacy files are the downgrade path: they must stay untouched.
+  assert.ok(existsSync(join(legacyRoot, 'state', 'settings.json')), 'legacy settings kept')
+  assert.ok(existsSync(join(legacyRoot, 'assets', 'uploads', 'a.png')), 'legacy uploads kept')
+  const record = JSON.parse(readFileSync(join(targetRoot, 'migration.json'), 'utf8'))
+  assert.equal(record.schema, 1)
+  assert.equal(record.actions.length, 3)
+  // Second startup: destinations exist, so nothing is copied or overwritten again.
+  const second = migrateLegacyHostData({ root: targetRoot, legacy, target })
+  assert.deepEqual(second.actions, [])
+  rmSync(root, { recursive: true, force: true })
 })
 
 console.log(`tests: ${passed} passed, ${failures.length} failed`)
