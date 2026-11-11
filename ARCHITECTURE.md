@@ -67,7 +67,8 @@ we-wallpaper/host.mjs  内嵌 MIT 的 dsh-we-wallpaper host half：Steam/WE 发�
 | `_wallpapers` | GET | 本地 + 上传 + WE roots + 场景 + 网页壁纸 + **v0.6.0 WE 库条目（末尾 additive）** | v0.3 / v0.6 扩展 |
 | `_we-roots` | GET/POST | 额外 WE 目录（只收 JSON + 绝对路径，≤8KB） | v0.3 |
 | `_upload` | POST | 受控上传（流式、原子、同名序号） | v0.3 |
-| `_engines` | GET | build 握手 + 场景/网页项目数 + ffmpeg + 缓存 + 设置 revision + `capabilities` + **v0.6.0 `weLibrary`/`capabilities.weLibrary`（additive）** | v0.4 / v0.5 / v0.6 扩展 |
+| `_engines` | GET | build 握手 + 场景/网页项目数 + ffmpeg + 缓存 + 设置 revision + `capabilities` + **v0.6.0 `weLibrary`/`capabilities.weLibrary`（additive）** + **v2.0.1 `data`（用户数据模式，符号化）** | v0.4 / v0.5 / v0.6 扩展 |
+| `_fingerprint` | GET | **v2.0.1** 精确构建指纹：version / git commit / `lib/client.js` sha256 / HOST_API / DSH 版本（`profileContext.installAnchor`）/ 安装方式；供中枢「自检」「反馈」面板与 issue 模板使用（不含机器路径） | **v2.0.1** |
 | `_engine/webwallgl.js`、`_scene-frame`、`_scene-project/...` | GET | 场景引擎/适配页/场景字节 | v0.3 |
 | `_settings` | GET/PUT/DELETE | 宿主设置（`{schemaVersion,revision,updatedAt,settings}`；仅 `tianlight.*`/`dsh-tianlight:*`，≤256KB，原子写） | **v0.5** |
 | `_bundle` | GET | 流式导出 tar.gz：`manifest.json` + `settings.json` + `wallpapers/*` | **v0.5** |

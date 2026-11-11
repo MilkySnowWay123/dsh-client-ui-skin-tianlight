@@ -466,6 +466,21 @@ $DSH_HOME/profiles/<profile>/tianlight/
 - 卸载/升级**不会删除**这个目录；v2.0.0 及更早版本留在插件目录 `state/`、`assets/uploads/`、`assets/derived/`、`we-roots.json` 的数据会在新版本**首次启动时复制**过来（旧文件保留不删，方便回滚到旧版）。
 - 手动清理：退出 DSH 后删除 `$DSH_HOME/profiles/<profile>/tianlight/` 即可（会清掉设置、上传壁纸、缓存与 WE 状态）。
 
+### 版本指纹与安装校验（v2.0.1）
+
+角色中枢 →「功能自检」/「反馈」面板顶部显示一行**版本指纹**（反馈 JSON 和自检复制文本也会带上它）：
+
+```text
+2.0.1 · 8f3a2b1c9d0e · client 7d55aecce9c4 · HOST_API 2 · DSH 0.2.2-rc.1 · tarball
+ 版本     git commit     lib/client.js sha256 前 12 位   路由契约    DSH 版本    安装方式
+```
+
+- 安装方式由当前 DSH profile 的依赖写法判定：`local-link`（本地链接/目录）、`tarball`（Release 包）、`git`（源码地址）、`registry`（npm）、`unknown`。
+- GitHub 反馈模板已把「版本指纹」设为**必填**；它会和 Release 的 `build-manifest.json` 对上（version / commit / clientSha256 / HOST_API 同源）。
+- 核对"装到的东西 = 发布包"：下载 Release 的 `SHA256SUMS.txt` 后运行
+  `node tools/verify-install.mjs <插件目录> SHA256SUMS.txt` → 输出 `完全一致：N/N 个文件…`；
+  不一致时会列出 `MISMATCH`（哈希不符）/ `MISSING`（缺文件）/ `EXTRA`（多出文件，`state/`、`uploads/` 等用户数据会被忽略）。
+
 ## 故障排查
 
 ### 1. 皮肤不出现，`ui-skin-tianlight` 被禁用（home patch 覆盖）

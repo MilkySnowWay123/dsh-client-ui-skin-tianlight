@@ -126,6 +126,23 @@ check('manifest 200 + asset list', () => {
   assert.ok(Array.isArray(value.assets), 'assets must be an array')
 })
 
+// ---------- v2.0.1: exact build fingerprint route ----------
+const fingerprintResponse = await call('GET', '/skin-tianlight/_fingerprint')
+check('v2.0.1 fingerprint reports the exact installed build', () => {
+  assert.equal(fingerprintResponse.status, 200)
+  const value = JSON.parse(fingerprintResponse.body.toString('utf8'))
+  assert.equal(value.schema, 1)
+  assert.equal(value.version, PKG_VERSION, 'fingerprint version must be the packaged version')
+  assert.equal(value.hostApi, '2', 'fingerprint must report the HOST_API contract')
+  assert.match(value.clientSha256, /^[0-9a-f]{64}$/, 'client sha256 must be a full digest')
+  assert.equal(value.clientShort, value.clientSha256.slice(0, 12))
+  assert.equal(typeof value.line, 'string')
+  assert.ok(value.line.includes(PKG_VERSION) && value.line.includes(value.clientShort), 'one-line form carries version + client digest')
+  assert.ok(['local-link', 'tarball', 'git', 'registry', 'unknown'].includes(value.installMethod), 'install method must be classified')
+  assert.ok(value.dshVersion === null || typeof value.dshVersion === 'string', 'DSH version is a string when the host exposes profileContext')
+  assert.ok(JSON.stringify(value).includes('/skin-tianlight') === false, 'fingerprint must not leak absolute machine paths')
+})
+
 // ---------- R4B: Host allowlist (DNS-rebinding fence) ----------
 // A malicious site rebound to 127.0.0.1 makes Origin === Host; only a loopback
 // Host name is accepted. A missing Host is a non-browser caller (curl/HTTP-1.0).

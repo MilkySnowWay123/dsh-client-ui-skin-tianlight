@@ -5,6 +5,7 @@ import { EventEmitter } from 'node:events'
 import { existsSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { createHash } from 'node:crypto'
 import { Readable, Writable } from 'node:stream'
 import { pathToFileURL } from 'node:url'
 import { gunzipSync, gzipSync } from 'node:zlib'
@@ -30,6 +31,8 @@ import { servePath } from '../lib/http-media.js'
 import { SVG_MAX_BYTES, isSafeSvgBuffer } from '../lib/media-types.js'
 import { TINY_MP4, TINY_PNG, makeMediaFixture } from './media-fixtures.mjs'
 import { dataRootForProfile, migrateLegacyHostData } from '../lib/host-paths.js'
+import { buildFingerprint, classifyInstallSpec, formatFingerprintLine } from '../lib/fingerprint.js'
+import { verifyInstall } from './verify-install.mjs'
 import {
   DSH_COMPAT_MUST_MATCH,
   DSH_COMPAT_RANGE,
@@ -4668,6 +4671,67 @@ test('v2.0.1 migration copies legacy data once, keeps the originals and records 
   // Second startup: destinations exist, so nothing is copied or overwritten again.
   const second = migrateLegacyHostData({ root: targetRoot, legacy, target })
   assert.deepEqual(second.actions, [])
+  rmSync(root, { recursive: true, force: true })
+})
+
+// ---- v2.0.1: exact build fingerprint + install verification ----
+const sha256Text = (text) => createHash('sha256').update(text).digest('hex')
+
+test('v2.0.1 fingerprint identifies the exact running build', () => {
+  const fingerprint = buildFingerprint({ hostApi: '2' })
+  assert.equal(fingerprint.version, PKG_VERSION)
+  assert.match(fingerprint.clientSha256, /^[0-9a-f]{64}$/)
+  assert.equal(fingerprint.clientShort, fingerprint.clientSha256.slice(0, 12))
+  assert.equal(fingerprint.hostApi, '2')
+  assert.ok(['local-link', 'tarball', 'git', 'registry', 'unknown'].includes(fingerprint.installMethod))
+  assert.ok(fingerprint.commit === null || /^[0-9a-f]{40,64}$/i.test(fingerprint.commit))
+  const line = formatFingerprintLine(fingerprint)
+  assert.ok(line.includes(PKG_VERSION), 'line carries the version')
+  assert.ok(line.includes('HOST_API 2'), 'line carries HOST_API')
+  assert.ok(line.includes(fingerprint.clientShort), 'line carries the client sha prefix')
+})
+
+test('v2.0.1 install-method classification covers link/tarball/git/registry', () => {
+  assert.equal(classifyInstallSpec('link:D:/plugins/x'), 'local-link')
+  assert.equal(classifyInstallSpec('workspace:*'), 'local-link')
+  assert.equal(classifyInstallSpec('file:./x.tgz'), 'tarball')
+  assert.equal(classifyInstallSpec('https://github.com/o/r/releases/download/v1/x.tgz'), 'tarball')
+  assert.equal(classifyInstallSpec('git+https://github.com/o/r.git#main'), 'git')
+  assert.equal(classifyInstallSpec('github:o/r'), 'git')
+  assert.equal(classifyInstallSpec('^2.0.1'), 'registry')
+  assert.equal(classifyInstallSpec('2.0.1'), 'registry')
+  assert.equal(classifyInstallSpec(''), 'unknown')
+})
+
+test('v2.0.1 verify-install says 完全一致 on match and lists differences otherwise', () => {
+  const root = mkdtempSync(join(tmpdir(), 'tl-verify-install-'))
+  const installDir = join(root, 'install')
+  mkdirSync(join(installDir, 'lib'), { recursive: true })
+  writeFileSync(join(installDir, 'package.json'), '{"version":"2.0.1"}')
+  writeFileSync(join(installDir, 'lib', 'client.js'), 'client-bytes')
+  const sumsFile = join(root, 'SHA256SUMS.txt')
+  writeFileSync(
+    sumsFile,
+    [
+      sha256Text('{"version":"2.0.1"}') + '  package.json',
+      sha256Text('client-bytes') + '  lib/client.js',
+      '0'.repeat(64) + '  dsh-client-ui-skin-tianlight.tgz',
+      '',
+    ].join('\n'),
+  )
+  const clean = verifyInstall(installDir, sumsFile)
+  assert.equal(clean.ok, true, 'a matching install is complete')
+  assert.equal(clean.matched, 2)
+  assert.equal(clean.skippedAssets, 1, 'the release .tgz line is not an installed file')
+  writeFileSync(join(installDir, 'lib', 'client.js'), 'tampered')
+  mkdirSync(join(installDir, 'state'), { recursive: true })
+  writeFileSync(join(installDir, 'state', 'settings.json'), '{}')
+  writeFileSync(join(installDir, 'extra.txt'), 'unexpected')
+  const dirty = verifyInstall(installDir, sumsFile)
+  assert.equal(dirty.ok, false)
+  assert.equal(dirty.mismatched.length, 1)
+  assert.equal(dirty.extra.includes('extra.txt'), true, 'unexpected package files are reported')
+  assert.equal(dirty.extra.includes('state/settings.json'), false, 'runtime user data is ignored')
   rmSync(root, { recursive: true, force: true })
 })
 
