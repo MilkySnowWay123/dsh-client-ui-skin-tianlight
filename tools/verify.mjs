@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import assert from 'node:assert/strict'
 import { dirname, join } from 'node:path'
+import { DSH_COMPAT_MUST_MATCH, DSH_COMPAT_MUST_NOT_MATCH, DSH_COMPAT_RANGE, OFFICIAL_PEER_PACKAGES, satisfies } from './compat.mjs'
 
 const PKG = dirname(dirname(fileURLToPath(import.meta.url)))
 /** Read the expected host build from package.json so a version bump cannot leave
@@ -468,18 +469,26 @@ check('package.json declares web client + bundle patch', () => {
 })
 check('skin.json passes the manager catalog rules', () => {
   const skin = JSON.parse(fs.readFileSync(PKG + '/skin.json', 'utf8'))
+  const pkg = JSON.parse(fs.readFileSync(PKG + '/package.json', 'utf8'))
   assert.match(skin.id, /^[a-z0-9][a-z0-9._-]*$/)
   assert.ok(skin.name.trim() !== '')
   assert.match(skin.bodyAttr, /^data-[a-z0-9_.:-]+$/)
   assert.ok(typeof skin.wiring.id === 'string' && skin.wiring.id.length > 0)
-  assert.equal(skin.package, JSON.parse(fs.readFileSync(PKG + '/package.json', 'utf8')).name)
+  assert.equal(skin.package, pkg.name)
   if (skin.dshCompatibility !== undefined) assert.match(skin.dshCompatibility, /^\d+\.\d+\.\d+rc\d+$/)
-  // Multi-version support (v0.4.0+): the single value above stays what the skin manager
-  // displays; the range + tested list are informational fields the manager ignores.
-  if (skin.dshCompatibilityRange !== undefined) {
-    assert.equal(typeof skin.dshCompatibilityRange, 'string')
-    assert.match(skin.dshCompatibilityRange, /0\.2\.0/)
-    assert.match(skin.dshCompatibilityRange, /0\.3\.0/)
+  // Multi-version support (v2.0.1+): ONE canonical range, declared in three places
+  // (harness gate, official peers, catalog range). The harness reads engines.dsh on
+  // 0.2.1/0.2.2 and peerDependencies on 0.2.0, so both must carry it verbatim.
+  assert.equal(skin.dshCompatibilityRange, DSH_COMPAT_RANGE, 'skin.json dshCompatibilityRange must equal the canonical range')
+  assert.equal(pkg.engines?.dsh, DSH_COMPAT_RANGE, 'package.json engines.dsh must equal the canonical range')
+  for (const name of OFFICIAL_PEER_PACKAGES) {
+    assert.equal(pkg.peerDependencies?.[name], DSH_COMPAT_RANGE, `peerDependencies[${name}] must equal the canonical range`)
+  }
+  for (const version of DSH_COMPAT_MUST_MATCH) {
+    assert.ok(satisfies(version, DSH_COMPAT_RANGE), `the declared range must match ${version}`)
+  }
+  for (const version of DSH_COMPAT_MUST_NOT_MATCH) {
+    assert.equal(satisfies(version, DSH_COMPAT_RANGE), false, `the declared range must not match ${version}`)
   }
   if (skin.dshCompatibilityTested !== undefined) {
     assert.ok(Array.isArray(skin.dshCompatibilityTested), 'tested list must be an array')

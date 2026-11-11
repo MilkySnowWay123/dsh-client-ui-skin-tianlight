@@ -14,8 +14,8 @@
 
 | 项 | 值 |
 |---|---|
-| 支持范围 | `>=0.2.0-rc.1 <0.3.0`（`skin.json` → `dshCompatibilityRange`） |
-| 管理器展示值 | `dshCompatibility: "0.2.2rc1"`（skin-manager 只接受 `/^\d+\.\d+\.\d+rc\d+$/` 单串） |
+| 支持范围 | `>=0.2.0-rc.1 <0.2.1-0 \|\| >=0.2.1-0 <0.2.2-0 \|\| >=0.2.2-0 <0.3.0-0`（同一串写进三处，见 §1b；0.2.x 的正式/rc/alpha 均放行，0.3.x 起被拦下） |
+| 管理器展示值 | `dshCompatibility: "0.2.2rc1"`（skin-manager 只接受 `/^\d+\.\d+\.\d+rc\d+$/` 单串；它会安全忽略 `dshCompatibilityRange`） |
 | 实测版本 | 0.2.0-rc.2 · 0.2.1-rc.3（历史 Desktop）· 0.2.1-rc.5（npm 运行时）· 0.2.2-rc.1（npm + Desktop） |
 | 不承诺 | 0.3.x 及以后（需要先跑 `npm run compat` 与多版本 lab） |
 
@@ -23,12 +23,38 @@
 
 ```json
 "dshCompatibility": "0.2.2rc1",
-"dshCompatibilityRange": ">=0.2.0-rc.1 <0.3.0",
+"dshCompatibilityRange": ">=0.2.0-rc.1 <0.2.1-0 || >=0.2.1-0 <0.2.2-0 || >=0.2.2-0 <0.3.0-0",
 "dshCompatibilityTested": ["0.2.0-rc.2", "0.2.1-rc.3", "0.2.1-rc.5", "0.2.2-rc.1"],
-"version": "0.6.0"
+"version": "2.0.1"
 ```
 
 `version` 由 `tools/release.mjs` 在发布时写入/更新（skin-manager 忽略未知字段）。
+
+### 1b. 兼容性门禁在哪里生效（源码证据，v2.0.1 修订）
+
+DSH 的插件兼容判断**不读 `skin.json`**，而在 `@deepseek-ai/dsh-app-boot` 的
+`evaluatePluginCompatibility()` 里；`@deepseek-ai/dsh-plugin-manager` 在安装前、安装后和启动装载
+bundle 时都会调用它（不兼容会被拒绝安装或跳过 bundle 并提示，可用 exact-version exemption 强制放行）。
+
+| DSH 版本 | 判断字段 | 证据（npm 包内文件:行） |
+|---|---|---|
+| 0.2.0-rc.2 | 只读 `peerDependencies` 里的 `@deepseek-ai/dsh` / `@deepseek-ai/dsh-*`（无 `engines.dsh` 支持） | `dsh-app-boot/lib/index.js:252-306`（`unmetRequirements` 只遍历 peers） |
+| 0.2.1-rc.5 | `engines.dsh` 存在则**独自**决定、忽略 peers；否则同上 peer 列表 | `dsh-app-boot/lib/index.js:252-326` |
+| 0.2.2-rc.1 | 同 0.2.1 | `dsh-app-boot/lib/index.js:1070-1144` |
+
+- 三个版本都用 `semver.satisfies(runtimeVersion, range, { includePrerelease: true })`，因此 rc/alpha
+  预发布参与范围匹配（`satisfies()`：0.2.0 :300，0.2.1 :277，0.2.2 :1095）。
+- 安装前预读：0.2.0 用 `pnpm view … peerDependencies`（`dsh-plugin-manager/lib/types/operations.js:126-140`），
+  0.2.1/0.2.2 用 `pnpm view … engines peerDependencies`（`…/operations.js:184-209`）。
+- **pnpm 不会自动安装 peer**：三个版本的 profile 模板固定 `nodeLinker: hoisted` + `autoInstallPeers: false`
+  （`dsh-app-boot/lib/index.js` 的 `PROFILE_PNPM_WORKSPACE`；0.2.0 :563-567，0.2.1/0.2.2 相同），
+  peer 声明只用于兼容判断，不会把官方包复制进 profile。
+- awesome-dsh-plugin `contributing.md`：官方 `@deepseek-ai/*` 包用 `peerDependencies` 声明，并且范围要为
+  每个 patch 元组写显式预发布分支（旧 `>=0.2.0-rc.1 <0.3.0` 会静默排除 0.2.1/0.2.2 的 rc 构建）。
+
+结论：**同时**声明 `package.json` 的 `engines.dsh`（0.2.1/0.2.2 门禁）和两个官方包的
+`peerDependencies`（0.2.0 门禁 + 官方依赖声明），`skin.json.dshCompatibilityRange` 保持同一串；
+`tools/compat.mjs` 是唯一来源，`tools/audit.mjs` / `tools/verify.mjs` / `tools/test.mjs` 三处静态守卫强制一致。
 
 **集成基线**：v0.5.1 = git `7282d94`，`lib/client.js` 768,962 字符 / 21 片段；完整静态链全 PASS（build --check、
 test 61/61、structure --strict、audit、check-css、verify 全部 exit 0）。**v0.5.0 运行时矩阵已判定**：
@@ -427,4 +453,5 @@ node "D:\DeepSeek Harness(2)\diag\skinlab\run.mjs" --scenarios default,panel,clo
 
 未来 DSH 0.3.x 出现后的升级流程：
 `compat-matrix` 若报 `INCOMPATIBLE` → 只改 `src/65-bridge.js` 的发现选择器（CSS 不动）→
-在旧/新两版上各跑一次运行时矩阵 → 更新本文件与 `dshCompatibilityRange`。
+在旧/新两版上各跑一次运行时矩阵 → 更新本文件、`tools/compat.mjs` 里的范围（它会同步到
+`package.json` 的 `engines.dsh` + 官方包 `peerDependencies` 与 `skin.json.dshCompatibilityRange`）。
