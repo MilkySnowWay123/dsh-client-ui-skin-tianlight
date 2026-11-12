@@ -1,7 +1,15 @@
 {
-  "publicVersion": "v2.0.0",
-  "internalVersion": "v2.0.0",
-  "internalTag": "v2.0.0",
-  "internalClientSha256": "7d55aecce9c4b741b5d6dfca187c2c7571f4a3a164d5976fcc683605d87adca6",
-  "note": "From v2.0.0 on the repository, the DSH install and the GitHub release share one version number. This final v2.0.0 build includes the post-2.0.0 Fiber teardown fix, the .gitattributes LF guard, the catalog description refresh, and the reduced demo wallpaper set (bg-4k.mp4 + cat.png; the HEVC 1080p bg-main.mp4 was removed). Earlier builds used internal 1.6.x / public v1.0.x labels and remain as history."
+  "publicVersion": "v2.0.1",
+  "internalVersion": "v2.0.1",
+  "internalTag": "v2.0.1",
+  "internalClientSha256": "3eda2277ab20d9cbd9945a73b3f2fd4295df046056380ae13ccba444366fdd63",
+  "releaseCommit": "d8a064aa14b408a0f436facc42fe2d160f50dc5a",
+  "releaseTagObject": "caff146117d0119b115e3ac8e1c14150a86bf706",
+  "releaseBuiltAt": "2026-11-12T05:15:19.952Z",
+  "releaseAssets": {
+    "tarballSha256": "076607fa4c0249f9b9de870cc93a9e7b3d8b12e8c8f03e81c3e1d07859642242",
+    "sha256sumsSha256": "3ae820854cb3efdb29de7f74cfae033fc8329867150e3d62c7946447da9b0dcb",
+    "buildManifestSha256": "7ae6e97f3015b99b79ec63ccc8ca44c488823b6fd79bc9de7d3c142f54487296"
+  },
+  "note": "From v2.0.0 on the repository, the DSH install and the GitHub release share one version number. v2.0.1 publishes deterministic Release artifacts (tarball + SHA256SUMS + build-manifest), the three-tuple DSH compatibility range, user data under <profile>/tianlight with copy-only migration, and the version fingerprint in the role hub; it also carries the pre-release fixes found by the task-7 matrix (cold-start settings bootstrap retry; lazy persistent paths for settings/frame cache). Earlier builds used internal 1.6.x / public v1.0.x labels and remain as history."
 }
