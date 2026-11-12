@@ -33,7 +33,7 @@ const OUT = join(outRoot, `${manifest.name.replace(/^@[^/]+\//, '')}-${manifest.
 // The demo media shipped with the repository. This is an explicit allow-list so a
 // local user wallpaper can never leak into a release package.
 const BUILTIN_MEDIA = ['bg-4k.mp4', 'cat.png']
-const FILES = ['lib', 'cordis.patch.yml', 'skin.json', 'package.json', 'README.md', 'LICENSE', 'assets/README.md', 'presets', 'vendor']
+const FILES = ['bin', 'lib', 'cordis.patch.yml', 'skin.json', 'package.json', 'README.md', 'LICENSE', 'assets/README.md', 'presets', 'vendor']
 
 // 1. verify the source is distributable
 const problems = []

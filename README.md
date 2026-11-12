@@ -6,6 +6,14 @@
 >
 > npm 包名 `dsh-client-ui-skin-tianlight`（v2.0.2 起；旧链接安装包名 `@dsh-external/dsh-client-ui-skin-tianlight`）· 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
 
+## v2.0.3 · 一条命令安装
+
+```bash
+npx dsh-client-ui-skin-tianlight@latest
+```
+
+先完全退出 DeepSeek Harness，再运行上面这一条命令；装完打开 DSH、页面按 Ctrl+F5 即可。它会自动找到 DSH 数据目录和 `desktop` profile，备份 profile 清单，按插件管理器的格式登记依赖与 bundle，自动注销旧包名，复制并逐字节校验插件文件。不改任何 `cordis.patch.yml`，不碰 `<profile>/tianlight/` 里的用户数据。另有 `npx dsh-client-ui-skin-tianlight doctor`（只读体检）和 `uninstall`（卸载，保留用户数据）。插件本体与 2.0.2 相同。
+
 ## v2.0.2 · 正式版：npm 发布 + 包名迁移
 
 `2.0.2` 把插件**发布到公开 npm registry**，安装从「下载 Release / 目录链接」变成一条命令（见下方「从 npm 安装」）：
@@ -423,8 +431,19 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 
 ### 从 npm 安装（推荐，一条命令）
 
-npm 包：**`dsh-client-ui-skin-tianlight`**（公开 registry，预构建、免 `allowBuilds` 构建授权）。三种装法任选：
+npm 包：**`dsh-client-ui-skin-tianlight`**（公开 registry，预构建、免 `allowBuilds` 构建授权）。装法任选：
 
+- **一条命令（v2.0.3 起，推荐）**：先**完全退出 DSH**（含托盘图标），然后运行
+
+  ```bash
+  npx dsh-client-ui-skin-tianlight@latest
+  ```
+
+  装完打开 DSH，页面按 Ctrl+F5。需要本机有 Node.js 18+。常用参数：`--profile <名称>`（默认 `desktop`，只有一个 profile 时用它）、`--dsh-home <目录>`（默认 `$DSH_HOME` 或 `~/.dsh`）、`--dry-run`（只显示计划）、`--lang zh|en`。npm 官方源慢时可加 `--registry=https://registry.npmmirror.com`。
+  - 它做的事：备份 profile 的 `package.json` / `pnpm-lock.yaml` / `pnpm-workspace.yaml` 到 `<profile>/.tianlight-installer/backups/`（保留最近 3 份，旧版插件文件也放在这里便于回滚）；把依赖写成精确版本、在 `dsh.profile.bundles` 登记一次；注销旧包名 `@dsh-external/dsh-client-ui-skin-tianlight`、`@local/dsh-enable-tianlight`；把插件文件复制进 `node_modules/dsh-client-ui-skin-tianlight` 并逐字节校验。原来是 `link:` 链接安装的，只移除链接本身，不动链接指向的开发目录。
+  - 它不做的事：不改任何 `cordis.patch.yml`（发现 `ui-skin-tianlight` 被 `disabled: true` 或被手写插入时只提示）；不碰 `<profile>/tianlight/` 用户数据；DSH 运行时默认拒绝安装（Windows 会锁住正在使用的插件文件，强行替换会报 EPERM），确需继续可加 `--force`。
+  - 体检：`npx dsh-client-ui-skin-tianlight doctor`，只读，检查登记、旧包名残留、文件是否与发布包逐字节一致、被禁用的行、用户数据。卸载：`npx dsh-client-ui-skin-tianlight uninstall`（保留用户数据）。
+  - profile 的 `pnpm-lock.yaml` 由插件管理器在下一次安装/更新时自动补齐。
 - **DSH Desktop → 插件管理器**：安装/添加插件时输入包名 `dsh-client-ui-skin-tianlight`（或从市场页安装），插件管理器会把依赖与 `dsh.profile.bundles` 一起登记。
 - **命令行**：`dsh plugin --profile desktop add dsh-client-ui-skin-tianlight` 安装依赖，然后在插件管理器里启用 `ui-skin-tianlight` 行。
 - 升级：插件管理器的「更新」按 registry 新版本更新；或 `dsh plugin --profile desktop add dsh-client-ui-skin-tianlight@latest` 后重启。**升级后重启 DSH 一次 + Ctrl+F5。**

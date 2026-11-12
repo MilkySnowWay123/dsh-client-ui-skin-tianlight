@@ -25,6 +25,11 @@ const ROOT = dirname(HERE)
 const args = process.argv.slice(2)
 const dryRun = args.includes('--dry-run')
 const skipCommitCheck = args.includes('--skip-commit-check')
+// 2FA accounts need a live one-time password for publish (or a granular token that
+// bypasses 2FA). Accept it as `--otp <code>` or via the NPM_OTP environment variable.
+const otpIndex = args.indexOf('--otp')
+const otp = otpIndex >= 0 ? String(args[otpIndex + 1] ?? '') : String(process.env.NPM_OTP ?? '')
+if (otp !== '' && /^\d{6,8}$/.test(otp) === false) fail('--otp/NPM_OTP must be a 6-8 digit one-time password')
 const dirIndex = args.indexOf('--dir')
 const GITHUB_REPO = 'github.com/MilkySnowWay123/dsh-client-ui-skin-tianlight'
 
@@ -108,6 +113,7 @@ const publishArgs = [
   'https://registry.npmjs.org/',
   '--ignore-scripts',
 ]
+if (otp !== '') publishArgs.push('--otp', otp)
 if (dryRun) publishArgs.push('--dry-run')
 console.log(`${dryRun ? '[dry-run] ' : ''}npm ${publishArgs.join(' ')}`)
 const publish = run('npm', publishArgs)

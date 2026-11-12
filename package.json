@@ -1,10 +1,13 @@
 {
   "name": "dsh-client-ui-skin-tianlight",
   "description": "Tianlight skin for the dsh web GUI: Makoto Shinkai daylight skies, a looping video wallpaper, a wallpaper library with upload/rotation, optional WebWallGL scene support, and a draggable Mint chibi-cat desktop companion",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "private": true,
   "type": "module",
   "main": "lib/index.js",
+  "bin": {
+    "dsh-client-ui-skin-tianlight": "bin/cli.mjs"
+  },
   "exports": {
     ".": "./lib/index.js",
     "./client": "./lib/client.js",
@@ -60,6 +63,7 @@
     "npm:publish:dry": "node tools/npm-publish.mjs --dry-run"
   },
   "files": [
+    "bin",
     "lib",
     "vendor",
     "assets",

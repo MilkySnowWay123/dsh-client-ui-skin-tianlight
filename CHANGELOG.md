@@ -5,6 +5,14 @@
 
 
 
+## [2.0.3] - 2026-11-12
+
+### 发布说明
+
+- v2.0.3 · 一条命令安装：`npx dsh-client-ui-skin-tianlight@latest`（发布说明见 RELEASE-NOTES-v2.0.3.md）
+- 新增 `bin/cli.mjs` + `bin/installer.mjs`：install（默认）/ doctor / uninstall；自动定位 `$DSH_HOME` 与 profile，备份清单、精确版本登记、注销旧包名、暂存后替换并逐字节校验；不写 `cordis.patch.yml`、不碰用户数据；DSH 运行时默认拒绝（避免 Windows EPERM）。
+- `package.json` 增加 `bin`，`files` 与 `tools/pack.mjs` 增加 `bin/`；`tools/test.mjs` 新增 9 个安装器测试。插件本体（`lib/`、`src/`、资源）与 2.0.2 相同。
+
 ## [2.0.2] - 2026-11-12
 
 ### 发布说明

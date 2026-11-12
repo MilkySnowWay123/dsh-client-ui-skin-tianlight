@@ -2,9 +2,9 @@
 // Run: node tools/test.mjs
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
-import { existsSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { createHash } from 'node:crypto'
 import { Readable, Writable } from 'node:stream'
 import { pathToFileURL } from 'node:url'
@@ -33,6 +33,7 @@ import { TINY_MP4, TINY_PNG, makeMediaFixture } from './media-fixtures.mjs'
 import { dataRootForProfile, migrateLegacyHostData } from '../lib/host-paths.js'
 import { buildFingerprint, classifyInstallSpec, formatFingerprintLine } from '../lib/fingerprint.js'
 import { verifyInstall } from './verify-install.mjs'
+import * as tlInstaller from '../bin/installer.mjs'
 import {
   DSH_COMPAT_MUST_MATCH,
   DSH_COMPAT_RANGE,
@@ -4733,6 +4734,164 @@ test('v2.0.1 verify-install says 完全一致 on match and lists differences oth
   assert.equal(dirty.extra.includes('extra.txt'), true, 'unexpected package files are reported')
   assert.equal(dirty.extra.includes('state/settings.json'), false, 'runtime user data is ignored')
   rmSync(root, { recursive: true, force: true })
+})
+
+
+// ---- v2.0.3: one-command installer (bin/installer.mjs) ------------------------
+const installerProfile = () => ({
+  name: 'dsh-profile-desktop',
+  private: true,
+  dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'] } },
+  dependencies: {},
+})
+
+test('installer: DSH home resolves --dsh-home, then DSH_HOME, then ~/.dsh', () => {
+  // resolve(), not join(): on Windows a rooted path gains the current drive letter
+  assert.equal(tlInstaller.resolveDshHome({ dshHome: '/x/home', env: { DSH_HOME: '/y' }, home: '/h' }), resolve('/x/home'))
+  assert.equal(tlInstaller.resolveDshHome({ env: { DSH_HOME: '/y' }, home: '/h' }), resolve('/y'))
+  assert.equal(tlInstaller.resolveDshHome({ env: {}, home: '/h' }), join('/h', '.dsh'))
+})
+
+test('installer: profile choice prefers --profile, then desktop, then the only profile', () => {
+  assert.deepEqual(tlInstaller.pickProfile(['desktop', 'web'], 'web'), { ok: true, profile: 'web' })
+  assert.equal(tlInstaller.pickProfile(['desktop'], 'nope').reason, 'profile-missing')
+  assert.deepEqual(tlInstaller.pickProfile(['desktop', 'web']), { ok: true, profile: 'desktop' })
+  assert.deepEqual(tlInstaller.pickProfile(['web']), { ok: true, profile: 'web' })
+  assert.equal(tlInstaller.pickProfile(['a', 'b']).reason, 'profile-ambiguous')
+  assert.equal(tlInstaller.pickProfile([]).reason, 'no-profiles')
+})
+
+test('installer: install plan registers an exact version once and unregisters legacy names', () => {
+  const manifest = installerProfile()
+  manifest.dsh.profile.bundles.push('@dsh-external/dsh-client-ui-skin-tianlight', '@local/dsh-enable-tianlight')
+  manifest.dependencies['@dsh-external/dsh-client-ui-skin-tianlight'] = 'link:D:/dev/tianlight'
+  manifest.dependencies['@local/dsh-enable-tianlight'] = 'link:D:/dev/enable'
+  const snapshot = JSON.stringify(manifest)
+  const plan = tlInstaller.planInstall(manifest, '2.0.3')
+  assert.equal(plan.ok, true)
+  assert.equal(JSON.stringify(manifest), snapshot, 'the input manifest is not mutated')
+  assert.deepEqual(plan.manifest.dependencies, { 'dsh-client-ui-skin-tianlight': '2.0.3' })
+  assert.deepEqual(plan.manifest.dsh.profile.bundles, ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', 'dsh-client-ui-skin-tianlight'])
+  const again = tlInstaller.planInstall(plan.manifest, '2.0.3')
+  assert.equal(again.changes.length, 0, 'a second run is a no-op')
+  assert.equal(tlInstaller.planInstall({ name: 'x' }, '2.0.3').reason, 'not-a-profile', 'base bundles are never guessed')
+})
+
+test('installer: uninstall plan removes current and legacy registrations only', () => {
+  const manifest = tlInstaller.planInstall(installerProfile(), '2.0.3').manifest
+  manifest.dependencies.other = '1.0.0'
+  const plan = tlInstaller.planUninstall(manifest)
+  assert.deepEqual(plan.manifest.dependencies, { other: '1.0.0' })
+  assert.deepEqual(plan.manifest.dsh.profile.bundles, ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app'])
+})
+
+test('installer: patch scan reports a disabled row and a hand-inserted row, nothing else', () => {
+  const text = [
+    '# comment',
+    '- id: agent-default-model',
+    '  config:',
+    '    disabled: true',
+    "- id: 'ui-skin-tianlight'",
+    '  disabled: true',
+    '- insert:',
+    '    - id: ui-skin-tianlight',
+    "      name: 'dsh-client-ui-skin-tianlight'",
+    '',
+  ].join('\r\n')
+  assert.deepEqual(tlInstaller.scanPatchText(text), ['disabled', 'manual-insert'])
+  assert.deepEqual(tlInstaller.scanPatchText('- id: ui-skin-tianlight\n  disabled: false\n'), [])
+})
+
+test('installer: DSH process detection matches the process name, never its own command line', () => {
+  assert.equal(tlInstaller.tasklistHasDsh('"DeepSeek Harness.exe","4242","Console","1","300,000 K"\r\n'), true)
+  assert.equal(tlInstaller.tasklistHasDsh('"node.exe","1","Console","1","1 K"\r\n"cmd.exe","2"'), false)
+  assert.equal(tlInstaller.psHasDsh('  77 /Applications/DeepSeek Harness.app/Contents/MacOS/DeepSeek Harness\n'), true)
+  assert.equal(tlInstaller.psHasDsh('  77 node\n  78 npm exec\n'), false)
+  assert.equal(tlInstaller.psHasDsh('  77 DeepSeek Harness\n', [77]), false, 'own pids are ignored')
+})
+
+test('installer: install swaps files in, parks the previous copy, never follows a dev link', () => {
+  const root = mkdtempSync(join(tmpdir(), 'tl-installer-'))
+  const src = join(root, 'pkg')
+  mkdirSync(join(src, 'lib'), { recursive: true })
+  writeFileSync(join(src, 'package.json'), JSON.stringify({ name: 'dsh-client-ui-skin-tianlight', version: '2.0.3', private: true, files: ['lib', 'missing.txt'] }))
+  writeFileSync(join(src, 'lib', 'client.js'), 'v2.0.3 client')
+  const profile = join(root, 'profiles', 'desktop')
+  const target = join(profile, 'node_modules', 'dsh-client-ui-skin-tianlight')
+  mkdirSync(join(target, 'lib'), { recursive: true })
+  writeFileSync(join(target, 'package.json'), JSON.stringify({ name: 'dsh-client-ui-skin-tianlight', version: '2.0.2' }))
+  writeFileSync(join(target, 'lib', 'client.js'), 'v2.0.2 client')
+  mkdirSync(join(profile, 'tianlight', 'state'), { recursive: true })
+  writeFileSync(join(profile, 'tianlight', 'state', 'settings.json'), JSON.stringify({ revision: 7 }))
+  writeFileSync(join(profile, 'package.json'), JSON.stringify(installerProfile()))
+
+  const entries = tlInstaller.packageEntries(src)
+  assert.deepEqual(entries, ['package.json', 'lib'], 'only existing published entries are copied')
+  assert.equal(tlInstaller.countFiles(src, entries), 2)
+  const backup = tlInstaller.makeBackupDir(profile)
+  assert.equal(existsSync(join(backup, 'package.json')), true, 'the profile manifest is backed up')
+  const result = tlInstaller.installFiles({ srcRoot: src, profileDir: profile, backupDir: backup, entries })
+  assert.equal(result.previous.kind, 'dir')
+  assert.equal(readFileSync(join(target, 'lib', 'client.js'), 'utf8'), 'v2.0.3 client')
+  assert.equal(readFileSync(join(backup, 'previous-package', 'lib', 'client.js'), 'utf8'), 'v2.0.2 client', 'old copy kept for rollback')
+  assert.equal(JSON.parse(readFileSync(join(target, 'package.json'), 'utf8')).private, undefined, 'installed manifest drops private')
+  assert.deepEqual(tlInstaller.compareTrees(src, target, entries), [])
+  writeFileSync(join(target, 'lib', 'client.js'), 'tampered')
+  assert.deepEqual(tlInstaller.compareTrees(src, target, entries), [{ path: 'lib/client.js', problem: 'differs' }])
+
+  // a `link:` development install: only the link goes away, the linked tree is untouched
+  const dev = join(root, 'dev-tree')
+  mkdirSync(dev, { recursive: true })
+  writeFileSync(join(dev, 'keep.txt'), 'source')
+  rmSync(target, { recursive: true, force: true })
+  symlinkSync(dev, target, process.platform === 'win32' ? 'junction' : 'dir')
+  assert.equal(tlInstaller.inspectInstalled(profile).kind, 'link')
+  tlInstaller.installFiles({ srcRoot: src, profileDir: profile, backupDir: tlInstaller.makeBackupDir(profile), entries })
+  assert.equal(readFileSync(join(dev, 'keep.txt'), 'utf8'), 'source', 'linked development tree is never touched')
+  assert.equal(tlInstaller.inspectInstalled(profile).kind, 'dir')
+
+  // a link that ended up inside a backup folder is unlinked by pruning, never descended into
+  const staleBackup = join(profile, '.tianlight-installer', 'backups', '0000-stale-link')
+  mkdirSync(staleBackup, { recursive: true })
+  symlinkSync(dev, join(staleBackup, 'previous-package'), process.platform === 'win32' ? 'junction' : 'dir')
+  tlInstaller.pruneBackups(profile, 0)
+  assert.equal(readFileSync(join(dev, 'keep.txt'), 'utf8'), 'source', 'pruning never deletes through a link')
+  assert.equal(existsSync(staleBackup), false)
+
+  // uninstall keeps user data; backups are pruned to the newest three
+  tlInstaller.removeInstalledFiles({ profileDir: profile, backupDir: tlInstaller.makeBackupDir(profile) })
+  assert.equal(tlInstaller.inspectInstalled(profile).kind, 'missing')
+  assert.equal(tlInstaller.inspectUserData(profile).revision, 7, 'user data survives uninstall')
+  for (let i = 0; i < 3; i += 1) mkdirSync(join(profile, '.tianlight-installer', 'backups', `0000-extra-${i}`), { recursive: true })
+  tlInstaller.pruneBackups(profile)
+  assert.equal(readdirSync(join(profile, '.tianlight-installer', 'backups')).length, 3)
+  rmSync(root, { recursive: true, force: true })
+})
+
+test('installer: a Windows junction reported as a plain directory is still a link', () => {
+  // Node 24 on Windows: lstat(junction).isSymbolicLink() === false and isDirectory() === true,
+  // so detection must not rely on isSymbolicLink(); the real path decides.
+  const dirStat = { isSymbolicLink: () => false, isDirectory: () => true }
+  // linkTargetOf() builds its expected path with the host's own join()/dirname(), so the
+  // fixture must speak the host's separators too — otherwise only the separator differs
+  // and a plain directory looks like a link on Windows.
+  const pkgPath = join('/p', 'node_modules', 'x')
+  const devPath = join('/dev', 'tianlight')
+  const realDir = { lstat: () => dirStat, realpath: (p) => p, platform: 'win32' }
+  assert.equal(tlInstaller.linkTargetOf(pkgPath, realDir), null, 'a real directory is not a link')
+  const junction = { lstat: () => dirStat, realpath: (p) => (p === pkgPath ? devPath : p), platform: 'win32' }
+  assert.equal(tlInstaller.linkTargetOf(pkgPath, junction), devPath, 'a directory whose real path is elsewhere is a link')
+  const caseOnly = { lstat: () => dirStat, realpath: (p) => p.toLowerCase(), platform: 'win32' }
+  assert.equal(tlInstaller.linkTargetOf(pkgPath.toUpperCase(), caseOnly), null, 'Windows path case differences are not links')
+})
+
+test('installer: the package exposes the CLI as its npx bin and ships it', () => {
+  const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  assert.equal(manifest.bin?.['dsh-client-ui-skin-tianlight'], 'bin/cli.mjs')
+  assert.equal(manifest.files.includes('bin'), true)
+  const cli = readFileSync(new URL('../bin/cli.mjs', import.meta.url), 'utf8')
+  assert.equal(cli.startsWith('#!/usr/bin/env node'), true, 'npm needs the shebang to build the bin shim')
+  assert.equal(/cordis\.patch\.yml['"]?\s*,\s*['"]?utf8|writeFileSync\([^)]*cordis/.test(cli), false, 'the CLI never writes cordis.patch.yml')
 })
 
 console.log(`tests: ${passed} passed, ${failures.length} failed`)
