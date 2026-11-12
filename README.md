@@ -4,7 +4,16 @@
 
 > 这是一个 **DSH（DeepSeek Harness）Web GUI 皮肤插件**，不是独立应用。它是一个标准 DSH bundle：`dsh.bundle.patch` 负责插入 `ui-skin-tianlight` 行，`dsh.client` 提供浏览器半；Web GUI 与 DSH Desktop 共用同一前端。
 >
-> 包名 `@dsh-external/dsh-client-ui-skin-tianlight` · 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
+> npm 包名 `dsh-client-ui-skin-tianlight`（v2.0.2 起；旧链接安装包名 `@dsh-external/dsh-client-ui-skin-tianlight`）· 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
+
+## v2.0.2 · 正式版：npm 发布 + 包名迁移
+
+`2.0.2` 把插件**发布到公开 npm registry**，安装从「下载 Release / 目录链接」变成一条命令（见下方「从 npm 安装」）：
+
+- npm 包名改为 **dsh-client-ui-skin-tianlight**（v2.0.1 及更早用 `@dsh-external/dsh-client-ui-skin-tianlight`；`@dsh-external` 是链接安装约定、不是可发布作用域）。
+- DSH bundle 名、浏览器模块 id、`skin.json.package` 与宿主指纹的包名同步改为新名字。
+- **旧用户需要迁移一次**：卸载/移除旧包名条目，再按新方式安装；用户数据仍在 `$DSH_HOME/profiles/<profile>/tianlight/`，不丢失。用 `link:`/本地目录安装的 profile 需把依赖名与 `dsh.profile.bundles` 条目改成新包名后重启 DSH。
+- 文件与功能不变：`pre-release` 验收矩阵（0.2.0-rc.2 / 0.2.1-rc.5 / 0.2.2-rc.1 × 安装方式 × 全新/升级/卸载）与 `npm run check` 全绿。
 
 ## v2.0.0 · 正式版：桌宠 AI 对话接入 DSH 自带模型（宿主路由）
 
@@ -412,7 +421,17 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 
 本皮肤是**标准 DSH bundle**：`package.json` 的 `dsh.bundle.patch` 指向包内自带的 `cordis.patch.yml`，由它插入 `ui-skin-tianlight` 这一行；浏览器半由 `dsh.client` 提供。**只安装这一个包即可**，旧教程里的第二个 enable bundle（`@local/dsh-enable-tianlight`）已废弃，不要再装。
 
-### 从 GitHub Release 安装（预构建包，推荐）
+### 从 npm 安装（推荐，一条命令）
+
+npm 包：**`dsh-client-ui-skin-tianlight`**（公开 registry，预构建、免 `allowBuilds` 构建授权）。三种装法任选：
+
+- **DSH Desktop → 插件管理器**：安装/添加插件时输入包名 `dsh-client-ui-skin-tianlight`（或从市场页安装），插件管理器会把依赖与 `dsh.profile.bundles` 一起登记。
+- **命令行**：`dsh plugin --profile desktop add dsh-client-ui-skin-tianlight` 安装依赖，然后在插件管理器里启用 `ui-skin-tianlight` 行。
+- 升级：插件管理器的「更新」按 registry 新版本更新；或 `dsh plugin --profile desktop add dsh-client-ui-skin-tianlight@latest` 后重启。**升级后重启 DSH 一次 + Ctrl+F5。**
+
+> **v2.0.2 包名迁移**：旧版包名是 `@dsh-external/dsh-client-ui-skin-tianlight`（仅用于 `link:` / 本地目录安装，不能发布到 npm）。从旧版升级时请先移除旧条目，再按上面的新包名安装一次；用户数据在 `$DSH_HOME/profiles/<profile>/tianlight/`，迁移不丢。旧的 GitHub Release tarball / 源码目录安装方式仍然可用（见下）。
+
+### 从 GitHub Release 安装（预构建包，备选）
 
 每个 tag 的 Release 都附带 4 个文件：`dsh-client-ui-skin-tianlight.tgz`（文件名不带版本号，供 `releases/latest/download` 使用）、`dsh-client-ui-skin-tianlight-<版本>.tgz`（同一份字节的副本）、`SHA256SUMS.txt`、`build-manifest.json`。
 
@@ -425,7 +444,7 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 ### DSH Desktop（0.2.0 / 0.2.1 / 0.2.2，单包安装）
 
 1. 把本仓库目录（或 Release 解包后的 `dsh-client-ui-skin-tianlight/` 目录）放到任意位置，建议用纯 ASCII 路径。
-2. 在 DSH Desktop 的**插件管理器**里选择「安装本地目录 / Install from local folder」，指向该目录。Desktop 的 profile（本版为 `desktop`）由 Electron 管理，**不要**手动编辑 profile 目录下的 `package.json` / `cordis.patch.yml`；安装器会以 `link:` 依赖引用本包，并且只登记 `@dsh-external/dsh-client-ui-skin-tianlight` 这一条 bundle。
+2. 在 DSH Desktop 的**插件管理器**里选择「安装本地目录 / Install from local folder」，指向该目录。Desktop 的 profile（本版为 `desktop`）由 Electron 管理，**不要**手动编辑 profile 目录下的 `package.json` / `cordis.patch.yml`；安装器会以 `link:` 依赖引用本包，并且只登记 `dsh-client-ui-skin-tianlight` 这一条 bundle。
 3. 确认 `ui-skin-tianlight` 这一行处于 **enabled** 状态。该行由本包的 `cordis.patch.yml` 自带，profile 的 `cordis.patch.yml` 不需要、也不应该再手写同 id 的行（重复插入会重复挂载插件）。
 4. **重启 DSH Desktop**（v0.5.0 宿主半新增路由，必须重启一次）。之后只改浏览器半（`src/` → `lib/client.js`）时 Ctrl+F5 刷新即可，不用重启。
 
@@ -433,7 +452,7 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 
 ### 命令行 `dsh web`（可选）
 
-不用 Desktop 时，Web profile 也是同一种单包安装：把本包以目录链接或 `link:` 依赖放进 profile 的 `node_modules`，在 profile 的 `package.json` 里依赖本包，并在 `dsh.profile.bundles` 中登记 `@dsh-external/dsh-client-ui-skin-tianlight`。行仍由 bundle 自带的 patch 插入，不需要手写。
+不用 Desktop 时，Web profile 也是同一种单包安装：把本包以目录链接或 `link:` 依赖放进 profile 的 `node_modules`，在 profile 的 `package.json` 里依赖本包，并在 `dsh.profile.bundles` 中登记 `dsh-client-ui-skin-tianlight`。行仍由 bundle 自带的 patch 插入，不需要手写。
 
 > **v0.5.0 新增宿主能力**（设置存储 / 导入导出包 / 预裁剪缓存 / 可选转码 / 网页壁纸），所以安装或更新后需要**重启一次 DSH**；之后只改 `src/` 的浏览器半仍只需 Ctrl+F5。设置与缓存从 v2.0.1 起写入 DSH profile 的用户数据目录 `<profile>/tianlight/state/`（v2.0.0 及更早在插件目录 `state/`），`ffmpeg` 是可选的系统命令。
 >

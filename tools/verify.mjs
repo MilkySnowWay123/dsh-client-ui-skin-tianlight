@@ -10,6 +10,9 @@ const PKG = dirname(dirname(fileURLToPath(import.meta.url)))
 /** Read the expected host build from package.json so a version bump cannot leave
  *  the handshake assertion pinned to an old value. */
 const PKG_VERSION = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8')).version
+/** Package identity: npm name on v2.0.2+; every identity surface must agree or the
+ *  profile's bundle resolution (patch insert name) and the client module id drift. */
+const PKG_NAME = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8')).name
 
 // ---------- R7: deterministic environment + no plugin-tree writes ----------
 // The host half probes `ffmpeg -version` lazily. Without pinning it, a machine that
@@ -467,7 +470,7 @@ const clientUrl = pathToFileURL(PKG + '/lib/client.js').href
 await import(clientUrl)
 check('client registers one module envelope', () => {
   assert.ok(loaded !== null, 'window.__ModuleLoader__.load was not called')
-  assert.equal(loaded.id, '@dsh-external/dsh-client-ui-skin-tianlight')
+  assert.equal(loaded.id, PKG_NAME)
   assert.equal(typeof loaded.factory, 'function')
 })
 check('factory evaluates and exports apply()', () => {
@@ -483,6 +486,22 @@ check('package.json declares web client + bundle patch', () => {
   assert.equal(pkg.dsh.client.platform, 'web')
   assert.equal(pkg.exports['./client'], './lib/client.js')
   assert.equal(pkg.dsh.bundle.patch, './cordis.patch.yml')
+})
+check('package identity agrees across every registry/loader surface', () => {
+  const pkg = JSON.parse(fs.readFileSync(PKG + '/package.json', 'utf8'))
+  const skin = JSON.parse(fs.readFileSync(PKG + '/skin.json', 'utf8'))
+  assert.equal(skin.package, PKG_NAME, 'skin.json.package must equal package.json name')
+  const patch = fs.readFileSync(PKG + '/cordis.patch.yml', 'utf8')
+  assert.ok(
+    patch.includes("name: '" + PKG_NAME + "'") || patch.includes('name: "' + PKG_NAME + '"'),
+    'cordis.patch.yml insert name must equal package.json name',
+  )
+  assert.equal(loaded.id, PKG_NAME, 'client module envelope id must equal package.json name')
+  const npmFiles = Array.isArray(pkg.files) ? pkg.files : []
+  for (const required of ['lib/index.js', 'lib/client.js', 'lib/fingerprint.js', 'lib/settings-store.js', 'lib/host-paths.js', 'cordis.patch.yml', 'skin.json', 'assets/bg-4k.mp4', 'vendor/webwallgl/webwallgl.global.min.js', 'presets/tianlight-default.json']) {
+    const covered = npmFiles.some((entry) => entry === required || required.startsWith(String(entry).replace(/\/+$/, '') + '/'))
+    assert.ok(covered, 'package.json files[] must cover ' + required + ' (npm installs would miss it)')
+  }
 })
 check('skin.json passes the manager catalog rules', () => {
   const skin = JSON.parse(fs.readFileSync(PKG + '/skin.json', 'utf8'))

@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 
 const PROFILE_DIR = 'C:/Users/57579/.dsh/profiles/web'
-const PKG = '@dsh-external/dsh-client-ui-skin-tianlight'
+const PKG = 'dsh-client-ui-skin-tianlight'
 const WIRING = 'ui-skin-tianlight'
 
 let bad = 0

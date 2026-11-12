@@ -1,5 +1,5 @@
 {
-  "name": "@dsh-external/dsh-client-ui-skin-tianlight",
+  "name": "dsh-client-ui-skin-tianlight",
   "description": "Tianlight skin for the dsh web GUI: Makoto Shinkai daylight skies, a looping video wallpaper, a wallpaper library with upload/rotation, optional WebWallGL scene support, and a draggable Mint chibi-cat desktop companion",
   "version": "2.0.1",
   "private": true,
@@ -55,30 +55,27 @@
     "restore": "node tools/restore.mjs",
     "agent-check": "node tools/agent-check.mjs",
     "release": "node tools/release.mjs",
-    "i18n-audit": "node tools/i18n-audit.mjs"
+    "i18n-audit": "node tools/i18n-audit.mjs",
+    "npm:publish": "node tools/npm-publish.mjs",
+    "npm:publish:dry": "node tools/npm-publish.mjs --dry-run"
   },
   "files": [
-    "lib/index.js",
-    "lib/pet-chat.js",
-    "vendor/we-wallpaper",
-    "lib/we-wallpaper",
-    "lib/host-paths.js",
-    "lib/client.js",
-    "lib/media-types.js",
-    "lib/http-media.js",
-    "lib/upload.js",
-    "lib/scene-project.js",
-    "lib/scene-frame.html",
-    "lib/web-project.js",
-    "lib/transcode.js",
-    "lib/media-cache.js",
-    "lib/bundle.js",
-    "lib/settings-store.js",
-    "vendor/webwallgl",
+    "lib",
+    "vendor",
+    "assets",
+    "presets",
     "cordis.patch.yml",
     "skin.json",
-    "assets/README.md",
-    "assets",
-    "presets"
-  ]
+    "build-info.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MilkySnowWay123/dsh-client-ui-skin-tianlight.git"
+  },
+  "homepage": "https://github.com/MilkySnowWay123/dsh-client-ui-skin-tianlight#readme",
+  "bugs": {
+    "url": "https://github.com/MilkySnowWay123/dsh-client-ui-skin-tianlight/issues"
+  }
 }
