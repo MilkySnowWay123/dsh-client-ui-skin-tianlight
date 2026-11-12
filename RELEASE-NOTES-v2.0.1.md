@@ -50,6 +50,10 @@
 - 新增 `tools/verify-install.mjs <插件目录> <SHA256SUMS.txt>`：逐文件比对并输出「完全一致」或 `MISMATCH` / `MISSING` / `EXTRA`（忽略 `state/`、`uploads/` 等用户数据）。
 - 指纹与 Release 的 `build-manifest.json` 同源（version / commit / clientSha256 / HOST_API 一致）。
 
+## 发布前验收修复
+
+- **冷启动设置引导重试**：任务 7 矩阵在 DSH 0.2.2-rc.1 + git 源码首次安装时复现——页面冷启动的第一次 `GET /skin-tianlight/_settings` 可能落在宿主半绑定路由之前，拿到 SPA HTML/404 而不是 JSON；旧逻辑把它当成"宿主不可用"，默认外观只写 localStorage、不推送到宿主镜像（该会话后续也不再同步，诊断显示 `lastError: host:bad-json`）。现在只对可恢复的回答（bad JSON / 网络错误 / 404 / 405 / 501）做最多 **4 次、300/600/900ms 退避** 的重试，仍失败才退化为本地模式；诊断新增 `bootstrapAttempts` 便于核对。
+
 ## 验证
 
 - 静态链 `npm run check` 全绿：build --check 26 片段、**test 125/125**、structure --strict、audit 无阻断（新增 4 条 v2.0.1 守卫）、check-css 10 块、verify ALL CHECKS PASSED、i18n zh=en 1373。
