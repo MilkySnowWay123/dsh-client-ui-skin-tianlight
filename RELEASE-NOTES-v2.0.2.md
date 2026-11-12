@@ -49,7 +49,30 @@
 
 - 静态链 `npm run check` 全绿：build --check 26 片段、test 125/125、structure --strict、audit 无阻断、check-css、verify（含新增身份一致性/必需文件断言）、i18n zh=en。
 - `node tools/npm-publish.mjs --dry-run`：npm tarball 与 pack 目录文件集合一致（44 文件）；包名/版本/非 private/repository/build-info=HEAD 校验通过。
-- 任务 7 验收矩阵（本版重跑，3 个 DSH 版本 × 安装方式）结果见文末表格。
+- 任务 7 验收矩阵（本版重跑）：**18/18 组合全部通过**——3 个真实 DSH 运行时 × 3 种安装形态（Release tarball / git 源码 / npm registry tarball）× 全新安装、从旧包名 v2.0.0 升级（迁移后数据保留），明细见文末表格。
+- npm 与 Release tarball 文件集合一致（44/44），`npm run check` 全绿（125 tests），dry-run 通过。
+
+
+## 任务 7 验收矩阵（v2.0.2，发布前实测）
+
+环境：3 个真实 DSH 运行时（隔离 `$DSH_HOME` + headless Edge CDP）× 3 种安装形态：
+**Release tarball**（GitHub Release 内容）、**git 源码检出**、**npm registry tarball**（`npm pack` 产物，按 registry 名与范围安装）。每个组合依次执行「全新安装 → 从旧包名 v2.0.0 升级（迁移包名/数据目录）→ 卸载」。npm 形态在真实发布前用与 registry 完全相同的 `npm pack` tarball 验证。
+
+| DSH 版本 | tarball 全新/升级 | git 全新/升级 | npm 全新/升级 |
+|---|---|---|---|
+| 0.2.0-rc.2 | ✅/✅ | ✅/✅ | ✅/✅ |
+| 0.2.1-rc.5 | ✅/✅ | ✅/✅ | ✅/✅ |
+| 0.2.2-rc.1 | ✅/✅ | ✅/✅ | ✅/✅ |
+
+每个组合的断言（18/18 通过）：
+
+- 新包名 `dsh-client-ui-skin-tianlight` 的 bundle 被 profile 解析并挂载：`body[data-dsh-tianlight]` 出现，浏览器控制台 0 error / 0 exception；
+- `GET /skin-tianlight/_fingerprint` 的 version / git commit / `lib/client.js` sha256 / HOST_API / DSH 版本 / 安装方式（tarball / git / registry）与 `build-manifest.json` 一致；
+- 全新安装：默认外观 11 个键与 `presets/tianlight-default.json` 一致；
+- 升级：先用旧包名 v2.0.0 启动并改设置/上传壁纸，卸载旧条目后换成新包名安装，改过的设置（`tianlight.glass=1.13`）与上传壁纸都保留，旧数据未删除，`<profile>/tianlight/migration.json` 存在；
+- 卸载：DSH 正常启动，无皮肤属性/样式/节点，控制台干净。
+
+证据：`diag/tmp/task7/runs/20261112-140713/`（results.json + shots + logs）。
 
 ## 许可
 
