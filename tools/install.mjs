@@ -3,7 +3,7 @@
 // bundle's own cordis.patch.yml instead of being registered twice.
 import { readFileSync, writeFileSync, copyFileSync, existsSync } from 'node:fs'
 
-const PKG_NAME = '@dsh-external/dsh-client-ui-skin-tianlight'
+const PKG_NAME = 'dsh-client-ui-skin-tianlight'
 const PROFILE = 'C:/Users/57579/.dsh/profiles/web'
 const stamp = new Date().toISOString().replace(/[:.]/g, '-')
 

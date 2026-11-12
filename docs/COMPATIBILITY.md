@@ -1,6 +1,6 @@
 # 兼容性矩阵 · DSH 0.2.0 / 0.2.1 / 0.2.2
 
-> 适用范围：`@dsh-external/dsh-client-ui-skin-tianlight` **v0.6.0**（2026-11-10）
+> 适用范围：`dsh-client-ui-skin-tianlight` **v2.0.2**（2026-11-12；v2.0.1 及更早的包名为 `@dsh-external/dsh-client-ui-skin-tianlight`，仅用于链接安装，不能发布到 npm）
 > 目标：同一次构建同时支持 DSH **0.2.0、0.2.1、0.2.2** 三条运行时线（Web `dsh web` 与 Desktop 壳），
 > 且不需要为版本维护多份产物。所有选择器都不写 DSH 构建哈希。
 > v0.5.0 判定见 [RELEASE-0.5.0.md](RELEASE-0.5.0.md)（4 运行时 323/323 PASS + 旧宿主降级 17/17 PASS）；

@@ -100,13 +100,26 @@ node tools/verify-install.mjs <安装后的插件目录> SHA256SUMS.txt
 
 输出 `完全一致：N/N 个文件…` 即通过；否则会列出 `MISMATCH` / `MISSING` / `EXTRA`（`state/`、`uploads/` 等用户数据会被忽略）。
 
-## 六、安装方式（给用户）
+## 六、发布到 npm（v2.0.2 起，推荐入口）
+
+npm 包名 **dsh-client-ui-skin-tianlight**；包内容与 Release tarball 完全同源（都来自 `node tools/pack.mjs` 的 `dist/dsh-client-ui-skin-tianlight-<version>/`）。
+
+1. 构建：`node tools/pack.mjs`。
+2. 干跑：`node tools/npm-publish.mjs --dry-run`（校验包名/版本/非 private/repository/build-info=HEAD，并列出将上传的文件）。
+3. 登录一次（本机）：`npm login`（浏览器/2FA）；CI 用 `NODE_AUTH_TOKEN`。
+4. 上传：`node tools/npm-publish.mjs` → 发布 `dsh-client-ui-skin-tianlight@<version>` 到 registry.npmjs.org。
+5. 验证：`npm view dsh-client-ui-skin-tianlight version`；可选 `npm pack dsh-client-ui-skin-tianlight@<version>` 后与 SHA256SUMS 比对。
+6. npm 版本发布不可撤回（24h 内可 unpublish，尽量不用），所以先 `npm run check` 全绿、并确认要发的版本号后再上传。
+
+> npm 上 `@dsh-external/...` 是链接安装约定、不可发布；v2.0.2 起包名统一为 `dsh-client-ui-skin-tianlight`，DSH bundle 名/浏览器模块 id/`skin.json.package` 同步修改。
+
+## 七、安装方式（给用户）
 
 1. 从 Release 下载 `.tgz` 与 `SHA256SUMS.txt`，按第五节校验。
 2. `tar -xzf dsh-client-ui-skin-tianlight.tgz` → 得到 `dsh-client-ui-skin-tianlight/` 目录。
 3. DSH Desktop 插件管理器 →「安装本地目录」指向该目录 → 重启 DSH 一次 → Ctrl+F5。
 
-## 七、仓库内容约定
+## 八、仓库内容约定
 
 - 完整版会带上默认演示素材（约 34MB）：`assets/bg-4k.mp4`、`assets/cat.png`。单文件均低于 GitHub 100MB 限制。
 - `.gitignore` 排除 `node_modules/`、`backup/`、`dist/`、`*.zip`、`diag.log`、`state/`、`assets/uploads/`、`assets/derived/`、`we-roots.json`，以及除默认两个文件外的 `assets/*`。
@@ -115,7 +128,7 @@ node tools/verify-install.mjs <安装后的插件目录> SHA256SUMS.txt
 
 > **不要**把开发工作目录整个拖上去：不要提交 `backup/`、`dist/`、`node_modules/`、`assets/uploads/`、`state/`、`we-roots.json`。
 
-## 八、本地 git / SSH 前置
+## 九、本地 git / SSH 前置
 
 - Git 任意方式安装即可（GitHub Desktop 自带 git；无管理员权限时可用便携版）。
 - 本机发布用 SSH（`git@github.com:...`）。Git for Windows 的 msys `sh.exe` 在受限沙箱里可能报 `couldn't create signal pipe`，旧脚本的做法仍然有效：
@@ -126,6 +139,6 @@ node tools/verify-install.mjs <安装后的插件目录> SHA256SUMS.txt
 
   发布工具本身只做一次只读 `git ls-remote`；即使 SSH 环境未配置，失败也只会给出警告，push 仍需你自己配置好认证。
 
-## 九、历史：内部/公开双版本编号（已退役）
+## 十、历史：内部/公开双版本编号（已退役）
 
 v2.0.0 起，仓库版本、GitHub Release 名称与 DSH 内安装版本统一为一个版本号。更早的流程（内部 `1.6.x` ↔ 公开 `v1.0.x` 双编号、`tools/public-release.mjs`、移动 tag）**已退役**；相关 tag 与 Release 仅作历史保留，`INTERNAL-BUILD.json` 记录最后一段映射关系。历史版本的回滚方式：重新安装上一发布版 + Ctrl+F5 + 重启 DSH。

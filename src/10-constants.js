@@ -6,7 +6,7 @@
 		/** The product marks the dark theme on <body>; several rules and the wallpaper
 		 *  palette sample key off it. */
 		const DARK_ATTR = "data-ds-dark-theme";
-		const PLUGIN_ID = "@dsh-external/dsh-client-ui-skin-tianlight";
+		const PLUGIN_ID = "dsh-client-ui-skin-tianlight";
 		const CSS_TAG_ID = "ui-skin-tianlight/tianlight.css";
 		const STORAGE_KEY = "dsh-tianlight:cat:v1";
 		/**
