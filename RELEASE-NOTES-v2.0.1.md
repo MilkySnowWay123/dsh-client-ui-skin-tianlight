@@ -96,7 +96,7 @@
 - 升级：改过的设置（`tianlight.glass=1.13`）与上传的壁纸都保留；旧插件目录数据未删除；`<profile>/tianlight/migration.json` 迁移记录存在；
 - 卸载：DSH 正常启动，无 `data-dsh-tianlight` 属性 / 无皮肤样式表 / 无皮肤节点，控制台干净。
 
-证据：`diag/tmp/task7/runs/20261112-002931/`（`results.json` + `shots/` + `logs/`）。
+证据：`diag/tmp/task7/runs/20261112-124837/`（`results.json` + `shots/` + `logs/`）。
 
 ## 许可
 
