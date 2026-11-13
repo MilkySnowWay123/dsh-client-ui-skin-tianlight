@@ -6,6 +6,10 @@
 >
 > npm 包名 `dsh-client-ui-skin-tianlight`（v2.0.2 起；旧链接安装包名 `@dsh-external/dsh-client-ui-skin-tianlight`）· 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
 
+## v2.0.4 · 安全修复版（建议升级）
+
+修复了 v2.0.3 验收中发现的问题，其中最重要的一条：Wallpaper Engine 网页壁纸的页面以前会以 DSH 源的身份运行，现在一律沙箱化。2.0.2 和 2.0.3 都受影响，请升级：先完全退出 DSH，再运行 `npx dsh-client-ui-skin-tianlight@latest`。另外 `npx` 不再顺带下载整套 DSH 依赖，安装快很多。详见 [RELEASE-NOTES-v2.0.4.md](RELEASE-NOTES-v2.0.4.md)。
+
 ## v2.0.3 · 一条命令安装
 
 ```bash

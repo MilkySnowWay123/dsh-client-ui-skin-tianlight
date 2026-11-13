@@ -28,7 +28,7 @@ import {
 } from '../lib/settings-store.js'
 import { buildTarBuffer, classifyBundleEntry, handleBundle, handleImport, isBundleBuiltinMedia, listBundleWallpapers, parseTar, validateBundleEntryName } from '../lib/bundle.js'
 import { servePath } from '../lib/http-media.js'
-import { SVG_MAX_BYTES, isSafeSvgBuffer } from '../lib/media-types.js'
+import { SVG_MAX_BYTES, isSafeSvgBuffer, realPathInside } from '../lib/media-types.js'
 import { TINY_MP4, TINY_PNG, makeMediaFixture } from './media-fixtures.mjs'
 import { dataRootForProfile, migrateLegacyHostData } from '../lib/host-paths.js'
 import { buildFingerprint, classifyInstallSpec, formatFingerprintLine } from '../lib/fingerprint.js'
@@ -68,6 +68,8 @@ import {
   PET_CHAT_CODES,
   PET_CHAT_MAX_BODY_BYTES,
   PET_CHAT_MAX_CHARS,
+  PET_CHAT_HOST_PER_DAY,
+  PET_CHAT_HOST_PER_MINUTE,
   PET_CHAT_MAX_TOKENS,
   PET_CHAT_SYSTEM_PROMPT,
   PET_CHAT_TIMEOUT_MS,
@@ -2058,6 +2060,11 @@ await testAsync('WE route family: list, same-origin fence, state and method gate
         origin: 'null',
       })
       assert.notEqual(sandboxedWeWeb.status, 403, 'sandboxed WE web-project reads are not fenced out')
+      // v2.0.4 (H1): whoever loads it, the WE web page is an opaque, non-embeddable-by-others document
+      const weCsp = String(sandboxedWeWeb.headers['content-security-policy'] ?? '')
+      assert.match(weCsp, /sandbox allow-scripts/, 'WE web HTML is sandboxed to an opaque origin')
+      assert.equal(/allow-same-origin/.test(weCsp), false, 'the sandbox never grants the DSH origin')
+      assert.match(weCsp, /frame-ancestors 'self'/, 'other sites cannot embed the WE web page')
       // The allowlist is matched on a normalised pathname: a `..` segment must not
       // tunnel from an exempt read prefix into a different host route.
       assert.equal(
@@ -2220,6 +2227,8 @@ await testAsync('WE route family: media/preview/web serving and path containment
         assert.equal(page.status, 200)
         assert.match(String(page.headers['content-type']), /text\/html/)
         assert.equal(page.bodyText(), '<html>workshop-web</html>')
+        assert.match(String(page.headers['content-security-policy']), /sandbox allow-scripts/, 'H1: same-origin loads get the sandbox too')
+        assert.equal(page.headers['referrer-policy'], 'no-referrer')
         assert.equal((await callMounted(routes, 'GET', '/api/we-wallpaper/web/3003/index.html')).status, 200)
         assert.equal((await callMounted(routes, 'GET', '/api/we-wallpaper/web/3003/..%2F..%2Fproject.json')).status, 403)
         assert.equal((await callMounted(routes, 'GET', '/api/we-wallpaper/media/..%2F..%2Fproject.json')).status, 400)
@@ -4892,6 +4901,100 @@ test('installer: the package exposes the CLI as its npx bin and ships it', () =>
   const cli = readFileSync(new URL('../bin/cli.mjs', import.meta.url), 'utf8')
   assert.equal(cli.startsWith('#!/usr/bin/env node'), true, 'npm needs the shebang to build the bin shim')
   assert.equal(/cordis\.patch\.yml['"]?\s*,\s*['"]?utf8|writeFileSync\([^)]*cordis/.test(cli), false, 'the CLI never writes cordis.patch.yml')
+})
+
+
+// ---- v2.0.4 security regressions (v2.0.3 acceptance report H1/M1/M2/M3) -------
+test('v2.0.4 M1: an SVG event handler hidden behind a quoted ">" is rejected', () => {
+  const ns = 'xmlns="http://www.w3.org/2000/svg"'
+  const verdict = (body) => isSafeSvgBuffer(Buffer.from(`<svg ${ns}>${body}</svg>`))
+  assert.equal(verdict('<image href="#x" alt=">" onload="alert(1)"/>').ok, false, 'quoted > before onload')
+  assert.equal(verdict("<image href='#x' alt='>' onload='alert(1)'/>").ok, false, 'single-quoted variant')
+  assert.equal(verdict('<g a=">"><script>alert(1)</script></g>').ok, false, 'quoted > before a script element')
+  assert.equal(verdict('<rect width="1" height="1" fill="#fff"/><text>a &gt; b</text>').ok, true, 'a passive SVG still passes')
+})
+
+test('v2.0.4 M2: project/upload paths refuse a junction or symlink that leads outside the root', () => {
+  const root = mkdtempSync(join(tmpdir(), 'tl-realpath-'))
+  const project = join(root, 'project')
+  const outside = join(root, 'outside')
+  mkdirSync(project, { recursive: true })
+  mkdirSync(outside, { recursive: true })
+  writeFileSync(join(project, 'project.json'), JSON.stringify({ type: 'web', file: 'index.html' }))
+  writeFileSync(join(project, 'index.html'), '<html></html>')
+  writeFileSync(join(outside, 'secret.png'), 'TOP-SECRET-OUTSIDE')
+  symlinkSync(outside, join(project, 'linkdir'), process.platform === 'win32' ? 'junction' : 'dir')
+  assert.equal(realPathInside(project, join(project, 'index.html')), true)
+  assert.equal(realPathInside(project, join(project, 'linkdir', 'secret.png')), false)
+  assert.equal(webProjectFilePath(project, ['linkdir', 'secret.png']), null, 'web-project route')
+  assert.equal(sceneFilePath(project, ['linkdir', 'secret.png']), null, 'scene-project route')
+  assert.notEqual(webProjectFilePath(project, ['index.html']), null, 'real files inside still resolve')
+  assert.equal(safeJoin(project, 'linkdir'), null, 'safeJoin follows the link before trusting it')
+  assert.notEqual(safeJoin(project, 'index.html'), null)
+  assert.notEqual(safeJoin(project, 'not-yet-created.png'), null, 'a new upload target is still allowed')
+  rmSync(root, { recursive: true, force: true })
+})
+
+await testAsync('v2.0.4 M3: the host enforces its own per-minute and per-day pet-chat budget', async () => {
+  const { service, calls } = fakeLlmService()
+  let clock = Date.parse('2026-11-13T10:00:00')
+  const runtime = createPetChat({ perMinute: 3, perDay: 5, now: () => clock })
+  const ctx = petChatContext(service)
+  for (let i = 0; i < 3; i += 1) assert.equal((await callPetChat(runtime.handle, ctx)).status, 200)
+  const limited = await callPetChat(runtime.handle, ctx)
+  assert.equal(limited.status, 429)
+  assert.deepEqual(limited.bodyJson(), { ok: false, code: 'rate-limit' })
+  assert.equal(calls.stream.length, 3, 'a refused call never reaches the model')
+  clock += 61000
+  for (let i = 0; i < 2; i += 1) assert.equal((await callPetChat(runtime.handle, ctx)).status, 200)
+  clock += 61000
+  assert.equal((await callPetChat(runtime.handle, ctx)).status, 429, 'the day budget is spent')
+  clock += 24 * 3600 * 1000
+  assert.equal((await callPetChat(runtime.handle, ctx)).status, 200, 'a new local day resets the budget')
+  assert.equal(PET_CHAT_HOST_PER_MINUTE >= 6 && PET_CHAT_HOST_PER_DAY >= 132, true, 'host ceiling stays above what the UI can spend')
+})
+
+test('v2.0.4 H2: DSH peers are optional so npx never installs the DSH tree', () => {
+  const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  for (const name of Object.keys(manifest.peerDependencies)) {
+    assert.equal(manifest.peerDependenciesMeta?.[name]?.optional, true, name + ' is an optional peer')
+  }
+})
+
+test('v2.0.4 L1: a failed install leaves no staging copy behind; stale ones are cleaned', () => {
+  const root = mkdtempSync(join(tmpdir(), 'tl-staging-'))
+  const src = join(root, 'pkg')
+  mkdirSync(join(src, 'lib'), { recursive: true })
+  writeFileSync(join(src, 'package.json'), JSON.stringify({ name: 'dsh-client-ui-skin-tianlight', version: '2.0.4', files: ['lib'] }))
+  writeFileSync(join(src, 'lib', 'client.js'), 'new')
+  const profile = join(root, 'profiles', 'desktop')
+  const modules = join(profile, 'node_modules')
+  mkdirSync(join(modules, tlInstaller.STAGING_PREFIX + '99999', 'lib'), { recursive: true })
+  writeFileSync(join(profile, 'package.json'), JSON.stringify(installerProfile()))
+  const entries = tlInstaller.packageEntries(src)
+  // a backup dir that cannot receive the parked package makes the swap fail
+  mkdirSync(join(modules, 'dsh-client-ui-skin-tianlight'), { recursive: true })
+  writeFileSync(join(modules, 'dsh-client-ui-skin-tianlight', 'package.json'), '{"version":"2.0.3"}')
+  const badBackup = join(root, 'missing', 'deeper')
+  assert.throws(() => tlInstaller.installFiles({ srcRoot: src, profileDir: profile, backupDir: badBackup, entries }))
+  const leftovers = readdirSync(modules).filter((name) => name.startsWith(tlInstaller.STAGING_PREFIX))
+  assert.deepEqual(leftovers, [], 'stale and failed staging copies are gone')
+  assert.equal(readFileSync(join(modules, 'dsh-client-ui-skin-tianlight', 'package.json'), 'utf8'), '{"version":"2.0.3"}', 'the old copy stays in place')
+  assert.equal(tlInstaller.isUncPath('\\\\server\\share'), true)
+  assert.equal(tlInstaller.isUncPath('//server/share'), true)
+  assert.equal(tlInstaller.isUncPath('C:\\Users\\u\\.dsh'), false)
+  rmSync(root, { recursive: true, force: true })
+})
+
+test('v2.0.4 L2: shipped binaries match the checksums published in docs/THIRD-PARTY.md', () => {
+  const notes = readFileSync(new URL('../docs/THIRD-PARTY.md', import.meta.url), 'utf8')
+  for (const rel of ['vendor/we-wallpaper/wcap/wcap-x64.exe', 'vendor/webwallgl/webwallgl.global.min.js']) {
+    const digest = createHash('sha256').update(readFileSync(new URL('../' + rel, import.meta.url))).digest('hex')
+    assert.equal(notes.includes(digest), true, rel + ' checksum is published and current')
+  }
+  assert.match(notes, /Copyright \(c\) Xalcon @ mmowned\.com[\s\S]*Permission is hereby granted/, 'RePKG MIT text is included')
+  const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  assert.equal(manifest.files.includes('docs/THIRD-PARTY.md'), true, 'the notices ship in the npm package')
 })
 
 console.log(`tests: ${passed} passed, ${failures.length} failed`)

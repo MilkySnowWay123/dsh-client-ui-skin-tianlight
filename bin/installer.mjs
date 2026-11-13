@@ -59,6 +59,11 @@ export function writeJsonAtomic(file, value) {
 
 // ---- locating DSH -----------------------------------------------------------
 
+/** `\\server\share` / `//server/share` (and `\\?\UNC\...`): network locations are refused. */
+export function isUncPath(value) {
+  return typeof value === 'string' && /^(?:\\\\|\/\/)/.test(value.trim())
+}
+
 export function resolveDshHome({ dshHome = null, env = process.env, home = homedir() } = {}) {
   if (typeof dshHome === 'string' && dshHome.trim() !== '') return resolve(dshHome.trim())
   if (typeof env.DSH_HOME === 'string' && env.DSH_HOME.trim() !== '') return resolve(env.DSH_HOME.trim())
@@ -401,37 +406,57 @@ export function pruneBackups(profileDir, keep = KEEP_BACKUPS) {
  * backup folder (a link is just unlinked), then swap the staged copy in. If the swap
  * fails the previous copy is put back.
  */
+export const STAGING_PREFIX = `.${PKG_NAME}.tl-staging-`
+
+/** v2.0.4 (L1): staging copies left behind by an interrupted/failed earlier run. */
+export function cleanStaleStaging(modulesDir) {
+  const removed = []
+  if (existsSync(modulesDir) === false) return removed
+  for (const name of readdirSync(modulesDir)) {
+    if (name.startsWith(STAGING_PREFIX) === false) continue
+    safeRemoveTree(join(modulesDir, name))
+    removed.push(name)
+  }
+  return removed
+}
+
 export function installFiles({ srcRoot = SELF_ROOT, profileDir, backupDir, entries = packageEntries(srcRoot) }) {
   const modules = join(profileDir, 'node_modules')
   mkdirSync(modules, { recursive: true })
+  cleanStaleStaging(modules)
   const target = join(modules, PKG_NAME)
-  const staging = join(modules, `.${PKG_NAME}.tl-staging-${process.pid}`)
-  rmSync(staging, { recursive: true, force: true })
-  mkdirSync(staging, { recursive: true })
-  for (const entry of entries) cpSync(join(srcRoot, entry), join(staging, entry), { recursive: true })
-  const stagedManifestPath = join(staging, 'package.json')
-  const stagedManifest = readJson(stagedManifestPath)
-  if (stagedManifest.private !== undefined) {
-    delete stagedManifest.private
-    writeFileSync(stagedManifestPath, JSON.stringify(stagedManifest, null, 2) + '\n', 'utf8')
-  }
-
-  const before = inspectInstalled(profileDir)
+  const staging = join(modules, `${STAGING_PREFIX}${process.pid}`)
   let parked = null
-  if (before.kind === 'link') {
-    removeLink(target)
-  } else if (before.kind === 'dir') {
-    parked = join(backupDir, 'previous-package')
-    renameSync(target, parked)
-  }
+  let swapped = false
   try {
-    renameSync(staging, target)
-  } catch (error) {
-    if (parked !== null && existsSync(target) === false) renameSync(parked, target)
-    rmSync(staging, { recursive: true, force: true })
-    throw error
+    mkdirSync(staging, { recursive: true })
+    for (const entry of entries) cpSync(join(srcRoot, entry), join(staging, entry), { recursive: true })
+    const stagedManifestPath = join(staging, 'package.json')
+    const stagedManifest = readJson(stagedManifestPath)
+    if (stagedManifest.private !== undefined) {
+      delete stagedManifest.private
+      writeFileSync(stagedManifestPath, JSON.stringify(stagedManifest, null, 2) + '\n', 'utf8')
+    }
+    const before = inspectInstalled(profileDir)
+    if (before.kind === 'link') {
+      removeLink(target)
+    } else if (before.kind === 'dir') {
+      parked = join(backupDir, 'previous-package')
+      renameSync(target, parked)
+    }
+    try {
+      renameSync(staging, target)
+      swapped = true
+    } catch (error) {
+      if (parked !== null && existsSync(target) === false) renameSync(parked, target)
+      throw error
+    }
+    return { previous: before, parked }
+  } finally {
+    // v2.0.4 (L1): whatever failed — copy, parking (EPERM on a locked file), swap —
+    // never leave the ~37 MB staging copy behind.
+    if (swapped === false) safeRemoveTree(staging)
   }
-  return { previous: before, parked }
 }
 
 export function removeInstalledFiles({ profileDir, backupDir }) {

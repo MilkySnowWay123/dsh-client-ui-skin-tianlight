@@ -100,7 +100,31 @@ For more information, please refer to <https://unlicense.org>.
 | 许可 | MIT |
 | 使用方式 | 格式/算法参考与 DXT 解码移植；未整份复制其 C# 实现 |
 
-RePKG 的 MIT 许可条款与本文件 §1 的 MIT 全文相同（仅版权行不同：`Copyright (c) Xalcon @ mmowned.com`）。
+RePKG 的 MIT 许可全文（v2.0.4 起逐字附在这里，随 npm 包分发）：
+
+```
+MIT License
+
+Copyright (c) Xalcon @ mmowned.com
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 ## 4. WebWallGL（MIT）
 
@@ -112,6 +136,17 @@ Wallpaper Engine 场景通道使用仓库内 `vendor/webwallgl/` 的 WebWallGL 3
 | 位置 | `vendor/webwallgl/webwallgl.global.min.js`（+ `README.upstream.md`） |
 | 归属 | Copyright (c) 2026 **oneincase** `<462534624@qq.com>` |
 | 许可 | MIT；全文见 [`vendor/webwallgl/LICENSE`](../vendor/webwallgl/LICENSE) |
+
+## 4.1 二进制与压缩代码（v2.0.4 起公布校验值）
+
+下面两个文件不是从本仓库源码构建的，包内无法审计其源码，只能按来源与校验值核对。`wcap-x64.exe` 未做代码签名，且只在用户显式点击「生成动态」时才会运行。
+
+| 文件 | SHA-256 | 来源 |
+|---|---|---|
+| `vendor/we-wallpaper/wcap/wcap-x64.exe` | `4bd124febf537f0f569bd5cb7486ddbb9e664b509f39e421e6949767829b6be6` | 上游 dsh-we-wallpaper `tools/wcap/wcap-x64.exe`，原样复制 |
+| `vendor/webwallgl/webwallgl.global.min.js` | `2f86ab955f3377e2fa2cfd5ffa72f5813fe8f6e4a272295fed36f4c1e626b1e5` | WebWallGL 3.0 发布的压缩构建，原样复制（见 `vendor/webwallgl/README.upstream.md`） |
+
+`tools/test.mjs` 会断言这两个校验值，文件被替换时测试会变红。
 
 ## 5. 默认演示素材
 

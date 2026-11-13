@@ -28,6 +28,7 @@ import {
   pruneBackups,
   readJson,
   removeInstalledFiles,
+  isUncPath,
   resolveDshHome,
   scanPatches,
   writeJsonAtomic,
@@ -59,6 +60,7 @@ const M = {
     home: (p) => `DSH 数据目录：${p}`,
     noHome: (p) => `找不到 DSH 数据目录 ${p}\n  请先安装并启动一次 DeepSeek Harness；数据目录不在默认位置时用 --dsh-home <目录> 指定。`,
     noProfiles: '这个 DSH 数据目录里还没有 profile。请先启动一次 DSH 再运行本命令。',
+    unc: '不支持网络路径（\\\\服务器\\共享）作为 DSH 数据目录，请使用本机磁盘上的目录。',
     profileMissing: (p, list) => `没有名为 "${p}" 的 profile。现有：${list.join('、') || '（无）'}`,
     profileAmbiguous: (list) => `有多个 profile：${list.join('、')}\n  请用 --profile <名称> 指定要装到哪一个。`,
     profile: (p) => `目标 profile：${p}`,
@@ -120,6 +122,7 @@ const M = {
     home: (p) => `DSH home: ${p}`,
     noHome: (p) => `DSH home not found: ${p}\n  Install and start DeepSeek Harness once first, or pass --dsh-home <dir>.`,
     noProfiles: 'This DSH home has no profile yet. Start DSH once, then run this command again.',
+    unc: 'Network paths (\\\\server\\share) are not supported as the DSH home; use a local directory.',
     profileMissing: (p, list) => `No profile named "${p}". Existing: ${list.join(', ') || '(none)'}`,
     profileAmbiguous: (list) => `Several profiles exist: ${list.join(', ')}\n  Pick one with --profile <name>.`,
     profile: (p) => `Target profile: ${p}`,
@@ -186,7 +189,10 @@ const die = (line, code = 1) => {
 
 // ---- shared steps -----------------------------------------------------------
 function locate() {
+  const requestedHome = value('--dsh-home') ?? process.env.DSH_HOME ?? ''
+  if (isUncPath(requestedHome)) die(M.unc)
   const dshHome = resolveDshHome({ dshHome: value('--dsh-home') })
+  if (isUncPath(dshHome)) die(M.unc)
   say(M.home(dshHome))
   if (existsSync(dshHome) === false) die(M.noHome(dshHome))
   const profiles = listProfiles(dshHome)
