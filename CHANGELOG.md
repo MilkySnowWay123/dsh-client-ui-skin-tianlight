@@ -5,6 +5,16 @@
 
 
 
+## [2.0.5] - 2026-11-14
+
+### 发布说明
+
+- v2.0.5 · 天气兜底版：新增宿主只读路由 `GET /skin-tianlight/_weather?latitude=..&longitude=..`，浏览器半直连 Open-Meteo 失败时改由宿主代取（宿主先试 HTTPS，失败才用同一域名明文 HTTP）；拿到 JSON 后仍走原来的 `normalizeWeatherForecast` 与同一份天气状态，不改模型、文案、权限与配额。
+- 触发条件：部分网络会丢弃 Chromium/OpenSSL 到 `api.open-meteo.com` 的 TLS 握手，而明文 HTTP 与系统 TLS 栈正常；桌面端是 `dsh-app://` 安全源，渲染层不能自行降级（mixed content）。修复前表现为天气卡一直 `获取失败：请求超时（静默重试）`。
+- 直连优先：只有直连真的失败、且宿主真的取到数据之后，才把「直连不可用」记在**本页会话**里；宿主再次失败会回头重试直连。网络正常时不会产生额外请求。
+- `HOST_API` 仍为 `2`（纯新增路由，旧宿主没有这条路由时客户端拿到 404，行为与 2.0.4 一致）；`BUILD` → `2.0.5`，`skin.json` / `package.json` 同步。
+- 测试与静态链：build 26/26、test 全绿、structure/audit/check-css/verify/i18n-audit 全绿。
+
 ## [2.0.4] - 2026-11-13
 
 ### 发布说明
