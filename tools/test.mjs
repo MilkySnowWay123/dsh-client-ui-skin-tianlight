@@ -5439,6 +5439,7 @@ await testAsync('splash A: once per session, opt-out, accessibility, skip, 3s gu
     assert.match(productSource, /WEBGL_lose_context/, 'long film releases the GPU context')
     assert.match(productSource, /audioCtx\.close/, 'long film closes AudioContext on dispose')
     assert.match(productSource, /__tlSplashFilm/, 'long film exposes a diagnostic handle')
+    assert.match(productSource, /onSkipHint/, 'the long film exposes the explicit skip hint')
     assert.equal(splash.SPLASH_FILM_DURATION_MS, 18500)
     assert.equal(splash.SPLASH_FILM_HARD_STOP_MS, 23500)
   } finally {
