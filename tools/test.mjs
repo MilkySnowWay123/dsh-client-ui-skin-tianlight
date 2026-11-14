@@ -4997,6 +4997,445 @@ test('v2.0.4 L2: shipped binaries match the checksums published in docs/THIRD-PA
   assert.equal(manifest.files.includes('docs/THIRD-PARTY.md'), true, 'the notices ship in the npm package')
 })
 
+// ---- A · 破晓 opening animation (59-splash): behaviour + lifecycle ----
+await testAsync('splash A: once per session, opt-out, accessibility, skip, 3s guard, error and dispose', async () => {
+  const saved = {}
+  const savedKeys = [
+    'window', 'document', 'localStorage', 'sessionStorage', 'matchMedia', 'Element',
+    'setTimeout', 'clearTimeout', 'addEventListener', 'removeEventListener',
+  ]
+  for (const key of savedKeys) saved[key] = globalThis[key]
+
+  const dir = mkdtempSync(join(tmpdir(), 'tl-splash-test-'))
+  const productSource = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
+  const splashStart = productSource.indexOf('//#region splash')
+  const splashEnd = productSource.indexOf('//#endregion', splashStart)
+  assert.ok(splashStart > 0 && splashEnd > splashStart, 'splash region exists')
+  const splashSource = productSource.slice(splashStart, splashEnd)
+  assert.match(splashSource, /const SPLASH_DURATION_MS = 1700;/, '1.7s timeline')
+  assert.match(splashSource, /const SPLASH_HARD_STOP_MS = 3000;/, '3s hard stop')
+  assert.match(splashSource, /sessionStorage\?\.getItem\(SPLASH_SESSION_KEY\)/, 'session-scoped playback')
+  assert.equal(/fetch\s*\(|XMLHttpRequest|WebSocket|new Image|\.src\s*=/.test(splashSource), false, 'the splash loads nothing')
+  assert.equal(/setInterval\s*\(/.test(splashSource), false, 'the splash owns no repeating timer')
+  assert.match(productSource, /data-tl-hub-splash-toggle/, 'role hub exposes the toggle')
+  assert.match(productSource, /"hub\.splash\.hint"/, 'localized hint is wired')
+
+  const instrumented = productSource.replace(
+    'exports.apply = apply;',
+    [
+      'exports.apply = apply;',
+      '\t\texports.__splashTest = {',
+      '\t\t\tinstallSplash, installSplashEntry, readSplashEnabled, setSplashEnabled,',
+      '\t\t\treadSplashStyle, setSplashStyle, readSplashSound, setSplashSound, splashPlan, splashStatus,',
+      '\t\t\tSPLASH_ENABLED_KEY, SPLASH_STYLE_KEY, SPLASH_LAST_FULL_KEY, SPLASH_SOUND_KEY,',
+      '\t\t\tSPLASH_SESSION_KEY, SPLASH_DURATION_MS, SPLASH_HARD_STOP_MS, SPLASH_FILM_DURATION_MS, SPLASH_FILM_HARD_STOP_MS,',
+      '\t\t};',
+    ].join('\n'),
+  )
+  assert.notEqual(instrumented, productSource, 'instrumentation point present')
+  const clientFile = join(dir, 'client.mjs')
+  writeFileSync(clientFile, instrumented)
+
+  let loaded = null
+  let matchMediaMatches = false
+  let animateShouldThrow = false
+  const animationRecords = []
+  const docListeners = []
+  const globalListeners = new Map()
+  let timerSeq = 0
+  const timers = new Map()
+
+  class FakeAnimation {
+    constructor(keyframes, options) {
+      this.keyframes = keyframes
+      this.options = options
+      this.id = ''
+      this.canceled = false
+    }
+    cancel() {
+      this.canceled = true
+    }
+    play() {}
+    pause() {}
+    finish() {}
+  }
+
+  class FakeElement {
+    constructor(tag) {
+      this.tagName = String(tag).toUpperCase()
+      this.attributes = new Map()
+      this.children = []
+      this.parentNode = null
+      this.textContent = ''
+    }
+    setAttribute(name, value) {
+      this.attributes.set(String(name), String(value))
+    }
+    getAttribute(name) {
+      return this.attributes.has(String(name)) ? this.attributes.get(String(name)) : null
+    }
+    hasAttribute(name) {
+      return this.attributes.has(String(name))
+    }
+    removeAttribute(name) {
+      this.attributes.delete(String(name))
+    }
+    appendChild(child) {
+      child.parentNode = this
+      this.children.push(child)
+      return child
+    }
+    removeChild(child) {
+      const index = this.children.indexOf(child)
+      if (index >= 0) this.children.splice(index, 1)
+      child.parentNode = null
+    }
+    remove() {
+      if (this.parentNode !== null) this.parentNode.removeChild(this)
+    }
+    addEventListener() {}
+    removeEventListener() {}
+    animate(keyframes, options) {
+      if (animateShouldThrow) throw new Error('injected animation failure')
+      const animation = new FakeAnimation(keyframes, options)
+      animationRecords.push({ element: this, animation })
+      return animation
+    }
+    getAnimations() {
+      return []
+    }
+  }
+
+  const body = new FakeElement('body')
+  body.setAttribute('data-dsh-tianlight', '')
+  const appRoot = new FakeElement('root')
+  appRoot.setAttribute('id', 'root')
+  const documentFake = {
+    hidden: false,
+    body,
+    documentElement: new FakeElement('html'),
+    createElement: (tag) => new FakeElement(tag),
+    getElementById: (id) => (id === 'root' ? appRoot : null),
+    addEventListener(type, fn, capture) {
+      if (!docListeners.some((entry) => entry.type === type && entry.fn === fn && entry.capture === (capture === true))) {
+        docListeners.push({ type, fn, capture: capture === true })
+      }
+    },
+    removeEventListener(type, fn, capture) {
+      const index = docListeners.findIndex((entry) => entry.type === type && entry.fn === fn && entry.capture === (capture === true))
+      if (index >= 0) docListeners.splice(index, 1)
+    },
+    dispatchEvent: () => true,
+    querySelector: () => null,
+    querySelectorAll: () => [],
+  }
+  const makeStorage = () => {
+    const map = new Map()
+    return {
+      getItem: (key) => (map.has(String(key)) ? map.get(String(key)) : null),
+      setItem: (key, value) => void map.set(String(key), String(value)),
+      removeItem: (key) => void map.delete(String(key)),
+      clear: () => map.clear(),
+      key: (index) => [...map.keys()][index] ?? null,
+      get length() {
+        return map.size
+      },
+    }
+  }
+  const local = makeStorage()
+  const session = makeStorage()
+  const fakeWindow = {
+    __ModuleLoader__: { load: (spec) => { loaded = spec } },
+    addEventListener: (type, fn) => {
+      if (!globalListeners.has(type)) globalListeners.set(type, [])
+      globalListeners.get(type).push(fn)
+    },
+    removeEventListener: (type, fn) => {
+      const list = globalListeners.get(type)
+      if (!list) return
+      const index = list.indexOf(fn)
+      if (index >= 0) list.splice(index, 1)
+    },
+    dispatchEvent: () => true,
+    innerWidth: 1920,
+    innerHeight: 1080,
+    location: { protocol: 'http:', hash: '' },
+  }
+  globalThis.window = fakeWindow
+  globalThis.document = documentFake
+  globalThis.localStorage = local
+  globalThis.sessionStorage = session
+  globalThis.Element = class Element {}
+  globalThis.Element.prototype.animate = function animate() {}
+  globalThis.matchMedia = (query) => ({
+    matches: query === '(prefers-reduced-motion: reduce)' && matchMediaMatches === true,
+    media: query,
+    addEventListener() {},
+    removeEventListener() {},
+  })
+  globalThis.addEventListener = fakeWindow.addEventListener
+  globalThis.removeEventListener = fakeWindow.removeEventListener
+
+  const overlay = () => body.children.find((child) => child.hasAttribute && child.hasAttribute('data-tl-splash')) ?? null
+  const documentListener = (type) => docListeners.find((entry) => entry.type === type)
+  const resetScenario = () => {
+    assert.equal(overlay(), null, 'no overlay leaks between scenarios')
+    assert.equal(docListeners.length, 0, 'no document listeners leak between scenarios')
+    assert.equal(timers.size, 0, 'no timers leak between scenarios')
+    assert.equal(globalListeners.get('error')?.length ?? 0, 0, 'no error guards leak between scenarios')
+    assert.equal(globalListeners.get('unhandledrejection')?.length ?? 0, 0, 'no rejection guards leak between scenarios')
+    animationRecords.length = 0
+    animateShouldThrow = false
+    matchMediaMatches = false
+    session.clear()
+    local.clear()
+    local.setItem('tianlight.splash', '1')
+    body.removeAttribute('data-tl-lowpower')
+    appRoot.removeAttribute('data-tl-splash-blur')
+  }
+
+  let activeDispose = null
+  try {
+    await import(pathToFileURL(clientFile).href + '?stamp=' + Date.now())
+    const splash = loaded.factory(() => null).__splashTest
+    assert.ok(splash !== undefined, 'instrumented product exposes the splash hooks')
+
+    // Replace timers only after the async import: no real delay is used below.
+    globalThis.setTimeout = (fn, delay) => {
+      timerSeq += 1
+      timers.set(timerSeq, { fn, delay })
+      return timerSeq
+    }
+    globalThis.clearTimeout = (id) => timers.delete(id)
+    const runDelay = (delay) => {
+      const found = [...timers.entries()].find(([, timer]) => timer.delay === delay)
+      assert.ok(found !== undefined, 'expected a ' + delay + 'ms timer')
+      timers.delete(found[0])
+      found[1].fn()
+    }
+
+    // 1) default on + one play per session + a new session can play again.
+    resetScenario()
+    assert.equal(splash.readSplashEnabled(), true, 'default is on')
+    activeDispose = splash.installSplash()
+    assert.ok(overlay() !== null, 'first page session shows the overlay')
+    assert.equal(overlay().getAttribute('aria-hidden'), 'true', 'overlay is decorative for AT')
+    assert.equal(session.getItem(splash.SPLASH_SESSION_KEY), '1', 'session marker written')
+    assert.equal(splash.splashStatus().active, true, 'status reports active')
+    assert.ok(timers.size >= 3, '3s guard, normal end and reveal are armed')
+    assert.equal(timers.has(timerSeq), true)
+    assert.ok(animationRecords.length >= 10, 'the A timeline uses finite WAAPI effects')
+    for (const record of animationRecords) {
+      for (const frame of record.animation.keyframes) {
+        for (const key of Object.keys(frame)) {
+          assert.ok(['opacity', 'transform', 'filter'].includes(key), 'only transform/opacity/filter animate (saw ' + key + ')')
+        }
+      }
+      assert.equal(Number.isFinite(record.animation.options.duration), true, 'finite animation duration')
+      assert.equal(record.animation.options.duration + record.animation.options.delay <= splash.SPLASH_DURATION_MS, true, 'no effect exceeds 1.7s')
+      assert.equal(record.animation.options.iterations === undefined || record.animation.options.iterations <= 1, true, 'no looping effect')
+    }
+    activeDispose()
+    activeDispose = null
+    assert.equal(overlay(), null, 'dispose removes the overlay')
+    assert.equal(timers.size, 0, 'dispose clears the timers')
+    assert.equal(splash.splashStatus().active, false)
+    assert.equal(splash.splashStatus().reason, 'disposed')
+
+    activeDispose = splash.installSplash()
+    assert.equal(overlay(), null, 'the same session never replays after refresh/hot reload')
+    activeDispose()
+    activeDispose = null
+    assert.equal(splash.splashStatus().reason, 'seen')
+    session.clear()
+    activeDispose = splash.installSplash()
+    assert.ok(overlay() !== null, 'a new DSH page session can play once again')
+    activeDispose()
+    activeDispose = null
+
+    // 2) setting off + reduced motion + low power all skip, but consume the session.
+    resetScenario()
+    splash.setSplashEnabled(false)
+    assert.equal(splash.readSplashEnabled(), false, 'toggle persists off')
+    activeDispose = splash.installSplash()
+    assert.equal(overlay(), null, 'off means no overlay')
+    assert.equal(splash.splashStatus().reason, 'disabled')
+    assert.equal(session.getItem(splash.SPLASH_SESSION_KEY), '1', 'a skipped session is marked too')
+    activeDispose()
+    activeDispose = null
+
+    resetScenario()
+    matchMediaMatches = true
+    activeDispose = splash.installSplash()
+    assert.equal(overlay(), null, 'reduced motion skips the splash entirely')
+    assert.equal(splash.splashStatus().reason, 'reduced-motion')
+    activeDispose()
+    activeDispose = null
+
+    resetScenario()
+    body.setAttribute('data-tl-lowpower', '')
+    activeDispose = splash.installSplash()
+    assert.equal(overlay(), null, 'low power skips the splash entirely')
+    assert.equal(splash.splashStatus().reason, 'low-power')
+    activeDispose()
+    activeDispose = null
+
+    // 3) pointerdown and any key both end immediately and eat the event.
+    resetScenario()
+    activeDispose = splash.installSplash()
+    assert.ok(overlay() !== null)
+    const pointerListener = documentListener('pointerdown')
+    assert.ok(pointerListener !== undefined, 'pointerdown listener installed')
+    let prevented = 0
+    let stopped = 0
+    pointerListener.fn({ preventDefault: () => { prevented += 1 }, stopPropagation: () => { stopped += 1 } })
+    assert.equal(overlay(), null, 'pointerdown removes the overlay immediately')
+    assert.equal(prevented, 1)
+    assert.equal(stopped, 1)
+    assert.equal(docListeners.length, 0, 'skip removes both document listeners')
+    assert.equal(timers.size, 0, 'skip clears timers')
+    activeDispose()
+    activeDispose = null
+
+    resetScenario()
+    activeDispose = splash.installSplash()
+    const keyListener = documentListener('keydown')
+    assert.ok(keyListener !== undefined, 'keydown listener installed')
+    keyListener.fn({ preventDefault: () => {}, stopPropagation: () => {} })
+    assert.equal(overlay(), null, 'any key skips the overlay')
+    assert.equal(splash.splashStatus().reason, 'skipped')
+    activeDispose()
+    activeDispose = null
+
+    // 4) page errors remove the overlay; a broken animate() call removes it too.
+    resetScenario()
+    activeDispose = splash.installSplash()
+    const errorListener = (globalListeners.get('error') ?? [])[0]
+    assert.equal(typeof errorListener, 'function', 'page error guard installed')
+    errorListener(new Error('injected page failure'))
+    assert.equal(overlay(), null, 'error removes the overlay')
+    assert.equal(splash.splashStatus().reason, 'error')
+    assert.equal(timers.size, 0)
+    assert.equal(docListeners.length, 0)
+    activeDispose()
+    activeDispose = null
+
+    resetScenario()
+    animateShouldThrow = true
+    const realWarn = console.warn
+    console.warn = () => {}
+    try {
+      activeDispose = splash.installSplash()
+    } finally {
+      console.warn = realWarn
+    }
+    activeDispose()
+    activeDispose = null
+    assert.equal(overlay(), null, 'a failing WAAPI call never leaves a black canvas')
+    assert.equal(splash.splashStatus().reason, 'error')
+    assert.equal(timers.size, 0, 'animation failure clears its hard-stop timer too')
+    assert.equal(globalListeners.get('error')?.length ?? 0, 0, 'animation failure removes its global guards')
+
+    // 5) the 3s hard stop wins even if the normal end timer never fires.
+    resetScenario()
+    activeDispose = splash.installSplash()
+    assert.ok(overlay() !== null)
+    runDelay(splash.SPLASH_HARD_STOP_MS)
+    assert.equal(overlay(), null, '3s hard stop removes the overlay')
+    assert.equal(splash.splashStatus().reason, 'timeout')
+    assert.equal(timers.size, 0)
+    assert.equal(docListeners.length, 0)
+    activeDispose()
+    activeDispose = null
+
+    // 6) normal end: 1.7s reveal + 50ms cleanup, including the real #root blur.
+    resetScenario()
+    activeDispose = splash.installSplash()
+    runDelay(1300)
+    assert.equal(appRoot.hasAttribute('data-tl-splash-blur'), true, 'reveal adds the scoped blur attribute')
+    const rootAnimation = animationRecords.find((record) => record.element === appRoot)
+    assert.ok(rootAnimation !== undefined, '#root receives the reveal animation')
+    assert.equal(rootAnimation.animation.id, 'tl-splash-reveal')
+    assert.equal(rootAnimation.animation.options.duration, splash.SPLASH_DURATION_MS - 1300, 'reveal runs for the last 400ms')
+    runDelay(splash.SPLASH_DURATION_MS + 50)
+    assert.equal(overlay(), null, 'normal end removes the overlay')
+    assert.equal(appRoot.hasAttribute('data-tl-splash-blur'), false, 'normal end removes the root attribute')
+    assert.equal(rootAnimation.animation.canceled, true, 'normal end cancels the root filter')
+    assert.equal(timers.size, 0)
+    activeDispose()
+    activeDispose = null
+
+    // 7) dispose after the reveal tears down node, filters, timers and listeners.
+    resetScenario()
+    activeDispose = splash.installSplash()
+    runDelay(1300)
+    const rootAnimationForDispose = animationRecords.find((record) => record.element === appRoot)
+    activeDispose()
+    activeDispose = null
+    assert.equal(overlay(), null, 'dispose removes the overlay node')
+    assert.equal(appRoot.hasAttribute('data-tl-splash-blur'), false, 'dispose removes the root blur attribute')
+    assert.equal(rootAnimationForDispose.animation.canceled, true, 'dispose cancels the root filter')
+    assert.equal(animationRecords.every((record) => record.animation.canceled === true), true, 'dispose cancels every splash animation')
+    assert.equal(timers.size, 0, 'dispose clears every timer')
+    assert.equal(docListeners.length, 0, 'dispose removes every document listener')
+    assert.equal(globalListeners.get('error')?.length ?? 0, 0, 'dispose removes the error guard')
+    assert.equal(globalListeners.get('unhandledrejection')?.length ?? 0, 0, 'dispose removes the rejection guard')
+    assert.equal(splash.splashStatus().active, false)
+    assert.equal(splash.splashStatus().reason, 'disposed')
+
+    // 8) four-way style: defaults, migration from the old boolean, sound.
+    splash.setSplashStyle('long-once')
+    local.clear()
+    assert.equal(splash.readSplashStyle(), 'long-once', 'default is long-once')
+    local.setItem('tianlight.splash', '0')
+    assert.equal(splash.readSplashStyle(), 'off', 'legacy 0 is off')
+    local.setItem('tianlight.splash', '1')
+    assert.equal(splash.readSplashStyle(), 'long-once', 'legacy 1 keeps the long-once default')
+    assert.equal(splash.setSplashStyle('long'), 'long')
+    assert.equal(local.getItem(splash.SPLASH_STYLE_KEY), 'long')
+    assert.equal(local.getItem(splash.SPLASH_ENABLED_KEY), '1')
+    assert.equal(splash.setSplashStyle('simple'), 'simple')
+    assert.equal(splash.setSplashStyle('off'), 'off')
+    assert.equal(local.getItem(splash.SPLASH_ENABLED_KEY), '0')
+    assert.equal(splash.setSplashStyle('bogus'), 'long-once')
+    assert.equal(splash.readSplashSound(), false, 'sound defaults off')
+    assert.equal(splash.setSplashSound(true), true)
+    assert.equal(splash.readSplashSound(), true)
+    assert.equal(splash.setSplashSound(false), false)
+    assert.equal(splash.readSplashSound(), false)
+
+    // 9) daily cadence planner: first full of the day, compact after, cross-day reset.
+    assert.equal(splash.splashPlan({ style: 'long-once', seen: false, reduced: false, low: false, today: '2026-11-14', lastFull: '' }).mode, 'long')
+    assert.equal(splash.splashPlan({ style: 'long-once', seen: false, reduced: false, low: false, today: '2026-11-14', lastFull: '2026-11-14' }).mode, 'simple')
+    assert.equal(splash.splashPlan({ style: 'long-once', seen: false, reduced: false, low: false, today: '2026-11-15', lastFull: '2026-11-14' }).mode, 'long')
+    assert.equal(splash.splashPlan({ style: 'long', seen: false, reduced: false, low: false, today: '2026-11-14', lastFull: '2026-11-14' }).mode, 'long')
+    assert.equal(splash.splashPlan({ style: 'simple', seen: false, reduced: false, low: false, today: '2026-11-14', lastFull: '' }).mode, 'simple')
+    assert.equal(splash.splashPlan({ style: 'off', seen: false, reduced: false, low: false, today: '2026-11-14', lastFull: '' }).mode, 'none')
+    assert.equal(splash.splashPlan({ style: 'long', seen: true, reduced: false, low: false }).reason, 'seen')
+    assert.equal(splash.splashPlan({ style: 'long', seen: false, reduced: true, low: false }).reason, 'reduced-motion')
+    assert.equal(splash.splashPlan({ style: 'long', seen: false, reduced: false, low: true }).reason, 'low-power')
+
+    // 10) the long film is a separate fragment with a bounded lifecycle.
+    assert.match(productSource, /installSplashFilm/, 'long film installer is wired')
+    assert.match(productSource, /WEBGL_lose_context/, 'long film releases the GPU context')
+    assert.match(productSource, /audioCtx\.close/, 'long film closes AudioContext on dispose')
+    assert.match(productSource, /__tlSplashFilm/, 'long film exposes a diagnostic handle')
+    assert.equal(splash.SPLASH_FILM_DURATION_MS, 18500)
+    assert.equal(splash.SPLASH_FILM_HARD_STOP_MS, 23500)
+  } finally {
+    try {
+      if (activeDispose !== null) activeDispose()
+    } catch {
+      // the test is already reporting a failure
+    }
+    for (const key of savedKeys) {
+      if (saved[key] === undefined) delete globalThis[key]
+      else globalThis[key] = saved[key]
+    }
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 console.log(`tests: ${passed} passed, ${failures.length} failed`)
 for (const failure of failures) console.log('  FAIL ' + failure)
 if (failures.length > 0) process.exit(1)

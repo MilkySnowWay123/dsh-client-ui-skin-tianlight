@@ -3337,6 +3337,237 @@ body[data-dsh-tianlight] [data-tl-cat][data-tl-hist-flip] > [data-tl-cathist] {
 	top: calc(100% + 10px);
 	bottom: auto;
 }
+
+/* ---- A · 破晓 opening animation ----
+   The overlay lives outside #root and is entirely self-contained: no asset, no
+   font download, no backdrop-filter, no layout animation. Motion is limited to
+   transform / opacity / filter. The skin owns the visual, the runtime is owned by
+   59-splash.js (it removes this node and every timer on skip, error and dispose). */
+body[data-dsh-tianlight] [data-tl-splash] {
+	position: fixed;
+	inset: 0;
+	z-index: 2147483000;
+	overflow: hidden;
+	isolation: isolate;
+	contain: paint style;
+	background: #05080F;
+	color: #fff;
+	direction: ltr;
+	pointer-events: auto;
+	cursor: default;
+	user-select: none;
+	-webkit-user-select: none;
+	font-family: var(--ds-font-family, "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: geometricPrecision;
+}
+body[data-dsh-tianlight] [data-tl-splash] *,
+body[data-dsh-tianlight] [data-tl-splash] *::before,
+body[data-dsh-tianlight] [data-tl-splash] *::after {
+	box-sizing: border-box;
+}
+body[data-dsh-tianlight] [data-tl-splash-sky] {
+	position: absolute;
+	inset: 0;
+	opacity: 0;
+	background:
+		radial-gradient(ellipse 74% 64% at 50% 50%, rgba(63, 143, 224, 0.24) 0%, rgba(63, 143, 224, 0.075) 42%, rgba(5, 8, 15, 0) 73%),
+		linear-gradient(180deg, rgba(5, 8, 15, 0) 24%, rgba(63, 143, 224, 0.055) 48%, rgba(5, 8, 15, 0) 76%);
+	pointer-events: none;
+}
+body[data-dsh-tianlight] [data-tl-splash-dawn] {
+	position: absolute;
+	top: 47.6%;
+	left: 50%;
+	width: min(122vw, 2340px);
+	height: min(76vh, 820px);
+	opacity: 0;
+	transform: translate3d(-50%, -50%, 0) scale(0.54, 0.18);
+	transform-origin: 50% 50%;
+	filter: blur(22px);
+	background:
+		radial-gradient(ellipse 45% 36% at 50% 50%, rgba(255, 214, 150, 0.2) 0%, rgba(127, 226, 255, 0.135) 19%, rgba(63, 143, 224, 0.11) 42%, rgba(63, 143, 224, 0.028) 62%, rgba(5, 8, 15, 0) 78%),
+		linear-gradient(90deg, rgba(5, 8, 15, 0) 4%, rgba(63, 143, 224, 0.042) 28%, rgba(127, 226, 255, 0.06) 50%, rgba(63, 143, 224, 0.042) 72%, rgba(5, 8, 15, 0) 96%);
+	pointer-events: none;
+}
+body[data-dsh-tianlight] [data-tl-splash-glow] {
+	position: absolute;
+	top: 44%;
+	left: 0;
+	right: 0;
+	width: min(56vw, 1075px);
+	height: 92px;
+	margin: -46px auto 0;
+	opacity: 0;
+	transform: scaleX(0.2);
+	transform-origin: 50% 50%;
+	filter: blur(26px);
+	background: radial-gradient(ellipse 50% 44% at 50% 50%, rgba(255, 214, 150, 0.34) 0%, rgba(127, 226, 255, 0.13) 34%, rgba(63, 143, 224, 0.05) 60%, rgba(5, 8, 15, 0) 80%);
+	pointer-events: none;
+}
+body[data-dsh-tianlight] [data-tl-splash-line] {
+	position: absolute;
+	top: 44%;
+	left: 0;
+	right: 0;
+	width: min(42vw, 806px);
+	height: 1px;
+	margin: 0 auto;
+	transform: scaleX(0);
+	transform-origin: 50% 50%;
+	pointer-events: none;
+}
+body[data-dsh-tianlight] [data-tl-splash-line-core] {
+	position: absolute;
+	inset: 0;
+	display: block;
+	background: linear-gradient(90deg, rgba(255, 214, 150, 0) 0%, rgba(255, 214, 150, 0.22) 12%, rgba(255, 248, 231, 0.92) 50%, rgba(255, 214, 150, 0.22) 88%, rgba(255, 214, 150, 0) 100%);
+	box-shadow:
+		0 0 1px rgba(255, 255, 255, 0.9),
+		0 0 12px rgba(255, 214, 150, 0.36),
+		0 0 34px rgba(127, 226, 255, 0.16);
+	transform-origin: 50% 50%;
+}
+body[data-dsh-tianlight] [data-tl-splash-center] {
+	position: absolute;
+	top: 54.3%;
+	left: 50%;
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	transform: translate3d(-50%, -50%, 0);
+	text-align: center;
+	pointer-events: none;
+}
+body[data-dsh-tianlight] [data-tl-splash-wordmark] {
+	position: relative;
+	display: inline-block;
+	margin: 0;
+	padding-left: 0.32em;
+	font-size: clamp(76px, 6.56vw, 126px);
+	font-weight: 300;
+	line-height: 1;
+	letter-spacing: 0.32em;
+	color: #fff;
+	white-space: nowrap;
+	transform-origin: 50% 60%;
+	opacity: 0;
+}
+body[data-dsh-tianlight] .tl-splash-word-base {
+	display: inline-block;
+}
+body[data-dsh-tianlight] .tl-splash-char {
+	display: inline-block;
+	transform: translate3d(0, 0, 0);
+}
+body[data-dsh-tianlight] [data-tl-splash-small] {
+	display: block;
+	margin-top: clamp(23px, 1.56vw, 30px);
+	padding-left: 0.4em;
+	font-size: clamp(10px, 0.73vw, 14px);
+	font-weight: 400;
+	line-height: 1;
+	letter-spacing: 0.4em;
+	color: rgba(255, 255, 255, 0.64);
+	text-transform: uppercase;
+	white-space: nowrap;
+	opacity: 0;
+}
+body[data-dsh-tianlight] .tl-splash-sheen {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	pointer-events: none;
+	-webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 30%, #000 70%, transparent 100%);
+	mask-image: linear-gradient(90deg, transparent 0%, #000 30%, #000 70%, transparent 100%);
+}
+body[data-dsh-tianlight] [data-tl-splash-sheen-window] {
+	position: absolute;
+	top: 0;
+	left: 0;
+	display: block;
+	width: 22%;
+	height: 100%;
+	overflow: hidden;
+	clip-path: polygon(28% 0%, 100% 0%, 72% 100%, 0% 100%);
+	transform: translate3d(-100%, 0, 0);
+}
+body[data-dsh-tianlight] [data-tl-splash-sheen-copy] {
+	position: absolute;
+	top: 0;
+	left: 0;
+	display: block;
+	width: 454.5455%;
+	height: 100%;
+	padding-left: 0.32em;
+	font: inherit;
+	line-height: 1;
+	letter-spacing: inherit;
+	white-space: nowrap;
+	color: transparent;
+	background-image: linear-gradient(180deg, #ffffff 0%, #ecfdff 38%, #a9edff 72%, #7fe2ff 100%);
+	-webkit-background-clip: text;
+	background-clip: text;
+	-webkit-text-fill-color: transparent;
+	filter: drop-shadow(0 0 9px rgba(127, 226, 255, 0.22));
+	transform: translate3d(22%, 0, 0);
+}
+body[data-dsh-tianlight] #root[data-tl-splash-blur] {
+	will-change: filter, transform;
+	transform-origin: 50% 50%;
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-switch {
+	display: inline-flex;
+	align-items: center;
+	gap: 9px;
+	padding: 6px 12px 6px 7px;
+	border-radius: 999px;
+	background: var(--tl-accent-soft, rgba(255, 255, 255, 0.12));
+	border: 0.5px solid var(--tl-line-strong, rgba(255, 255, 255, 0.3));
+	color: var(--tl-ink);
+	cursor: pointer;
+	font: 600 12px/1.2 var(--ds-font-family, system-ui);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-switch-track {
+	position: relative;
+	display: inline-block;
+	width: 34px;
+	height: 20px;
+	flex: 0 0 34px;
+	border-radius: 999px;
+	border: 0.5px solid rgba(255, 255, 255, 0.2);
+	background: rgba(8, 18, 30, 0.28);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-switch-knob {
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background: var(--tl-ink, #eaf3ff);
+	transform: translate3d(0, 0, 0);
+	transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-switch[data-on="true"] .tl-hub-switch-track {
+	border-color: var(--tl-accent, #7fb6ff);
+	background: var(--tl-accent-soft, rgba(127, 182, 255, 0.16));
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-switch[data-on="true"] .tl-hub-switch-knob {
+	transform: translate3d(14px, 0, 0);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-switch[data-on="true"] .tl-hub-switch-label {
+	color: var(--tl-accent, #7fb6ff);
+}
+body[data-dsh-tianlight] [data-tl-hub] .tl-hub-switch-label {
+	min-width: 3em;
+	text-align: left;
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-splash-card] {
+	border-color: var(--tl-line-strong, rgba(255, 255, 255, 0.28));
+}
 `;
 
 		/** Injected once per page; every rule is scoped to the skin's body attribute. */
