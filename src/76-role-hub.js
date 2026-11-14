@@ -82,6 +82,20 @@
 				"hub.glass.done": "玻璃质感：{depth}",
 				"hub.glass.previewHint": "默认柔和；真实更明显、磨砂最安静；低电量/15fps 自动降级。",
 				"hub.glass.preview": "当前：{depth} · 实际：{effective}",
+				"hub.splash.title": "开机动画",
+				"hub.splash.on": "已开启",
+				"hub.splash.off": "已关闭",
+				"hub.splash.aria": "开机动画设置",
+				"hub.splash.style": "播放方式",
+				"hub.splash.longOnce": "长片（每天第一次）",
+				"hub.splash.long": "长片（每次打开）",
+				"hub.splash.simple": "简洁",
+				"hub.splash.offOption": "关闭",
+				"hub.splash.skip": "点击任意处跳过",
+				"hub.splash.sound": "开机音效",
+				"hub.splash.soundOff": "关（默认）",
+				"hub.splash.soundOn": "开",
+				"hub.splash.hint": "默认每天第一次播长片，之后播简洁版；Ctrl+F5 刷新不重播。系统减少动态效果或省电时自动跳过；长片可随时点击或按 Esc 跳过。",
 				"hub.appearance.reset": "恢复默认外观",
 				"hub.appearance.hint": "恢复作者的默认外观（壁纸/玻璃档位/排版/特效/桌宠形象）；不会动聊天、权限、天气与你上传的壁纸文件。",
 				"hub.appearance.confirm": "再次点击确认恢复默认外观：现有外观设置会被覆盖（聊天/权限/天气不受影响）。",
@@ -464,6 +478,20 @@
 				"hub.glass.done": "Glass depth: {depth}",
 				"hub.glass.previewHint": "Soft is the default; Real is the most visible, Frosted the quietest; auto-lowered on low power or 15fps.",
 				"hub.glass.preview": "Current: {depth} · effective: {effective}",
+				"hub.splash.title": "Opening animation",
+				"hub.splash.on": "On",
+				"hub.splash.off": "Off",
+				"hub.splash.aria": "Opening animation settings",
+				"hub.splash.style": "Playback",
+				"hub.splash.longOnce": "Film (first launch each day)",
+				"hub.splash.long": "Film (every launch)",
+				"hub.splash.simple": "Compact",
+				"hub.splash.offOption": "Off",
+				"hub.splash.skip": "Click anywhere to skip",
+				"hub.splash.sound": "Opening sound",
+				"hub.splash.soundOff": "Off (default)",
+				"hub.splash.soundOn": "On",
+				"hub.splash.hint": "The film plays on the first launch of each day, then the compact version; Ctrl+F5 does not replay it. Skipped under reduced motion or low power; click or Esc skips the film.",
 				"hub.appearance.reset": "Restore default appearance",
 				"hub.appearance.hint": "Restores the author's default look (wallpaper / glass depth / typography / effects / companion look); chat, permissions, weather and your uploaded wallpaper files are untouched.",
 				"hub.appearance.confirm": "Click again to restore the default appearance: current appearance settings will be overwritten (chat / permissions / weather are untouched).",
@@ -2013,6 +2041,31 @@
 				}
 				hubTry(() => controller.apply(level), null, "glass-apply");
 				refreshGlass();
+			};
+
+			// ---- opening animation card ---------------------------------------------
+			// The splash module owns the setting and the one-play-per-session rule; the
+			// hub only mirrors the stored preference. Turning it off does not replay or
+			// cancel the current run (that is already over); the next DSH launch is quiet.
+			const refreshSplash = () => {
+				if (ui === null || ui.splashToggle === null || ui.splashToggle === undefined) return;
+				const style = typeof readSplashStyle === "function" ? readSplashStyle() : "long-once";
+				ui.splashToggle.value = style;
+				ui.splashToggle.setAttribute("data-style", style);
+				if (ui.splashLabel !== null && ui.splashLabel !== undefined) {
+					const key =
+						style === "long-once"
+							? "hub.splash.longOnce"
+							: style === "long"
+								? "hub.splash.long"
+								: style === "simple"
+									? "hub.splash.simple"
+									: "hub.splash.offOption";
+					ui.splashLabel.textContent = TL_T(key);
+				}
+				if (ui.splashSound !== null && ui.splashSound !== undefined) {
+					ui.splashSound.value = typeof readSplashSound === "function" && readSplashSound() ? "1" : "0";
+				}
 			};
 
 			// ---- media card ---------------------------------------------------------
@@ -4258,6 +4311,59 @@
 				glassCard.appendChild(state.appearanceNote);
 				body.appendChild(glassCard);
 
+				// b2) A · 破晓 opening animation (splash module owns the preference)
+				const splashCard = hubCreate("section", { "data-tl-hub-splash-card": "", className: "tl-hub-card tl-hub-splash" }, [
+					hubCreate("h3", { className: "tl-hub-card-title" }, TL_T("hub.splash.title")),
+				]);
+				const splashRow = hubCreate("div", { className: "tl-hub-row tl-hub-switch-row" });
+				const splashLabel = hubCreate("span", { className: "tl-hub-switch-label" }, TL_T("hub.splash.style"));
+				state.splashToggle = hubCreate("select", {
+					className: "tl-hub-select",
+					"aria-label": TL_T("hub.splash.aria"),
+					"data-tl-hub-splash-toggle": "",
+				});
+				for (const [value, key] of [
+					["long-once", "hub.splash.longOnce"],
+					["long", "hub.splash.long"],
+					["simple", "hub.splash.simple"],
+					["off", "hub.splash.offOption"],
+				]) {
+					state.splashToggle.appendChild(hubCreate("option", { value }, TL_T(key)));
+				}
+				state.splashToggle.addEventListener("change", () => {
+					try {
+						setSplashStyle(state.splashToggle.value);
+						refreshSplash();
+					} catch (error) {
+						setLastError("splash-toggle", error);
+					}
+				});
+				splashRow.appendChild(splashLabel);
+				splashRow.appendChild(state.splashToggle);
+				splashCard.appendChild(splashRow);
+
+				const soundRow = hubCreate("div", { className: "tl-hub-row tl-hub-switch-row" });
+				soundRow.appendChild(hubCreate("span", { className: "tl-hub-switch-label" }, TL_T("hub.splash.sound")));
+				state.splashSound = hubCreate("select", {
+					className: "tl-hub-select",
+					"aria-label": TL_T("hub.splash.sound"),
+					"data-tl-hub-splash-sound": "",
+				});
+				state.splashSound.appendChild(hubCreate("option", { value: "0" }, TL_T("hub.splash.soundOff")));
+				state.splashSound.appendChild(hubCreate("option", { value: "1" }, TL_T("hub.splash.soundOn")));
+				state.splashSound.addEventListener("change", () => {
+					try {
+						setSplashSound(state.splashSound.value === "1");
+						refreshSplash();
+					} catch (error) {
+						setLastError("splash-sound", error);
+					}
+				});
+				soundRow.appendChild(state.splashSound);
+				splashCard.appendChild(soundRow);
+				splashCard.appendChild(hubCreate("p", { className: "tl-hub-note tl-hub-hint" }, TL_T("hub.splash.hint")));
+				body.appendChild(splashCard);
+
 				// c) companion look: catalog select + local upload
 				const mediaCard = hubCreate("section", { "data-tl-hub-media-card": "", className: "tl-hub-card" }, [
 					hubCreate("h3", { className: "tl-hub-card-title" }, TL_T("hub.media.title")),
@@ -4609,6 +4715,7 @@
 				hubTry(() => refreshLifeConfig(false), null, "refresh-life-config");
 				hubTry(refreshWeather, null, "refresh-weather");
 				hubTry(refreshGlass, null, "refresh-glass");
+				hubTry(refreshSplash, null, "refresh-splash");
 				hubTry(refreshAi, null, "refresh-ai");
 				hubTry(refreshMind, null, "refresh-mind");
 				hubTry(refreshAgent, null, "refresh-agent");
@@ -4668,6 +4775,7 @@
 					restoreHubDraft();
 					refreshWeather();
 					refreshGlass();
+					refreshSplash();
 					refreshAi();
 					// plan A: re-probe the host model capability on every open (44 owns the
 					// probe; it degrades to a no-op when the brain build predates it).
@@ -4713,6 +4821,7 @@
 				features: {
 					mediaDefault: true,
 					glassPreview: true,
+					splash: true,
 					weather: true,
 					selftest: true,
 					feedback: true,

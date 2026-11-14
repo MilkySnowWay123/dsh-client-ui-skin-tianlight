@@ -96,8 +96,21 @@
 					"[data-tl-legibility]",
 					"[data-tl-web]",
 					"[data-tl-a11y-live]",
+					"[data-tl-splash]",
 				]) {
 					for (const node of document.querySelectorAll(selector)) node.remove();
+				}
+				// A crashed old splash may have left the reveal filter animation on #root.
+				try {
+					const appRoot = document.getElementById("root");
+					if (appRoot !== null) {
+						appRoot.removeAttribute("data-tl-splash-blur");
+						for (const animation of appRoot.getAnimations?.() ?? []) {
+							if (animation !== null && animation !== undefined && animation.id === "tl-splash-reveal") animation.cancel();
+						}
+					}
+				} catch (error) {
+					note("apply:purge-splash", error);
 				}
 				const staleStyle = document.querySelector(
 					"style[data-plugin-css=" + JSON.stringify(CSS_TAG_ID) + "]",
@@ -275,6 +288,13 @@
 							return null;
 						}
 					},
+					splash: () => {
+						try {
+							return splashStatus();
+						} catch {
+							return null;
+						}
+					},
 				};
 				// Support diagnostics: which hook layer does this DSH build render?
 				// Lazy on purpose — plugin apply runs before the shell mounts the product UI,
@@ -325,6 +345,14 @@
 				// one-shot migration/host-adoption already ran above; this effect owns
 				// the persistent write mirror + BroadcastChannel only.
 				install("ui-skin-tianlight: settings sync", () => installSettingsRuntime(body));
+
+				// ---- A · 破晓 opening overlay ------------------------------------
+				// The overlay owns its own fixed layer outside #root. It is installed
+				// before the switchable modules and never waits for the wallpaper or a
+				// product resource; this call is synchronous and the hard-stop timer is
+				// armed before any animation starts. Skipped for reduced motion / low
+				// power / a disabled setting, and at most once per browser session.
+				install("ui-skin-tianlight: splash", () => installSplashEntry());
 
 				// ---- switchable modules: installed in MODULE_DEFS order ----
 				const runtime = createModuleRuntime(install);
