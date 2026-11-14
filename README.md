@@ -6,6 +6,10 @@
 >
 > npm 包名 `dsh-client-ui-skin-tianlight`（v2.0.2 起；旧链接安装包名 `@dsh-external/dsh-client-ui-skin-tianlight`）· 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
 
+## v2.0.6 · 天气保鲜版
+
+2.0.5 让天气能取到了，但轮询还有两处会让人以为它「停在几小时前」：一是天气数值没变时「更新于」不前进（持久化快照只在数值变化时写，界面又直接读快照时间），二是宿主兜底在冷 DNS 时可能被 3.5 秒预算掐掉、偶发 502。这一版把 HTTPS 预算收到 2.5 秒、HTTP 放宽到 8 秒，并让宿主记住上次成功的通道（下次先用它）；同时新增只在内存里的「本页最近一次成功轮询时间」，界面用它显示「更新于」，持久化照旧只在数值变化时写。刷新间隔仍是 15/30/60/120 分钟、页面隐藏时不请求。详见 [RELEASE-NOTES-v2.0.6.md](RELEASE-NOTES-v2.0.6.md)。
+
 ## v2.0.5 · 天气兜底版
 
 有些网络会把浏览器（Chromium/OpenSSL）到 `api.open-meteo.com` 的 **TLS 握手**丢掉——同一域名走明文 HTTP、或走系统 TLS 栈（curl/PowerShell）却正常。桌面端页面是 `dsh-app://` 安全源，渲染层不能自己降级，于是天气卡一直停在 `获取失败：请求超时（静默重试）`。这一版给宿主加了只读的 `_weather` 兜底路由：客户端直连失败后请宿主代取（宿主先试 HTTPS，失败才用同一域名的明文 HTTP），拿到数据后照旧走原来的天气模型与配额；直连正常时完全不会走到它。详见 [RELEASE-NOTES-v2.0.5.md](RELEASE-NOTES-v2.0.5.md)。
