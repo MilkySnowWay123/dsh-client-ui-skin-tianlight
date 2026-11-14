@@ -5018,6 +5018,7 @@ await testAsync('splash A: once per session, opt-out, accessibility, skip, 3s gu
   assert.equal(/fetch\s*\(|XMLHttpRequest|WebSocket|new Image|\.src\s*=/.test(splashSource), false, 'the splash loads nothing')
   assert.equal(/setInterval\s*\(/.test(splashSource), false, 'the splash owns no repeating timer')
   assert.match(productSource, /data-tl-hub-splash-toggle/, 'role hub exposes the toggle')
+  assert.match(productSource, /data-tl-hub-splash-motion/, 'role hub exposes the reduced-motion override')
   assert.match(productSource, /"hub\.splash\.hint"/, 'localized hint is wired')
 
   const instrumented = productSource.replace(
@@ -5026,8 +5027,8 @@ await testAsync('splash A: once per session, opt-out, accessibility, skip, 3s gu
       'exports.apply = apply;',
       '\t\texports.__splashTest = {',
       '\t\t\tinstallSplash, installSplashEntry, readSplashEnabled, setSplashEnabled,',
-      '\t\t\treadSplashStyle, setSplashStyle, readSplashSound, setSplashSound, splashPlan, splashStatus,',
-      '\t\t\tSPLASH_ENABLED_KEY, SPLASH_STYLE_KEY, SPLASH_LAST_FULL_KEY, SPLASH_SOUND_KEY,',
+      '\t\t\treadSplashStyle, setSplashStyle, readSplashSound, setSplashSound, readSplashForceMotion, setSplashForceMotion, splashPlan, splashStatus,',
+      '\t\t\tSPLASH_ENABLED_KEY, SPLASH_STYLE_KEY, SPLASH_LAST_FULL_KEY, SPLASH_SOUND_KEY, SPLASH_FORCE_MOTION_KEY,',
       '\t\t\tSPLASH_SESSION_KEY, SPLASH_DURATION_MS, SPLASH_HARD_STOP_MS, SPLASH_FILM_DURATION_MS, SPLASH_FILM_HARD_STOP_MS,',
       '\t\t};',
     ].join('\n'),
@@ -5403,6 +5404,24 @@ await testAsync('splash A: once per session, opt-out, accessibility, skip, 3s gu
     assert.equal(splash.readSplashSound(), true)
     assert.equal(splash.setSplashSound(false), false)
     assert.equal(splash.readSplashSound(), false)
+    assert.equal(splash.readSplashForceMotion(), false, 'reduced-motion override defaults off')
+    assert.equal(splash.setSplashForceMotion(true), true)
+    assert.equal(splash.readSplashForceMotion(), true)
+    assert.equal(
+      splash.splashPlan({ style: 'long', seen: false, reduced: true, low: false, forceMotion: true }).mode,
+      'long',
+      'explicit override allows the film under reduced motion',
+    )
+    assert.equal(
+      splash.splashPlan({ style: 'long', seen: false, reduced: true, low: false, forceMotion: false }).reason,
+      'reduced-motion',
+    )
+    assert.equal(
+      splash.splashPlan({ style: 'long', seen: false, reduced: false, low: true, forceMotion: true }).reason,
+      'low-power',
+      'override does not defeat low power',
+    )
+    assert.equal(splash.setSplashForceMotion(false), false)
 
     // 9) daily cadence planner: first full of the day, compact after, cross-day reset.
     assert.equal(splash.splashPlan({ style: 'long-once', seen: false, reduced: false, low: false, today: '2026-11-14', lastFull: '' }).mode, 'long')

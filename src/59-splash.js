@@ -28,6 +28,7 @@
 		const SPLASH_STYLE_KEY = "tianlight.splash.style";
 		const SPLASH_LAST_FULL_KEY = "tianlight.splash.lastFull";
 		const SPLASH_SOUND_KEY = "tianlight.splash.sound";
+		const SPLASH_FORCE_MOTION_KEY = "tianlight.splash.forceMotion";
 		const SPLASH_SESSION_KEY = "tianlight.splash.seen.v1";
 		const SPLASH_STYLES = ["long-once", "long", "simple", "off"];
 		const SPLASH_DEFAULT_STYLE = "long-once";
@@ -42,6 +43,7 @@
 		let splashPreferenceFallback = null;
 		let splashStyleFallback = null;
 		let splashSoundFallback = null;
+		let splashForceMotionFallback = null;
 		const splashRuntime = {
 			active: false,
 			reason: "idle",
@@ -125,6 +127,36 @@
 			return splashSoundFallback;
 		}
 
+		/**
+		 * Explicit, default-off accessibility override. When the user turns this on,
+		 * the splash is allowed to run even if the OS reports reduce-motion. Low-power
+		 * mode still skips unconditionally.
+		 */
+		function readSplashForceMotion() {
+			try {
+				const raw = globalThis.localStorage?.getItem(SPLASH_FORCE_MOTION_KEY);
+				if (typeof raw === "string") {
+					const value = raw.trim().toLowerCase();
+					if (value === "1" || value === "true" || value === "on") return true;
+					if (value === "0" || value === "false" || value === "off") return false;
+				}
+			} catch {
+				// fall through
+			}
+			return splashForceMotionFallback === true;
+		}
+
+		function setSplashForceMotion(enabled) {
+			splashForceMotionFallback = enabled === true;
+			try {
+				globalThis.localStorage?.setItem(SPLASH_FORCE_MOTION_KEY, splashForceMotionFallback ? "1" : "0");
+			} catch {
+				// current session still follows the fallback
+			}
+			tl5Diag("splash", { forceMotion: splashForceMotionFallback, changedAt: Date.now() });
+			return splashForceMotionFallback;
+		}
+
 		function splashLocalDate() {
 			const d = new Date();
 			const y = d.getFullYear();
@@ -198,7 +230,7 @@
 			if (splashSeenThisSession()) return { play: false, reason: "seen", enabled };
 			splashMarkSession();
 			if (enabled === false) return { play: false, reason: "disabled", enabled };
-			if (splashReducedMotion()) return { play: false, reason: "reduced-motion", enabled };
+			if (splashReducedMotion() && readSplashForceMotion() !== true) return { play: false, reason: "reduced-motion", enabled };
 			if (splashLowPowerActive()) return { play: false, reason: "low-power", enabled };
 			return { play: true, reason: "playing", enabled };
 		}
@@ -213,11 +245,12 @@
 			const seen = o.seen === undefined ? splashSeenThisSession() : o.seen === true;
 			const reduced = o.reduced === undefined ? splashReducedMotion() : o.reduced === true;
 			const low = o.low === undefined ? splashLowPowerActive() : o.low === true;
+			const forceMotion = o.forceMotion === undefined ? readSplashForceMotion() : o.forceMotion === true;
 			const today = typeof o.today === "string" ? o.today : splashLocalDate();
 			const lastFull = typeof o.lastFull === "string" ? o.lastFull : readSplashLastFull();
 			if (seen) return { mode: "none", reason: "seen", style };
 			if (style === "off") return { mode: "none", reason: "disabled", style };
-			if (reduced) return { mode: "none", reason: "reduced-motion", style };
+			if (reduced && forceMotion !== true) return { mode: "none", reason: "reduced-motion", style };
 			if (low) return { mode: "none", reason: "low-power", style };
 			if (style === "simple") return { mode: "simple", reason: "simple", style };
 			if (style === "long-once" && lastFull === today) return { mode: "simple", reason: "daily", style };
@@ -234,6 +267,7 @@
 				seen: splashSeenThisSession(),
 				lastFull: readSplashLastFull(),
 				sound: readSplashSound(),
+				forceMotion: readSplashForceMotion(),
 				durationMs: splashRuntime.mode === "long" ? SPLASH_FILM_DURATION_MS : SPLASH_DURATION_MS,
 				animations: splashRuntime.animations,
 			};
@@ -622,7 +656,7 @@
 			};
 			if (splashSeenThisSession()) return finishStatus("seen", style === "long" || style === "long-once" ? "long" : "simple");
 			if (style === "off") return finishStatus("disabled", "simple");
-			if (splashReducedMotion()) return finishStatus("reduced-motion", "simple");
+			if (splashReducedMotion() && readSplashForceMotion() !== true) return finishStatus("reduced-motion", "simple");
 			if (splashLowPowerActive()) return finishStatus("low-power", "simple");
 
 			if (style === "simple") return installSplash();

@@ -6,6 +6,17 @@
 >
 > npm 包名 `dsh-client-ui-skin-tianlight`（v2.0.2 起；旧链接安装包名 `@dsh-external/dsh-client-ui-skin-tianlight`）· 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
 
+## v2.1.1 · 减少动态效果覆盖
+
+有些 Windows 机器把“动画效果”关掉后，Chromium 会报告 `prefers-reduced-motion: reduce`，v2.1.0 按规范直接跳过长片，看起来就像“开机动画没了”。这一版在角色中枢 →「开机动画」里增加一个显式开关：
+
+- **减少动态效果时：遵守系统（默认）/ 仍播放**
+- 选择“仍播放”后，即使系统报告 reduce-motion，长片/简洁版仍会按原规则播放；
+- **低电量仍然会跳过**，这个覆盖不绕过低电量；
+- 新键 `tianlight.splash.forceMotion`，默认 `0`；旧用户不打开就保持原来的无障碍行为。
+
+如果只是 Windows 关闭了动画效果，也可以直接在系统设置里打开“动画效果”；两种方式二选一。详见 [RELEASE-NOTES-v2.1.1.md](RELEASE-NOTES-v2.1.1.md)。
+
 ## v2.1.0 · 长片开机动画
 
 这一版把「天光」从 1.7 秒的简洁开机，扩展成一支 **18.5 秒的电影片头**：星海、彗星、极光、破晓、云海、字标，最后玻璃落到真实 DSH 面板上。长片（B）与原来的简洁版（A）并存，默认「长片（每天第一次）」；当天之后、或手动选「简洁」时走 A。设置里另有「长片（每次打开）」和「关闭」两档，共四档。

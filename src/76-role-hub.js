@@ -95,6 +95,10 @@
 				"hub.splash.sound": "开机音效",
 				"hub.splash.soundOff": "关（默认）",
 				"hub.splash.soundOn": "开",
+				"hub.splash.motion": "减少动态效果时（无障碍覆盖）",
+				"hub.splash.motionOff": "遵守系统（默认）",
+				"hub.splash.motionOn": "仍播放",
+				"hub.splash.motionHint": "默认遵守系统的“减少动态效果”。打开“仍播放”会覆盖系统设置；低电量时仍会跳过。",
 				"hub.splash.hint": "默认每天第一次播长片，之后播简洁版；Ctrl+F5 刷新不重播。系统减少动态效果或省电时自动跳过；长片可随时点击或按 Esc 跳过。",
 				"hub.appearance.reset": "恢复默认外观",
 				"hub.appearance.hint": "恢复作者的默认外观（壁纸/玻璃档位/排版/特效/桌宠形象）；不会动聊天、权限、天气与你上传的壁纸文件。",
@@ -491,6 +495,10 @@
 				"hub.splash.sound": "Opening sound",
 				"hub.splash.soundOff": "Off (default)",
 				"hub.splash.soundOn": "On",
+				"hub.splash.motion": "Under reduced motion (accessibility override)",
+				"hub.splash.motionOff": "Respect system (default)",
+				"hub.splash.motionOn": "Play anyway",
+				"hub.splash.motionHint": "By default the splash respects the system reduce-motion setting. \"Play anyway\" overrides it; low power still skips.",
 				"hub.splash.hint": "The film plays on the first launch of each day, then the compact version; Ctrl+F5 does not replay it. Skipped under reduced motion or low power; click or Esc skips the film.",
 				"hub.appearance.reset": "Restore default appearance",
 				"hub.appearance.hint": "Restores the author's default look (wallpaper / glass depth / typography / effects / companion look); chat, permissions, weather and your uploaded wallpaper files are untouched.",
@@ -2065,6 +2073,10 @@
 				}
 				if (ui.splashSound !== null && ui.splashSound !== undefined) {
 					ui.splashSound.value = typeof readSplashSound === "function" && readSplashSound() ? "1" : "0";
+				}
+				if (ui.splashMotion !== null && ui.splashMotion !== undefined) {
+					ui.splashMotion.value =
+						typeof readSplashForceMotion === "function" && readSplashForceMotion() ? "1" : "0";
 				}
 			};
 
@@ -4361,6 +4373,27 @@
 				});
 				soundRow.appendChild(state.splashSound);
 				splashCard.appendChild(soundRow);
+
+				const motionRow = hubCreate("div", { className: "tl-hub-row tl-hub-switch-row" });
+				motionRow.appendChild(hubCreate("span", { className: "tl-hub-switch-label" }, TL_T("hub.splash.motion")));
+				state.splashMotion = hubCreate("select", {
+					className: "tl-hub-select",
+					"aria-label": TL_T("hub.splash.motion"),
+					"data-tl-hub-splash-motion": "",
+				});
+				state.splashMotion.appendChild(hubCreate("option", { value: "0" }, TL_T("hub.splash.motionOff")));
+				state.splashMotion.appendChild(hubCreate("option", { value: "1" }, TL_T("hub.splash.motionOn")));
+				state.splashMotion.addEventListener("change", () => {
+					try {
+						setSplashForceMotion(state.splashMotion.value === "1");
+						refreshSplash();
+					} catch (error) {
+						setLastError("splash-motion", error);
+					}
+				});
+				motionRow.appendChild(state.splashMotion);
+				splashCard.appendChild(motionRow);
+				splashCard.appendChild(hubCreate("p", { className: "tl-hub-note tl-hub-hint" }, TL_T("hub.splash.motionHint")));
 				splashCard.appendChild(hubCreate("p", { className: "tl-hub-note tl-hub-hint" }, TL_T("hub.splash.hint")));
 				body.appendChild(splashCard);
 
