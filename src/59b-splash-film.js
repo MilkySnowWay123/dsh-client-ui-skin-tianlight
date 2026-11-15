@@ -1164,7 +1164,12 @@
 			      if (!AC) return false
 			      audioCtx = new AC()
 			    }
-			    if (audioCtx.state === 'suspended') audioCtx.resume()
+			    // resume() rejects with InvalidStateError when the film is disposed (and
+			    // closes the context) before the promise settles; that is an expected
+			    // teardown race, not an unhandled rejection in the user's console.
+			    if (audioCtx.state === 'suspended') {
+			      try { void audioCtx.resume().catch(() => {}) } catch (e) {}
+			    }
 			    if (soundMaster) { try { soundMaster.disconnect() } catch (e) {} }
 			    const master = audioCtx.createGain()
 			    master.gain.value = 0.55
@@ -1531,14 +1536,15 @@
 			const skipHint = host.querySelector("#skipHint");
 			if (skipHint && typeof opts.skipText === "string" && opts.skipText !== "") skipHint.textContent = opts.skipText;
 			// The film is opaque: hide the wallpaper and hold its video paused so the
-			// 4K decoder does not compete with the shader. The wallpaper controller can
-			// start (or retry) playback *after* this point, so a one-shot pause is not
-			// enough: every `play` during the film is immediately paused again and the
-			// video is resumed only if the wallpaper actually asked for playback.
-			const scene = document.querySelector("[data-tl-scene]");
-			const sceneVisibility = scene ? scene.style.visibility : "";
-			const sceneVideos = scene ? [...scene.querySelectorAll("video")] : [];
-			const heldVideos = sceneVideos.map((video) => ({ video, pausedByFilm: false }));
+			// 4K decoder does not compete with the shader. The wallpaper module installs
+			// *after* the splash (scene and video do not exist yet at this point), and it
+			// can start/retry playback later, so watch for the scene to appear and hold
+			// every `play` while the film is active. On exit resume only the videos the
+			// wallpaper actually asked to play; a user-paused wallpaper stays paused.
+			let scene = document.querySelector("[data-tl-scene]");
+			let sceneVisibility = scene ? scene.style.visibility : "";
+			let sceneHidden = false;
+			const heldVideos = [];
 			const holdSceneVideo = (event) => {
 				const video = event !== null && event !== undefined ? event.currentTarget : null;
 				const entry = heldVideos.find((candidate) => candidate.video === video);
@@ -1550,20 +1556,95 @@
 					// a detached video freezes by itself
 				}
 			};
-			for (const entry of heldVideos) {
+			const holdVideo = (video) => {
+				if (heldVideos.some((candidate) => candidate.video === video)) return;
+				const entry = { video, pausedByFilm: false };
+				heldVideos.push(entry);
 				try {
-					if (entry.video.paused === false) {
+					if (video.paused === false) {
 						entry.pausedByFilm = true;
-						entry.video.pause();
+						video.pause();
 					}
-					entry.video.addEventListener("play", holdSceneVideo);
+					video.addEventListener("play", holdSceneVideo);
 				} catch {
 					// a video without listeners simply keeps its old behaviour
 				}
+			};
+			const hideScene = (found) => {
+				scene = found;
+				if (sceneObserver !== null) {
+					try {
+						sceneObserver.disconnect();
+					} catch {
+						// ignore
+					}
+					sceneObserver = null;
+				}
+				if (sceneWatch !== 0) {
+					try {
+						globalThis.clearInterval(sceneWatch);
+					} catch {
+						// ignore
+					}
+					sceneWatch = 0;
+				}
+				sceneVisibility = found.style.visibility;
+				try {
+					found.style.visibility = "hidden";
+					sceneHidden = true;
+				} catch {
+					// a stripped scene still gets the video hold below
+				}
+				for (const video of found.querySelectorAll("video")) holdVideo(video);
+			};
+			let sceneObserver = null;
+			let sceneWatch = 0;
+			if (scene !== null) {
+				hideScene(scene);
+			} else if (typeof MutationObserver === "function") {
+				sceneObserver = new MutationObserver(() => {
+					if (scene !== null) return;
+					const found = document.querySelector("[data-tl-scene]");
+					if (found !== null) hideScene(found);
+				});
+				try {
+					sceneObserver.observe(document.body, { childList: true });
+				} catch {
+					sceneObserver = null;
+				}
 			}
-			if (scene) scene.style.visibility = "hidden";
+			if (scene === null && sceneObserver === null && typeof globalThis.setInterval === "function") {
+				sceneWatch = globalThis.setInterval(() => {
+					if (scene !== null) return;
+					const found = document.querySelector("[data-tl-scene]");
+					if (found !== null) hideScene(found);
+				}, 250);
+			}
 			const restoreScene = () => {
-				if (scene) scene.style.visibility = sceneVisibility;
+				if (sceneObserver !== null) {
+					try {
+						sceneObserver.disconnect();
+					} catch {
+						// ignore
+					}
+					sceneObserver = null;
+				}
+				if (sceneWatch !== 0) {
+					try {
+						globalThis.clearInterval(sceneWatch);
+					} catch {
+						// ignore
+					}
+					sceneWatch = 0;
+				}
+				if (scene !== null && sceneHidden === true) {
+					try {
+						scene.style.visibility = sceneVisibility;
+					} catch {
+						// ignore
+					}
+					sceneHidden = false;
+				}
 				for (const entry of heldVideos) {
 					try {
 						entry.video.removeEventListener("play", holdSceneVideo);

@@ -5599,7 +5599,7 @@ await testAsync('splash film wrapper: normal/skip/fallback/hard-stop/dispose/err
   const saved = {}
   const savedKeys = [
     'window', 'document', 'localStorage', 'sessionStorage', 'matchMedia', 'Element',
-    'setTimeout', 'clearTimeout', 'addEventListener', 'removeEventListener',
+    'setTimeout', 'clearTimeout', 'addEventListener', 'removeEventListener', 'MutationObserver',
   ]
   for (const key of savedKeys) saved[key] = globalThis[key]
 
@@ -5631,7 +5631,25 @@ await testAsync('splash film wrapper: normal/skip/fallback/hard-stop/dispose/err
   let timerSeq = 0
   const timers = new Map()
   const globalListeners = new Map()
+  const observers = []
   let loaded = null
+  class FakeMutationObserver {
+    constructor(callback) {
+      this.callback = callback
+      this.connected = false
+    }
+    observe() {
+      this.connected = true
+      observers.push(this)
+    }
+    disconnect() {
+      this.connected = false
+    }
+    takeRecords() {
+      return []
+    }
+  }
+  globalThis.MutationObserver = FakeMutationObserver
 
   class FakeElement {
     constructor(tag) {
@@ -5722,6 +5740,7 @@ await testAsync('splash film wrapper: normal/skip/fallback/hard-stop/dispose/err
   const scene = new FakeElement('div')
   const video = new FakeVideo()
   scene._videos = [video]
+  let sceneAvailable = true
   const documentFake = {
     hidden: false,
     body,
@@ -5739,7 +5758,7 @@ await testAsync('splash film wrapper: normal/skip/fallback/hard-stop/dispose/err
       if (id === 'film') return body.children.find((child) => child.id === 'film') ?? null
       return null
     },
-    querySelector: (selector) => (selector === '[data-tl-scene]' ? scene : null),
+    querySelector: (selector) => (selector === '[data-tl-scene]' && sceneAvailable ? scene : null),
     querySelectorAll: () => [],
     addEventListener() {},
     removeEventListener() {},
@@ -5797,6 +5816,8 @@ await testAsync('splash film wrapper: normal/skip/fallback/hard-stop/dispose/err
     for (const child of [...body.children]) body.removeChild(child)
     appRoot.style.visibility = ''
     scene.style.visibility = ''
+    sceneAvailable = true
+    observers.length = 0
     video.paused = true
     video.playCalls = 0
     video.pauseCalls = 0
@@ -5873,6 +5894,27 @@ await testAsync('splash film wrapper: normal/skip/fallback/hard-stop/dispose/err
     fakeWindow.__filmRuntimeOptions.onDone()
     assert.equal(video.paused, true, 'a wallpaper that never asked to play is not started')
     assert.equal(video.playCalls, 0)
+
+    // 3b) the wallpaper module mounts the scene AFTER the splash: it must be found.
+    resetScene()
+    sceneAvailable = false
+    scene._videos = []
+    fakeRuntime()
+    film.installSplashFilm({})
+    assert.equal(scene.style.visibility, '', 'the scene does not exist at install time')
+    assert.equal(observers.length, 1, 'a body watcher waits for the scene')
+    // The wallpaper mounts: the scene appears with its video already playing.
+    scene._videos = [video]
+    sceneAvailable = true
+    video.paused = false
+    observers[0].callback()
+    assert.equal(observers[0].connected, false, 'the watcher disconnects once the scene is found')
+    assert.equal(scene.style.visibility, 'hidden', 'a scene mounted later is hidden')
+    assert.equal(video.paused, true, 'a video mounted later is held paused')
+    fakeWindow.__filmRuntimeOptions.onDone()
+    assert.equal(scene.style.visibility, '', 'the late scene is restored')
+    assert.equal(video.paused, false, 'the late video resumes')
+    assert.equal(timers.size, 0)
 
     // 4) a performance/GL fallback ends after the 1.8s grace period, not before.
     resetScene()
