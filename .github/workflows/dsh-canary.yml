@@ -1,0 +1,248 @@
+name: dsh-canary
+
+# Daily compatibility canary against the DSH releases that our users may get next.
+#
+# The static `check` workflow cannot answer the only question that matters before a
+# DSH release: does the NEXT build still expose the hooks the Tianlight selector
+# bridge depends on? That needs a real DSH install, so this workflow installs the
+# published packages and runs the same three tools a human runs before upgrading.
+#
+# Rows (tools/canary-matrix.mjs):
+#   next    npm dist-tag `next`        — the version DSH Desktop will auto-update into
+#   alpha   npm dist-tag `alpha`       — early warning
+#   tested  newest skin.json value     — control row: a version we already ship as supported
+#
+# Deliberately NOT triggered by push: a canary failure must never block a feature
+# branch, and a release tag has to stay reproducible. One tick per day plus manual
+# dispatch is the contract described in docs/COMPATIBILITY.md §10.
+on:
+  schedule:
+    # 03:17 UTC daily (off the hour so the job does not queue behind every other cron).
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+# The only write this workflow needs is an issue; the repo itself is never touched.
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: dsh-canary
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    name: resolve npm dist-tags
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      next: ${{ steps.matrix.outputs.next }}
+      alpha: ${{ steps.matrix.outputs.alpha }}
+      tested: ${{ steps.matrix.outputs.tested }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: resolve next / alpha / tested
+        id: matrix
+        # The resolver prints one `name=value` line per output; GITHUB_OUTPUT takes them as-is.
+        run: node tools/canary-matrix.mjs >> "$GITHUB_OUTPUT"
+      - name: show resolved rows
+        env:
+          NEXT: ${{ steps.matrix.outputs.next }}
+          ALPHA: ${{ steps.matrix.outputs.alpha }}
+          TESTED: ${{ steps.matrix.outputs.tested }}
+          MATRIX: ${{ steps.matrix.outputs.matrix }}
+        run: |
+          echo "next=$NEXT alpha=$ALPHA tested=$TESTED"
+          echo "$MATRIX"
+
+  compat:
+    name: compat (${{ matrix.label }} = ${{ matrix.version }})
+    needs: resolve
+    if: needs.resolve.outputs.matrix != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.resolve.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: install DSH packages
+        id: install
+        env:
+          DSH_VERSION: ${{ matrix.version }}
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/dsh-probe"
+          mkdir -p "$root"
+          cd "$root"
+          printf '{"name":"dsh-canary-probe","private":true}\n' > package.json
+          # Same two bundle packages the author profile lists, installed without scripts.
+          npm install --ignore-scripts --no-audit --no-fund \
+            "@deepseek-ai/dsh-base@$DSH_VERSION" \
+            "@deepseek-ai/dsh-web-app@$DSH_VERSION"
+          echo "root=$root/node_modules/@deepseek-ai" >> "$GITHUB_OUTPUT"
+      - name: compat matrix
+        id: compat
+        continue-on-error: true
+        run: node tools/compat-matrix.mjs --dsh "${{ steps.install.outputs.root }}"
+      - name: hook scan (with self-check)
+        id: hooks
+        continue-on-error: true
+        run: node tools/hook-scan.mjs --dsh "${{ steps.install.outputs.root }}" --self-check
+      - name: upgrade assumptions
+        id: upgrade
+        continue-on-error: true
+        run: node tools/upgrade-check.mjs --dsh "${{ steps.install.outputs.root }}"
+      - name: compatibility range
+        id: range
+        continue-on-error: true
+        env:
+          DSH_VERSION: ${{ matrix.version }}
+        run: |
+          node --input-type=module -e '
+            import { readFileSync } from "node:fs"
+            import { satisfies } from "./tools/compat.mjs"
+            const skin = JSON.parse(readFileSync("skin.json", "utf8"))
+            const range = skin.dshCompatibilityRange
+            const version = process.env.DSH_VERSION
+            const ok = satisfies(version, range, { includePrerelease: true })
+            console.log(`${version} ${ok ? "satisfies" : "does NOT satisfy"} ${range}`)
+            process.exitCode = ok ? 0 : 3
+          '
+      - name: verdict
+        id: verdict
+        if: always()
+        env:
+          LABEL: ${{ matrix.label }}
+          VERSION: ${{ matrix.version }}
+          RANGE_OUTCOME: ${{ steps.range.outcome }}
+          COMPAT_OUTCOME: ${{ steps.compat.outcome }}
+          HOOKS_OUTCOME: ${{ steps.hooks.outcome }}
+          UPGRADE_OUTCOME: ${{ steps.upgrade.outcome }}
+        run: |
+          set -euo pipefail
+          {
+            echo "### DSH canary — ${LABEL} \`${VERSION}\`"
+            echo ""
+            echo "| check | outcome |"
+            echo "| --- | --- |"
+            echo "| compatibility range | ${RANGE_OUTCOME} |"
+            echo "| compat-matrix | ${COMPAT_OUTCOME} |"
+            echo "| hook-scan --self-check | ${HOOKS_OUTCOME} |"
+            echo "| upgrade-check | ${UPGRADE_OUTCOME} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          failure=0
+          if [ "$RANGE_OUTCOME" != "success" ]; then
+            # The spec's third outcome: a version we do not claim to support showed up.
+            title="发现新的 DSH 版本 ${VERSION}，超出兼容范围"
+            reason="out-of-range"
+            failure=1
+          elif [ "$COMPAT_OUTCOME" != "success" ] || [ "$HOOKS_OUTCOME" != "success" ] || [ "$UPGRADE_OUTCOME" != "success" ]; then
+            title="DSH ${VERSION} 兼容巡检失败"
+            reason="tool-failed"
+            failure=1
+          else
+            title=""
+            reason="ok"
+          fi
+          {
+            echo "title=$title"
+            echo "reason=$reason"
+          } >> "$GITHUB_OUTPUT"
+          if [ "$failure" -ne 0 ]; then
+            echo "::error::${title}"
+            exit 1
+          fi
+      - name: open or update the tracking issue
+        if: failure()
+        uses: actions/github-script@v7
+        env:
+          TITLE: ${{ steps.verdict.outputs.title }}
+          REASON: ${{ steps.verdict.outputs.reason }}
+          DSH_VERSION: ${{ matrix.version }}
+          LABEL: ${{ matrix.label }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const title = process.env.TITLE || `DSH canary failure: ${process.env.DSH_VERSION}`
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            const body = [
+              `DSH \`${process.env.DSH_VERSION}\` (npm ${process.env.LABEL}) failed the daily canary.`,
+              '',
+              `- reason: \`${process.env.REASON}\``,
+              `- run: ${runUrl}`,
+              `- skin: \`${context.payload.repository?.name ?? ''}\` @ \`${context.sha}\``,
+              '',
+              'Steps to resolve:',
+              '1. open the run log and see which tool failed,',
+              '2. if the build is inside the supported range but a hook is missing, extend `src/65-bridge.js` (CSS stays untouched),',
+              '3. if the build is outside `dshCompatibilityRange`, run the three tools and the runtime smoke locally, then widen the range in a patch release **only** when everything passes.',
+            ].join('\n')
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            })
+            const existing = issues.data.find((issue) => issue.title === title)
+            if (existing !== undefined) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body,
+              })
+              core.info(`appended to #${existing.number}: ${title}`)
+            } else {
+              const created = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+              })
+              core.info(`opened #${created.data.number}: ${title}`)
+            }
+
+  smoke:
+    name: runtime smoke (npm next)
+    needs: resolve
+    if: needs.resolve.outputs.next != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: install the next DSH (CLI + bundles)
+        id: install
+        env:
+          DSH_VERSION: ${{ needs.resolve.outputs.next }}
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/dsh-smoke"
+          mkdir -p "$root"
+          cd "$root"
+          printf '{"name":"dsh-smoke-probe","private":true}\n' > package.json
+          # The CLI package depends on base + web-app, so one install gives us `dsh web`.
+          npm install --ignore-scripts --no-audit --no-fund "@deepseek-ai/dsh@$DSH_VERSION"
+          echo "root=$root/node_modules/@deepseek-ai" >> "$GITHUB_OUTPUT"
+      - name: runtime smoke (headless Chrome + CDP)
+        run: node tools/smoke-dsh.mjs --dsh "${{ steps.install.outputs.root }}"
+      - name: upload smoke evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-evidence
+          path: smoke-artifacts
+          if-no-files-found: ignore
+          retention-days: 14
