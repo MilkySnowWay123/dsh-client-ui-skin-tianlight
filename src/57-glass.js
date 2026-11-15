@@ -1,4 +1,4 @@
-﻿		//#region glass opacity
+		//#region glass opacity
 		/**
 		 * One multiplier for every glass surface. 1 = the designed look; below makes
 		 * surfaces more see-through, above makes them more solid. Expressed as a
@@ -146,6 +146,46 @@
 		 * headless). The node is created only while live sampling is effective and is
 		 * removed again otherwise, so the default path never carries the filter.
 		 */
+		/**
+		 * A radial vector field: R/G encode the horizontal/vertical displacement, with
+		 * zero offset in the centre and a strong outward bend near the rim. `feDisplacementMap`
+		 * on the backdrop then behaves like a convex lens instead of a noisy warp.
+		 * Generated at runtime so the package does not carry a big base64 blob.
+		 */
+		let glassLensMap = "";
+		function lensMapDataUrl() {
+			if (glassLensMap !== "") return glassLensMap;
+			try {
+				const size = 256;
+				const canvas = document.createElement("canvas");
+				canvas.width = size;
+				canvas.height = size;
+				const context = typeof canvas.getContext === "function" ? canvas.getContext("2d") : null;
+				if (context === null) return "";
+				const image = context.createImageData(size, size);
+				const data = image.data;
+				for (let y = 0; y < size; y += 1) {
+					const ny = (y / (size - 1)) * 2 - 1;
+					for (let x = 0; x < size; x += 1) {
+						const nx = (x / (size - 1)) * 2 - 1;
+						const radius = Math.min(1, Math.sqrt(nx * nx + ny * ny));
+						const bend = Math.pow(radius, 2.2);
+						const index = (y * size + x) * 4;
+						data[index] = Math.max(0, Math.min(255, Math.round(128 + 127 * nx * bend)));
+						data[index + 1] = Math.max(0, Math.min(255, Math.round(128 + 127 * ny * bend)));
+						data[index + 2] = 128;
+						data[index + 3] = 255;
+					}
+				}
+				context.putImageData(image, 0, 0);
+				glassLensMap = canvas.toDataURL("image/png");
+				return glassLensMap;
+			} catch (error) {
+				note("glass:lens-map", error);
+				return "";
+			}
+		}
+
 		function ensureGlassLens() {
 			try {
 				if (glassLensNode !== null && glassLensNode.isConnected === true) return glassLensNode;
@@ -156,6 +196,8 @@
 					glassLensNode = existing;
 					return glassLensNode;
 				}
+				const map = lensMapDataUrl();
+				if (map === "") return null;
 				const ns = "http://www.w3.org/2000/svg";
 				const svg = document.createElementNS(ns, "svg");
 				svg.setAttribute("id", GLASS_LENS_ID);
@@ -167,29 +209,26 @@
 				const defs = document.createElementNS(ns, "defs");
 				const filter = document.createElementNS(ns, "filter");
 				filter.setAttribute("id", "tl-glass-lens-filter");
-				filter.setAttribute("x", "-15%");
-				filter.setAttribute("y", "-15%");
-				filter.setAttribute("width", "130%");
-				filter.setAttribute("height", "130%");
+				filter.setAttribute("x", "-10%");
+				filter.setAttribute("y", "-10%");
+				filter.setAttribute("width", "120%");
+				filter.setAttribute("height", "120%");
 				filter.setAttribute("color-interpolation-filters", "sRGB");
-				const turbulence = document.createElementNS(ns, "feTurbulence");
-				turbulence.setAttribute("type", "fractalNoise");
-				turbulence.setAttribute("baseFrequency", "0.01 0.016");
-				turbulence.setAttribute("numOctaves", "1");
-				turbulence.setAttribute("seed", "7");
-				turbulence.setAttribute("result", "lensNoise");
-				const soften = document.createElementNS(ns, "feGaussianBlur");
-				soften.setAttribute("in", "lensNoise");
-				soften.setAttribute("stdDeviation", "1");
-				soften.setAttribute("result", "lensNoiseSoft");
+				const mapImage = document.createElementNS(ns, "feImage");
+				mapImage.setAttribute("href", map);
+				mapImage.setAttribute("x", "0");
+				mapImage.setAttribute("y", "0");
+				mapImage.setAttribute("width", "100%");
+				mapImage.setAttribute("height", "100%");
+				mapImage.setAttribute("preserveAspectRatio", "none");
+				mapImage.setAttribute("result", "lensMap");
 				const displace = document.createElementNS(ns, "feDisplacementMap");
 				displace.setAttribute("in", "SourceGraphic");
-				displace.setAttribute("in2", "lensNoiseSoft");
-				displace.setAttribute("scale", "26");
+				displace.setAttribute("in2", "lensMap");
+				displace.setAttribute("scale", "56");
 				displace.setAttribute("xChannelSelector", "R");
 				displace.setAttribute("yChannelSelector", "G");
-				filter.appendChild(turbulence);
-				filter.appendChild(soften);
+				filter.appendChild(mapImage);
 				filter.appendChild(displace);
 				defs.appendChild(filter);
 				svg.appendChild(defs);

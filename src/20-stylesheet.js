@@ -2011,7 +2011,7 @@ body[data-dsh-tianlight] {
 	/* v2.2.0 live mode: the only place the stylesheet re-samples the wallpaper in
 	   real time. These are the plain defaults; each depth and the dark theme tune
 	   them below, so the live look still follows the selected depth. */
-	--tl-liquid-live-blur: 14px;
+	--tl-liquid-live-blur: 2px;
 	--tl-liquid-live-sat: 1.9;
 	--tl-liquid-live-bright: 0.92;
 	--tl-liquid-live-contrast: 1.1;
@@ -2064,7 +2064,7 @@ body[data-dsh-tianlight][data-tl-glass-effective="soft"] {
 	--tl-liquid-sheen: 0.18;
 	--tl-liquid-grain: 180px;
 	--tl-liquid-rim: 0.30;
-	--tl-liquid-live-blur: 13px;
+	--tl-liquid-live-blur: 2px;
 	--tl-liquid-live-sat: 1.8;
 	--tl-liquid-live-bright: 0.93;
 	--tl-liquid-live-contrast: 1.1;
@@ -2079,7 +2079,7 @@ body[data-dsh-tianlight][data-tl-glass-effective="real"] {
 	--tl-liquid-sheen: 0.35;
 	--tl-liquid-grain: 140px;
 	--tl-liquid-rim: 0.36;
-	--tl-liquid-live-blur: 18px;
+	--tl-liquid-live-blur: 3px;
 	--tl-liquid-live-sat: 1.95;
 	--tl-liquid-live-bright: 0.91;
 	--tl-liquid-live-contrast: 1.1;
@@ -2094,7 +2094,7 @@ body[data-dsh-tianlight][data-tl-glass-effective="frosted"] {
 	--tl-liquid-sheen: 0.08;
 	--tl-liquid-grain: 110px;
 	--tl-liquid-rim: 0.40;
-	--tl-liquid-live-blur: 24px;
+	--tl-liquid-live-blur: 6px;
 	--tl-liquid-live-sat: 1.1;
 	--tl-liquid-live-bright: 0.98;
 	--tl-liquid-live-contrast: 1.04;
@@ -2211,7 +2211,7 @@ body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-eff
 	   refraction tint at the bottom-right, then the grain surface. The 1px bright
 	   right edge is what makes it read as a glass pane. */
 	background-image:
-		linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 26%),
+		linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 26%),
 		radial-gradient(120% 100% at 100% 100%, rgba(70, 150, 240, 0.10) 0%, rgba(70, 150, 240, 0) 62%),
 		var(--tl-liquid-surface) !important;
 	background-size: auto, auto, var(--tl-liquid-surface-size);
@@ -2225,7 +2225,7 @@ body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-eff
 }
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-settings], [data-tl-wall]) {
 	background-image:
-		linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 22%),
+		linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 22%),
 		var(--tl-liquid-surface) !important;
 	background-size: auto, var(--tl-liquid-surface-size);
 	border-color: var(--tl-glass-line);
@@ -2243,7 +2243,7 @@ body[data-dsh-tianlight][data-ds-dark-theme]:is([data-tl-glass-effective="soft"]
 }
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-hub] [data-tl-hub-panel] {
 	background-image:
-		linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 22%),
+		linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 22%),
 		var(--tl-liquid-surface);
 	background-size: auto, var(--tl-liquid-surface-size);
 	border-color: var(--tl-glass-line);
@@ -2297,8 +2297,8 @@ body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-eff
    layer ownership stays untouched. */
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-composer] {
 	background-image:
-		linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 18%),
-		radial-gradient(120% 140% at 0% 0%, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 48%),
+		linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 18%),
+		radial-gradient(120% 140% at 0% 0%, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 48%),
 		var(--tl-liquid-surface) !important;
 	background-size: auto, auto, var(--tl-liquid-surface-size);
 	border-color: rgba(255, 255, 255, calc(var(--tl-liquid-hi) + 0.30)) !important;
@@ -2444,6 +2444,7 @@ body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] 
 	--tl-liquid-noise: 0.02;
 	--tl-liquid-sheen: 0.16;
 	--tl-liquid-rim: 0.36;
+	--tl-liquid-live-blur: 6px;
 	--tl-liquid-live-bright: 0.72;
 	--tl-liquid-live-sat: 1.35;
 	--tl-liquid-live-contrast: 1.06;
@@ -2478,8 +2479,8 @@ body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] 
 	/* Composer keeps its ::before ownership (a filter on the card itself would
 	   re-anchor its non-portaled tooltips); live only makes that one layer real. */
 	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] [data-tl-composer]::before {
-		-webkit-backdrop-filter: blur(max(var(--tl-glass-blur), var(--tl-liquid-blur), var(--tl-liquid-live-blur))) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
-		backdrop-filter: blur(max(var(--tl-glass-blur), var(--tl-liquid-blur), var(--tl-liquid-live-blur))) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
+		-webkit-backdrop-filter: blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
+		backdrop-filter: blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
 	}
 	/* Small floating surfaces upgrade their existing bounded blur; none of them
 	   gains a filter it did not already carry at a non-off depth. */
@@ -2496,8 +2497,8 @@ body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] 
 		backdrop-filter: url(#tl-glass-lens-filter) blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
 	}
 	body[data-dsh-tianlight][data-tl-glass-lens-support="1"][data-tl-glass-live-effective="on"] [data-tl-composer]::before {
-		-webkit-backdrop-filter: url(#tl-glass-lens-filter) blur(max(var(--tl-glass-blur), var(--tl-liquid-blur), var(--tl-liquid-live-blur))) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
-		backdrop-filter: url(#tl-glass-lens-filter) blur(max(var(--tl-glass-blur), var(--tl-liquid-blur), var(--tl-liquid-live-blur))) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
+		-webkit-backdrop-filter: url(#tl-glass-lens-filter) blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
+		backdrop-filter: url(#tl-glass-lens-filter) blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
 	}
 	/* The role-hub preview is the control's own feedback: live makes it clear at a
 	   glance, including a tiny moving-wallpaper feel from the real backdrop. */

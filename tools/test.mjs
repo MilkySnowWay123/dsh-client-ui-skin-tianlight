@@ -2323,6 +2323,8 @@ test('v2.2.0 live glass: opt-in only, gated on the effective flag, and user-rese
   assert.match(CLIENT_SOURCE, /const GLASS_LENS_ID = "tl-glass-lens"/)
   assert.match(CLIENT_SOURCE, /function ensureGlassLens\(\)/)
   assert.match(CLIENT_SOURCE, /feDisplacementMap/)
+  assert.match(CLIENT_SOURCE, /function lensMapDataUrl\(\)/, 'a radial lens map is generated at runtime')
+  assert.match(CLIENT_SOURCE, /createElementNS\(ns, "feImage"\)/, 'the lens map is fed into feDisplacementMap')
   assert.match(CLIENT_SOURCE, /data-tl-glass-lens-support/)
   assert.match(CLIENT_SOURCE, /url\(#tl-glass-lens-filter\)/)
   assert.match(CLIENT_SOURCE, /const cssom = globalThis\.CSS/, 'the supports probe must not use the closure CSS string')
