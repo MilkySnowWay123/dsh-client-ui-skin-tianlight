@@ -19,7 +19,7 @@
 | `hook-scan.mjs` | 对**任意 DSH 版本目录**扫描桥接钩子（`data-*` 属性 + CSS 类名后缀）；升级 Desktop 前先跑；`--self-check` 同时校验 `src/65-bridge.js` 与钩子清单同步 | 是 |
 | `hooks.mjs` | 桥接钩子清单（data-* 与类名后缀），被 `upgrade-check` / `hook-scan` / 测试共用 | 否 |
 | `resolve-selectors.mjs` | 历史工具：构建哈希选择器体检（v0.2.0 起 CSS 已无哈希依赖，仅排查旧版/外部版本时用） | 是 |
-| `pack.mjs` | 生成可安装目录（默认含随包演示素材白名单；`--code-only` 纯代码）；**是唯一打包入口**，CI 与本地发布都用它 | 否 |
+| `pack.mjs` | 生成可安装目录（默认含随包演示素材白名单；`--code-only` 纯代码）；**是唯一打包入口**，CI 与本地发布都用它；打包后把文本文件归一为 LF，保证 npm 包与 GitHub Release 逐字节一致 | 否 |
 | `release-artifacts.mjs` | 从 `pack.mjs` 产物生成 4 个 Release 附件：不带版本号/带版本号的 tgz（同一份字节）、`SHA256SUMS.txt`、`build-manifest.json`；内置禁用路径 / 本机路径 / 版本一致性校验，失败即非零退出 | 否 |
 | `verify-install.mjs` | 用一个已安装的插件目录对比 Release 的 `SHA256SUMS.txt`：输出「完全一致」或列出 `MISMATCH` / `MISSING` / `EXTRA`（忽略 `state/`、`uploads/` 等用户数据）；`--json` 可机器读取 | 否 |
 | `lib/fingerprint.js` | 宿主侧版本指纹：version / git commit / `lib/client.js` sha256 / HOST_API / DSH 版本（`profileContext.installAnchor`）/ 安装方式；`_fingerprint` 路由与中枢自检/反馈面板共用 | 否 |
