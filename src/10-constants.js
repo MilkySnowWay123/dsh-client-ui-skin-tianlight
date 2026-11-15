@@ -20,7 +20,7 @@
 		 * (`BUILD` in lib/index.js) and must not force a restart. Keep in sync with
 		 * `HOST_API` in lib/index.js.
 		 */
-		const HOST_API = "2";
+		const HOST_API = "3";
 
 		/**
 		 * Shipped skin version. The long film prints it in the landing title, so it
@@ -69,6 +69,22 @@
 		function railFrameStep() {
 			return renderTier === "60" ? 3 : renderTier === "15" ? 10 : 5;
 		}
+		/**
+		 * v2.2.0: publish the tier on <body> as well as in memory. The live-glass
+		 * controller observes this attribute, so switching to 15fps really flattens the
+		 * per-frame sampling immediately instead of waiting for the next low-power or
+		 * DOM mutation. The attribute is descriptive only; `readRenderTier()` remains the
+		 * single source of truth.
+		 */
+		function publishRenderTier() {
+			try {
+				if (typeof document !== "undefined" && document !== null && document.body !== null) {
+					document.body.setAttribute("data-tl-render-tier", renderTier);
+				}
+			} catch (error) {
+				// a stripped harness has no body; the in-memory tier still applies
+			}
+		}
 		const renderTierController = {
 			read: readRenderTier,
 			set: (next) => {
@@ -78,7 +94,10 @@
 				} catch {
 					// persistence is optional; this session still uses the new tier
 				}
+				publishRenderTier();
+				return renderTier;
 			},
+			publish: publishRenderTier,
 		};
 
 		/**

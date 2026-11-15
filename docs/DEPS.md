@@ -18,9 +18,9 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | 指标 | 数值 |
 | --- | --- |
 | 片段数 | 28 |
-| 共享顶层名字 | 1149（声明点 1149） |
-| 跨片段引用（去重） | 306 |
-| 跨片段引用（出现次数） | 2248 |
+| 共享顶层名字 | 1163（声明点 1163） |
+| 跨片段引用（去重） | 307 |
+| 跨片段引用（出现次数） | 2272 |
 | 依赖边 | 124 |
 
 ## 2. 片段表
@@ -28,7 +28,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | 片段 | region | 声明数 | 顶层引用数 | 依赖的片段（名字数） | 被哪些片段依赖（名字数） |
 | --- | --- | --- | --- | --- | --- |
 | `00-envelope.js` |  | 0 | 4 | — | — |
-| `10-constants.js` | constants | 22 | 25 | — | `11-platform` (1), `12-schema` (3), `13-i18n` (2), `20-stylesheet` (2), `30-wallpaper` (4), `31-engine-extra` (3), `32-effects` (2), `35-context` (3), `40-companion` (3), `42-life` (3), `44-pet-brain` (4), `50-rheostat` (2), `55-lowpower` (1), `57-glass` (2), `58-legibility` (3), `59-splash` (2), `59b-splash-film` (2), `60-zones` (1), `70-sidebar` (8), `72-we-library` (3), `76-role-hub` (3), `90-font` (2), `95-a11y` (2), `99-apply` (3) |
+| `10-constants.js` | constants | 23 | 35 | — | `11-platform` (1), `12-schema` (3), `13-i18n` (2), `20-stylesheet` (2), `30-wallpaper` (4), `31-engine-extra` (3), `32-effects` (2), `35-context` (3), `40-companion` (3), `42-life` (3), `44-pet-brain` (4), `50-rheostat` (2), `55-lowpower` (1), `57-glass` (3), `58-legibility` (3), `59-splash` (2), `59b-splash-film` (2), `60-zones` (1), `70-sidebar` (8), `72-we-library` (3), `76-role-hub` (3), `90-font` (2), `95-a11y` (2), `99-apply` (3) |
 | `11-platform.js` | platform | 52 | 425 | `10-constants` (1), `30-wallpaper` (1) | `12-schema` (8), `13-i18n` (1), `20-stylesheet` (1), `30-wallpaper` (3), `31-engine-extra` (5), `32-effects` (6), `35-context` (5), `40-companion` (1), `42-life` (1), `58-legibility` (3), `59-splash` (1), `70-sidebar` (9), `72-we-library` (4), `76-role-hub` (2), `90-font` (4), `95-a11y` (4), `99-apply` (7) |
 | `12-schema.js` | schema | 114 | 1394 | `10-constants` (3), `11-platform` (8), `13-i18n` (5) | `13-i18n` (1), `70-sidebar` (1), `76-role-hub` (1), `99-apply` (3) |
 | `13-i18n.js` | i18n | 19 | 153 | `10-constants` (2), `11-platform` (1), `12-schema` (1) | `12-schema` (5), `30-wallpaper` (2), `31-engine-extra` (3), `32-effects` (2), `35-context` (4), `40-companion` (3), `42-life` (2), `44-pet-brain` (2), `50-rheostat` (3), `55-lowpower` (2), `58-legibility` (2), `59-splash` (1), `70-sidebar` (4), `72-we-library` (4), `76-role-hub` (2), `90-font` (2), `95-a11y` (4), `99-apply` (3) |
@@ -39,11 +39,11 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `35-context.js` | smart context | 59 | 1620 | `10-constants` (3), `11-platform` (5), `13-i18n` (4), `30-wallpaper` (1), `32-effects` (1), `57-glass` (1) | `30-wallpaper` (1), `31-engine-extra` (1), `70-sidebar` (2), `99-apply` (2) |
 | `40-companion.js` | companion | 70 | 1618 | `10-constants` (3), `11-platform` (1), `13-i18n` (3), `30-wallpaper` (1), `44-pet-brain` (2) | `42-life` (1), `44-pet-brain` (2), `99-apply` (3) |
 | `42-life.js` | life rhythm | 91 | 901 | `10-constants` (3), `11-platform` (1), `13-i18n` (2), `40-companion` (1), `44-pet-brain` (1) | `99-apply` (1) |
-| `44-pet-brain.js` | pet brain | 190 | 1852 | `10-constants` (4), `13-i18n` (2), `40-companion` (2), `55-lowpower` (1), `57-glass` (1) | `40-companion` (2), `42-life` (1), `48-pet-agent` (3), `76-role-hub` (2), `99-apply` (1) |
+| `44-pet-brain.js` | pet brain | 198 | 1977 | `10-constants` (4), `13-i18n` (2), `40-companion` (2), `55-lowpower` (1), `57-glass` (1) | `40-companion` (2), `42-life` (1), `48-pet-agent` (3), `76-role-hub` (2), `99-apply` (1) |
 | `48-pet-agent.js` | pet agent | 38 | 440 | `44-pet-brain` (3) | `76-role-hub` (1), `99-apply` (1) |
 | `50-rheostat.js` | reasoning rheostat | 2 | 314 | `10-constants` (2), `13-i18n` (3) | `99-apply` (1) |
 | `55-lowpower.js` | low power | 4 | 164 | `10-constants` (1), `13-i18n` (2), `30-wallpaper` (2), `60-zones` (1) | `30-wallpaper` (1), `32-effects` (1), `44-pet-brain` (1), `59-splash` (1), `70-sidebar` (2), `99-apply` (1) |
-| `57-glass.js` | glass opacity | 15 | 100 | `10-constants` (2) | `35-context` (1), `44-pet-brain` (1), `70-sidebar` (2), `76-role-hub` (1), `99-apply` (3) |
+| `57-glass.js` | glass opacity | 20 | 139 | `10-constants` (3) | `35-context` (1), `44-pet-brain` (1), `70-sidebar` (2), `76-role-hub` (1), `99-apply` (3) |
 | `58-legibility.js` | legibility | 24 | 321 | `10-constants` (3), `11-platform` (3), `13-i18n` (2), `30-wallpaper` (1) | `70-sidebar` (2), `90-font` (3), `99-apply` (1) |
 | `59-splash.js` | splash | 42 | 389 | `10-constants` (2), `11-platform` (1), `13-i18n` (1), `55-lowpower` (1), `59b-splash-film` (1) | `76-role-hub` (6), `99-apply` (2) |
 | `59b-splash-film.js` | splash | 5 | 822 | `10-constants` (2) | `59-splash` (1) |
@@ -51,7 +51,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `65-bridge.js` | selector bridge | 2 | 179 | — | `99-apply` (2) |
 | `70-sidebar.js` | wallpaper sidebar | 13 | 1354 | `10-constants` (8), `11-platform` (9), `12-schema` (1), `13-i18n` (4), `30-wallpaper` (24), `32-effects` (2), `35-context` (2), `55-lowpower` (2), `57-glass` (2), `58-legibility` (2), `60-zones` (6), `90-font` (2) | `99-apply` (1) |
 | `72-we-library.js` | we library | 57 | 642 | `10-constants` (3), `11-platform` (4), `13-i18n` (4), `30-wallpaper` (2) | `99-apply` (1) |
-| `76-role-hub.js` | role hub | 55 | 3226 | `10-constants` (3), `11-platform` (2), `12-schema` (1), `13-i18n` (2), `44-pet-brain` (2), `48-pet-agent` (1), `57-glass` (1), `59-splash` (6) | `99-apply` (1) |
+| `76-role-hub.js` | role hub | 55 | 3407 | `10-constants` (3), `11-platform` (2), `12-schema` (1), `13-i18n` (2), `44-pet-brain` (2), `48-pet-agent` (1), `57-glass` (1), `59-splash` (6) | `99-apply` (1) |
 | `90-font.js` | font panel | 20 | 424 | `10-constants` (2), `11-platform` (4), `13-i18n` (2), `58-legibility` (3) | `70-sidebar` (2), `99-apply` (1) |
 | `95-a11y.js` | accessibility | 7 | 356 | `10-constants` (2), `11-platform` (4), `13-i18n` (4) | `99-apply` (1) |
 | `99-apply.js` | apply | 5 | 242 | `10-constants` (3), `11-platform` (7), `12-schema` (3), `13-i18n` (3), `20-stylesheet` (1), `30-wallpaper` (1), `31-engine-extra` (1), `32-effects` (1), `35-context` (2), `40-companion` (3), `42-life` (1), `44-pet-brain` (1), `48-pet-agent` (1), `50-rheostat` (1), `55-lowpower` (1), `57-glass` (3), `58-legibility` (1), `59-splash` (2), `60-zones` (1), `65-bridge` (2), `70-sidebar` (1), `72-we-library` (1), `76-role-hub` (1), `90-font` (1), `95-a11y` (1) | — |
@@ -161,7 +161,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `42-life.js` | `registerTl5Strings` | `13-i18n.js` | 1 |
 | `42-life.js` | `TL_T` | `13-i18n.js` | 1 |
 | `42-life.js` | `tl5MediaKindFromName` | `11-platform.js` | 1 |
-| `44-pet-brain.js` | `ASSET_BASE` | `10-constants.js` | 2 |
+| `44-pet-brain.js` | `ASSET_BASE` | `10-constants.js` | 3 |
 | `44-pet-brain.js` | `companionDutyBridge` | `40-companion.js` | 3 |
 | `44-pet-brain.js` | `glassDepthController` | `57-glass.js` | 6 |
 | `44-pet-brain.js` | `HOST_API` | `10-constants.js` | 1 |
@@ -186,7 +186,8 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `55-lowpower.js` | `scenePlayback` | `30-wallpaper.js` | 4 |
 | `55-lowpower.js` | `TL_T` | `13-i18n.js` | 1 |
 | `57-glass.js` | `note` | `10-constants.js` | 2 |
-| `57-glass.js` | `readRenderTier` | `10-constants.js` | 1 |
+| `57-glass.js` | `readRenderTier` | `10-constants.js` | 2 |
+| `57-glass.js` | `renderTierController` | `10-constants.js` | 1 |
 | `58-legibility.js` | `DARK_ATTR` | `10-constants.js` | 1 |
 | `58-legibility.js` | `note` | `10-constants.js` | 6 |
 | `58-legibility.js` | `React` | `10-constants.js` | 20 |
@@ -297,7 +298,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `76-role-hub.js` | `setSplashForceMotion` | `59-splash.js` | 1 |
 | `76-role-hub.js` | `setSplashSound` | `59-splash.js` | 1 |
 | `76-role-hub.js` | `setSplashStyle` | `59-splash.js` | 1 |
-| `76-role-hub.js` | `TL_T` | `13-i18n.js` | 410 |
+| `76-role-hub.js` | `TL_T` | `13-i18n.js` | 431 |
 | `76-role-hub.js` | `tl5ApplyDefaultAppearance` | `12-schema.js` | 1 |
 | `76-role-hub.js` | `tl5OverlayRegister` | `11-platform.js` | 1 |
 | `76-role-hub.js` | `tl5ValidateUploadFile` | `11-platform.js` | 1 |
@@ -414,7 +415,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `42-life.js` | `13-i18n.js` | 2 | 2 |
 | `42-life.js` | `40-companion.js` | 1 | 10 |
 | `42-life.js` | `44-pet-brain.js` | 1 | 6 |
-| `44-pet-brain.js` | `10-constants.js` | 4 | 6 |
+| `44-pet-brain.js` | `10-constants.js` | 4 | 7 |
 | `44-pet-brain.js` | `13-i18n.js` | 2 | 66 |
 | `44-pet-brain.js` | `40-companion.js` | 2 | 5 |
 | `44-pet-brain.js` | `55-lowpower.js` | 1 | 4 |
@@ -426,7 +427,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `55-lowpower.js` | `13-i18n.js` | 2 | 2 |
 | `55-lowpower.js` | `30-wallpaper.js` | 2 | 6 |
 | `55-lowpower.js` | `60-zones.js` | 1 | 4 |
-| `57-glass.js` | `10-constants.js` | 2 | 3 |
+| `57-glass.js` | `10-constants.js` | 3 | 5 |
 | `58-legibility.js` | `10-constants.js` | 3 | 27 |
 | `58-legibility.js` | `11-platform.js` | 3 | 4 |
 | `58-legibility.js` | `13-i18n.js` | 2 | 2 |
@@ -458,7 +459,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `76-role-hub.js` | `10-constants.js` | 3 | 10 |
 | `76-role-hub.js` | `11-platform.js` | 2 | 2 |
 | `76-role-hub.js` | `12-schema.js` | 1 | 1 |
-| `76-role-hub.js` | `13-i18n.js` | 2 | 411 |
+| `76-role-hub.js` | `13-i18n.js` | 2 | 432 |
 | `76-role-hub.js` | `44-pet-brain.js` | 2 | 5 |
 | `76-role-hub.js` | `48-pet-agent.js` | 1 | 3 |
 | `76-role-hub.js` | `57-glass.js` | 1 | 2 |

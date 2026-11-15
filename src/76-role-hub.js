@@ -80,8 +80,14 @@
 				"hub.glass.lowered": "当前档：{depth}（实际 {effective}，已自动降级）",
 				"hub.glass.unavailable": "玻璃控制器未就绪。",
 				"hub.glass.done": "玻璃质感：{depth}",
-				"hub.glass.previewHint": "默认柔和；真实更明显、磨砂最安静；低电量/15fps 自动降级。",
+				"hub.glass.previewHint": "默认柔和；真实更明显、磨砂最安静；「实时渲染」逐帧采样背后的壁纸（更耗电）；低电量/15fps 自动降级。",
 				"hub.glass.preview": "当前：{depth} · 实际：{effective}",
+				"hub.glass.previewLive": "当前：{depth} · 实时采样 · 实际：{effective}",
+				"hub.glass.live": "实时渲染",
+				"hub.glass.liveOffHint": "关闭：静态玻璃，省电",
+				"hub.glass.liveOnHint": "已开启：逐帧采样背后的壁纸",
+				"hub.glass.liveDegraded": "已开启：省电/15fps 下暂不采样",
+				"hub.glass.liveNeedsDepth": "先选择一个玻璃档位",
 				"hub.splash.title": "开机动画",
 				"hub.splash.on": "已开启",
 				"hub.splash.off": "已关闭",
@@ -167,6 +173,16 @@
 				"hub.ai.llm.providerSaved": "已更新模型提供方。",
 				"hub.ai.llm.providerFailed": "无法更新模型提供方。",
 				"hub.ai.llm.providerUnavailable": "无法读取 DSH 模型提供方列表，暂时只能跟随默认。",
+				"hub.ai.llm.modelLabel": "桌宠使用的模型",
+				"hub.ai.llm.followModel": "跟随 DSH 默认模型（{model}）",
+				"hub.ai.llm.followProviderModel": "该提供方的首个模型（由宿主自动选择）",
+				"hub.ai.llm.firstModel": "首个模型（宿主自动选择）",
+				"hub.ai.llm.modelSaved": "已更新模型。",
+				"hub.ai.llm.modelFailed": "无法更新模型。",
+				"hub.ai.llm.modelUnavailable": "读取不到该提供方的模型列表，暂时由宿主自动选择。",
+				"hub.ai.llm.modelEmpty": "该提供方暂时没有可用模型。",
+				"hub.ai.llm.savedUnavailable": "已保存但当前不可用：{model}",
+				"hub.ai.llm.providerHint": "Grok / Claude 等国际模型：先在 DSH 设置 → 模型里添加提供商——Claude 选内置 anthropic 并填入 API 密钥；Grok 选「自定义模型 API」，地址 https://api.x.ai/v1、协议 OpenAI Chat Completions、填入 xAI 密钥。回到这里就能在提供方和模型下拉框里选到它。",
 				"hub.ai.host.unconfigured-model": "未配置模型：请先在 DSH 设置里配置模型。",
 				"hub.ai.host.no-llm-service": "宿主未提供 LLM 服务。",
 				"hub.ai.host.no-providers": "宿主没有可用的模型提供方。",
@@ -480,8 +496,14 @@
 				"hub.glass.lowered": "Depth: {depth} (effective {effective}, auto-lowered)",
 				"hub.glass.unavailable": "Glass control is unavailable.",
 				"hub.glass.done": "Glass depth: {depth}",
-				"hub.glass.previewHint": "Soft is the default; Real is the most visible, Frosted the quietest; auto-lowered on low power or 15fps.",
+				"hub.glass.previewHint": "Soft is the default; Real is the most visible, Frosted the quietest; Live samples the wallpaper behind the glass every frame (costs more power); auto-lowered on low power or 15fps.",
 				"hub.glass.preview": "Current: {depth} · effective: {effective}",
+				"hub.glass.previewLive": "Current: {depth} · live sampling · effective: {effective}",
+				"hub.glass.live": "Live rendering",
+				"hub.glass.liveOffHint": "Off: static glass, saves power",
+				"hub.glass.liveOnHint": "On: sampling the wallpaper behind the glass",
+				"hub.glass.liveDegraded": "On: paused while low power / 15 fps",
+				"hub.glass.liveNeedsDepth": "Choose a glass level first",
 				"hub.splash.title": "Opening animation",
 				"hub.splash.on": "On",
 				"hub.splash.off": "Off",
@@ -567,6 +589,16 @@
 				"hub.ai.llm.providerSaved": "Model provider updated.",
 				"hub.ai.llm.providerFailed": "Could not update the model provider.",
 				"hub.ai.llm.providerUnavailable": "Could not read the DSH provider list; only the default is available.",
+				"hub.ai.llm.modelLabel": "Model for the companion",
+				"hub.ai.llm.followModel": "Follow the DSH default model ({model})",
+				"hub.ai.llm.followProviderModel": "This provider's first model (chosen by the host)",
+				"hub.ai.llm.firstModel": "First model (chosen by the host)",
+				"hub.ai.llm.modelSaved": "Model updated.",
+				"hub.ai.llm.modelFailed": "Could not update the model.",
+				"hub.ai.llm.modelUnavailable": "Could not read this provider's model list; the host will pick one for now.",
+				"hub.ai.llm.modelEmpty": "This provider has no models right now.",
+				"hub.ai.llm.savedUnavailable": "Saved but unavailable now: {model}",
+				"hub.ai.llm.providerHint": "Grok / Claude and other international models: add the provider in DSH Settings → Models — Claude uses the built-in anthropic entry with its API key; Grok uses Custom model API with base URL https://api.x.ai/v1, protocol OpenAI Chat Completions and the xAI key. Then pick it in the provider and model selectors here.",
 				"hub.ai.host.unconfigured-model": "No model configured: configure one in DSH settings first.",
 				"hub.ai.host.no-llm-service": "The host exposes no LLM service.",
 				"hub.ai.host.no-providers": "The host has no available model provider.",
@@ -1467,6 +1499,12 @@
 			let hubLlmProvidersBusy = false;
 			/** Signature guard: rebuild `<select>` options only when the data changed. */
 			let hubLlmProviderSignature = "";
+			// v2.2.0: model catalogue read on demand (not on every status poll).
+			/** `{ provider, ok, models, reason }` for the current provider; null until read. */
+			let hubLlmModelsCache = null;
+			let hubLlmModelsBusy = false;
+			/** Signature guard for the model `<select>` options. */
+			let hubLlmModelSignature = "";
 			try {
 				if (ctx !== null && ctx !== undefined && typeof ctx.inject === "function") {
 					hubLlmInjectDisposers.push(
@@ -2005,9 +2043,18 @@
 				const controller = hubGlassDepthController();
 				let depth = "off";
 				let effective = "off";
+				let live = false;
+				let liveEffective = false;
 				if (controller !== null) {
 					depth = hubTry(() => controller.read(), "off", "glass-read");
 					effective = hubTry(() => controller.effective(), depth, "glass-effective");
+					live = hubTry(() => (typeof controller.live === "function" ? controller.live() : false), false, "glass-live-read") === true;
+					liveEffective =
+						hubTry(
+							() => (typeof controller.liveEffective === "function" ? controller.liveEffective() : false),
+							false,
+							"glass-live-effective",
+						) === true;
 				}
 				for (const level of HUB_GLASS_LEVELS) {
 					const button = ui.glassButtons[level];
@@ -2021,13 +2068,40 @@
 						button.setAttribute("aria-pressed", "false");
 					}
 				}
+				if (ui.glassLive !== null && ui.glassLive !== undefined) {
+					const supported = controller !== null && typeof controller.setLive === "function";
+					ui.glassLive.disabled = supported === false || depth === "off";
+					ui.glassLive.setAttribute("type", "button");
+					ui.glassLive.setAttribute("aria-pressed", live ? "true" : "false");
+					if (live) ui.glassLive.setAttribute("data-active", "");
+					else ui.glassLive.removeAttribute("data-active");
+					ui.glassLive.setAttribute("data-tl-hub-glass-live-state", live ? (liveEffective ? "on" : "degraded") : "off");
+				}
+				if (ui.glassLiveNote !== null && ui.glassLiveNote !== undefined) {
+					ui.glassLiveNote.textContent =
+						controller === null
+							? TL_T("hub.glass.unavailable")
+							: depth === "off"
+								? TL_T("hub.glass.liveNeedsDepth")
+								: live === false
+									? TL_T("hub.glass.liveOffHint")
+									: liveEffective === true
+										? TL_T("hub.glass.liveOnHint")
+										: TL_T("hub.glass.liveDegraded");
+				}
 				const syncGlassPreview = () => {
 					if (ui === null || ui.glassPreview === null || ui.glassPreview === undefined) return;
 					ui.glassPreview.setAttribute("data-tl-glass-preview", depth);
 					ui.glassPreview.setAttribute("data-depth", depth);
 					ui.glassPreview.setAttribute("data-effective", effective);
+					ui.glassPreview.setAttribute("data-live", liveEffective ? "on" : "off");
 					if (ui.glassPreviewLabel !== null && ui.glassPreviewLabel !== undefined) {
-						ui.glassPreviewLabel.textContent = TL_T("hub.glass.preview", { depth: hubGlassLabel(depth), effective: hubGlassLabel(effective) });
+						ui.glassPreviewLabel.textContent = live
+							? TL_T("hub.glass.previewLive", {
+									depth: hubGlassLabel(depth),
+									effective: hubGlassLabel(effective),
+								})
+							: TL_T("hub.glass.preview", { depth: hubGlassLabel(depth), effective: hubGlassLabel(effective) });
 					}
 				};
 				if (controller === null) {
@@ -2048,6 +2122,28 @@
 					return;
 				}
 				hubTry(() => controller.apply(level), null, "glass-apply");
+				refreshGlass();
+			};
+			/**
+			 * v2.2.0: toggle the real-time sampling mode. "Live" is a modifier of a
+			 * depth recipe, so turning it on from the "off" depth first selects the
+			 * soft recipe (one explicit user action, not a hidden side effect). The
+			 * controller persists the preference and the 15fps/low-power guard decides
+			 * whether it is actually effective right now.
+			 */
+			const toggleGlassLive = () => {
+				const controller = hubGlassDepthController();
+				if (controller === null || typeof controller.setLive !== "function") {
+					if (ui !== null && ui.glassLiveNote !== null && ui.glassLiveNote !== undefined) {
+						ui.glassLiveNote.textContent = TL_T("hub.glass.unavailable");
+					}
+					return;
+				}
+				const current = hubTry(() => (typeof controller.live === "function" ? controller.live() : false), false, "glass-live-current") === true;
+				if (current !== true && hubTry(() => controller.read(), "off", "glass-read-live") === "off") {
+					hubTry(() => controller.apply("soft"), null, "glass-live-depth");
+				}
+				hubTry(() => controller.setLive(current !== true), null, "glass-live-toggle");
 				refreshGlass();
 			};
 
@@ -2841,6 +2937,15 @@
 				const host = llm !== null && llm.host !== null && typeof llm.host === "object" ? llm.host : null;
 				const hostProvider = host !== null && typeof host.provider === "string" && host.provider !== "" ? host.provider : "";
 				const hostModel = host !== null && typeof host.model === "string" && host.model !== "" ? host.model : "";
+				// v2.2.0: the user's explicit provider/model selection is what the next call
+				// actually uses; fall back to the host default when either is unset.
+				const selectedProvider = llm !== null && typeof llm.provider === "string" && llm.provider !== "" ? llm.provider : "";
+				const selectedModel = llm !== null && typeof llm.model === "string" && llm.model !== "" ? llm.model : "";
+				// v2.2.0: a provider override without a model lets the host pick that
+				// provider's first catalogue entry, not the DSH default model of another
+				// provider. The adapter line must not claim otherwise.
+				const providerDiffers = selectedProvider !== "" && selectedProvider !== hostProvider;
+				const adapterModel = selectedModel !== "" ? selectedModel : providerDiffers ? TL_T("hub.ai.llm.firstModel") : hostModel;
 				const adapterId = hubAdapterId(status);
 				// (a) the host answered the probe and cannot serve a model: name the reason.
 				if (host !== null && host.checked === true && host.available !== true) {
@@ -2852,8 +2957,8 @@
 				if (routing === "dsh") {
 					return {
 						text: TL_T("hub.ai.adapterDsh", {
-							provider: hostProvider === "" ? TL_T("hub.ai.llm.unknown") : hostProvider,
-							model: hostModel === "" ? TL_T("hub.ai.llm.unknown") : hostModel,
+							provider: (selectedProvider || hostProvider) === "" ? TL_T("hub.ai.llm.unknown") : selectedProvider || hostProvider,
+							model: adapterModel === "" ? TL_T("hub.ai.llm.unknown") : adapterModel,
 						}),
 						state: "dsh",
 					};
@@ -2901,6 +3006,140 @@
 					"data-tl-hub-llm-provider-state",
 					cache === null ? "loading" : cache.ok === true ? (providers.length === 0 ? "empty" : "listed") : "unavailable",
 				);
+			};
+			/**
+			 * v2.2.0 model picker. The provider decides which catalogue to read; a model
+			 * without a provider choice means "that model of the DSH default provider".
+			 * The option label is the model's display name, falling back to its id.
+			 */
+			const renderModelSelect = (status) => {
+				if (ui === null || ui.llmModel === null || ui.llmModel === undefined) return;
+				const select = ui.llmModel;
+				const pet = hubPetBrain();
+				const canSet = pet !== null && typeof pet.setLlmModel === "function";
+				const llm = status !== null && typeof status === "object" && status.llm !== null && typeof status.llm === "object" ? status.llm : null;
+				const host = llm !== null && llm.host !== null && typeof llm.host === "object" ? llm.host : null;
+				const selectedProvider = llm !== null && typeof llm.provider === "string" ? llm.provider : "";
+				const hostProvider = host !== null && typeof host.provider === "string" ? host.provider : "";
+				const effectiveProvider = selectedProvider !== "" ? selectedProvider : hostProvider;
+				const hostModel = host !== null && typeof host.model === "string" && host.model !== "" ? host.model : TL_T("hub.ai.llm.unknown");
+				const cache = hubLlmModelsCache;
+				const models = cache !== null && cache.ok === true && cache.provider === effectiveProvider ? cache.models : [];
+				const selected = llm !== null && typeof llm.model === "string" ? llm.model : "";
+				const canChoose = canSet === true && models.length > 0;
+				const known = models.some((model) => model.id === selected);
+				const missing = selected !== "" && known === false;
+				const providerDiffers = selectedProvider !== "" && selectedProvider !== hostProvider;
+				const followLabel =
+					providerDiffers && selected === ""
+						? TL_T("hub.ai.llm.followProviderModel")
+						: TL_T("hub.ai.llm.followModel", { model: hostModel });
+				const signature =
+					effectiveProvider +
+					"|" +
+					followLabel +
+					"|" +
+					models.map((model) => model.id).join(",") +
+					"|" +
+					(canChoose ? "1" : "0") +
+					"|" +
+					selected +
+					"|" +
+					(missing ? "1" : "0");
+				if (signature !== hubLlmModelSignature) {
+					hubLlmModelSignature = signature;
+					select.textContent = "";
+					select.appendChild(hubCreate("option", { value: "" }, followLabel));
+					for (const model of models) select.appendChild(hubCreate("option", { value: model.id }, model.name));
+					// v2.2.0: a saved model that the current catalogue no longer lists must be
+					// visible, not silently rendered as "follow the default" while still being
+					// sent. It stays selectable so the user can explicitly switch to follow.
+					if (missing) {
+						select.appendChild(
+							hubCreate("option", { value: selected }, TL_T("hub.ai.llm.savedUnavailable", { model: selected })),
+						);
+					}
+				}
+				select.value = selected !== "" && (known || missing) ? selected : "";
+				// With a saved-but-missing model the select stays usable: "follow default"
+				// is the user's way out without switching providers or reloading.
+				select.disabled = canChoose === false && selected === "";
+				select.setAttribute("data-tl-hub-llm-model-count", String(models.length));
+				select.setAttribute(
+					"data-tl-hub-llm-model-state",
+					canSet === false
+						? "unavailable"
+						: hubLlmModelsBusy === true
+							? "loading"
+							: cache === null || cache.provider !== effectiveProvider
+								? "idle"
+								: cache.ok === true
+									? models.length === 0
+										? "empty"
+										: "listed"
+									: "unavailable",
+				);
+			};
+			/** One debounced catalogue read per provider; cache survives status polls. */
+			const ensureLlmModels = (status) => {
+				if (hubLlmModelsBusy === true) return;
+				const pet = hubPetBrain();
+				if (pet === null || typeof pet.listModels !== "function") return;
+				const llm = status !== null && typeof status === "object" && status.llm !== null && typeof status.llm === "object" ? status.llm : null;
+				const host = llm !== null && llm.host !== null && typeof llm.host === "object" ? llm.host : null;
+				const selectedProvider = llm !== null && typeof llm.provider === "string" ? llm.provider : "";
+				const provider = selectedProvider !== "" ? selectedProvider : host !== null && typeof host.provider === "string" ? host.provider : "";
+				if (provider === "") return;
+				if (hubLlmModelsCache !== null && hubLlmModelsCache.provider === provider) {
+					// A successful catalogue stays cached for the page session; a failed one
+					// retries after a short backoff instead of disabling the picker forever.
+					if (hubLlmModelsCache.ok === true || Date.now() < hubLlmModelsCache.until) return;
+				}
+				hubLlmModelsBusy = true;
+				runAsync(async () => {
+					let result = null;
+					try {
+						result = await pet.listModels(provider);
+					} catch (error) {
+						note("role-hub:llm-models", error);
+						result = null;
+					}
+					hubLlmModelsBusy = false;
+					hubLlmModelsCache =
+						result !== null && result !== undefined && result.ok === true
+							? { provider, ok: true, models: Array.isArray(result.models) ? result.models : [], reason: "", until: 0 }
+							: {
+									provider,
+									ok: false,
+									models: [],
+									reason: result !== null && result !== undefined && typeof result.code === "string" ? result.code : "unavailable",
+									until: Date.now() + 5000,
+								};
+					refreshAi();
+				});
+			};
+			/** Persist the chosen model through the brain's same-closure bridge. */
+			const onModelChange = async (event) => {
+				if (isSyntheticUserEvent(event)) return;
+				disarmPendingConfirms();
+				const pet = hubPetBrain();
+				if (pet === null || typeof pet.setLlmModel !== "function") {
+					setAiNote(TL_T("hub.ai.llm.modelFailed"));
+					return;
+				}
+				const value =
+					ui !== null && ui.llmModel !== null && ui.llmModel !== undefined && typeof ui.llmModel.value === "string"
+						? ui.llmModel.value
+						: "";
+				let result = null;
+				try {
+					result = await pet.setLlmModel(value === "" ? null : value);
+				} catch (error) {
+					note("role-hub:llm-model", error);
+					result = null;
+				}
+				setAiNote(result !== null && result !== undefined && result.ok === false ? TL_T("hub.ai.llm.modelFailed") : TL_T("hub.ai.llm.modelSaved"));
+				refreshAi();
 			};
 			/** One model-fallback hint line, shared by the AI note (44 localizes the copy). */
 			const setLlmHintNote = (code) => {
@@ -2950,6 +3189,18 @@
 					note("role-hub:llm-provider", error);
 					result = null;
 				}
+				// v2.2.0: a model id belongs to one provider; switching providers clears the
+				// old selection (otherwise the host would resolve a model the new route does
+				// not serve). The model picker immediately loads the new catalogue.
+				if (typeof pet.setLlmModel === "function") {
+					try {
+						await pet.setLlmModel(null);
+					} catch (error) {
+						note("role-hub:llm-model-clear", error);
+					}
+				}
+				hubLlmModelsCache = null;
+				hubLlmModelSignature = "";
 				setAiNote(result !== null && result !== undefined && result.ok === false ? TL_T("hub.ai.llm.providerFailed") : TL_T("hub.ai.llm.providerSaved"));
 				refreshAi();
 			};
@@ -3389,7 +3640,9 @@
 				ui.adapter.textContent = adapterLine.text;
 				ui.adapter.setAttribute("data-tl-hub-adapter-state", adapterLine.state);
 				renderProviderSelect(status);
+				renderModelSelect(status);
 				ensureLlmProviders();
+				ensureLlmModels(status);
 				if (!available) setAiNote(TL_T("hub.ai.unavailable"));
 				else if (paused) setAiNote(TL_T("hub.ai.pausedNote"));
 				else if (ui.aiNote.textContent === TL_T("hub.ai.pausedNote") || ui.aiNote.textContent === TL_T("hub.ai.unavailable")) setAiNote("");
@@ -3397,6 +3650,18 @@
 				// overwrites a more recent note (typed error, saved provider, denied turn).
 				if (hubLlmProvidersCache !== null && hubLlmProvidersCache.ok !== true && ui.aiNote.textContent === "") {
 					setAiNote(TL_T("hub.ai.llm.providerUnavailable"));
+				}
+				// v2.2.0: a failed model catalogue only explains the disabled model picker;
+				// a saved selection / typed error note still wins.
+				if (
+					hubLlmModelsCache !== null &&
+					hubLlmModelsCache.ok !== true &&
+					ui.aiNote.textContent === "" &&
+					ui.llmModel !== null &&
+					ui.llmModel !== undefined &&
+					ui.llmModel.getAttribute("data-tl-hub-llm-model-state") === "unavailable"
+				) {
+					setAiNote(TL_T("hub.ai.llm.modelUnavailable"));
 				}
 				refreshPermissions(rows);
 				renderAudit();
@@ -4302,6 +4567,19 @@
 					glassRow.appendChild(button);
 				}
 				glassCard.appendChild(glassRow);
+				// v2.2.0: real-time sampling toggle. Rendered as a two-state button so the
+				// control reads as a switch even before a wallpaper exists.
+				const glassLiveRow = hubCreate("div", { className: "tl-hub-row tl-hub-glass-live-row", "data-tl-hub-glass-live-row": "" });
+				state.glassLive = hubCreate(
+					"button",
+					{ type: "button", className: "tl-hub-choice", "data-tl-hub-glass-live": "", "aria-pressed": "false" },
+					TL_T("hub.glass.live"),
+				);
+				state.glassLive.addEventListener("click", () => toggleGlassLive());
+				state.glassLiveNote = hubCreate("span", { className: "tl-hub-hint", "data-tl-hub-glass-live-note": "" }, TL_T("hub.glass.liveOffHint"));
+				glassLiveRow.appendChild(state.glassLive);
+				glassLiveRow.appendChild(state.glassLiveNote);
+				glassCard.appendChild(glassLiveRow);
 				state.glassPreview = hubCreate(
 					"div",
 					{ className: "tl-hub-glass-preview", "data-tl-glass-preview": "off", "data-tl-hub-glass-preview": "", "data-depth": "off" },
@@ -4529,6 +4807,25 @@
 				providerRow.appendChild(state.llmProviderLabel);
 				providerRow.appendChild(state.llmProvider);
 				aiCard.appendChild(providerRow);
+				// v2.2.0: model picker next to the provider picker. The catalogue is read on
+				// demand from the host, so Grok / Claude / any DSH-configured route shows up
+				// with its real model ids instead of silently using the DeepSeek default.
+				const modelRow = hubCreate("div", { className: "tl-hub-row tl-hub-llm-model-row", "data-tl-hub-llm-model-row": "" });
+				state.llmModelLabel = hubCreate(
+					"span",
+					{ className: "tl-hub-hint", "data-tl-i18n-key": "hub.ai.llm.modelLabel" },
+					TL_T("hub.ai.llm.modelLabel"),
+				);
+				state.llmModel = hubCreate("select", {
+					"data-tl-hub-llm-model": "",
+					className: "tl-hub-select",
+					"aria-label": TL_T("hub.ai.llm.modelLabel"),
+				});
+				state.llmModel.addEventListener("change", (event) => runAsync(() => onModelChange(event)));
+				modelRow.appendChild(state.llmModelLabel);
+				modelRow.appendChild(state.llmModel);
+				aiCard.appendChild(modelRow);
+				aiCard.appendChild(hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-llm-provider-hint": "" }, TL_T("hub.ai.llm.providerHint")));
 				state.aiNote = hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-ai-note": "", role: "status" }, "");
 				aiCard.appendChild(state.aiNote);
 				const chatRow = hubCreate("div", { className: "tl-hub-row" });
@@ -4854,6 +5151,7 @@
 				features: {
 					mediaDefault: true,
 					glassPreview: true,
+					glassLive: true,
 					splash: true,
 					weather: true,
 					selftest: true,

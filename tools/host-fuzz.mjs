@@ -121,6 +121,12 @@ function send(handler, scenario) {
 const VOLATILE_KEYS = new Set([
   // identity/diagnostic fields that legitimately differ between two checkouts
   'commit', 'commitShort', 'builtAt', 'sha256', 'line', 'buildSource',
+  // The fingerprint necessarily reports each build's own client hash; route
+  // equivalence compares everything else about the response.
+  'clientSha256', 'clientShort',
+  // The host contract id moves only with a deliberate route-contract change (v2.2.0:
+  // 2 -> 3). Route equivalence ignores the id itself but still compares every route.
+  'api', 'hostApi',
   // local leftovers of the checkout (state/ exists in a dev tree, not in a fresh one)
   'migratedFromLegacy', 'legacyDataPending',
 ])
@@ -174,6 +180,9 @@ const PNG = Buffer.from(
   'hex',
 )
 
+// v2.2.0 `_pet-models` is intentionally absent: it did not exist in the 2.1.7
+// reference build, so an old-vs-new comparison would be a guaranteed 404/200
+// difference. Its behaviour is covered by tools/test.mjs instead.
 const EXACT = [
   '_we-roots',
   '_settings',
@@ -222,9 +231,11 @@ push({ name: 'POST _upload bad name', method: 'POST', url: '/skin-tianlight/_upl
 push({ name: 'POST _upload aborted', method: 'POST', url: '/skin-tianlight/_upload?name=fuzz-abort.png', headers: { 'content-type': 'image/png' }, body: PNG, abort: true })
 push({ name: 'GET _bundle with build stamp', method: 'GET', url: '/skin-tianlight/_bundle', skipBody: true })
 push({ name: 'POST _import empty gzip', method: 'POST', url: '/skin-tianlight/_import', headers: { 'content-type': 'application/gzip' }, body: '' })
-push({ name: 'GET _engines with api', method: 'GET', url: '/skin-tianlight/_engines?api=2' })
-push({ name: 'GET _engines with stale api', method: 'GET', url: '/skin-tianlight/_engines?api=1' })
+// A deliberately wrong contract id is stale in BOTH builds; the actual HOST_API
+// value moves with each route-contract change, so it is not an old-vs-new constant.
+push({ name: 'GET _engines with stale api', method: 'GET', url: '/skin-tianlight/_engines?api=0' })
 push({ name: 'GET _engines with legacy build', method: 'GET', url: '/skin-tianlight/_engines?build=2.1.5' })
+push({ name: 'GET _engines with stale legacy build', method: 'GET', url: '/skin-tianlight/_engines?build=0.4.0' })
 push({ name: 'GET _fingerprint twice', method: 'GET', url: '/skin-tianlight/_fingerprint' })
 
 // assets, ranges, fallback and traversal

@@ -99,7 +99,11 @@ expect('overrides use !important (inline tokens are otherwise unopposed)', /--ds
 expect('dark theme block exists', css.includes('body[data-dsh-tianlight][data-ds-dark-theme]'))
 expect('reduced-motion guard exists', css.includes('prefers-reduced-motion: reduce'))
 expect('desktop titlebar clearance present', css.includes('--dsh-windows-titlebar-height'))
-expect('panel fill has a legibility floor', css.includes('max(0.96, calc(0.88 * var(--tl-glass-m, 1)))'))
+expect(
+  'both panel fills keep a legibility floor (light + dark)',
+  css.includes('max(0.86, calc(0.80 * var(--tl-glass-m, 1)))') &&
+    css.includes('max(0.96, calc(0.88 * var(--tl-glass-m, 1)))'),
+)
 expect('no unresolved template placeholder', !css.includes('${'))
 expect('no stray backtick', !css.includes('`'))
 
@@ -131,6 +135,37 @@ expect(
   liveBlurRules.some((match) => /\[data-tl-composer\]::before/.test(match[1])) &&
     liveBlurRules.some((match) => /\[data-tl-menu\]/.test(match[1])) &&
     liveBlurRules.some((match) => /\[data-tl-model\]/.test(match[1])),
+)
+
+// ---- v2.2.0 live glass: every real-time filter must be gated on the installer's
+// effective flag, so the default path (and low power / 15 fps) adds no compositing.
+const liveRules = liveBlurRules.filter((match) => /data-tl-glass-live/.test(match[1]))
+expect(
+  'live glass ships real backdrop-filter rules',
+  liveRules.length >= 3,
+  'found ' + liveRules.length,
+)
+expect(
+  'every live glass rule is gated on data-tl-glass-live-effective="on"',
+  liveRules.every((match) => /data-tl-glass-live-effective="on"/.test(match[1])),
+  liveRules.map((match) => match[1].trim()).filter((selector) => /data-tl-glass-live-effective="on"/.test(selector) === false).join(' | '),
+)
+expect(
+  'live glass covers the large panels and the composer',
+  liveRules.some((match) => /\[data-tl-sidebar\]/.test(match[1]) && /\[data-tl-settings\]/.test(match[1])) &&
+    liveRules.some((match) => /\[data-tl-composer\]::before/.test(match[1])),
+)
+expect(
+  'text-bearing glass keeps a legibility floor (composer/input >= 0.26, bubble >= 0.30)',
+  css.includes('--tl-glass-fill: rgba(233, 243, 254, calc(0.26 * var(--tl-glass-m, 1)))') &&
+    css.includes('--dsw-specific-bubble: rgba(236, 245, 255, 0.30) !important'),
+)
+expect(
+  'the old white specular is gone (real / soft / frosted hi alpha lowered)',
+  css.includes('--tl-liquid-hi: 0.24') &&
+    css.includes('--tl-liquid-hi: 0.17') &&
+    css.includes('--tl-liquid-hi: 0.30') &&
+    css.includes('--tl-liquid-hi: 0.52') === false,
 )
 
 console.log('\nCSS blocks: ' + blocks.length + ', total ' + css.length + ' chars')

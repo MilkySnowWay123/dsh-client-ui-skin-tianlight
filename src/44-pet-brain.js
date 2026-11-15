@@ -87,10 +87,12 @@
 		 *     Error carrying a stable `code` on failure. A user-registered non-`dsh`
 		 *     adapter is never overridden, and `llm` still needs the user's explicit
 		 *     grant before anything is called;
-		 *   - the role hub writes the chosen provider through the same-closure bridge
-		 *     (`setLlmProvider`); the model always follows the DSH default (plan A),
-		 *     so there is no per-model selection. Only the provider string persists
-		 *     (`tianlight.pet.llmProvider.v1`, null/absent = follow the default);
+		 *   - the role hub writes the chosen provider and model through same-closure
+		 *     bridges (`setLlmProvider` / `setLlmModel`). v2.2.0 replaced the plan-A
+		 *     "provider only, model always follows the DSH default" rule: both values
+		 *     persist (`tianlight.pet.llmProvider.v1`, `tianlight.pet.llmModel.v1`;
+		 *     null/absent = follow the DSH default), and switching provider drops the
+		 *     old model id so it can never be sent to a different route;
 		 *   - a failed AI call degrades to the local brain exactly as before; the chat
 		 *     result carries an additive `llmError` stable code and
 		 *     `petLlmHintText()` localizes the user-facing hint. The existing quotas
@@ -188,10 +190,15 @@
 		// model path is the host's fixed-prompt route. These constants are shared by the
 		// capability probe, the built-in adapter and the role hub's status card.
 		const PET_HOST_LLM_ROUTE = ASSET_BASE + "/_pet-chat";
+		// v2.2.0: read-only model catalogue for the provider+model picker. The browser
+		// cannot call llm.listModels(), so this same-origin GET route supplies ids only.
+		const PET_HOST_MODELS_ROUTE = ASSET_BASE + "/_pet-models";
 		/** fetch-level fallback; the 20s PET_LLM_TIMEOUT_MS race in petCallLlm still wins. */
 		const PET_HOST_LLM_FETCH_TIMEOUT_MS = 25000;
-		/** Only the user's provider choice persists; null/absent = follow the DSH default. */
+		const PET_HOST_MODELS_FETCH_TIMEOUT_MS = 8000;
+		/** Only the user's provider/model choices persist; null/absent = follow DSH. */
 		const PET_LLM_PROVIDER_KEY = "tianlight.pet.llmProvider.v1";
+		const PET_LLM_MODEL_KEY = "tianlight.pet.llmModel.v1";
 		/** Stable error codes shared with the host route (unknown codes normalize to llm-error). */
 		const PET_LLM_CODES = [
 			"invalid-request",
@@ -206,6 +213,8 @@
 			"quota",
 			"rate-limit",
 			"llm-error",
+			// v2.2.0 catalogue reads (read-only model picker).
+			"models-unavailable",
 		];
 		/** Stable code -> localized "replied locally because…" hint key. */
 		const PET_LLM_HINT_KEYS = {
@@ -538,9 +547,11 @@
 		/**
 		 * Built-in `{ id:"dsh", chat }` adapter for `petCallLlm`. `payload.system` is
 		 * IGNORED on purpose: the system prompt is fixed on the host side. Only the
-		 * bounded content string and (when the user chose one) the provider id are sent;
-		 * the model always follows the DSH default (plan A). Every failure throws an
-		 * Error with a stable `code`; petChat exposes it as the additive `llmError`.
+		 * bounded content string and (when the user chose them) the provider id and
+		 * model id are sent. v2.2.0 sends the model too, so picking Claude / Grok / any
+		 * other DSH-configured route actually reaches that model instead of the default
+		 * one. Every failure throws an Error with a stable `code`; petChat exposes it as
+		 * the additive `llmError`.
 		 */
 		async function petHostLlmChat(payload) {
 			const messages = payload !== null && typeof payload === "object" && Array.isArray(payload.messages) ? payload.messages : [];
@@ -548,8 +559,11 @@
 			const text = typeof first === "string" ? first : "";
 			if (text === "") throw petLlmError("invalid-request");
 			const body = { text };
-			// Plan A: provider only; never send a model id (the host uses its default).
+			// v2.2.0: provider and model travel together; either may be null to follow
+			// the DSH default (a lone model id is valid and means "that model of the
+			// default provider").
 			if (petLlmProvider !== null) body.provider = petLlmProvider;
+			if (petLlmModel !== null) body.model = petLlmModel;
 			let timer = 0;
 			let controller = null;
 			try {
@@ -660,31 +674,161 @@
 		}
 
 		/**
-		 * Plan A: the role hub selects only a PROVIDER (the model always follows the DSH
-		 * default). `null`/"" = follow the default; a string is trimmed and capped at 128
-		 * chars. Returns `{ok:true, provider}` or `{ok:false, reason:"invalid-provider"}`.
+		 * The role hub selects a provider (and, since v2.2.0, a model too). `null`/"" =
+		 * follow the DSH default; a string is trimmed and capped at 128 chars. Changing
+		 * the provider clears the saved model. Returns `{ok:true, provider}` or
+		 * `{ok:false, reason:"invalid-provider"}`.
 		 */
 		function petSetLlmProvider(value) {
 			try {
 				if (value === null || value === undefined || value === "") {
 					petLlmProvider = null;
+					// v2.2.0: a model id belongs to the provider that served it.
+					petLlmModel = null;
 					petSaveLlmProvider();
+					petSaveLlmModel();
 					return { ok: true, provider: null };
 				}
 				if (typeof value !== "string") return { ok: false, reason: "invalid-provider" };
 				const provider = value.trim();
 				if (provider === "") {
 					petLlmProvider = null;
+					petLlmModel = null;
 					petSaveLlmProvider();
+					petSaveLlmModel();
 					return { ok: true, provider: null };
 				}
 				if (provider.length > 128) return { ok: false, reason: "invalid-provider" };
+				if (petLlmProvider !== provider) petLlmModel = null;
 				petLlmProvider = provider;
 				petSaveLlmProvider();
+				if (petLlmModel === null) petSaveLlmModel();
 				return { ok: true, provider };
 			} catch (error) {
 				note("pet-brain:set-llm-provider", error);
 				return { ok: false, reason: "internal-error" };
+			}
+		}
+
+		/** Persisted model id (null = follow the DSH default model). */
+		function petReadLlmModel() {
+			try {
+				const storage = petStorage();
+				if (storage === null) return null;
+				const raw = storage.getItem(PET_LLM_MODEL_KEY);
+				if (typeof raw !== "string") return null;
+				const model = raw.trim();
+				if (model === "" || model.length > 200) return null;
+				return model;
+			} catch (error) {
+				return null;
+			}
+		}
+
+		function petSaveLlmModel() {
+			try {
+				const storage = petStorage();
+				if (storage === null) return;
+				if (petLlmModel === null) {
+					if (typeof storage.removeItem === "function") storage.removeItem(PET_LLM_MODEL_KEY);
+				} else {
+					storage.setItem(PET_LLM_MODEL_KEY, petLlmModel);
+				}
+			} catch (error) {
+				note("pet-brain:llm-model-save", error);
+			}
+		}
+
+		/**
+		 * v2.2.0: the role hub selects a model in addition to a provider, so a Grok /
+		 * Claude (or any DSH-configured) route can actually be reached. `null`/"" =
+		 * follow the DSH default model. A model without a provider choice is valid
+		 * (choose a model of the default provider). Returns `{ok:true, model}` or
+		 * `{ok:false, reason}`.
+		 */
+		function petSetLlmModel(value) {
+			try {
+				if (value === null || value === undefined || value === "") {
+					petLlmModel = null;
+					petSaveLlmModel();
+					return { ok: true, model: null };
+				}
+				if (typeof value !== "string") return { ok: false, reason: "invalid-model" };
+				const model = value.trim();
+				if (model === "") {
+					petLlmModel = null;
+					petSaveLlmModel();
+					return { ok: true, model: null };
+				}
+				if (model.length > 200) return { ok: false, reason: "invalid-model" };
+				petLlmModel = model;
+				petSaveLlmModel();
+				return { ok: true, model };
+			} catch (error) {
+				note("pet-brain:set-llm-model", error);
+				return { ok: false, reason: "internal-error" };
+			}
+		}
+
+		/**
+		 * v2.2.0: read the model ids one registered provider serves. This is the only
+		 * new network call in the brain and it is the same same-origin, read-only host
+		 * route the chat uses; the payload contains no text and no credentials. Returns
+		 * `{ok:true, provider, models:[{id,name}]}` or `{ok:false, code}`; never throws.
+		 */
+		async function petHostModels(provider) {
+			const wanted = typeof provider === "string" ? provider.trim() : "";
+			if (wanted === "" || wanted.length > 128) return { ok: false, code: "invalid-request" };
+			if (typeof fetch !== "function") return { ok: false, code: "host-unavailable" };
+			let controller = null;
+			let timer = 0;
+			try {
+				if (typeof AbortController === "function") controller = new AbortController();
+				timer = window.setTimeout(() => {
+					try {
+						if (controller !== null) controller.abort();
+					} catch (error) {
+						// abort is best-effort
+					}
+				}, PET_HOST_MODELS_FETCH_TIMEOUT_MS);
+				const request = {
+					method: "GET",
+					headers: { accept: "application/json" },
+					cache: "no-store",
+				};
+				if (controller !== null) request.signal = controller.signal;
+				const response = await fetch(PET_HOST_MODELS_ROUTE + "?provider=" + encodeURIComponent(wanted), request);
+				let data = null;
+				try {
+					data = response !== null && typeof response === "object" && typeof response.json === "function" ? await response.json() : null;
+				} catch (error) {
+					data = null;
+				}
+				if (data !== null && typeof data === "object" && data.ok === true && Array.isArray(data.models)) {
+					const models = [];
+					for (const entry of data.models) {
+						if (models.length >= 200) break;
+						if (entry === null || typeof entry !== "object") continue;
+						const id = typeof entry.id === "string" ? petClipText(entry.id.trim(), 200) : "";
+						if (id === "") continue;
+						const name = typeof entry.name === "string" && entry.name.trim() !== "" ? petClipText(entry.name.trim(), 200) : id;
+						models.push({ id, name });
+					}
+					return { ok: true, provider: wanted, models };
+				}
+				const code = data !== null && typeof data === "object" && typeof data.code === "string" ? petNormalizeLlmCode(data.code) : "models-unavailable";
+				return { ok: false, code };
+			} catch (error) {
+				const name = error !== null && typeof error === "object" && typeof error.name === "string" ? error.name : "";
+				return { ok: false, code: name === "AbortError" ? "timeout" : "host-unavailable" };
+			} finally {
+				if (timer !== 0) {
+					try {
+						window.clearTimeout(timer);
+					} catch (error) {
+						// the timeout already fired
+					}
+				}
 			}
 		}
 
@@ -705,6 +849,8 @@
 		let petHostLlm = { checked: false, available: false, reason: "unknown", provider: "", model: "" };
 		/** The provider id the user picked in the role hub; null = follow the DSH default. */
 		let petLlmProvider = null;
+		/** v2.2.0: the model id the user picked; null = follow the DSH default model. */
+		let petLlmModel = null;
 		/**
 		 * v2.0.0: after an explicit `clearLLM()` the page keeps honouring that choice for
 		 * its lifetime; only a page reload lets the host capability probe auto-register
@@ -1804,7 +1950,9 @@
 					minuteRemaining: 0,
 					// v2.0.0 (additive): same shape as petStatus(); a status failure must not
 					// claim the host is available, so the host block is the static unknown one.
+					// v2.2.0: `model` is the user's chosen model (null = follow default).
 					provider: petLlmProvider,
+					model: petLlmModel,
 					routing: petLlmRouting(),
 					host: { checked: false, available: false, reason: "unknown", provider: "", model: "" },
 				},
@@ -1832,9 +1980,11 @@
 						dailyLimit,
 						remaining: Math.max(0, dailyLimit - usedToday),
 						minuteRemaining: Math.max(0, PET_MINUTE_CALL_LIMIT - petLlmMinuteCount(now)),
-						// v2.0.0 (additive): plan A provider choice + adapter routing + the
-						// cached host capability snapshot (read by the role hub AI card).
+						// v2.0.0 (additive): provider choice + adapter routing + the cached
+						// host capability snapshot (read by the role hub AI card).
+						// v2.2.0: `model` joins `provider` as the user's explicit selection.
 						provider: petLlmProvider,
+						model: petLlmModel,
 						routing: petLlmRouting(),
 						host: petHostLlmStatus(),
 					},
@@ -2796,6 +2946,11 @@
 			hostLlm: () => petHostLlmStatus(),
 			refreshHostLlm: () => petHostLlmProbe(),
 			setLlmProvider: (provider) => petSetLlmProvider(provider),
+			// v2.2.0: provider+model selection and the read-only catalogue read used by
+			// the role hub. Both stay inside this closure; the page never gets a fetch
+			// helper or a credential surface.
+			setLlmModel: (model) => petSetLlmModel(model),
+			listModels: (provider) => petHostModels(provider),
 			setCapabilityAdapter: (cap, adapter) => petSetCapabilityAdapter(cap, adapter),
 			clearCapabilityAdapter: (cap) => petClearCapabilityAdapter(cap),
 			invokeCapability: (cap, input) => petInvokeCapability(cap, input),
@@ -2837,7 +2992,9 @@
 				// v2.0.0: restore the user's provider choice (null = follow the DSH default)
 				// and forget the previous page's host capability answer; the probe below
 				// refreshes it asynchronously without blocking install.
+				// v2.2.0: the model choice is restored alongside it.
 				petLlmProvider = petReadLlmProvider();
+				petLlmModel = petReadLlmModel();
 				petLlmAutoSuppressed = false;
 				petHostLlm = { checked: false, available: false, reason: "unknown", provider: "", model: "" };
 				petCapabilityAdapters = {};

@@ -60,15 +60,16 @@
 
 浏览器半的 `remote.llm` 只有 `listProviders / listConfigurableProviders / discoverModels` 三个只读方法，**不能直接调用模型**；因此 v2.0.0 在宿主半新增一条窄路由，让桌宠用 DSH 自己已配置的模型回答：
 
-- **路由**：`POST /skin-tianlight/_pet-chat`，只接受 loopback Host（localhost / 127.0.0.1 / [::1]）、POST + JSON、请求体 ≤16KB、文本 ≤4000 字；同时只处理 1 个请求；客户端断开即 abort；整通 20s 截止。
-- **调用哪条模型**：默认读 `agentDefaultModel.currentSelection()`（即 DSH 默认模型）；角色中枢可以只选择一个 **provider**（默认「跟随 DSH 默认模型」），**模型 id 永远跟随 DSH 默认选择**；请求里的 provider 必须出现在 `llm.listProviders()` 中，否则拒绝。若你选的 provider 不支持 DSH 默认模型 id（例如自建网关的模型目录不同），宿主模型解析会失败 → 气泡提示「未配置模型，已用本地回复」，切回「跟随默认」即可。
+- **路由**：`POST /skin-tianlight/_pet-chat`，只接受 loopback Host（localhost / 127.0.0.1 / [::1]）、POST + JSON、请求体 ≤16KB、文本 ≤4000 字；同时只处理 1 个请求；客户端断开即 abort；整通 20s 截止。v2.2.0 另有一条只读 `GET /skin-tianlight/_pet-models?provider=<id>`：只调用 `llm.listProviders()` / `llm.listModels()` 取 provider 与模型 id/名称（≤200 个，5s 截止），不读凭据、不发推理请求、不建会话。该路由有宿主侧分钟预算（30 次/分钟）、每 provider 10s 结果缓存、5s 负缓存与并发单飞，避免一次页面轮询放大成对第三方网关的重复 `/models` 请求；客户端断开即停止等待。
+- **调用哪条模型（v2.2.0）**：默认读 `agentDefaultModel.currentSelection()`（即 DSH 默认模型）；角色中枢现在可以选择 **provider + model** 两个值（默认都「跟随 DSH 默认」）。请求里的 provider 必须出现在 `llm.listProviders()` 中，model 必须能被该 provider 的 `resolveModelInfo()` 解析，否则拒绝（`provider-not-allowed` / `unconfigured-model`）。只选 provider 不选 model 时，宿主依次用：DSH 默认模型（provider 相同）→ 该 provider 模型目录的第一项。**Grok / Claude 等国际模型**走 DSH 自己的模型配置：Claude 在「设置 → 模型 → 添加模型提供商」选内置 `anthropic`；Grok 选「自定义模型 API」，地址 `https://api.x.ai/v1`、协议 `openai-completions`，再填入 xAI 密钥。配置好后回到角色中枢即可在 provider/model 下拉框中选到；皮肤本身不保存任何 API Key。
+- **模型目录缓存**：角色中枢按当前 provider 懒加载一次模型目录（每页面会话，按 provider 缓存）；读取失败时下拉框禁用并提示「读取不到该提供方的模型列表，暂时由宿主自动选择」，聊天仍会由宿主选该 provider 的第一项，不会因此阻塞。
 - **可随时断开**：显式调用 `clearLLM()` 后，本页面内不会再有后台探测把内置 `dsh` 适配器自动注册回来（刷新页面后才恢复自动注册）；撤销 `llm` 授权则只停止调用、不影响适配器。
 - **参数固定**：系统提示是宿主半的常量；`purpose`/`sessionId`/`tools` 一律不传（不会创建会话、不会调用工具）；`maxTokens ≤600`；有推理档位时自动取 `reasoning.efforts[0]`（最低档），没有就不传。
 - **凭据不下发**：宿主进程内的 `ctx.llm.stream()` 直接用 DSH 已配置的凭据，浏览器只拿到 `{ ok, text, finish, model }` 或 `{ ok:false, code }`；皮肤不读取、不保存任何 API Key。
 - **仍要你授权**：内置适配器只有在你于「角色中枢 → AI」两步确认授予 `llm` 后才会被调用；授权提示会明确写「会消耗你的模型额度」。配额/长度/超时/审计与 §3 完全一致，失败回退本地大脑并显示原因。
 - **来源标注**：对话气泡与角色中枢的对话记录会显示「AI 回复」或「本地回复」；出错时按稳定错误码提示中文原因：未配置模型 / 缺少凭据 / 余额不足（`quota`）/ 限流 / 超时 / 宿主不可用。
 - **可用性**：`_engines.capabilities.petLlm` 返回 `{ available, reason, provider, model }`；不可用时角色中枢显示具体原因（未配置模型、宿主无 LLM 服务、宿主不可用等），气泡回退「本地回复」。
-- **需要重启一次 DSH**：本项改动了宿主半（`lib/index.js` / `lib/pet-chat.js`），更新插件后必须重启 DSH Desktop 一次；只刷新页面不够。之后浏览器半的改动仍只需 `Ctrl+F5`。
+- **需要重启一次 DSH**：本项改动了宿主半（`lib/index.js` / `lib/pet-chat.js`），**`HOST_API` 2 → 3**；更新插件后必须重启 DSH Desktop 一次，否则客户端会看到 `_engines.stale=true`。只刷新页面不够。之后浏览器半的改动仍只需 `Ctrl+F5`。
 
 ## 3.5 高风险能力（high，v1.4.0）
 
@@ -127,7 +128,7 @@ await window.tianlightPet.setLLM(window.tianlightPetLLM)
 ## 6. 用户控制面
 
 - **桌宠是唯一入口**（v1.3.0 起不再有独立设置页/侧栏按钮）：**右键桌宠**，或点桌宠 → 菜单「角色中枢」，打开全屏角色中枢。
-- **角色中枢**：生活状态、生活节奏设置（静默/额度/作息/虚拟时钟）、AI 区（暂停/恢复、授权/撤销 LLM、看适配器、看对话、**v2.0.0 起可选择模型 provider（默认跟随 DSH 默认模型，模型 id 不单独选）**、对话记录显示「AI 回复/本地回复」）、**自主思考区**（启用/暂停、间隔、自主开口、**LLM 自主思考独立开关与用量/额度**、现在想一下、清空想法；静默/睡眠/专注时跳过并显示原因）、**AI Agent 区**（`agentChat` 授权两步确认、选择目标会话、连接/断开/打开、预算/状态/风险提示）、权限总览（7 项永久禁止只读）、审计。
+- **角色中枢**：生活状态、生活节奏设置（静默/额度/作息/虚拟时钟）、AI 区（暂停/恢复、授权/撤销 LLM、看适配器、看对话、**v2.2.0 起可选择 provider + model（默认都跟随 DSH 默认；模型目录按 provider 懒加载，支持 Grok / Claude 等 DSH 已配置路由）**、对话记录显示「AI 回复/本地回复」）、**自主思考区**（启用/暂停、间隔、自主开口、**LLM 自主思考独立开关与用量/额度**、现在想一下、清空想法；静默/睡眠/专注时跳过并显示原因）、**AI Agent 区**（`agentChat` 授权两步确认、选择目标会话、连接/断开/打开、预算/状态/风险提示）、权限总览（7 项永久禁止只读）、审计。
 - **控制台**：`window.tianlightPet.status() / permissions() / revoke() / chat("…") / pause() / audit()`；safe 能力可用 `grant()`。R4A：medium/high 授权只能经角色中枢（控制台没有内部凭据），`window.tianlightPetAgent` 只剩只读 `status()` / `audit()`（连接、列会话、发送均不在全局暴露，由中枢内部闭包 API 调用）、`window.tianlightRoleHub.open()`。
 - **高风险能力**：中枢权限总览可逐个授权/撤销（两步确认 + 警告）；适配器注册用 `setCapabilityAdapter(cap,{id,run})`，调用用 `invokeCapability(cap,input)`（详见 §3.5）。
 - 实例诊断：`__dshTianlightInstance.life() / pet() / agent() / hub() / glass() / duty()`。**R8**：诊断对象是只读方法面，不再包含 live cordis `ctx`/fiber（teardown 由实例闭包持有），同页脚本无法经它 `inject` 服务绕过授权。

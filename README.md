@@ -6,6 +6,28 @@
 >
 > npm 包名 `dsh-client-ui-skin-tianlight`（v2.0.2 起；旧链接安装包名 `@dsh-external/dsh-client-ui-skin-tianlight`）· 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
 
+## v2.2.0 · 实时液态玻璃 · 桌宠接入 Grok / Claude 等国际模型
+
+这一版把「液态玻璃」从静态滤镜推进到**真实采样**，并把桌宠的模型选择从「只能换 provider、模型永远跟 DSH 默认」修成 **provider + model 两级选择**。
+
+### 液态玻璃
+
+- **实时渲染按钮**（角色中枢 →「液态玻璃」卡片）：默认关闭；打开后侧栏、设置面板、壁纸库、角色中枢、输入区、菜单、模型胶囊等已知玻璃面会加一层真实的 `backdrop-filter`，逐帧采样背后的壁纸——壁纸在动，玻璃里的画面就跟着动，这才是真正的实时玻璃，而不是静态高光。
+- **泛白修复**：旧配方在同一像素上叠了最高 `0.52` 的白色 specular 和 `0.30` 的白色填充，亮色壁纸下整体发灰发白。v2.2.0 把 specular 降到 `0.17 / 0.24 / 0.30`（soft / real / frosted），白色填充换成冷色调并下调 alpha，另加一条底部暗边做出玻璃厚度；壁纸颜色更透、更饱和。
+- **能耗仍然可控**：实时模式是显式 opt-in；低电量或 15fps 渲染档会自动暂停采样（按钮保留开启状态，卡片提示“省电/15fps 下暂不采样”），关闭时零额外合成层。新键 `tianlight.glassLive`（`1`/`0`，默认 `0`），「恢复默认外观」会一并关掉。
+- 新增的单测/审计保证：任何 live 规则都必须挂在 `data-tl-glass-live-effective="on"` 上，场景层仍保持静态 veil（不再回到全视口无差别 blur）。
+
+### 桌宠 AI：Grok / Claude 等国际模型
+
+- **provider + model 两级选择**：角色中枢 →「AI 对话」现在有两个下拉框；provider 决定读哪份模型目录，model 决定真正发给哪条路由。默认都「跟随 DSH 默认」，不选就完全保持旧行为。
+- **Grok / Claude 怎么接**：先去 **DSH 设置 → 模型**里添加提供商——Claude 选内置 `anthropic` 并填 API 密钥；Grok 选「自定义模型 API」，地址 `https://api.x.ai/v1`、协议选 `OpenAI Chat Completions`、填 xAI 密钥。回到角色中枢，provider 下拉会出现 `anthropic` / 你的自定义 provider，model 下拉会列出该提供商真实提供的模型 id（如 `claude-sonnet-4-5`、`grok-4`）。
+- **只换 provider 不再报错**：旧版只发 provider、模型永远用 DSH 默认；选 Claude 时会把 `deepseek-flash` 发给 Anthropic，解析失败后回退本地。现在宿主按“显式 model → 同 provider 的 DSH 默认 → 该 provider 目录第一项”的顺序解析，并先校验模型属于该 provider；选错模型会给 `unconfigured-model` 的明确提示。注意：只有“provider + model 都跟随默认”才等于旧行为；只选了别的 provider 而 model 仍跟随默认时，宿主会自动用该 provider 的第一个模型（卡片会显示“该提供方的首个模型”）。
+- **宿主新路由**：`GET /skin-tianlight/_pet-models?provider=<id>`，只读、同源围栏、5s 截止、最多 200 项；返回模型 id/名称，不读凭据、不发推理请求。`POST _pet-chat` 新增可选 `model` 字段。
+- 新键 `tianlight.pet.llmModel.v1`（模型 id，默认跟随 DSH 默认）；切换 provider 会清空旧 model，避免把 A 提供方的模型 id 发给 B。
+- **本版改动了宿主半**（新路由 + `_pet-chat` 解析逻辑，`HOST_API` 2 → 3）：只刷新页面时客户端会看到 `_engines.stale=true` 并提示宿主半待重启。升级后请**完全退出 DSH（含托盘）再打开**，然后 Ctrl+F5。
+
+详见 [RELEASE-NOTES-v2.2.0.md](RELEASE-NOTES-v2.2.0.md)。
+
 ## v2.1.3 · 长片不再过早降级
 
 v2.1.2 解决了误触跳过；如果你的结尾是**简洁标志淡出**，那不是跳过，而是长片的性能兜底被过早触发：0.4× 档只要 30 帧平均超过 33ms 就切简洁版，启动阶段/窗口合成的一次抖动就会命中。
@@ -444,7 +466,7 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 - **首开不再像“0 张”**（v0.5.2）：清单首次加载显示「加载中…」；失败先 1.2s 静默重试一次，两次失败才显示错误与行内「重试」按钮；宿主 build 过旧会提示重启 DSH。pick 视图另有「更多设置在右上『高级』」提示
 - **上传壁纸**：面板内选择图片/视频，默认上限 **512MB**（`TIANLIGHT_UPLOAD_MAX` 可调）；宿主流式落盘到用户数据目录的 `uploads/`（v2.0.1 起位于 `$DSH_HOME/profiles/<profile>/tianlight/uploads/`），只接受图片/视频扩展名，同名自动加 `-1` 而不是覆盖；中文/4K 文件名会清洗成可播放的 ASCII 名
 - **叠加层**：A/B 两槽，预设（暗角/颗粒/光晕/扫描线）或图片（本地/URL），不透明度 + 混合 + 交换层级，纯 CSS 叠在任意壁纸之上
-- **玻璃面板（液态玻璃 v2，v1.6.1 起）**：`depth != off` 时统一覆盖全部界面——侧栏、设置面板、壁纸库、角色中枢、对话框、菜单、列表框、输入区、气泡、胶囊、提示，以及侧栏「新会话」按钮与主界面天气胶囊；v2 配方 = 更厚磨砂 + 更高饱和 + 多层 specular（左上径向 + 对角 sheen）+ 1px 亮/暗边（`--tl-liquid-rim`）+ 外柔光 + 细噪点（`--tl-liquid-grain`）+ hover/active 柔和回弹，三档 blur/sat 整体上调；**每视口只留一层模糊**（有场景用场景层、无场景用兜底层，浮层菜单与输入区沿用自身 blur；大面板与气泡不叠实时 blur，保证长会话滚动与视频流畅）；输入控件（`input`/`textarea`/`[contenteditable]`）只加描边/微高光、不加 blur；无壁纸场景时自动补一层玻璃兜底；`off` 档零变化（保持 v1.4 前观感，唯一例外是 v1.6.1 的新会话深色块修复），低电量/15fps 与减少动效自动降级
+- **玻璃面板（液态玻璃 v2，v1.6.1 起）**：`depth != off` 时统一覆盖全部界面——侧栏、设置面板、壁纸库、角色中枢、对话框、菜单、列表框、输入区、气泡、胶囊、提示，以及侧栏「新会话」按钮与主界面天气胶囊；v2 配方 = 更厚磨砂 + 更高饱和 + 多层 specular（左上径向 + 对角 sheen）+ 1px 亮/暗边（`--tl-liquid-rim`）+ 外柔光 + 细噪点（`--tl-liquid-grain`）+ hover/active 柔和回弹，三档 blur/sat 整体上调；**每视口只留一层模糊**（有场景用场景层、无场景用兜底层，浮层菜单与输入区沿用自身 blur；大面板与气泡不叠实时 blur，保证长会话滚动与视频流畅）；输入控件（`input`/`textarea`/`[contenteditable]`）只加描边/微高光、不加 blur；无壁纸场景时自动补一层玻璃兜底；`off` 档零变化（保持 v1.4 前观感，唯一例外是 v1.6.1 的新会话深色块修复），低电量/15fps 与减少动效自动降级。**v2.2.0**：新增「实时渲染」开关（逐帧 `backdrop-filter` 采样背后的壁纸，默认关、省电/15fps 自动暂停）；同一批把白色 specular 从 `0.52` 降到 `0.24`（real），白色填充换成冷色调并下调 alpha，修掉亮色壁纸下的“整体泛白”
 - **亮/暗双主题**：两套 token，均保持壁纸可见
 
 ### 引擎 / 音频（v0.5.0）
@@ -693,15 +715,15 @@ node tools/hook-scan.mjs --dsh <新版本@deepseek-ai 目录>  # 升级 Desktop 
 
 | 变量 | 默认（亮 / 暗） | 作用 |
 |---|---|---|
-| `--tl-panel-fill` | `0.84` / `0.88` | 模态面板填充，越大越实 |
-| `--tl-glass-fill` | `0.30` / `0.38` | 玻璃表面填充 |
+| `--tl-panel-fill` | `0.86` 起 / `0.96` 起（随玻璃倍率） | 模态面板填充，越大越实；v2.2.0 亮色公式为 `max(0.86, 0.80×玻璃倍率)` |
+| `--tl-glass-fill` | `0.26` / `0.38` | 玻璃表面填充（v2.2.0 起冷色调、低 alpha；文字承载面保留下限） |
 | `--tl-glass-blur` | `12px` / `14px` | 玻璃模糊半径（v1.6.0 起全界面分组按档位使用；输入控件不加 blur） |
 | `--tl-shell` | `0` | 全局表面透明度，`0` = 100% 壁纸 |
-| `--tl-overlay` | `0.82` / `0.84` | 菜单/弹层遮罩 |
+| `--tl-overlay` | `0.80` / `0.84` | 菜单/弹层遮罩 |
 | `--tl-accent` | `#2b74c9` | 强调色（面板内由壁纸取色覆盖） |
 | `--tl-content-width` / `--tl-para-gap` / `--tl-code-size` | 排版面板决定 | v0.5.0 排版增强写入的正文宽度/段距/代码字号变量 |
 
-持久化：壁纸选择、取景、玻璃、省电、收藏/标签/隐藏、排版、面板位置、播放/滤镜、轮播、桌宠、模块开关、语言、特效、情境、可读性等。
+持久化：壁纸选择、取景、玻璃（含 v2.2.0 实时渲染 `tianlight.glassLive`）、省电、收藏/标签/隐藏、排版、面板位置、播放/滤镜、轮播、桌宠、模块开关、语言、特效、情境、可读性等。
 v0.5.0 起设置由 `settingsStore` 镜像到宿主设置文件（v2.0.1 起为 `$DSH_HOME/profiles/<profile>/tianlight/state/settings.json`，跨浏览器），本地 `localStorage` 仍是同步读缓存；
 旧版本存储键在首次启动时迁移到 schema v5，原值备份在 `tianlight.backup.v5`。
 

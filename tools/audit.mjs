@@ -200,6 +200,34 @@ report(
     : "FAIL",
   "liquid glass ships all three levels (real / soft / frosted)",
 )
+// v2.2.0 live glass: a real, opt-in backdrop sampling mode. The gate must include the
+// user preference, the low-power attribute and the 15 fps tier; the role hub must own
+// the switch; and the white specular values must stay away from the old 0.52 wash.
+report(
+  source.includes("GLASS_LIVE_KEY") &&
+    source.includes('"tianlight.glassLive"') &&
+    source.includes("function effectiveGlassLive(") &&
+    source.includes('body.setAttribute("data-tl-glass-live-effective"') &&
+    source.includes('body.removeAttribute("data-tl-glass-live-effective")')
+    ? "PASS"
+    : "FAIL",
+  "v2.2.0 live glass state is persisted, written to <body> and disposed",
+)
+report(
+  /effectiveGlassLive[\s\S]{0,500}?readRenderTier\(\)[\s\S]{0,300}?data-tl-lowpower/.test(source)
+    ? "PASS"
+    : "FAIL",
+  "live glass is flattened by low power and the 15 fps tier",
+)
+report(
+  source.includes('data-tl-hub-glass-live') &&
+    source.includes("toggleGlassLive") &&
+    source.includes('typeof controller.setLive === "function"') &&
+    source.includes("hub.glass.liveOnHint")
+    ? "PASS"
+    : "FAIL",
+  "v2.2.0 role hub owns the live-rendering switch and its state copy",
+)
 report(!source.includes('"tianlight-role"') ? "PASS" : "FAIL", "no separate role settings section (role lives in the pet)")
 report(
   source.includes('type: "deferred"') && source.includes("publicApi") && source.includes("replay")

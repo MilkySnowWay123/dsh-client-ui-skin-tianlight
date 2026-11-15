@@ -136,7 +136,7 @@ check('v2.0.1 fingerprint reports the exact installed build', () => {
   const value = JSON.parse(fingerprintResponse.body.toString('utf8'))
   assert.equal(value.schema, 1)
   assert.equal(value.version, PKG_VERSION, 'fingerprint version must be the packaged version')
-  assert.equal(value.hostApi, '2', 'fingerprint must report the HOST_API contract')
+  assert.equal(value.hostApi, '3', 'fingerprint must report the HOST_API contract (v2.2.0: 3)')
   assert.match(value.clientSha256, /^[0-9a-f]{64}$/, 'client sha256 must be a full digest')
   assert.equal(value.clientShort, value.clientSha256.slice(0, 12))
   assert.equal(typeof value.line, 'string')

@@ -77,6 +77,7 @@ import {
   PET_CHAT_TIMEOUT_MS,
   computePetLlmCapability,
   createPetChat,
+  createPetModels,
   mapProviderFailureCode,
 } from '../lib/pet-chat.js'
 
@@ -950,6 +951,7 @@ await testAsync('engine status advertises v0.5.0 capabilities with cache/setting
 // Only a contract mismatch forces a restart; a browser-half-only release must not.
 await testAsync('engine status uses the HOST_API route contract for the handshake', async () => {
   const api = (await engineStatus(new URL('http://localhost/skin-tianlight/_engines'))).api
+  assert.equal(api, '3', 'v2.2.0 added the _pet-models route and the model field, so the contract moved to 3')
   assert.equal((await engineStatus(new URL('http://localhost/skin-tianlight/_engines?api=' + encodeURIComponent(api)))).stale, false)
   assert.equal((await engineStatus(new URL('http://localhost/skin-tianlight/_engines?api=' + encodeURIComponent(api + '-next')))).stale, true)
 })
@@ -2299,6 +2301,38 @@ test('R2: the scene layer has no full-viewport live blur and no 22s repaint', ()
   // The product's own bounded glass keeps its blur (the depth presets still do something).
   assert.match(CLIENT_SOURCE, /\[data-tl-composer\]::before \{[\s\S]{0,400}?backdrop-filter:/)
   assert.match(CLIENT_SOURCE, /\[data-tl-liquid-fallback\] \{[\s\S]{0,500}?backdrop-filter:/)
+})
+
+test('v2.2.0 live glass: opt-in only, gated on the effective flag, and user-resettable', () => {
+  assert.match(CLIENT_SOURCE, /const GLASS_LIVE_KEY = "tianlight\.glassLive"/)
+  assert.match(CLIENT_SOURCE, /function readGlassLive\(\)/)
+  assert.match(CLIENT_SOURCE, /function effectiveGlassLive\(live\)/)
+  assert.match(CLIENT_SOURCE, /data-tl-glass-live-effective/)
+  assert.match(CLIENT_SOURCE, /data-tl-glass-live", glassLiveLevel \? "on" : "off"/)
+  assert.match(CLIENT_SOURCE, /--tl-liquid-live-blur/)
+  assert.match(CLIENT_SOURCE, /data-tl-hub-glass-live/)
+  assert.match(CLIENT_SOURCE, /toggleGlassLive/)
+  assert.match(CLIENT_SOURCE, /hub\.glass\.liveOnHint/)
+  // The 15fps tier is published on <body> and observed, so live sampling really
+  // flattens on a tier change instead of waiting for an unrelated mutation.
+  assert.match(CLIENT_SOURCE, /function publishRenderTier\(\)/)
+  assert.match(CLIENT_SOURCE, /document\.body\.setAttribute\("data-tl-render-tier", renderTier\)/)
+  assert.match(CLIENT_SOURCE, /attributeFilter: \["data-tl-lowpower", "data-tl-lowpower-reason", "data-tl-render-tier"\]/)
+})
+
+test('v2.2.0 pet model picker: provider+model persist and travel through the fixed route', () => {
+  assert.match(CLIENT_SOURCE, /const PET_LLM_MODEL_KEY = "tianlight\.pet\.llmModel\.v1"/)
+  assert.match(CLIENT_SOURCE, /function petSetLlmModel\(value\)/)
+  assert.match(CLIENT_SOURCE, /function petHostModels\(provider\)/)
+  assert.match(CLIENT_SOURCE, /PET_HOST_MODELS_ROUTE = ASSET_BASE \+ "\/_pet-models"/)
+  assert.match(CLIENT_SOURCE, /if \(petLlmModel !== null\) body\.model = petLlmModel/)
+  assert.match(CLIENT_SOURCE, /model: petLlmModel/)
+  assert.match(CLIENT_SOURCE, /setLlmModel: \(model\) => petSetLlmModel\(model\)/)
+  assert.match(CLIENT_SOURCE, /if \(petLlmProvider !== provider\) petLlmModel = null/, 'switching provider drops the old model id')
+  assert.match(CLIENT_SOURCE, /listModels: \(provider\) => petHostModels\(provider\)/)
+  assert.match(CLIENT_SOURCE, /data-tl-hub-llm-model/)
+  assert.match(CLIENT_SOURCE, /hub\.ai\.llm\.providerHint/)
+  assert.match(CLIENT_SOURCE, /https:\/\/api\.x\.ai\/v1/)
 })
 
 test('R2: the selector bridge stamps added subtrees; full scans are >=500ms throttled', () => {
@@ -4107,7 +4141,7 @@ test('R8b C: wallpaper probe baseline, iframe token and video-event generation g
 // so the route under test is the only path from the pet to a model. These tests use
 // a fake llm service: no DSH boot, no network, no credential, no real model.
 const fakeLlmService = (options = {}) => {
-  const calls = { stream: [], resolveModelInfo: [] }
+  const calls = { stream: [], resolveModelInfo: [], listModels: [] }
   const providers =
     options.providers ?? [
       { id: 'deepseek-official', name: 'DeepSeek' },
@@ -4115,6 +4149,14 @@ const fakeLlmService = (options = {}) => {
     ]
   const service = {
     listProviders: () => (options.listProviders !== undefined ? options.listProviders() : providers.map((entry) => ({ ...entry }))),
+    listModels: async (provider) => {
+      calls.listModels.push(provider)
+      if (options.listModels !== undefined) return options.listModels(provider)
+      return [
+        { id: provider + '-default', name: provider + ' default' },
+        { id: provider + '-pro', name: provider + ' pro' },
+      ]
+    },
     resolveModelInfo: async (provider, model, signal) => {
       calls.resolveModelInfo.push({ provider, model, signal })
       if (options.resolveModelInfo !== undefined) return options.resolveModelInfo(provider, model, signal)
@@ -4153,6 +4195,13 @@ const callPetChat = async (mount, ctx, options = {}) => {
   mount(ctx, req, res)
   return waitForResponse(res)
 }
+const callPetModels = async (mount, ctx, provider) => {
+  const url = new URL('http://127.0.0.1/skin-tianlight/_pet-models' + (provider === '' ? '' : '?provider=' + encodeURIComponent(provider)))
+  const req = fakeRequest('GET', url.pathname + url.search, {})
+  const res = fakeResponse()
+  mount(ctx, req, res, url)
+  return waitForResponse(res)
+}
 
 await testAsync('pet chat bridge: success assembles text-delta only and pins the fixed prompt', async () => {
   const { service, calls } = fakeLlmService()
@@ -4183,17 +4232,124 @@ await testAsync('pet chat bridge: success assembles text-delta only and pins the
   assert.equal(request.provider, 'deepseek-official')
 })
 
-await testAsync('pet chat bridge: provider override must be registered; model follows the DSH default', async () => {
+await testAsync('pet chat bridge: provider override must be registered; model follows the provider catalogue', async () => {
   const { service, calls } = fakeLlmService()
   const runtime = createPetChat()
   const ctx = petChatContext(service)
   const allowed = await callPetChat(runtime.handle, ctx, { body: JSON.stringify({ text: 'hi', provider: 'deepseek-account' }) })
   assert.equal(allowed.status, 200)
   assert.equal(allowed.bodyJson().model.provider, 'deepseek-account')
-  assert.equal(calls.stream[0].model, 'deepseek-flash', 'plan A: the model id follows the DSH default selection')
+  assert.equal(calls.listModels[0], 'deepseek-account', 'a provider-only override asks that provider for its first model')
+  assert.equal(calls.stream[0].model, 'deepseek-account-default', 'the catalog model is used instead of the default provider model')
   const denied = await callPetChat(runtime.handle, ctx, { body: JSON.stringify({ text: 'hi', provider: 'evil-route' }) })
   assert.equal(denied.status, 400)
   assert.deepEqual(denied.bodyJson(), { ok: false, code: 'provider-not-allowed' })
+})
+
+await testAsync('pet chat bridge: explicit provider+model reaches that exact route (Grok/Claude style)', async () => {
+  const { service, calls } = fakeLlmService({
+    providers: [
+      { id: 'deepseek-official', name: 'DeepSeek' },
+      { id: 'anthropic', name: 'Anthropic' },
+      { id: 'xai', name: 'xAI' },
+    ],
+  })
+  const runtime = createPetChat()
+  const ctx = petChatContext(service)
+  const response = await callPetChat(runtime.handle, ctx, {
+    body: JSON.stringify({ text: 'hi', provider: 'anthropic', model: 'claude-sonnet-4-5' }),
+  })
+  assert.equal(response.status, 200)
+  assert.deepEqual(response.bodyJson().model, { provider: 'anthropic', model: 'claude-sonnet-4-5' })
+  assert.equal(calls.stream[0].provider, 'anthropic')
+  assert.equal(calls.stream[0].model, 'claude-sonnet-4-5', 'the selected model is forwarded, not the DeepSeek default')
+  assert.equal(calls.listModels.length, 0, 'an explicit model needs no catalogue read')
+  const grok = await callPetChat(runtime.handle, ctx, {
+    body: JSON.stringify({ text: 'hi', provider: 'xai', model: 'grok-4' }),
+  })
+  assert.equal(grok.status, 200)
+  assert.equal(calls.stream[1].model, 'grok-4')
+})
+
+await testAsync('pet chat bridge: a model the provider does not serve is a clean unconfigured-model', async () => {
+  const { service } = fakeLlmService({
+    resolveModelInfo: async (provider, model) => {
+      if (model === 'removed-model') throw new Error('UNKNOWN_MODEL')
+      return { provider, id: model, name: model }
+    },
+  })
+  const runtime = createPetChat()
+  const response = await callPetChat(runtime.handle, petChatContext(service), {
+    body: JSON.stringify({ text: 'hi', model: 'removed-model' }),
+  })
+  assert.equal(response.status, 409)
+  assert.deepEqual(response.bodyJson(), { ok: false, code: 'unconfigured-model' })
+})
+
+await testAsync('pet model catalogue: lists providers and one provider models (read-only metadata)', async () => {
+  const { service, calls } = fakeLlmService({ providers: [{ id: 'anthropic', name: 'Anthropic' }, { id: 'xai', name: 'xAI' }] })
+  const runtime = createPetModels()
+  const ctx = { get: (name) => (name === 'llm' ? service : undefined) }
+  const list = await callPetModels(runtime.handle, ctx, '')
+  assert.equal(list.status, 200)
+  assert.deepEqual(list.bodyJson(), { ok: true, providers: [{ id: 'anthropic', name: 'Anthropic' }, { id: 'xai', name: 'xAI' }] })
+  const models = await callPetModels(runtime.handle, ctx, 'anthropic')
+  assert.equal(models.status, 200)
+  assert.deepEqual(models.bodyJson(), {
+    ok: true,
+    provider: 'anthropic',
+    models: [
+      { id: 'anthropic-default', name: 'anthropic default' },
+      { id: 'anthropic-pro', name: 'anthropic pro' },
+    ],
+  })
+  assert.deepEqual(calls.listModels, ['anthropic'], 'only the requested provider is interrogated')
+  const unknown = await callPetModels(runtime.handle, ctx, 'missing')
+  assert.equal(unknown.status, 400)
+  assert.deepEqual(unknown.bodyJson(), { ok: false, code: 'provider-not-allowed' })
+})
+
+await testAsync('pet model catalogue: per-provider cache, single-flight and minute budget', async () => {
+  const { service, calls } = fakeLlmService({
+    listModels: async (provider) => {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+      return [{ id: provider + '-one', name: provider + ' one' }]
+    },
+  })
+  const runtime = createPetModels({ perMinute: 30, cacheTtlMs: 10000 })
+  const ctx = { get: (name) => (name === 'llm' ? service : undefined) }
+  const first = await callPetModels(runtime.handle, ctx, 'deepseek-official')
+  assert.equal(first.status, 200)
+  for (let index = 0; index < 4; index += 1) {
+    const cached = await callPetModels(runtime.handle, ctx, 'deepseek-official')
+    assert.equal(cached.status, 200)
+  }
+  assert.equal(calls.listModels.length, 1, 'a fresh per-provider cache answers repeated reads without a new call')
+  const parallelRuntime = createPetModels({ perMinute: 30 })
+  const parallel = await Promise.all(Array.from({ length: 8 }, () => callPetModels(parallelRuntime.handle, ctx, 'deepseek-official')))
+  assert.equal(parallel.every((response) => response.status === 200), true)
+  assert.equal(calls.listModels.length, 2, 'concurrent reads for one provider are coalesced')
+  const limitedRuntime = createPetModels({ perMinute: 3, cacheTtlMs: 10000 })
+  const statuses = []
+  for (let index = 0; index < 4; index += 1) statuses.push((await callPetModels(limitedRuntime.handle, ctx, 'deepseek-official')).status)
+  assert.deepEqual(statuses, [200, 200, 200, 429], 'the fourth request in the minute is rate-limited')
+})
+
+await testAsync('pet model catalogue: failures are stable codes, not provider internals', async () => {
+  const rejecting = fakeLlmService({ listModels: async () => { throw new Error('boom: secret-ish detail') } })
+  const runtime = createPetModels()
+  const ctx = { get: (name) => (name === 'llm' ? rejecting.service : undefined) }
+  const failed = await callPetModels(runtime.handle, ctx, 'deepseek-official')
+  assert.equal(failed.status, 502)
+  assert.deepEqual(failed.bodyJson(), { ok: false, code: 'models-unavailable' })
+  const noService = await callPetModels(runtime.handle, { get: () => undefined }, 'deepseek-official')
+  assert.equal(noService.status, 503)
+  assert.deepEqual(noService.bodyJson(), { ok: false, code: 'host-unavailable' })
+  const slow = fakeLlmService({ listModels: () => new Promise(() => {}) })
+  const timeoutRuntime = createPetModels({ timeoutMs: 10 })
+  const timedOut = await callPetModels(timeoutRuntime.handle, { get: (name) => (name === 'llm' ? slow.service : undefined) }, 'deepseek-official')
+  assert.equal(timedOut.status, 504, 'catalogue timeout is a gateway timeout, matching _pet-chat')
+  assert.deepEqual(timedOut.bodyJson(), { ok: false, code: 'models-unavailable' })
 })
 
 await testAsync('pet chat bridge: a route without effort metadata sends no reasoningEffort', async () => {
@@ -4500,6 +4656,32 @@ await testAsync('pet chat bridge is mounted on the skin route behind the loopbac
   const engines = await callMounted(routes, 'GET', '/skin-tianlight/_engines')
   assert.equal(engines.bodyJson().capabilities.petLlm.available, true)
   assert.equal(engines.bodyJson().capabilities.petLlm.provider, 'deepseek-official')
+  // v2.2.0: the read-only catalogue goes through the SAME dispatch table, GET/HEAD
+  // gate and loopback/origin fence — not just the handler unit.
+  const models = await callMounted(routes, 'GET', '/skin-tianlight/_pet-models?provider=deepseek-official')
+  assert.equal(models.status, 200)
+  assert.deepEqual(models.bodyJson(), {
+    ok: true,
+    provider: 'deepseek-official',
+    models: [
+      { id: 'deepseek-official-default', name: 'deepseek-official default' },
+      { id: 'deepseek-official-pro', name: 'deepseek-official pro' },
+    ],
+  })
+  const head = await callMounted(routes, 'HEAD', '/skin-tianlight/_pet-models?provider=deepseek-official')
+  assert.equal(head.status, 200)
+  const post = await callMounted(routes, 'POST', '/skin-tianlight/_pet-models?provider=deepseek-official', { 'content-type': 'application/json' }, '{}')
+  assert.equal(post.status, 405)
+  const evil = await callMounted(routes, 'GET', '/skin-tianlight/_pet-models?provider=deepseek-official', { host: 'evil.example:58733' })
+  assert.equal(evil.status, 403)
+  const foreign = await callMounted(routes, 'GET', '/skin-tianlight/_pet-models?provider=deepseek-official', {
+    host: '127.0.0.1:58733',
+    origin: 'http://evil.example',
+  })
+  assert.equal(foreign.status, 403)
+  const unknown = await callMounted(routes, 'GET', '/skin-tianlight/_pet-models?provider=missing')
+  assert.equal(unknown.status, 400)
+  assert.deepEqual(unknown.bodyJson(), { ok: false, code: 'provider-not-allowed' })
 })
 
 // ---- v2.0.0 client wiring: built-in DSH adapter, AI/local labels, provider picker ----
@@ -4600,6 +4782,7 @@ test('default appearance keeps only appearance keys and points the wallpaper at 
     'tianlight.layers',
     'tianlight.glass',
     'tianlight.glassDepth',
+    'tianlight.glassLive',
     'tianlight.font.family',
     'tianlight.effects',
     'tianlight.context',
@@ -4619,6 +4802,7 @@ test('default appearance keeps only appearance keys and points the wallpaper at 
     'dsh-tianlight:cat:v1',
     'tianlight.pet.ai.v1',
     'tianlight.pet.llmProvider.v1',
+    'tianlight.pet.llmModel.v1',
     'tianlight.panel.advancedSeen',
     'tianlight.language',
     'tianlight.modules',
@@ -4630,6 +4814,7 @@ test('default appearance keeps only appearance keys and points the wallpaper at 
     url: '/skin-tianlight/bg-4k.mp4',
   })
   assert.equal(DEFAULT_APPEARANCE_FILE.appearance['tianlight.petMedia.v1'], null, 'default look = built-in cat.png')
+  assert.equal(DEFAULT_APPEARANCE_FILE.appearance['tianlight.glassLive'], '0', 'restoring the author look turns live off')
 })
 
 test('default appearance is applied only on a fresh install and is reachable from the role hub', () => {

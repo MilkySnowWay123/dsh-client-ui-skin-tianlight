@@ -4,10 +4,10 @@
   "note": "Reviewed cross-fragment top-level references. Regenerate deliberately with `node tools/deps.mjs`; `npm run check` fails on any reference missing here.",
   "totals": {
     "fragments": 28,
-    "declarations": 1149,
-    "declarationSites": 1149,
-    "references": 306,
-    "referenceOccurrences": 2248,
+    "declarations": 1163,
+    "declarationSites": 1163,
+    "references": 307,
+    "referenceOccurrences": 2272,
     "edges": 124,
     "unused": 2
   },
@@ -622,7 +622,7 @@
       "from": "44-pet-brain.js",
       "name": "ASSET_BASE",
       "declaredIn": "10-constants.js",
-      "count": 2
+      "count": 3
     },
     {
       "from": "44-pet-brain.js",
@@ -771,6 +771,12 @@
     {
       "from": "57-glass.js",
       "name": "readRenderTier",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "57-glass.js",
+      "name": "renderTierController",
       "declaredIn": "10-constants.js",
       "count": 1
     },
@@ -1438,7 +1444,7 @@
       "from": "76-role-hub.js",
       "name": "TL_T",
       "declaredIn": "13-i18n.js",
-      "count": 410
+      "count": 431
     },
     {
       "from": "76-role-hub.js",

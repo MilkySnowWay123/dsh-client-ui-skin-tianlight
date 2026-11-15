@@ -12,20 +12,27 @@ body[data-dsh-tianlight] {
 	--tl-shell-soft: rgba(250, 252, 255, 0);
 	/* Menus get their own translucent fill: opaque 0.97 would hide the blur behind
 	   them, so glass on a popover has to start with actual transparency. */
-	--tl-overlay: rgba(250, 252, 255, 0.82);
+	/* v2.2.0 anti-white-cast pass: every white fill was re-tinted toward the cool
+	   daylight hue and pulled down in alpha. The old recipe stacked ~0.30 white fill
+	   + up to 0.52 white specular on the same pixel, which read as a grey/white veil
+	   over the wallpaper ("整体泛白") instead of glass. The wallpapers stay the source
+	   of colour; the glass only adds a thin, cool specular edge. */
+	--tl-overlay: rgba(240, 247, 255, 0.80);
 	/* Composer-only glass. Everything else stays fully transparent; this card is
 	   the one surface that earns a frosted backdrop. */
-	--tl-glass-fill: rgba(255, 255, 255, calc(0.30 * var(--tl-glass-m, 1)));
-	--tl-glass-line: rgba(255, 255, 255, 0.62);
+	--tl-glass-fill: rgba(233, 243, 254, calc(0.26 * var(--tl-glass-m, 1)));
+	--tl-glass-line: rgba(255, 255, 255, 0.48);
 	--tl-glass-blur: 12px;
 	/* Modal-grade surface: a settings panel has to stay readable over the chat, so
 	   it needs its own fill instead of the zeroed bg-layer tokens. The value is high
-	   on purpose: the panel carries NO backdrop blur (see below), so its opacity is
-	   what does the legibility work.
+	   on purpose: the panel carries NO backdrop blur unless live mode is on (see
+	   below), so its opacity is what does the legibility work there.
 	   The glass slider may lower it, but only down to a legibility floor: at 0.30 the
 	   panel was so transparent that the sidebar text behind it showed through, which
-	   reads as "duplicate stacked UI". Data surfaces keep a hard floor. */
-	--tl-panel-fill: rgba(250, 252, 255, max(0.9, calc(0.84 * var(--tl-glass-m, 1))));
+	   reads as "duplicate stacked UI". Data surfaces keep a hard floor.
+	   v2.2.0: slightly less opaque and less pure-white; live mode lowers it further
+	   because its own real backdrop blur carries the legibility. */
+	--tl-panel-fill: rgba(240, 247, 255, max(0.86, calc(0.80 * var(--tl-glass-m, 1))));
 	--tl-ink: #0f2438;
 	--tl-ink-soft: #3a5a78;
 	--tl-ink-faint: #5d7d99;
@@ -56,30 +63,33 @@ body[data-dsh-tianlight] {
 	--dsw-alias-markdown-code-block: var(--tl-code) !important;
 	/* Remaining surface tokens: bubbles, nested cards, menus, selectors. Left
 	   opaque they read as the only solid blocks on a transparent interface. */
-	--dsw-specific-bubble: rgba(255, 255, 255, 0.34) !important;
-	--dsw-specific-tip: rgba(255, 255, 255, 0.40) !important;
+	/* Text-bearing surfaces keep a legibility floor: the anti-white pass lowers the
+	   decorative veil, not the contrast the dark-ink transcript needs on a night
+	   wallpaper. Bubbles/tips are the two the legibility guard does not cover. */
+	--dsw-specific-bubble: rgba(236, 245, 255, 0.30) !important;
+	--dsw-specific-tip: rgba(238, 247, 255, 0.32) !important;
 	--dsw-specific-menu: var(--tl-overlay) !important;
-	--dsw-alias-bg-layer-3: rgba(255, 255, 255, 0.28) !important;
-	--dsw-alias-bg-module-platform: rgba(255, 255, 255, 0.26) !important;
-	--dsw-alias-interactive-bg-hover-solid: rgba(112, 164, 214, 0.26) !important;
-	--dsw-alias-turn-trigger-bg: rgba(255, 255, 255, 0.26) !important;
-	--dsw-alias-markdown-code-block-banner: rgba(236, 244, 252, 0.44) !important;
+	--dsw-alias-bg-layer-3: rgba(236, 245, 255, 0.20) !important;
+	--dsw-alias-bg-module-platform: rgba(236, 245, 255, 0.18) !important;
+	--dsw-alias-interactive-bg-hover-solid: rgba(104, 156, 210, 0.22) !important;
+	--dsw-alias-turn-trigger-bg: rgba(236, 245, 255, 0.18) !important;
+	--dsw-alias-markdown-code-block-banner: rgba(226, 238, 250, 0.40) !important;
 	/* Remaining large surfaces that 0.2.0 still paints opaque: terminal, settings
 	   cards, document preview, masks, skeletons, selectors, nav items. Translucent
 	   only — deliberately NO new backdrop-filter, so playback cost stays flat. */
 	--dsw-alias-bg-document-preview: var(--tl-glass-fill) !important;
 	--dsw-alias-bg-l1: var(--tl-glass-fill) !important;
 	--dsw-alias-bg-layer-4: var(--tl-glass-fill) !important;
-	--dsw-alias-bg-mask-1: rgba(240, 244, 250, 0.62) !important;
+	--dsw-alias-bg-mask-1: rgba(236, 243, 251, 0.58) !important;
 	/* Full-viewport backdrop blur: the single most expensive thing on a page with a
 	   playing video, and the mask is translucent enough without it. */
 	--dsw-mask-blur: none !important;
-	--dsw-alias-bg-mask-drop: rgba(240, 244, 250, 0.70) !important;
+	--dsw-alias-bg-mask-drop: rgba(236, 243, 251, 0.68) !important;
 	--dsw-alias-bg-skeleton: var(--tl-line) !important;
-	--dsw-alias-fill-l1: rgba(255, 255, 255, 0.42) !important;
-	--dsw-alias-fill-l2: rgba(255, 255, 255, 0.30) !important;
-	--dsw-alias-fill-tertiary: rgba(255, 255, 255, 0.26) !important;
-	--dsw-alias-fill-tsp-secondary: rgba(255, 255, 255, 0.30) !important;
+	--dsw-alias-fill-l1: rgba(236, 245, 255, 0.30) !important;
+	--dsw-alias-fill-l2: rgba(236, 245, 255, 0.22) !important;
+	--dsw-alias-fill-tertiary: rgba(236, 245, 255, 0.18) !important;
+	--dsw-alias-fill-tsp-secondary: rgba(236, 245, 255, 0.22) !important;
 	--dsw-alias-interactive-bg-active: var(--tl-accent-soft) !important;
 	--dsw-alias-interactive-bg-hover-danger: rgba(192, 57, 43, 0.16) !important;
 	/* v1.6.1: the sidebar "new chat" button lives on an opaque product fill token
@@ -90,10 +100,10 @@ body[data-dsh-tianlight] {
 	--dsw-alias-button-elevated-fill: var(--tl-glass-fill) !important;
 	--dsw-alias-button-floating-hover: var(--tl-accent-soft) !important;
 	--dsw-alias-onboarding-card-fill: var(--tl-glass-fill) !important;
-	--dsw-alias-onboarding-secondary-fill: rgba(255, 255, 255, 0.22) !important;
+	--dsw-alias-onboarding-secondary-fill: rgba(236, 245, 255, 0.18) !important;
 	--dsw-alias-settings-card-fill: var(--tl-glass-fill) !important;
 	--dsw-specific-input-major: var(--tl-glass-fill) !important;
-	--dsw-specific-selector: rgba(255, 255, 255, 0.42) !important;
+	--dsw-specific-selector: rgba(236, 245, 255, 0.30) !important;
 	--dsw-specific-sidebar-nav-item-active: var(--tl-accent-soft) !important;
 	--dsw-specific-sidebar-nav-item-active-accent: var(--tl-accent) !important;
 	--dsw-specific-sidebar-nav-item-hover: var(--tl-accent-soft) !important;
@@ -228,7 +238,7 @@ body[data-dsh-tianlight] [data-tl-scene] > [data-tl-veil] {
 	position: absolute;
 	inset: 0;
 	background:
-		linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, transparent 40%, rgba(12, 28, 48, 0.10) 100%);
+		linear-gradient(180deg, rgba(240, 248, 255, 0.05) 0%, transparent 40%, rgba(12, 28, 48, 0.12) 100%);
 }
 body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-scene] > [data-tl-veil] {
 	background:
@@ -1995,67 +2005,91 @@ body[data-dsh-tianlight] {
 	--tl-liquid-lo: 0;
 	--tl-liquid-noise: 0;
 	--tl-liquid-sheen: 0;
-	/* v1.6.1 liquid glass v2. The surface/size pairs below are the complete
-	   multi-layer recipe every glass surface paints, so each rule is a one-line
-	   background-image away from the whole look: a baked feTurbulence grain tile
-	   (size --tl-liquid-grain), a cool bottom-right tint, the diagonal sheen, then
-	   the top-left radial specular. The flat pair is the same recipe without the
-	   tiled grain, for surfaces that appear in large numbers (transcript bubbles).
-	   The var() references resolve against the selected depth on <body>, so only the
-	   numbers and the per-level grain URL are repeated per depth. */
+	/* v2.2.0 live mode: the only place the stylesheet re-samples the wallpaper in
+	   real time. These are the plain defaults; each depth and the dark theme tune
+	   them below, so the live look still follows the selected depth. */
+	--tl-liquid-live-blur: 14px;
+	--tl-liquid-live-sat: 1.45;
+	--tl-liquid-live-bright: 0.985;
+	--tl-liquid-live-contrast: 1.05;
+	/* v1.6.1 liquid glass v2, re-tuned in v2.2.0 against the white cast. The
+	   surface/size pairs below are the complete multi-layer recipe every glass
+	   surface paints: a baked feTurbulence grain tile (size --tl-liquid-grain), a
+	   cool bottom-right tint, the diagonal sheen, the top-left radial specular, and
+	   a faint bottom-edge thickness gradient. The flat pair is the same recipe
+	   without the tiled grain, for surfaces that appear in large numbers (transcript
+	   bubbles). Speculars are deliberately cool and low-alpha: white was the main
+	   reason every panel looked like a grey-white veil over the wallpaper. */
 	--tl-liquid-grain: 140px;
 	--tl-liquid-rim: 0;
 	--tl-liquid-grain-image: none;
 	--tl-liquid-surface:
 		var(--tl-liquid-grain-image),
 		radial-gradient(120% 100% at 100% 100%, rgba(120, 170, 235, calc(0.05 + var(--tl-liquid-noise) * 1.2)) 0%, rgba(96, 146, 214, calc(0.03 + var(--tl-liquid-noise) * 0.6)) 42%, rgba(80, 130, 200, 0) 72%),
-		linear-gradient(115deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 32%, rgba(255, 255, 255, 0) 62%, rgba(255, 255, 255, var(--tl-liquid-lo)) 100%),
-		radial-gradient(120% 80% at 14% 4%, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 56%);
-	--tl-liquid-surface-size: var(--tl-liquid-grain) var(--tl-liquid-grain), auto, auto, auto;
+		linear-gradient(115deg, rgba(232, 244, 255, var(--tl-liquid-hi)) 0%, rgba(232, 244, 255, 0) 32%, rgba(232, 244, 255, 0) 62%, rgba(232, 244, 255, var(--tl-liquid-lo)) 100%),
+		radial-gradient(120% 80% at 14% 4%, rgba(235, 247, 255, var(--tl-liquid-hi)) 0%, rgba(235, 247, 255, 0) 56%),
+		linear-gradient(180deg, rgba(9, 24, 42, 0) 0%, rgba(9, 24, 42, 0) 76%, rgba(9, 24, 42, calc(0.03 + var(--tl-liquid-noise) * 0.55)) 100%);
+	--tl-liquid-surface-size: var(--tl-liquid-grain) var(--tl-liquid-grain), auto, auto, auto, auto;
 	--tl-liquid-surface-flat:
 		radial-gradient(120% 100% at 100% 100%, rgba(120, 170, 235, calc(0.05 + var(--tl-liquid-noise) * 1.2)) 0%, rgba(96, 146, 214, calc(0.03 + var(--tl-liquid-noise) * 0.6)) 42%, rgba(80, 130, 200, 0) 72%),
-		linear-gradient(115deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 32%, rgba(255, 255, 255, 0) 62%, rgba(255, 255, 255, var(--tl-liquid-lo)) 100%),
-		radial-gradient(120% 80% at 14% 4%, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 56%);
-	--tl-liquid-surface-flat-size: auto, auto, auto;
-	--tl-liquid-fallback-boost: radial-gradient(120% 90% at 18% 6%, rgba(170, 215, 255, calc(0.04 + var(--tl-liquid-sheen) * 0.10)) 0%, rgba(120, 170, 230, 0) 62%);
-	/* The 1px light/dark inner edge pair and the outer soft glow, shared by every
-	   surface so one box-shadow declaration composes the full v2 rim. */
+		linear-gradient(115deg, rgba(232, 244, 255, var(--tl-liquid-hi)) 0%, rgba(232, 244, 255, 0) 32%, rgba(232, 244, 255, 0) 62%, rgba(232, 244, 255, var(--tl-liquid-lo)) 100%),
+		radial-gradient(120% 80% at 14% 4%, rgba(235, 247, 255, var(--tl-liquid-hi)) 0%, rgba(235, 247, 255, 0) 56%),
+		linear-gradient(180deg, rgba(9, 24, 42, 0) 0%, rgba(9, 24, 42, 0) 76%, rgba(9, 24, 42, calc(0.03 + var(--tl-liquid-noise) * 0.55)) 100%);
+	--tl-liquid-surface-flat-size: auto, auto, auto, auto;
+	--tl-liquid-fallback-boost: radial-gradient(120% 90% at 18% 6%, rgba(170, 215, 255, calc(0.03 + var(--tl-liquid-sheen) * 0.06)) 0%, rgba(120, 170, 230, 0) 62%);
+	/* The 1px light/dark inner edge trio and the outer soft glow, shared by every
+	   surface so one box-shadow declaration composes the full v2 rim. The bottom
+	   inset is the v2.2.0 "thickness" edge that keeps the glass from flattening
+	   into a white sheet. */
 	--tl-liquid-rim-shadow:
-		inset 1px 1px 0 rgba(255, 255, 255, var(--tl-liquid-rim)),
-		inset -1px -1px 0 rgba(4, 14, 28, calc(var(--tl-liquid-rim) * 0.55));
-	--tl-liquid-glow-shadow: 0 0 calc(6px + 14px * var(--tl-liquid-sheen)) rgba(150, 200, 250, calc(var(--tl-liquid-sheen) * 0.14));
+		inset 1px 1px 0 rgba(240, 249, 255, var(--tl-liquid-rim)),
+		inset -1px -1px 0 rgba(4, 14, 28, calc(var(--tl-liquid-rim) * 0.55)),
+		inset 0 -1px 0 rgba(4, 14, 28, calc(var(--tl-liquid-rim) * 0.40));
+	--tl-liquid-glow-shadow: 0 0 calc(6px + 14px * var(--tl-liquid-sheen)) rgba(150, 200, 250, calc(var(--tl-liquid-sheen) * 0.10));
 }
 body[data-dsh-tianlight][data-tl-glass-effective="soft"] {
 	--tl-liquid-blur: 11px;
 	--tl-liquid-sat: 1.3;
-	--tl-liquid-hi: 0.30;
-	--tl-liquid-lo: 0.14;
-	--tl-liquid-noise: 0.035;
-	--tl-liquid-sheen: 0.4;
+	--tl-liquid-hi: 0.17;
+	--tl-liquid-lo: 0.06;
+	--tl-liquid-noise: 0.03;
+	--tl-liquid-sheen: 0.32;
 	--tl-liquid-grain: 180px;
-	--tl-liquid-rim: 0.26;
+	--tl-liquid-rim: 0.22;
+	--tl-liquid-live-blur: 13px;
+	--tl-liquid-live-sat: 1.42;
+	--tl-liquid-live-bright: 0.985;
+	--tl-liquid-live-contrast: 1.05;
 	--tl-liquid-grain-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'140'%20height%3D'140'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.9'%20numOctaves%3D'2'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20type%3D'saturate'%20values%3D'0'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'140'%20height%3D'140'%20filter%3D'url(%23n)'%20opacity%3D'0.035'%2F%3E%3C%2Fsvg%3E");
 }
 body[data-dsh-tianlight][data-tl-glass-effective="real"] {
 	--tl-liquid-blur: 19px;
 	--tl-liquid-sat: 1.5;
-	--tl-liquid-hi: 0.52;
-	--tl-liquid-lo: 0.28;
-	--tl-liquid-noise: 0.05;
-	--tl-liquid-sheen: 1;
+	--tl-liquid-hi: 0.24;
+	--tl-liquid-lo: 0.09;
+	--tl-liquid-noise: 0.045;
+	--tl-liquid-sheen: 0.7;
 	--tl-liquid-grain: 140px;
-	--tl-liquid-rim: 0.46;
+	--tl-liquid-rim: 0.40;
+	--tl-liquid-live-blur: 18px;
+	--tl-liquid-live-sat: 1.58;
+	--tl-liquid-live-bright: 0.97;
+	--tl-liquid-live-contrast: 1.06;
 	--tl-liquid-grain-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'140'%20height%3D'140'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.9'%20numOctaves%3D'2'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20type%3D'saturate'%20values%3D'0'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'140'%20height%3D'140'%20filter%3D'url(%23n)'%20opacity%3D'0.05'%2F%3E%3C%2Fsvg%3E");
 }
 body[data-dsh-tianlight][data-tl-glass-effective="frosted"] {
 	--tl-liquid-blur: 26px;
 	--tl-liquid-sat: 0.95;
-	--tl-liquid-hi: 0.55;
-	--tl-liquid-lo: 0.08;
-	--tl-liquid-noise: 0.12;
-	--tl-liquid-sheen: 0.12;
+	--tl-liquid-hi: 0.30;
+	--tl-liquid-lo: 0.05;
+	--tl-liquid-noise: 0.10;
+	--tl-liquid-sheen: 0.10;
 	--tl-liquid-grain: 110px;
-	--tl-liquid-rim: 0.5;
+	--tl-liquid-rim: 0.44;
+	--tl-liquid-live-blur: 24px;
+	--tl-liquid-live-sat: 1.02;
+	--tl-liquid-live-bright: 1;
+	--tl-liquid-live-contrast: 1.02;
 	--tl-liquid-grain-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'140'%20height%3D'140'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.9'%20numOctaves%3D'2'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20type%3D'saturate'%20values%3D'0'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'140'%20height%3D'140'%20filter%3D'url(%23n)'%20opacity%3D'0.12'%2F%3E%3C%2Fsvg%3E");
 }
 body[data-dsh-tianlight] [data-tl-scene]::after {
@@ -2346,6 +2380,57 @@ body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], 
 	}
 }
 
+/* ---- v2.2.0 real-time (live) glass ------------------------------------------
+   The depth presets are a static veil by design (see the R2 note above). Live mode
+   is the explicit opt-in that buys the real thing: the known glass surfaces get a
+   backdrop-filter, so Chromium re-samples whatever wallpaper frame is behind them.
+   It is gated on data-tl-glass-live-effective="on"; the installer writes that
+   attribute only when the user turned live on AND the low-power / 15 fps guard is
+   clear, so neither the default path nor a degraded path pays for a single extra
+   compositing layer. Only the large, known skin surfaces are sampled: transcript
+   bubbles stay fill-only (one live blur per bubble would re-composite per message). */
+body[data-dsh-tianlight][data-ds-dark-theme] {
+	--tl-liquid-live-bright: 1.03;
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] :is([data-tl-sidebar], [data-tl-sidebar-col], [data-tl-settings], [data-tl-wall], [data-tl-hub-panel]) {
+		-webkit-backdrop-filter: blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
+		backdrop-filter: blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
+	}
+	/* A lit fill would hide the sampled wallpaper again; live mode trades some of
+	   the static fill for the real blur, which carries at least as much legibility. */
+	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] :is([data-tl-settings], [data-tl-wall]) {
+		background-color: color-mix(in srgb, var(--tl-panel-fill) 72%, transparent) !important;
+	}
+	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] [data-tl-hub] [data-tl-hub-panel] {
+		background-color: color-mix(in srgb, var(--tl-overlay) 74%, transparent) !important;
+	}
+	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] :is([data-tl-sidebar], [data-tl-sidebar-col]) {
+		background-color: color-mix(in srgb, var(--tl-glass-fill) 45%, transparent) !important;
+	}
+	/* Composer keeps its ::before ownership (a filter on the card itself would
+	   re-anchor its non-portaled tooltips); live only makes that one layer real. */
+	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] [data-tl-composer]::before {
+		-webkit-backdrop-filter: blur(max(var(--tl-glass-blur), var(--tl-liquid-blur), var(--tl-liquid-live-blur))) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
+		backdrop-filter: blur(max(var(--tl-glass-blur), var(--tl-liquid-blur), var(--tl-liquid-live-blur))) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
+	}
+	/* Small floating surfaces upgrade their existing bounded blur; none of them
+	   gains a filter it did not already carry at a non-off depth. */
+	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] :is([data-tl-menu], [data-tl-model], [data-tl-new-chat], [data-tl-weather-chip], [data-tl-rheo][data-tl-rheo-empty], [data-tl-glass-preview]) {
+		-webkit-backdrop-filter: blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
+		backdrop-filter: blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
+	}
+	/* The role-hub preview is the control's own feedback: live makes it clear at a
+	   glance, including a tiny moving-wallpaper feel from the real backdrop. */
+	body[data-dsh-tianlight] [data-tl-hub] [data-tl-glass-preview][data-live="on"] {
+		box-shadow:
+			inset 0 1px 0 rgba(235, 247, 255, calc(var(--tl-liquid-hi) + 0.10)),
+			var(--tl-liquid-rim-shadow),
+			0 0 0 0.5px rgba(120, 190, 255, 0.35),
+			var(--tl-liquid-glow-shadow);
+	}
+}
+
 /* Role-hub liquid-glass preview: a compact swatch that reflects the current depth
    even before/without a wallpaper, so the control always has visible feedback. */
 body[data-dsh-tianlight] [data-tl-hub] [data-tl-glass-preview] {
@@ -2550,6 +2635,33 @@ body[data-dsh-tianlight] [data-tl-hub] button:focus-visible {
 body[data-dsh-tianlight] [data-tl-hub] button[data-active] {
 	background: var(--tl-accent);
 	color: #fff;
+}
+/* v2.2.0 live-rendering switch: a status dot makes on/off readable without colour
+   alone (the label text already carries the state). */
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-glass-live]::before {
+	content: "";
+	display: inline-block;
+	width: 6px;
+	height: 6px;
+	margin-right: 6px;
+	border-radius: 999px;
+	background: currentColor;
+	opacity: 0.35;
+	vertical-align: 1px;
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-glass-live][data-active]::before {
+	opacity: 1;
+	background: #8ef0c8;
+	box-shadow: 0 0 6px rgba(142, 240, 200, 0.9);
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-glass-live-note] {
+	flex: 1 1 190px;
+	min-width: 150px;
+	font: 400 11px/1.45 var(--ds-font-family, system-ui);
+	color: var(--tl-ink-faint, var(--tl-ink-soft, var(--tl-ink)));
+}
+body[data-dsh-tianlight] [data-tl-hub] [data-tl-hub-glass-live][data-tl-hub-glass-live-state="degraded"] {
+	opacity: 0.75;
 }
 /* v1.3.0 merged life-rhythm settings (formerly the removed settings page). */
 body[data-dsh-tianlight] [data-tl-hub] .tl-hub-life input[type="time"],

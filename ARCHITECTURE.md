@@ -1,4 +1,4 @@
-# 架构（v2.1.8 现状）
+# 架构（v2.2.0 现状）
 
 本文件描述 **当前** 结构，不是版本流水账。按版本记的历史已整体挪到 [docs/HISTORY.md](docs/HISTORY.md)（内容未删改）。
 
@@ -26,7 +26,7 @@ DSH 的客户端插件加载约定是"一个插件只有一个 ESM 文件"（见
 | 14 | `48-pet-agent.js` | pet agent | 23685 | 桌宠接入 DSH Agent（受控） |
 | 15 | `50-rheostat.js` | reasoning rheostat | 20501 | 推理滑杆（只影响本会话展示） |
 | 16 | `55-lowpower.js` | low power | 10650 | 省电模式：三输入一决策，暂停壁纸与镜像 |
-| 17 | `57-glass.js` | glass opacity | 7230 | 液态玻璃三档与深度 |
+| 17 | `57-glass.js` | glass opacity | 7230 | 液态玻璃三档与深度、v2.2.0 实时渲染开关 |
 | 18 | `58-legibility.js` | legibility | 25156 | 可读性对比/字号/字距 |
 | 19 | `59-splash.js` | splash | 25280 | 开机动画：`splashPlan` 单点决策 + 简洁 A 版 |
 | 20 | `59b-splash-film.js` | （splash 长片） | 110910 | 18.5 秒长片（WebGL/WAAPI，自带硬停与释放） |
@@ -57,7 +57,7 @@ DSH 的客户端插件加载约定是"一个插件只有一个 ESM 文件"（见
 | `lib/scene-project.js` | WebWallGL 场景项目解析 |
 | `lib/web-project.js` | Wallpaper Engine 网页项目 |
 | `lib/weather-proxy.js` | 天气代理（只读） |
-| `lib/pet-chat.js` | 桌宠 AI 对话（POST `_pet-chat`，固定系统提示词与预算） |
+| `lib/pet-chat.js` | 桌宠 AI 对话（POST `_pet-chat`，固定系统提示词与预算）与只读模型目录（GET `_pet-models`）；v2.2.0 按 provider+model 解析 |
 | `lib/fingerprint.js` | 安装指纹（版本、哈希、安装方式） |
 | `lib/we-wallpaper/host.mjs` | 内置 Wallpaper Engine 桥（`WE_API_PREFIX`） |
 | `lib/scene-frame.html` | 场景适配 iframe（CSP 沙箱） |
@@ -79,6 +79,7 @@ DSH 的客户端插件加载约定是"一个插件只有一个 ESM 文件"（见
 | `_transcode` | POST | `lib/routes/frames.js` | 围栏；无豁免 |
 | `_transcode/status` | GET / HEAD | `lib/routes/frames.js` | 围栏；无豁免 |
 | `_pet-chat` | POST | `lib/routes/pet.js` | 围栏；无豁免 |
+| `_pet-models` | GET / HEAD | `lib/routes/pet.js` | 围栏；无豁免 |
 | `_upload` | POST | `lib/routes/media.js` | 围栏；无豁免 |
 | `_manifest` | GET / HEAD | `lib/routes/media.js` | 围栏；无豁免 |
 | `_wallpapers` | GET / HEAD | `lib/routes/wallpaper.js` | 围栏；无豁免 |

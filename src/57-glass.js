@@ -64,6 +64,18 @@
 		const GLASS_DEPTHS = ["off", "frosted", "soft", "real"];
 		const GLASS_DEPTH_DEFAULT = "soft";
 		let glassDepthController = null;
+		/**
+		 * v2.2.0 "live" mode. The depth presets above are a STATIC veil: they look like
+		 * glass but never sample the wallpaper behind them. Live mode is the explicit,
+		 * opt-in reversal of the R2 energy decision: the known glass panels get a real
+		 * backdrop-filter, so the compositor re-samples the (possibly playing) wallpaper
+		 * on every frame and the panels become real glass. It is deliberately off by
+		 * default and is flattened again by low power / the 15 fps tier, exactly like the
+		 * depth presets. Persisted as "1"/"0" in the same localStorage mirror as
+		 * `tianlight.glassDepth`; no host setting is involved.
+		 */
+		const GLASS_LIVE_KEY = "tianlight.glassLive";
+		let glassLiveLevel = false;
 
 		function readGlassDepth() {
 			try {
@@ -92,6 +104,51 @@
 			const effective = effectiveGlassDepth(depth);
 			body.setAttribute("data-tl-glass-depth", depth);
 			body.setAttribute("data-tl-glass-effective", effective);
+			return effective;
+		}
+
+		function readGlassLive() {
+			try {
+				const raw = globalThis.localStorage.getItem(GLASS_LIVE_KEY);
+				return raw === "1" || raw === "on" || raw === "true";
+			} catch {
+				// storage may be blocked
+			}
+			return false;
+		}
+
+		/**
+		 * Live sampling obeys the same energy contract as the depth presets: low power
+		 * (the body attribute owned by the low-power supervisor) or the 15 fps render
+		 * tier turns the real backdrop-filter off without losing the user's preference.
+		 */
+		function effectiveGlassLive(live) {
+			if (live !== true) return false;
+			try {
+				// Live is a modifier of a depth recipe, never a replacement for it: with
+				// depth "off" there is no glass surface to sample, so it stays inert.
+				const body = document.body;
+				if (body === null || body.getAttribute("data-tl-glass-effective") === "off") return false;
+				if (readRenderTier() === "15") return false;
+				if (body.hasAttribute("data-tl-lowpower")) return false;
+			} catch {
+				// degrade silently
+			}
+			return true;
+		}
+
+		/**
+		 * Write the configured and effective live attributes. `off` keeps the stylesheet's
+		 * default static veil; only `effective=on` adds any backdrop-filter, so a disabled
+		 * or low-power live mode costs exactly what it cost before v2.2.0.
+		 */
+		function applyGlassLive(live) {
+			const body = document.body;
+			if (body === null) return false;
+			glassLiveLevel = live === true;
+			const effective = effectiveGlassLive(glassLiveLevel);
+			body.setAttribute("data-tl-glass-live", glassLiveLevel ? "on" : "off");
+			body.setAttribute("data-tl-glass-live-effective", effective ? "on" : "off");
 			return effective;
 		}
 
@@ -135,26 +192,50 @@
 		}
 
 		function installGlassDepth() {
+			// v2.2.0: make the current render tier visible to the observer below, so a
+			// later switch to 15fps immediately flattens live sampling without a reload.
+			renderTierController.publish();
 			let depth = readGlassDepth();
 			let effective = applyGlassDepth(depth);
+			glassLiveLevel = readGlassLive();
+			let liveEffective = applyGlassLive(glassLiveLevel);
 			syncLiquidFallback(effective);
 			glassDepthController = {
 				read: () => depth,
 				effective: () => effective,
 				levels: () => [...GLASS_DEPTHS],
+				live: () => glassLiveLevel,
+				liveEffective: () => liveEffective,
 				apply: (next) => {
 					depth = GLASS_DEPTHS.includes(next) ? next : GLASS_DEPTH_DEFAULT;
 					effective = applyGlassDepth(depth);
+					liveEffective = applyGlassLive(glassLiveLevel);
 					syncLiquidFallback(effective);
 					try {
 						globalThis.localStorage.setItem(GLASS_DEPTH_KEY, depth);
 					} catch {
 						// persistence is optional
 					}
-					return { depth, effective };
+					return { depth, effective, live: glassLiveLevel, liveEffective };
+				},
+				/**
+				 * v2.2.0: turn real-time sampling on/off. This never changes the depth by
+				 * itself; the role hub combines the two controls so "live on" is only offered
+				 * while a depth recipe exists. Returns the stored and effective state.
+				 */
+				setLive: (next) => {
+					glassLiveLevel = next === true;
+					liveEffective = applyGlassLive(glassLiveLevel);
+					try {
+						globalThis.localStorage.setItem(GLASS_LIVE_KEY, glassLiveLevel ? "1" : "0");
+					} catch {
+						// persistence is optional
+					}
+					return { live: glassLiveLevel, liveEffective };
 				},
 				refresh: () => {
 					effective = applyGlassDepth(depth);
+					liveEffective = applyGlassLive(glassLiveLevel);
 					syncLiquidFallback(effective);
 					return effective;
 				},
@@ -164,6 +245,10 @@
 				observer = new MutationObserver(() => {
 					const next = effectiveGlassDepth(depth);
 					if (next !== effective) effective = applyGlassDepth(depth);
+					// v2.2.0: a low-power / 15 fps transition must also switch the live
+					// backdrop-filter off (or back on) without losing the stored preference.
+					const nextLive = effectiveGlassLive(glassLiveLevel);
+					if (nextLive !== liveEffective) liveEffective = applyGlassLive(glassLiveLevel);
 					// childList only (no deep observation): the scene is injected/removed as a
 					// direct body child, and watching descendants would fire on every streaming
 					// token of the transcript. The call is cheap and syncLiquidFallback is a
@@ -173,7 +258,7 @@
 				});
 				observer.observe(document.body, {
 					attributes: true,
-					attributeFilter: ["data-tl-lowpower", "data-tl-lowpower-reason"],
+					attributeFilter: ["data-tl-lowpower", "data-tl-lowpower-reason", "data-tl-render-tier"],
 					childList: true,
 				});
 			} catch (error) {
@@ -181,6 +266,7 @@
 			}
 			return () => {
 				glassDepthController = null;
+				glassLiveLevel = false;
 				try {
 					observer?.disconnect();
 				} catch (error) {
@@ -192,6 +278,9 @@
 				if (body !== null) {
 					body.removeAttribute("data-tl-glass-depth");
 					body.removeAttribute("data-tl-glass-effective");
+					body.removeAttribute("data-tl-glass-live");
+					body.removeAttribute("data-tl-glass-live-effective");
+					body.removeAttribute("data-tl-render-tier");
 				}
 			};
 		}
