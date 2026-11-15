@@ -45,7 +45,10 @@ function npmCommand(args) {
   candidates.push(join(execDir, 'node_modules', 'npm', 'bin', 'npm-cli.js'))
   candidates.push(join(execDir, '..', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js'))
   for (const candidate of candidates) {
-    if (candidate.endsWith('.js')) return { command: process.execPath, args: [candidate, ...args], shell: false }
+    // Existence matters: a GitHub runner's Node lives in the toolcache, where the
+    // first layout (`<node>/node_modules/npm/...`) does not exist even though the
+    // path ends with `.js`. Returning it would make the resolver fail on every tick.
+    if (candidate.endsWith('.js') && existsSync(candidate)) return { command: process.execPath, args: [candidate, ...args], shell: false }
   }
   return { command: 'npm', args, shell: process.platform === 'win32' }
 }
