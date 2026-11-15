@@ -22,11 +22,14 @@ concurrency:
 
 jobs:
   static:
-    name: static (Node ${{ matrix.node }})
-    runs-on: ubuntu-latest
+    name: static (${{ matrix.os }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
+      # Windows is in the matrix because the plugin had Windows-only defects
+      # (a junction being treated as a plain directory) that Linux CI could not see.
       matrix:
+        os: [ubuntu-latest, windows-latest]
         node: ['20', '22']
     steps:
       - uses: actions/checkout@v4
