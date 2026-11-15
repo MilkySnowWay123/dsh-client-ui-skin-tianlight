@@ -52,6 +52,7 @@ const CHECK_CHAIN = [
   ['build check', 'tools/build.mjs', '--check'],
   ['unit tests', 'tools/test.mjs'],
   ['structure', 'tools/structure.mjs', '--strict'],
+  ['deps baseline', 'tools/deps.mjs', '--check'],
   ['audit', 'tools/audit.mjs'],
   ['check-css', 'tools/check-css.mjs'],
   ['verify', 'tools/verify.mjs'],

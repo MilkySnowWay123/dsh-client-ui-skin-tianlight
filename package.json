@@ -55,7 +55,7 @@
   "scripts": {
     "build": "node tools/build.mjs",
     "build:check": "node tools/build.mjs --check",
-    "check": "node tools/build.mjs --check && node tools/test.mjs && node tools/structure.mjs --strict && node tools/audit.mjs && node tools/check-css.mjs && node tools/verify.mjs && node tools/i18n-audit.mjs",
+    "check": "node tools/build.mjs --check && node tools/test.mjs && node tools/structure.mjs --strict && node tools/deps.mjs --check && node tools/audit.mjs && node tools/check-css.mjs && node tools/verify.mjs && node tools/i18n-audit.mjs",
     "upgrade": "node tools/upgrade-check.mjs && node tools/hook-scan.mjs --self-check",
     "hook-scan": "node tools/hook-scan.mjs",
     "compat": "node tools/compat-matrix.mjs",

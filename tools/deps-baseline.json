@@ -1,0 +1,1815 @@
+{
+  "schema": 1,
+  "generator": "tools/deps.mjs",
+  "note": "Reviewed cross-fragment top-level references. Regenerate deliberately with `node tools/deps.mjs`; `npm run check` fails on any reference missing here.",
+  "totals": {
+    "fragments": 28,
+    "declarations": 1151,
+    "declarationSites": 1151,
+    "references": 300,
+    "referenceOccurrences": 2233,
+    "edges": 124
+  },
+  "references": [
+    {
+      "from": "11-platform.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 5
+    },
+    {
+      "from": "11-platform.js",
+      "name": "wallpaperController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "12-schema.js",
+      "name": "ASSET_BASE",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "12-schema.js",
+      "name": "moduleController",
+      "declaredIn": "11-platform.js",
+      "count": 8
+    },
+    {
+      "from": "12-schema.js",
+      "name": "React",
+      "declaredIn": "10-constants.js",
+      "count": 46
+    },
+    {
+      "from": "12-schema.js",
+      "name": "registerTl5Css",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "12-schema.js",
+      "name": "registerTl5PanelSection",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "12-schema.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "12-schema.js",
+      "name": "setTl5Language",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "12-schema.js",
+      "name": "STORAGE_KEY",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "12-schema.js",
+      "name": "subscribeTl5Metrics",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "12-schema.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 2
+    },
+    {
+      "from": "12-schema.js",
+      "name": "tl5Diag",
+      "declaredIn": "11-platform.js",
+      "count": 11
+    },
+    {
+      "from": "12-schema.js",
+      "name": "tl5Language",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "12-schema.js",
+      "name": "tl5MediaKindFromName",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "12-schema.js",
+      "name": "useTl5I18n",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "13-i18n.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 4
+    },
+    {
+      "from": "13-i18n.js",
+      "name": "React",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "13-i18n.js",
+      "name": "TL5_SCHEMA_STRINGS",
+      "declaredIn": "12-schema.js",
+      "count": 2
+    },
+    {
+      "from": "13-i18n.js",
+      "name": "tl5Diag",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "20-stylesheet.js",
+      "name": "CSS_TAG_ID",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "20-stylesheet.js",
+      "name": "PLUGIN_ID",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "20-stylesheet.js",
+      "name": "tl5CssText",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "30-wallpaper.js",
+      "name": "ASSET_BASE",
+      "declaredIn": "10-constants.js",
+      "count": 12
+    },
+    {
+      "from": "30-wallpaper.js",
+      "name": "contextController",
+      "declaredIn": "35-context.js",
+      "count": 4
+    },
+    {
+      "from": "30-wallpaper.js",
+      "name": "effectiveShaderFps",
+      "declaredIn": "10-constants.js",
+      "count": 4
+    },
+    {
+      "from": "30-wallpaper.js",
+      "name": "FOCAL_X",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "30-wallpaper.js",
+      "name": "lowPowerController",
+      "declaredIn": "55-lowpower.js",
+      "count": 3
+    },
+    {
+      "from": "30-wallpaper.js",
+      "name": "moduleController",
+      "declaredIn": "11-platform.js",
+      "count": 4
+    },
+    {
+      "from": "30-wallpaper.js",
+      "name": "publishTl5Metrics",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "30-wallpaper.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "30-wallpaper.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 67
+    },
+    {
+      "from": "30-wallpaper.js",
+      "name": "tl5Diag",
+      "declaredIn": "11-platform.js",
+      "count": 7
+    },
+    {
+      "from": "30-wallpaper.js",
+      "name": "transitionController",
+      "declaredIn": "31-engine-extra.js",
+      "count": 4
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "adaptiveController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 7
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "ASSET_BASE",
+      "declaredIn": "10-constants.js",
+      "count": 4
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "audioController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 34
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "contextController",
+      "declaredIn": "35-context.js",
+      "count": 11
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "effectsController",
+      "declaredIn": "32-effects.js",
+      "count": 4
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "forgetCatalog",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "frameCacheController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 4
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "moduleController",
+      "declaredIn": "11-platform.js",
+      "count": 12
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "React",
+      "declaredIn": "10-constants.js",
+      "count": 81
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "readWallpaperChoice",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "registerTl5Css",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "registerTl5PanelSection",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "subscribeTl5Metrics",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 7
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "tl5Diag",
+      "declaredIn": "11-platform.js",
+      "count": 5
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "useTl5I18n",
+      "declaredIn": "13-i18n.js",
+      "count": 2
+    },
+    {
+      "from": "31-engine-extra.js",
+      "name": "wallpaperController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 3
+    },
+    {
+      "from": "32-effects.js",
+      "name": "lowPowerController",
+      "declaredIn": "55-lowpower.js",
+      "count": 3
+    },
+    {
+      "from": "32-effects.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "32-effects.js",
+      "name": "publishTl5Metrics",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "32-effects.js",
+      "name": "React",
+      "declaredIn": "10-constants.js",
+      "count": 25
+    },
+    {
+      "from": "32-effects.js",
+      "name": "registerTl5Css",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "32-effects.js",
+      "name": "registerTl5PanelSection",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "32-effects.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "32-effects.js",
+      "name": "sceneStatusController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "32-effects.js",
+      "name": "subscribeTl5Metrics",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "32-effects.js",
+      "name": "tl5Diag",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "32-effects.js",
+      "name": "useTl5I18n",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "35-context.js",
+      "name": "ASSET_BASE",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "35-context.js",
+      "name": "effectsController",
+      "declaredIn": "32-effects.js",
+      "count": 5
+    },
+    {
+      "from": "35-context.js",
+      "name": "glassController",
+      "declaredIn": "57-glass.js",
+      "count": 9
+    },
+    {
+      "from": "35-context.js",
+      "name": "layerController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 4
+    },
+    {
+      "from": "35-context.js",
+      "name": "moduleController",
+      "declaredIn": "11-platform.js",
+      "count": 3
+    },
+    {
+      "from": "35-context.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 18
+    },
+    {
+      "from": "35-context.js",
+      "name": "React",
+      "declaredIn": "10-constants.js",
+      "count": 62
+    },
+    {
+      "from": "35-context.js",
+      "name": "registerTl5Css",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "35-context.js",
+      "name": "registerTl5PanelSection",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "35-context.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "35-context.js",
+      "name": "subscribeTl5I18n",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "35-context.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 47
+    },
+    {
+      "from": "35-context.js",
+      "name": "TL5_DIAG",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "35-context.js",
+      "name": "tl5Diag",
+      "declaredIn": "11-platform.js",
+      "count": 3
+    },
+    {
+      "from": "35-context.js",
+      "name": "useTl5I18n",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "40-companion.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 53
+    },
+    {
+      "from": "40-companion.js",
+      "name": "petBrainInternal",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "40-companion.js",
+      "name": "petLlmHintText",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "40-companion.js",
+      "name": "readRenderTier",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "40-companion.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "40-companion.js",
+      "name": "resolveCompanionArt",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "40-companion.js",
+      "name": "STORAGE_KEY",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "40-companion.js",
+      "name": "subscribeTl5I18n",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "40-companion.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 47
+    },
+    {
+      "from": "40-companion.js",
+      "name": "tl5OverlayRegister",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "42-life.js",
+      "name": "ASSET_BASE",
+      "declaredIn": "10-constants.js",
+      "count": 4
+    },
+    {
+      "from": "42-life.js",
+      "name": "companionDutyBridge",
+      "declaredIn": "40-companion.js",
+      "count": 10
+    },
+    {
+      "from": "42-life.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 36
+    },
+    {
+      "from": "42-life.js",
+      "name": "petBrainInternal",
+      "declaredIn": "44-pet-brain.js",
+      "count": 6
+    },
+    {
+      "from": "42-life.js",
+      "name": "readRenderTier",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "42-life.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "42-life.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "42-life.js",
+      "name": "tl5MediaKindFromName",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "44-pet-brain.js",
+      "name": "ASSET_BASE",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "44-pet-brain.js",
+      "name": "companionDutyBridge",
+      "declaredIn": "40-companion.js",
+      "count": 3
+    },
+    {
+      "from": "44-pet-brain.js",
+      "name": "glassDepthController",
+      "declaredIn": "57-glass.js",
+      "count": 6
+    },
+    {
+      "from": "44-pet-brain.js",
+      "name": "HOST_API",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "44-pet-brain.js",
+      "name": "lowPowerController",
+      "declaredIn": "55-lowpower.js",
+      "count": 4
+    },
+    {
+      "from": "44-pet-brain.js",
+      "name": "petChatsRecentContext",
+      "declaredIn": "40-companion.js",
+      "count": 2
+    },
+    {
+      "from": "44-pet-brain.js",
+      "name": "readRenderTier",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "44-pet-brain.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "44-pet-brain.js",
+      "name": "rememberHostIdentity",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "44-pet-brain.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 65
+    },
+    {
+      "from": "48-pet-agent.js",
+      "name": "petAgentChatAllowed",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "48-pet-agent.js",
+      "name": "petAgentPaused",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "48-pet-agent.js",
+      "name": "petRecordExternal",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "50-rheostat.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 4
+    },
+    {
+      "from": "50-rheostat.js",
+      "name": "React",
+      "declaredIn": "10-constants.js",
+      "count": 31
+    },
+    {
+      "from": "50-rheostat.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "50-rheostat.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "50-rheostat.js",
+      "name": "useTl5I18n",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "55-lowpower.js",
+      "name": "audioController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "55-lowpower.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "55-lowpower.js",
+      "name": "railPlayback",
+      "declaredIn": "60-zones.js",
+      "count": 4
+    },
+    {
+      "from": "55-lowpower.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "55-lowpower.js",
+      "name": "scenePlayback",
+      "declaredIn": "30-wallpaper.js",
+      "count": 4
+    },
+    {
+      "from": "55-lowpower.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "57-glass.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "57-glass.js",
+      "name": "readRenderTier",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "58-legibility.js",
+      "name": "DARK_ATTR",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "58-legibility.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 6
+    },
+    {
+      "from": "58-legibility.js",
+      "name": "React",
+      "declaredIn": "10-constants.js",
+      "count": 20
+    },
+    {
+      "from": "58-legibility.js",
+      "name": "registerTl5Css",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "58-legibility.js",
+      "name": "registerTl5PanelSection",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "58-legibility.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "58-legibility.js",
+      "name": "tl5Diag",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "58-legibility.js",
+      "name": "useTl5I18n",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "58-legibility.js",
+      "name": "wallpaperController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "59-splash.js",
+      "name": "BODY_ATTR",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "59-splash.js",
+      "name": "installSplashFilm",
+      "declaredIn": "59b-splash-film.js",
+      "count": 2
+    },
+    {
+      "from": "59-splash.js",
+      "name": "lowPowerController",
+      "declaredIn": "55-lowpower.js",
+      "count": 3
+    },
+    {
+      "from": "59-splash.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 8
+    },
+    {
+      "from": "59-splash.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 2
+    },
+    {
+      "from": "59-splash.js",
+      "name": "tl5Diag",
+      "declaredIn": "11-platform.js",
+      "count": 12
+    },
+    {
+      "from": "59b-splash-film.js",
+      "name": "PLUGIN_ID",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "59b-splash-film.js",
+      "name": "TL_BUILD_VERSION",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "60-zones.js",
+      "name": "railFrameStep",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "60-zones.js",
+      "name": "wallpaperController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "applyTypography",
+      "declaredIn": "90-font.js",
+      "count": 2
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "ASSET_BASE",
+      "declaredIn": "10-constants.js",
+      "count": 6
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "audioController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 6
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "clampNumber",
+      "declaredIn": "30-wallpaper.js",
+      "count": 3
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "CONTEXT_DEFAULTS",
+      "declaredIn": "35-context.js",
+      "count": 2
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "contextController",
+      "declaredIn": "35-context.js",
+      "count": 6
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "cropWindow",
+      "declaredIn": "60-zones.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "DARK_ATTR",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "EFFECTS_DEFAULTS",
+      "declaredIn": "32-effects.js",
+      "count": 2
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "effectsController",
+      "declaredIn": "32-effects.js",
+      "count": 6
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "glassController",
+      "declaredIn": "57-glass.js",
+      "count": 6
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "HOST_API",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "LAYER_BLEND_LABELS",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "LAYER_LABELS",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "layerController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 5
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "LEGIBILITY_DEFAULTS",
+      "declaredIn": "58-legibility.js",
+      "count": 2
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "legibilityController",
+      "declaredIn": "58-legibility.js",
+      "count": 6
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "LIBRARY_TAG_LENGTH",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "LIBRARY_TAG_MAX",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "listWallpapers",
+      "declaredIn": "30-wallpaper.js",
+      "count": 4
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "lowPowerController",
+      "declaredIn": "55-lowpower.js",
+      "count": 8
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "normalizeZones",
+      "declaredIn": "60-zones.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 4
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "playbackController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 4
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "probeUrlKind",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "PROVIDERS",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "RATIOS",
+      "declaredIn": "60-zones.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "React",
+      "declaredIn": "10-constants.js",
+      "count": 360
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "readGlass",
+      "declaredIn": "57-glass.js",
+      "count": 2
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "readLowPowerMode",
+      "declaredIn": "55-lowpower.js",
+      "count": 3
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "readTypography",
+      "declaredIn": "90-font.js",
+      "count": 4
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "readWallpaperChoice",
+      "declaredIn": "30-wallpaper.js",
+      "count": 3
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "readZones",
+      "declaredIn": "60-zones.js",
+      "count": 2
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "registerTl5Css",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "rememberHostIdentity",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "renderTierController",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "resolveWallpaperChoice",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "ROTATION_INTERVALS",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "rotationController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 6
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "sampleVideoFrames",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "sceneStatusController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "settingsStore",
+      "declaredIn": "12-schema.js",
+      "count": 6
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "SHADER_DEFAULTS",
+      "declaredIn": "30-wallpaper.js",
+      "count": 3
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "SHADER_PRESETS",
+      "declaredIn": "30-wallpaper.js",
+      "count": 3
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "SHADER_SOURCES",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "shaderController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 4
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "subscribeTl5I18n",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 3
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "tl5MediaKindFromName",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "tl5OverlayOpenAllowed",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "tl5OverlayRegister",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "tl5ReadRecent",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "tl5RememberRecent",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "tl5SampleWallpaperPalette",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "tl5ValidateUploadFile",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "UPLOAD_LIMIT",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "useTl5I18n",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "validateShaderSource",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "wallpaperController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 8
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "wallpaperLibraryController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "zoneController",
+      "declaredIn": "60-zones.js",
+      "count": 16
+    },
+    {
+      "from": "72-we-library.js",
+      "name": "ASSET_BASE",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "72-we-library.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 18
+    },
+    {
+      "from": "72-we-library.js",
+      "name": "React",
+      "declaredIn": "10-constants.js",
+      "count": 67
+    },
+    {
+      "from": "72-we-library.js",
+      "name": "readWallpaperChoice",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "72-we-library.js",
+      "name": "registerTl5Css",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "72-we-library.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "72-we-library.js",
+      "name": "subscribeTl5I18n",
+      "declaredIn": "13-i18n.js",
+      "count": 2
+    },
+    {
+      "from": "72-we-library.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 14
+    },
+    {
+      "from": "72-we-library.js",
+      "name": "tl5Diag",
+      "declaredIn": "11-platform.js",
+      "count": 12
+    },
+    {
+      "from": "72-we-library.js",
+      "name": "tl5OverlayRegister",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "72-we-library.js",
+      "name": "tl5RememberRecent",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "72-we-library.js",
+      "name": "useTl5I18n",
+      "declaredIn": "13-i18n.js",
+      "count": 4
+    },
+    {
+      "from": "72-we-library.js",
+      "name": "wallpaperController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 4
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "ASSET_BASE",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "glassDepthController",
+      "declaredIn": "57-glass.js",
+      "count": 2
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "HOST_API",
+      "declaredIn": "10-constants.js",
+      "count": 3
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "hostIdentity",
+      "declaredIn": "10-constants.js",
+      "count": 5
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "petAgentInternal",
+      "declaredIn": "48-pet-agent.js",
+      "count": 3
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "petBrainInternal",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "petLlmHintText",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "readSplashForceMotion",
+      "declaredIn": "59-splash.js",
+      "count": 2
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "readSplashSound",
+      "declaredIn": "59-splash.js",
+      "count": 2
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "readSplashStyle",
+      "declaredIn": "59-splash.js",
+      "count": 2
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "setSplashForceMotion",
+      "declaredIn": "59-splash.js",
+      "count": 1
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "setSplashSound",
+      "declaredIn": "59-splash.js",
+      "count": 1
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "setSplashStyle",
+      "declaredIn": "59-splash.js",
+      "count": 1
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 410
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "tl5ApplyDefaultAppearance",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "tl5OverlayRegister",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "76-role-hub.js",
+      "name": "tl5ValidateUploadFile",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "90-font.js",
+      "name": "DARK_ATTR",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "90-font.js",
+      "name": "LEGIBILITY_THRESHOLD_MAX",
+      "declaredIn": "58-legibility.js",
+      "count": 2
+    },
+    {
+      "from": "90-font.js",
+      "name": "LEGIBILITY_THRESHOLD_MIN",
+      "declaredIn": "58-legibility.js",
+      "count": 3
+    },
+    {
+      "from": "90-font.js",
+      "name": "legibilityController",
+      "declaredIn": "58-legibility.js",
+      "count": 4
+    },
+    {
+      "from": "90-font.js",
+      "name": "React",
+      "declaredIn": "10-constants.js",
+      "count": 35
+    },
+    {
+      "from": "90-font.js",
+      "name": "registerTl5Css",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "90-font.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "90-font.js",
+      "name": "tl5OverlayOpenAllowed",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "90-font.js",
+      "name": "tl5OverlayRegister",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "90-font.js",
+      "name": "tl5SampleWallpaperPalette",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "90-font.js",
+      "name": "useTl5I18n",
+      "declaredIn": "13-i18n.js",
+      "count": 2
+    },
+    {
+      "from": "95-a11y.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 3
+    },
+    {
+      "from": "95-a11y.js",
+      "name": "React",
+      "declaredIn": "10-constants.js",
+      "count": 11
+    },
+    {
+      "from": "95-a11y.js",
+      "name": "registerTl5Css",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "95-a11y.js",
+      "name": "registerTl5PanelSection",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "95-a11y.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "95-a11y.js",
+      "name": "subscribeTl5I18n",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "95-a11y.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 8
+    },
+    {
+      "from": "95-a11y.js",
+      "name": "tl5OverlayModalAbove",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "95-a11y.js",
+      "name": "tl5OverlayOpenAllowed",
+      "declaredIn": "11-platform.js",
+      "count": 4
+    },
+    {
+      "from": "95-a11y.js",
+      "name": "useTl5I18n",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "BODY_ATTR",
+      "declaredIn": "10-constants.js",
+      "count": 3
+    },
+    {
+      "from": "99-apply.js",
+      "name": "bootstrapSettingsRuntime",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "createModuleRuntime",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "CSS_TAG_ID",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "detectDshFeatures",
+      "declaredIn": "65-bridge.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "dutyChannelStatus",
+      "declaredIn": "40-companion.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "glassDepthController",
+      "declaredIn": "57-glass.js",
+      "count": 3
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installAccessibility",
+      "declaredIn": "95-a11y.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installAudioRuntime",
+      "declaredIn": "31-engine-extra.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installCompanion",
+      "declaredIn": "40-companion.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installContextRuntime",
+      "declaredIn": "35-context.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installDutyChannel",
+      "declaredIn": "40-companion.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installEffectsLayer",
+      "declaredIn": "32-effects.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installEffortRheostat",
+      "declaredIn": "50-rheostat.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installFontPanel",
+      "declaredIn": "90-font.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installGlassDepth",
+      "declaredIn": "57-glass.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installGlassOpacity",
+      "declaredIn": "57-glass.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installI18nRuntime",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installLegibilityGuard",
+      "declaredIn": "58-legibility.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installLifeRhythm",
+      "declaredIn": "42-life.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installLowPower",
+      "declaredIn": "55-lowpower.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installPetAgent",
+      "declaredIn": "48-pet-agent.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installPetBrain",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installRoleHub",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installScene",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installSelectorBridge",
+      "declaredIn": "65-bridge.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installSettingsRuntime",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installSplashEntry",
+      "declaredIn": "59-splash.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installStyles",
+      "declaredIn": "20-stylesheet.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installWallpaperSidebar",
+      "declaredIn": "70-sidebar.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installWeatherChip",
+      "declaredIn": "35-context.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installWeLibrary",
+      "declaredIn": "72-we-library.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installZoneFraming",
+      "declaredIn": "60-zones.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "moduleController",
+      "declaredIn": "11-platform.js",
+      "count": 6
+    },
+    {
+      "from": "99-apply.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 14
+    },
+    {
+      "from": "99-apply.js",
+      "name": "settingsStore",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "splashStatus",
+      "declaredIn": "59-splash.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "syncModulesAttr",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "TL5_DIAG",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "TL5_METRICS",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "TL5_MODULES_ATTR",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "99-apply.js",
+      "name": "tl5ActiveLanguage",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "tl5Diag",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "tl5Language",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    }
+  ]
+}

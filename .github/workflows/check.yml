@@ -44,6 +44,8 @@ jobs:
         run: node tools/test.mjs
       - name: structure (strict)
         run: node tools/structure.mjs --strict
+      - name: dependency baseline (no new cross-fragment references)
+        run: node tools/deps.mjs --check
       - name: audit
         run: node tools/audit.mjs
       - name: check-css
