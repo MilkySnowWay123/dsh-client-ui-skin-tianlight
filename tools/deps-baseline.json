@@ -4,11 +4,12 @@
   "note": "Reviewed cross-fragment top-level references. Regenerate deliberately with `node tools/deps.mjs`; `npm run check` fails on any reference missing here.",
   "totals": {
     "fragments": 28,
-    "declarations": 1151,
-    "declarationSites": 1151,
-    "references": 300,
-    "referenceOccurrences": 2233,
-    "edges": 124
+    "declarations": 1149,
+    "declarationSites": 1149,
+    "references": 306,
+    "referenceOccurrences": 2248,
+    "edges": 124,
+    "unused": 2
   },
   "references": [
     {
@@ -28,6 +29,12 @@
       "name": "ASSET_BASE",
       "declaredIn": "10-constants.js",
       "count": 1
+    },
+    {
+      "from": "12-schema.js",
+      "name": "MODULE_DEFS",
+      "declaredIn": "11-platform.js",
+      "count": 3
     },
     {
       "from": "12-schema.js",
@@ -82,6 +89,12 @@
       "name": "TL_T",
       "declaredIn": "13-i18n.js",
       "count": 2
+    },
+    {
+      "from": "12-schema.js",
+      "name": "TL5_METRICS",
+      "declaredIn": "11-platform.js",
+      "count": 1
     },
     {
       "from": "12-schema.js",
@@ -214,6 +227,12 @@
       "name": "transitionController",
       "declaredIn": "31-engine-extra.js",
       "count": 4
+    },
+    {
+      "from": "30-wallpaper.js",
+      "name": "VIDEO_CANDIDATES",
+      "declaredIn": "10-constants.js",
+      "count": 6
     },
     {
       "from": "31-engine-extra.js",
@@ -380,6 +399,12 @@
     {
       "from": "32-effects.js",
       "name": "subscribeTl5Metrics",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "32-effects.js",
+      "name": "TL5_METRICS",
       "declaredIn": "11-platform.js",
       "count": 1
     },
@@ -1125,7 +1150,7 @@
       "from": "70-sidebar.js",
       "name": "SHADER_DEFAULTS",
       "declaredIn": "30-wallpaper.js",
-      "count": 3
+      "count": 4
     },
     {
       "from": "70-sidebar.js",
@@ -1172,6 +1197,12 @@
     {
       "from": "70-sidebar.js",
       "name": "tl5OverlayRegister",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "tl5PanelSections",
       "declaredIn": "11-platform.js",
       "count": 1
     },
@@ -1227,6 +1258,12 @@
       "from": "70-sidebar.js",
       "name": "wallpaperLibraryController",
       "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "70-sidebar.js",
+      "name": "ZONE_DEFAULTS",
+      "declaredIn": "60-zones.js",
       "count": 2
     },
     {

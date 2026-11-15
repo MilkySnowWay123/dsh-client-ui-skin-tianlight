@@ -8,6 +8,7 @@
 //
 //   node tools/deps.mjs            # write docs/DEPS.md + tools/deps-baseline.json
 //   node tools/deps.mjs --check     # fail on a cross-fragment reference the baseline does not list
+//   node tools/deps.mjs --unused    # list top-level names nothing reads (dead code candidates)
 //   node tools/deps.mjs --json      # machine-readable analysis on stdout (no writes)
 //
 // The analyzer is a small hand-written lexer, not a regex pass: the fragments contain
@@ -27,6 +28,7 @@ const DOCS = join(ROOT, 'docs', 'DEPS.md')
 const args = process.argv.slice(2)
 const check = args.includes('--check')
 const asJson = args.includes('--json')
+const unusedOnly = args.includes('--unused')
 
 // --- the fragment order is OWNED by tools/build.mjs --------------------------
 // Duplicating the list here would let the two drift; read it from the builder and
@@ -274,6 +276,10 @@ function readVarDeclaration(tokens, start) {
         index += 1
         continue
       }
+      // or (const x of list) / or (const k in object): of and in end the
+      // binding list. Treating them as further declarator names would both invent a
+      // declaration and hide the iterated expression as a read.
+      if (pattern === null && (token.value === 'of' || token.value === 'in')) break
       if (pattern === 'object') {
         const following = tokens[index + 1]
         const isKey = following !== undefined && following.type === 'punct' && (following.value === ':' || following.value === '(')
@@ -281,11 +287,11 @@ function readVarDeclaration(tokens, start) {
           index += 1
           continue
         }
-        names.push(token.value)
+        names.push({ name: token.value, tokenIndex: index })
         index += 1
         continue
       }
-      names.push(token.value)
+      names.push({ name: token.value, tokenIndex: index })
       index += 1
       continue
     }
@@ -315,6 +321,7 @@ function analyzeFragment(text) {
   const tokens = tokenize(text)
   const declares = []
   const locallyDeclared = new Set()
+  const bindingTokens = new Set()
   const uses = []
   let depth = 0
 
@@ -355,8 +362,13 @@ function analyzeFragment(text) {
     if (token.type !== 'id') continue
 
     const previous = tokens[index - 1]
+    const beforePrevious = tokens[index - 2]
     const following = tokens[index + 1]
-    const isMemberAccess = previous !== undefined && previous.type === 'punct' && (previous.value === '.' || previous.value === '?.')
+    // ...name is a spread read, not a member access. A spread tokenizes as three
+    // '.' punctuation marks, so the identifier's previous token is '.' too; the token
+    // before it tells the two apart.
+    const isSpread = previous !== undefined && beforePrevious !== undefined && previous.value === '.' && beforePrevious.value === '.'
+    const isMemberAccess = previous !== undefined && previous.type === 'punct' && (previous.value === '.' || previous.value === '?.') && isSpread === false
     // `{ key: value }` — the key is not a reference. A ternary consequent followed by
     // `:` is skipped too; that direction only loses a reference, never invents one.
     const isObjectKey = following !== undefined && following.type === 'punct' && following.value === ':'
@@ -364,9 +376,10 @@ function analyzeFragment(text) {
 
     if (DECLARATION_KEYWORDS.has(token.value)) {
       const declaration = readVarDeclaration(tokens, index + 1)
-      for (const name of declaration.names) {
-        locallyDeclared.add(name)
-        if (depth === 0) declares.push({ name, offset: index })
+      for (const binding of declaration.names) {
+        locallyDeclared.add(binding.name)
+        bindingTokens.add(binding.tokenIndex)
+        if (depth === 0) declares.push({ name: binding.name, offset: index })
       }
       // Do NOT jump past the declaration: the initializer is ordinary code that may
       // read other fragments' names, and the loop is what records those reads.
@@ -392,9 +405,14 @@ function analyzeFragment(text) {
       continue
     }
     if (isMemberAccess || isObjectKey) continue
+    // A declaration's own binding identifier is not a read of itself.
+    if (bindingTokens.has(index)) continue
     uses.push({ name: token.value, offset: index })
   }
-  return { declares, uses: uses.filter((use) => !locallyDeclared.has(use.name)) }
+  const filtered = uses.filter((use) => !locallyDeclared.has(use.name))
+  // rawUses keeps every read (including names this fragment shadows) for --unused;
+  // uses is the coupling view the baseline records.
+  return { declares, uses: filtered, rawUses: uses.map((use) => use.name) }
 }
 
 // --- analysis ----------------------------------------------------------------
@@ -419,6 +437,21 @@ for (const fragment of fragments) {
 }
 
 const order = new Map(fragments.map((fragment, index) => [fragment.name, index]))
+
+/** Read count per declared name across every fragment, including its own reads. */
+const usage = new Map()
+for (const fragment of fragments) {
+  for (const name of fragment.rawUses) usage.set(name, (usage.get(name) ?? 0) + 1)
+}
+/** Top-level names no fragment reads at all — dead-code candidates, verified by grep before deletion. */
+const unused = fragments
+  .flatMap((fragment) =>
+    fragment.declares
+      .filter((declaration) => (usage.get(declaration.name) ?? 0) === 0)
+      .map((declaration) => ({ name: declaration.name, fragment: fragment.name })),
+  )
+  .sort((a, b) => order.get(a.fragment) - order.get(b.fragment) || a.name.localeCompare(b.name))
+
 const references = new Map()
 for (const fragment of fragments) {
   for (const use of fragment.uses) {
@@ -452,10 +485,17 @@ const stats = {
   references: referenceList.length,
   referenceOccurrences: referenceList.reduce((sum, reference) => sum + reference.count, 0),
   edges: edgeList.length,
+  unused: unused.length,
 }
 
 if (asJson) {
-  console.log(JSON.stringify({ fragments: fragments.map((fragment) => ({ name: fragment.name, region: fragment.region, declares: fragment.declares.length, uses: fragment.uses.length })), stats, duplicates, references: referenceList, edges: edgeList }, null, 2))
+  console.log(JSON.stringify({ fragments: fragments.map((fragment) => ({ name: fragment.name, region: fragment.region, declares: fragment.declares.length, uses: fragment.uses.length })), stats, duplicates, unused, references: referenceList, edges: edgeList }, null, 2))
+  process.exit(0)
+}
+
+if (unusedOnly) {
+  console.log('deps unused: ' + unused.length + ' top-level name(s) no fragment reads')
+  for (const entry of unused) console.log('  - ' + entry.name + '  (' + entry.fragment + ')')
   process.exit(0)
 }
 
