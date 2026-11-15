@@ -16,7 +16,7 @@
 // never talks to GitHub. CI appends its stdout to $GITHUB_OUTPUT, which is why every
 // line is a single `name=value` pair.
 import { spawnSync } from 'node:child_process'
-import { closeSync, mkdtempSync, openSync, readFileSync, rmSync } from 'node:fs'
+import { closeSync, existsSync, mkdtempSync, openSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
