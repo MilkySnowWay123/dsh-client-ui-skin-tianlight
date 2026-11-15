@@ -224,14 +224,17 @@
 			return false;
 		}
 
-		/** One session decision. The session marker is written even when the splash is skipped. */
+		/**
+		 * One session decision for the compact splash, expressed through the single
+		 * planner so the guard order lives in exactly one place.
+		 * The session marker is written even when the splash is skipped.
+		 */
 		function splashDecision() {
-			const enabled = readSplashEnabled();
-			if (splashSeenThisSession()) return { play: false, reason: "seen", enabled };
+			const plan = splashPlan();
+			const enabled = plan.style !== "off";
+			if (plan.reason === "seen") return { play: false, reason: "seen", enabled };
 			splashMarkSession();
-			if (enabled === false) return { play: false, reason: "disabled", enabled };
-			if (splashReducedMotion() && readSplashForceMotion() !== true) return { play: false, reason: "reduced-motion", enabled };
-			if (splashLowPowerActive()) return { play: false, reason: "low-power", enabled };
+			if (plan.mode === "none") return { play: false, reason: plan.reason, enabled };
 			return { play: true, reason: "playing", enabled };
 		}
 
@@ -646,7 +649,11 @@
 		 * which implementation runs.
 		 */
 		function installSplashEntry() {
-			const style = readSplashStyle();
+			// The whole guard chain lives in splashPlan: style, session marker, reduced
+			// motion (with the explicit override) and low power are evaluated in one
+			// place, and this function only turns the plan into an implementation.
+			const plan = splashPlan();
+			const style = plan.style;
 			const finishStatus = (reason, mode) => {
 				splashRuntime.active = false;
 				splashRuntime.reason = reason;
@@ -654,13 +661,13 @@
 				tl5Diag("splash", splashStatus());
 				return () => {};
 			};
-			if (splashSeenThisSession()) return finishStatus("seen", style === "long" || style === "long-once" ? "long" : "simple");
-			if (style === "off") return finishStatus("disabled", "simple");
-			if (splashReducedMotion() && readSplashForceMotion() !== true) return finishStatus("reduced-motion", "simple");
-			if (splashLowPowerActive()) return finishStatus("low-power", "simple");
-
-			if (style === "simple") return installSplash();
-			if (style === "long-once" && readSplashLastFull() === splashLocalDate()) return installSplash();
+			if (plan.mode === "none") {
+				// A seen session historically reported the long mode for the styles that
+				// would have played the film; the other skips reported the compact mode.
+				const seenMode = plan.reason === "seen" && (style === "long" || style === "long-once") ? "long" : "simple";
+				return finishStatus(plan.reason, seenMode);
+			}
+			if (plan.mode === "simple") return installSplash();
 
 			const body = document.body;
 			if (body === null || body === undefined) return finishStatus("no-body", "long");

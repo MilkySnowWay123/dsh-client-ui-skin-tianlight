@@ -48,8 +48,6 @@
 		let petAgentPending = false;
 		let petAgentAbort = null;
 
-		const petAgentDoc = () => (typeof document === "undefined" ? null : document);
-
 		function petAgentReadState() {
 			const dayKey = petAgentDayKey();
 			let stored = null;

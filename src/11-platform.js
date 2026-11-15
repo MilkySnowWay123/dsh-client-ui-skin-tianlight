@@ -15,7 +15,6 @@
 		 *   TL5_DIAG           运行时诊断命名空间，供 `__dshTianlightInstance` 与
 		 *                      面板“工程”分区读取，不写进产品 DOM。
 		 */
-		const TL5_VERSION = "0.5.0";
 		const TL5_MODULES_ATTR = "data-tl-modules";
 		const MODULES_KEY = "tianlight.modules";
 

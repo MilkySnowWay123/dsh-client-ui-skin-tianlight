@@ -5436,6 +5436,99 @@ await testAsync('splash A: once per session, opt-out, accessibility, skip, 3s gu
     assert.equal(splash.splashPlan({ style: 'long', seen: false, reduced: true, low: false }).reason, 'reduced-motion')
     assert.equal(splash.splashPlan({ style: 'long', seen: false, reduced: false, low: true }).reason, 'low-power')
 
+    // 9b) decision table: style x daily cadence x reduced motion x forceMotion x low
+    // power x invalid style. The pure planner and the four-way entry point are
+    // asserted against the SAME table, so the v2.1.7 merge of the three duplicated
+    // guard chains into one plan cannot drift.
+    const today = (() => {
+      const d = new Date()
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+    })()
+    const DECISION_TABLE = [
+      { name: 'off, plain', row: { style: 'off', seen: false, reduced: false, low: false, forceMotion: false, today, lastFull: '' }, mode: 'none', reason: 'disabled' },
+      { name: 'off before reduced-motion', row: { style: 'off', seen: false, reduced: true, low: false, forceMotion: false, today, lastFull: '' }, mode: 'none', reason: 'disabled' },
+      { name: 'off but already seen', row: { style: 'off', seen: true, reduced: false, low: false, forceMotion: false, today, lastFull: '' }, mode: 'none', reason: 'seen' },
+      { name: 'simple, plain', row: { style: 'simple', seen: false, reduced: false, low: false, forceMotion: false, today, lastFull: '' }, mode: 'simple', reason: 'simple' },
+      { name: 'simple under reduced-motion', row: { style: 'simple', seen: false, reduced: true, low: false, forceMotion: false, today, lastFull: '' }, mode: 'none', reason: 'reduced-motion' },
+      { name: 'simple under reduced-motion + override', row: { style: 'simple', seen: false, reduced: true, low: false, forceMotion: true, today, lastFull: '' }, mode: 'simple', reason: 'simple' },
+      { name: 'simple in low power (override does not help)', row: { style: 'simple', seen: false, reduced: false, low: true, forceMotion: true, today, lastFull: '' }, mode: 'none', reason: 'low-power' },
+      { name: 'long-once, first of the day', row: { style: 'long-once', seen: false, reduced: false, low: false, forceMotion: false, today, lastFull: '' }, mode: 'long', reason: 'daily-first' },
+      { name: 'long-once, already played today', row: { style: 'long-once', seen: false, reduced: false, low: false, forceMotion: false, today, lastFull: today }, mode: 'simple', reason: 'daily' },
+      { name: 'long-once, played yesterday', row: { style: 'long-once', seen: false, reduced: false, low: false, forceMotion: false, today, lastFull: '2026-01-01' }, mode: 'long', reason: 'daily-first' },
+      { name: 'long-once already seen this session', row: { style: 'long-once', seen: true, reduced: false, low: false, forceMotion: false, today, lastFull: '' }, mode: 'none', reason: 'seen' },
+      { name: 'long, every launch', row: { style: 'long', seen: false, reduced: false, low: false, forceMotion: false, today, lastFull: today }, mode: 'long', reason: 'long' },
+      { name: 'long under reduced-motion', row: { style: 'long', seen: false, reduced: true, low: false, forceMotion: false, today, lastFull: '' }, mode: 'none', reason: 'reduced-motion' },
+      { name: 'long under reduced-motion + override', row: { style: 'long', seen: false, reduced: true, low: false, forceMotion: true, today, lastFull: '' }, mode: 'long', reason: 'long' },
+      { name: 'long in low power', row: { style: 'long', seen: false, reduced: false, low: true, forceMotion: false, today, lastFull: '' }, mode: 'none', reason: 'low-power' },
+      { name: 'long already seen + reduced', row: { style: 'long', seen: true, reduced: true, low: true, forceMotion: false, today, lastFull: '' }, mode: 'none', reason: 'seen' },
+    ]
+    for (const entry of DECISION_TABLE) {
+      const plan = splash.splashPlan(entry.row)
+      assert.equal(plan.mode, entry.mode, 'decision table mode: ' + entry.name)
+      assert.equal(plan.reason, entry.reason, 'decision table reason: ' + entry.name)
+    }
+    // Invalid style values are normalized before the planner ever sees them.
+    splash.setSplashStyle('simple')
+    assert.equal(splash.splashPlan({ style: 'bogus', seen: false, reduced: false, low: false, forceMotion: false }).mode, 'simple', 'invalid style falls back to the stored one (simple)')
+    splash.setSplashStyle('off')
+    assert.equal(splash.splashPlan({ style: 'bogus', seen: false, reduced: false, low: false, forceMotion: false }).reason, 'disabled', 'invalid style falls back to the stored one (off)')
+
+    // 9c) the same guards through the four-way entry point (the code v2.1.7 merges).
+    resetScenario()
+    splash.setSplashStyle('off')
+    activeDispose = splash.installSplashEntry()
+    assert.equal(splash.splashStatus().reason, 'disabled', 'entry: off reports disabled')
+    assert.equal(overlay(), null, 'entry: off draws nothing')
+    activeDispose()
+    activeDispose = null
+
+    resetScenario()
+    splash.setSplashStyle('simple')
+    activeDispose = splash.installSplashEntry()
+    assert.equal(splash.splashStatus().reason, 'playing', 'entry: simple starts the compact splash')
+    assert.ok(overlay() !== null, 'entry: simple draws the overlay')
+    activeDispose()
+    activeDispose = null
+
+    resetScenario()
+    splash.setSplashStyle('simple')
+    local.setItem(splash.SPLASH_LAST_FULL_KEY, today)
+    activeDispose = splash.installSplashEntry()
+    assert.ok(overlay() !== null, 'entry: simple path also runs when the daily film is spent')
+    activeDispose()
+    activeDispose = null
+
+    resetScenario()
+    splash.setSplashStyle('long')
+    session.setItem(splash.SPLASH_SESSION_KEY, '1')
+    activeDispose = splash.installSplashEntry()
+    assert.equal(splash.splashStatus().reason, 'seen', 'entry: a second decision this session reports seen')
+    assert.equal(splash.splashStatus().mode, 'long', 'entry: the seen branch keeps the long mode for long styles')
+    assert.equal(overlay(), null, 'entry: seen draws nothing')
+    activeDispose()
+    activeDispose = null
+
+    resetScenario()
+    splash.setSplashStyle('simple')
+    matchMediaMatches = true
+    activeDispose = splash.installSplashEntry()
+    assert.equal(splash.splashStatus().reason, 'reduced-motion', 'entry: reduced motion skips without the override')
+    assert.equal(overlay(), null, 'entry: reduced motion draws nothing')
+    activeDispose()
+    activeDispose = null
+
+    resetScenario()
+    splash.setSplashStyle('simple')
+    body.setAttribute('data-tl-lowpower', '')
+    activeDispose = splash.installSplashEntry()
+    assert.equal(splash.splashStatus().reason, 'low-power', 'entry: low power wins over the style')
+    assert.equal(overlay(), null, 'entry: low power draws nothing')
+    body.removeAttribute('data-tl-lowpower')
+    activeDispose()
+    activeDispose = null
+    session.clear()
+    local.clear()
+
     // 10) the long film is a separate fragment with a bounded lifecycle.
     assert.match(productSource, /installSplashFilm/, 'long film installer is wired')
     assert.match(productSource, /WEBGL_lose_context/, 'long film releases the GPU context')
