@@ -33,6 +33,7 @@ import { TINY_MP4, TINY_PNG, makeMediaFixture } from './media-fixtures.mjs'
 import { dataRootForProfile, migrateLegacyHostData } from '../lib/host-paths.js'
 import { buildFingerprint, classifyInstallSpec, formatFingerprintLine } from '../lib/fingerprint.js'
 import { verifyInstall } from './verify-install.mjs'
+import { isTextPath, normalizeTextBuffer, normalizeTextTree } from './pack-text.mjs'
 import * as tlInstaller from '../bin/installer.mjs'
 import {
   DSH_COMPAT_MUST_MATCH,
@@ -5606,6 +5607,28 @@ test('release tooling bumps TL_BUILD_VERSION with the film title', () => {
   )
   assert.ok(releaseSource.includes('TL_BUILD_VERSION -> '), 'the dry-run plan names the film title version line')
   assert.match(constantsSource, /const TL_BUILD_VERSION = "[^"]+";/, 'the declaration exists in src/10-constants.js')
+})
+
+test('pack output normalizes CRLF text files to LF', () => {
+  withTempDir('tl-pack-text-', (dir) => {
+    writeFileSync(join(dir, 'README.md'), 'a\r\nb\r\n')
+    writeFileSync(join(dir, 'LICENSE'), 'x\r\n')
+    writeFileSync(join(dir, 'vendor.ps1'), 'y\r\n')
+    const binary = Buffer.from([0, 13, 10, 1, 2, 3])
+    writeFileSync(join(dir, 'bg.mp4'), binary)
+    const changed = normalizeTextTree(dir)
+    assert.equal(changed, 3, 'three CRLF text files were rewritten')
+    assert.equal(readFileSync(join(dir, 'README.md'), 'utf8'), 'a\nb\n')
+    assert.equal(readFileSync(join(dir, 'LICENSE'), 'utf8'), 'x\n')
+    assert.equal(readFileSync(join(dir, 'vendor.ps1'), 'utf8'), 'y\n')
+    assert.deepEqual(readFileSync(join(dir, 'bg.mp4')), binary, 'binary media is byte-identical')
+    assert.equal(normalizeTextBuffer(Buffer.from('x\r\ny\r\n')).toString('utf8'), 'x\ny\n')
+    assert.equal(isTextPath('vendor/we-wallpaper/wcap/LICENSE'), true)
+    assert.equal(isTextPath('assets/bg-4k.mp4'), false)
+    assert.equal(isTextPath('vendor/we-wallpaper/wcap/wcap-x64.exe'), false)
+    const packSource = readFileSync(new URL('../tools/pack.mjs', import.meta.url), 'utf8')
+    assert.match(packSource, /normalizeTextTree\(OUT\)/, 'pack.mjs calls the normalizer on its output')
+  })
 })
 
 // ---- long film wrapper: every exit restores the page and clears what it owns ----

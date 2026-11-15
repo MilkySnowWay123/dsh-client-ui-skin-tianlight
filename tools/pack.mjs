@@ -14,6 +14,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statS
 import { spawnSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { normalizeTextTree } from './pack-text.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = dirname(HERE)
@@ -127,6 +128,11 @@ writeFileSync(
   'utf8',
 )
 
+// 4b. line endings: the repo stores text as LF, but a Windows checkout can hand
+// us CRLF for files Git considers clean. Normalize the packaged copy so npm and
+// the GitHub Release produce byte-identical text files on every platform.
+const normalizedTextFiles = normalizeTextTree(OUT)
+
 // 5. report
 const walk = (dir) => {
   let total = 0
@@ -155,5 +161,6 @@ writeFileSync(
 
 console.log('packed -> ' + OUT)
 console.log(`  files: ${stats.files}, size: ${(stats.total / 1024 / 1024).toFixed(1)} MiB, built-in media: ${media.length === 0 ? 'none (--code-only)' : media.join(', ')}`)
+console.log(`  text eol: LF (${normalizedTextFiles} file(s) rewritten; 0 means already LF)`)
 console.log('  metadata: ' + join(outRoot, '.pack-meta.json') + ' (outside the package)')
 console.log('  next: node tools/release-artifacts.mjs   (release attachments)')
