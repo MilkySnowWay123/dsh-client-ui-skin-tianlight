@@ -455,3 +455,82 @@ node "D:\DeepSeek Harness(2)\diag\skinlab\run.mjs" --scenarios default,panel,clo
 `compat-matrix` 若报 `INCOMPATIBLE` → 只改 `src/65-bridge.js` 的发现选择器（CSS 不动）→
 在旧/新两版上各跑一次运行时矩阵 → 更新本文件、`tools/compat.mjs` 里的范围（它会同步到
 `package.json` 的 `engines.dsh` + 官方包 `peerDependencies` 与 `skin.json.dshCompatibilityRange`）。
+
+## 10. 0.3 策略与每日巡检（v2.1.6）
+
+### 10.1 上限继续锁在 `<0.3.0-0`
+
+皮肤对 DSH 的适配不靠版本分支，靠 `src/65-bridge.js` 的运行时发现（slot 名 → 产品 `data-*` → CSS Module 类名后缀）。
+任何一层在没测过的 build 上失效，皮肤就可能把界面藏住 —— 那比不加载更糟。所以 0.3 **只能验过再放**，
+`dshCompatibilityRange` 的第三段暂时停在 `>=0.2.2-0 <0.3.0-0`。
+
+### 10.2 DSH 怎么处理"不兼容的插件"：拒绝加载，不是只警告
+
+证据来自公开包 `@deepseek-ai/dsh-app-boot@0.2.2-rc.3`（npm 安装后的
+`node_modules/@deepseek-ai/dsh-app-boot/lib/index.js`；同样的逻辑 0.2.2-rc.1 起就有）：
+
+| 行为 | 位置 |
+| --- | --- |
+| 版本比较用 `semver.satisfies(runtimeVersion, range, { includePrerelease: true })` | `lib/index.js:1099-1101` |
+| 自己声明了 `engines.dsh` 就只看它，否则逐个检查 `@deepseek-ai/dsh` / `@deepseek-ai/dsh-*` 的 peer | `lib/index.js:1102-1121` |
+| 不满足的要求整理成 `{ requirements, exempted }` | `lib/index.js:1134-1149` |
+| profile bundle 不满足 → **整层跳过（皮肤不会被加载）**，进 `skippedBundles` | `lib/index.js:1800-1836` |
+| 跳过时 stderr 打印 `skipping profile bundle "<name>": <reason>` | `lib/index.js:1360-1361` |
+| 组合阶段把冲突行 `row.disabled = true` | `lib/index.js:3114-3128` |
+| 报错文案给出 `dsh plugin allow-version` 的精确版本豁免路径 | `lib/index.js:1156-1159` |
+| 豁免保存在 profile 自己的 `compatibility.json` | `lib/index.js:1164` |
+
+所以三件事：
+
+1. **不兼容 = 不加载**（整层跳过 + 行被禁用 + stderr 警告），不是"照常加载、只给个警告"。
+2. `skin.json` 的 `dshCompatibilityRange` **DSH 不读**（在 0.2.2-rc.3 的整个 `@deepseek-ai/*` 里 grep 无匹配），
+   真正决定加载的是 `package.json` 的 `engines.dsh`（或官方包 peer）。两处声明必须一致，
+   `tools/test.mjs` / `tools/audit.mjs` / `tools/verify.mjs` 已经在守着这一点。
+3. 想强行加载只能给"精确 `包名@版本` + 精确 DSH 版本"的豁免，写进 profile 的 `compatibility.json` ——
+   皮肤永远不会替用户写这个文件，报告里也不建议用户写；不兼容就是修桥。
+
+### 10.3 每日巡检：`.github/workflows/dsh-canary.yml`
+
+- 触发：每天 03:17 UTC 一次 + `workflow_dispatch`；**不挂 push**（失败不能挡住功能分支，tag 必须可复现）。
+- 行由 `tools/canary-matrix.mjs` 解析：npm `next`、npm `alpha`、`skin.json.dshCompatibilityTested` 里最新的一版（对照行）。
+- 每个 job 先 `npm view` 把 tag 落成具体版本打印，再装 `@deepseek-ai/dsh-base` + `@deepseek-ai/dsh-web-app`（`--ignore-scripts`），
+  跑 `compat-matrix` / `hook-scan --self-check` / `upgrade-check`，最后用 `tools/compat.mjs` 判断是否在范围内。
+- 三种结论：范围内且全过 → 成功；范围内但有工具失败 → job 失败；**不在范围内** → 三个工具照跑、结果写进 job summary、
+  job 失败且标题写明「发现新的 DSH 版本 x.y.z，超出兼容范围」。
+- 失败自动开 issue（标题带版本号）；同标题已有 open issue 时只追加评论（`actions/github-script`，权限只开 `issues: write`）。
+- `smoke` job 只跑 `next`：装 `@deepseek-ai/dsh`（CLI 会带 base + web-app），用 `tools/smoke-dsh.mjs` 起隔离 DSH home +
+  headless Chrome，断言见 10.4，失败时上传 `smoke-artifacts/`。
+
+### 10.4 冒烟脚本的四个断言（`tools/smoke-dsh.mjs`）
+
+1. `body` 上有 `data-dsh-tianlight`（皮肤真的应用了）；
+2. 控制台/页面异常里没有来自本插件的报错；
+3. 开机动画 `off` 时，输入框（`[data-tl-composer]` / `[data-composer-card]`）在 10 秒内可见；
+4. 开机动画 `long` 时，25 秒内长片结束且 `#root` 仍然可见。
+
+```bash
+# 本地（需要一份装好的 @deepseek-ai + Chrome/Edge）
+node tools/smoke-dsh.mjs --dsh <node_modules/@deepseek-ai> [--chrome <path>] [--keep]
+npm run check   # 静态链，CI 同款
+```
+
+本地实测（2026-11-15，DSH 0.2.2-rc.3，Windows + Edge headless）：
+
+```
+  [PASS] skin attribute on <body>  ->  1224 ms
+  [PASS] #root rendered
+  [PASS] composer visible with splash off (<= 10 s)  ->  690 ms
+  [PASS] long film starts  ->  1221 ms
+  [PASS] long film ends (<= 25 s)  ->  20186 ms
+  [PASS] #root visible after the film
+  [PASS] no console error from this plugin  ->  0 console call(s) total
+smoke: PASS
+```
+
+### 10.5 发现 0.3 预发布版之后
+
+1. 先看 canary 的 issue/run：哪一行失败、哪个工具失败；
+2. 本地复跑三项工具 + `tools/smoke-dsh.mjs`（指向该版本装好的 `@deepseek-ai`）；
+3. 全绿 → 在补丁版本里把范围扩成 `... || >=0.3.0-0 <0.3.1-0`，同时改 `tools/compat.mjs` 的一处常量（三处声明由测试同步）；
+4. 不绿 → 修 `src/65-bridge.js` 的发现逻辑（或对应片段），**不要**先放开上限；修完重跑 2、3。
+
