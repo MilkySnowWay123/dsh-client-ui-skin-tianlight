@@ -4,7 +4,7 @@
 //
 //   node tools/structure.mjs           # report
 //   node tools/structure.mjs --strict  # non-zero exit on any violation
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -173,6 +173,60 @@ const important = (client.match(/!important/g) ?? []).length
 notes.push(`!important occurrences: ${important}`)
 notes.push('regions: ' + regionNames.join(' -> '))
 notes.push('panel sections: ' + [...client.matchAll(/registerTl5PanelSection\(\{\s*id: "([a-z0-9-]+)"/g)].map((m) => m[1]).join(', '))
+
+// 8. v2.1.8: ARCHITECTURE.md must describe the CURRENT structure. A page can be
+// complete and still lie, so every fragment, every host module, every route module
+// and every documented route path has to appear there; a new one without a doc entry
+// fails the strict chain.
+const ARCHITECTURE = join(ROOT, 'ARCHITECTURE.md')
+const architecture = existsSync(ARCHITECTURE) ? readFileSync(ARCHITECTURE, 'utf8') : ''
+if (architecture === '') {
+  violations.push('ARCHITECTURE.md is missing')
+} else {
+  const buildSource = readFileSync(join(ROOT, 'tools', 'build.mjs'), 'utf8')
+  const fragmentBlock = /const FRAGMENTS = \[([\s\S]*?)\]/.exec(buildSource)
+  const fragments = fragmentBlock === null ? [] : [...fragmentBlock[1].matchAll(/'([^']+\.js)'/g)].map((match) => match[1])
+  if (fragments.length === 0) violations.push('cannot read the FRAGMENTS list from tools/build.mjs')
+  for (const fragment of fragments) {
+    if (!architecture.includes(fragment)) violations.push(`ARCHITECTURE.md does not mention src/${fragment}`)
+  }
+  for (const module of readdirSync(join(ROOT, 'lib')).filter((name) => name.endsWith('.js') && name !== 'client.js')) {
+    if (!architecture.includes('lib/' + module)) violations.push(`ARCHITECTURE.md does not mention lib/${module}`)
+  }
+  const routesDir = join(ROOT, 'lib', 'routes')
+  const routeModules = existsSync(routesDir) ? readdirSync(routesDir).filter((name) => name.endsWith('.js')) : []
+  if (routeModules.length === 0) violations.push('lib/routes/ has no route modules')
+  for (const module of routeModules) {
+    if (!architecture.includes('lib/routes/' + module)) violations.push(`ARCHITECTURE.md does not mention lib/routes/${module}`)
+  }
+  const EXPECTED_ROUTES = [
+    '_we-roots',
+    '_settings',
+    '_bundle',
+    '_import',
+    '_frame-cache',
+    '_frame-cache/status',
+    '_transcode',
+    '_transcode/status',
+    '_pet-chat',
+    '_upload',
+    '_manifest',
+    '_wallpapers',
+    '_engines',
+    '_weather',
+    '_fingerprint',
+    '_engine/webwallgl.js',
+    '_scene-frame',
+    '_scene-project/',
+    '_web-project/',
+    'uploads/',
+    'derived/',
+    'ext/',
+  ]
+  for (const route of EXPECTED_ROUTES) {
+    if (!architecture.includes(route)) violations.push(`ARCHITECTURE.md does not document the route ${route}`)
+  }
+}
 
 console.log('structure audit')
 for (const note of notes) console.log('  - ' + note)
