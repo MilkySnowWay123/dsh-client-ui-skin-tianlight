@@ -49,11 +49,15 @@ function run(cmd, cmdArgs) {
   const entry = cmd === 'npm' ? npmEntry() : null
   const realCmd = entry === null ? cmd : process.execPath
   const realArgs = entry === null ? cmdArgs : [entry, ...cmdArgs]
+  // Only npm's Windows .cmd shim needs a shell. `git` is a real executable on PATH,
+  // and passing it through shell:true concatenates arguments instead of escaping them
+  // (Node DEP0190) — needless risk for no benefit.
+  const shell = cmd === 'npm' && entry === null && process.platform === 'win32'
   return spawnSync(realCmd, realArgs, {
     cwd: ROOT,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
-    shell: entry === null && process.platform === 'win32',
+    shell,
     windowsHide: true,
   })
 }

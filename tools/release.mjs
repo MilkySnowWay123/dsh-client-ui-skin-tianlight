@@ -56,6 +56,7 @@ const CHECK_CHAIN = [
   ['audit', 'tools/audit.mjs'],
   ['check-css', 'tools/check-css.mjs'],
   ['verify', 'tools/verify.mjs'],
+  ['i18n audit', 'tools/i18n-audit.mjs'],
 ]
 const CHANGELOG_HEADER = [
   '# 更新日志',

@@ -133,6 +133,18 @@ add('alpha', alpha, 'npm dist-tag alpha')
 // The control row is never deduplicated away: it is the "this must keep working" row.
 if (tested !== '') rows.push({ label: 'tested', version: tested, source: 'skin.json dshCompatibilityTested' })
 
+// A resolver that produces no row would let the workflow finish green without running
+// a single compatibility check. Refuse instead: an empty matrix is a configuration or
+// npm failure, not a passing canary.
+if (tested === '') {
+  console.error('canary-matrix: skin.json dshCompatibilityTested is empty; the control row is required')
+  process.exit(1)
+}
+if (rows.length === 0) {
+  console.error('canary-matrix: no rows resolved; refusing to report a green canary')
+  process.exit(1)
+}
+
 if (readable) {
   console.log('canary matrix')
   console.log('  package: ' + DSH_PACKAGE)
