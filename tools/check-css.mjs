@@ -101,7 +101,7 @@ expect('reduced-motion guard exists', css.includes('prefers-reduced-motion: redu
 expect('desktop titlebar clearance present', css.includes('--dsh-windows-titlebar-height'))
 expect(
   'both panel fills keep a legibility floor (light + dark)',
-  css.includes('max(0.86, calc(0.80 * var(--tl-glass-m, 1)))') &&
+  css.includes('max(0.82, calc(0.76 * var(--tl-glass-m, 1)))') &&
     css.includes('max(0.96, calc(0.88 * var(--tl-glass-m, 1)))'),
 )
 expect('no unresolved template placeholder', !css.includes('${'))
@@ -156,15 +156,15 @@ expect(
     liveRules.some((match) => /\[data-tl-composer\]::before/.test(match[1])),
 )
 expect(
-  'text-bearing glass keeps a legibility floor (composer/input >= 0.26, bubble >= 0.30)',
-  css.includes('--tl-glass-fill: rgba(233, 243, 254, calc(0.26 * var(--tl-glass-m, 1)))') &&
+  'text-bearing glass keeps a legibility floor (bubble >= 0.30; live lowers decorative fill)',
+  css.includes('--tl-glass-fill: rgba(233, 243, 254, calc(0.20 * var(--tl-glass-m, 1)))') &&
     css.includes('--dsw-specific-bubble: rgba(236, 245, 255, 0.30) !important'),
 )
 expect(
   'the old white specular is gone (real / soft / frosted hi alpha lowered)',
-  css.includes('--tl-liquid-hi: 0.24') &&
-    css.includes('--tl-liquid-hi: 0.17') &&
-    css.includes('--tl-liquid-hi: 0.30') &&
+  css.includes('--tl-liquid-hi: 0.18') &&
+    css.includes('--tl-liquid-hi: 0.12') &&
+    css.includes('--tl-liquid-hi: 0.24') &&
     css.includes('--tl-liquid-hi: 0.52') === false,
 )
 
