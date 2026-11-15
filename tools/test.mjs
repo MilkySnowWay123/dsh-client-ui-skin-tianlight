@@ -5586,6 +5586,357 @@ await testAsync('weather proxy: deadline, size cap, status, json and the in-flig
   resetInflight()
 })
 
+await testAsync('version: the film title uses the same version as package.json', async () => {
+  const clientSource = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
+  const match = /const TL_BUILD_VERSION = "([^"]+)";/.exec(clientSource)
+  assert.ok(match !== null, 'TL_BUILD_VERSION is declared in lib/client.js')
+  assert.equal(match[1], PKG_VERSION, 'the film title version must match package.json (got ' + match[1] + ')')
+  assert.equal(clientSource.includes('TIANLIGHT 2.0.4'), false, 'the stale 2.0.4 title is gone from the product')
+})
+
+// ---- long film wrapper: every exit restores the page and clears what it owns ----
+await testAsync('splash film wrapper: normal/skip/fallback/hard-stop/dispose/error all restore the page', async () => {
+  const saved = {}
+  const savedKeys = [
+    'window', 'document', 'localStorage', 'sessionStorage', 'matchMedia', 'Element',
+    'setTimeout', 'clearTimeout', 'addEventListener', 'removeEventListener',
+  ]
+  for (const key of savedKeys) saved[key] = globalThis[key]
+
+  const productSource = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
+  const filmStart = productSource.indexOf('function createSplashFilmRuntime(options) {')
+  const installStart = productSource.indexOf('function installSplashFilm(options) {', filmStart)
+  assert.ok(filmStart > 0 && installStart > filmStart, 'film runtime and wrapper are present')
+  const stub = [
+    'function createSplashFilmRuntime(options) {',
+    '\t\t\twindow.__filmRuntimeOptions = options;',
+    '\t\t\treturn window.__filmRuntimeApi;',
+    '\t\t}',
+    '',
+    '\t\t',
+  ].join('\n')
+  let instrumented = productSource.slice(0, filmStart) + stub + productSource.slice(installStart)
+  instrumented = instrumented.replace(
+    'exports.apply = apply;',
+    [
+      'exports.apply = apply;',
+      '\t\texports.__filmTest = { installSplashFilm, PLUGIN_ID, TL_BUILD_VERSION };',
+    ].join('\n'),
+  )
+  assert.notEqual(instrumented, productSource, 'instrumentation point present')
+  const dir = mkdtempSync(join(tmpdir(), 'tl-film-test-'))
+  const clientFile = join(dir, 'client.mjs')
+  writeFileSync(clientFile, instrumented)
+
+  let timerSeq = 0
+  const timers = new Map()
+  const globalListeners = new Map()
+  let loaded = null
+
+  class FakeElement {
+    constructor(tag) {
+      this.tagName = String(tag).toUpperCase()
+      this.attributes = new Map()
+      this.children = []
+      this.parentNode = null
+      this.textContent = ''
+      this.style = { visibility: '' }
+      this.dataset = {}
+      this.hidden = false
+      this.listeners = new Map()
+      this.id = ''
+    }
+    setAttribute(name, value) {
+      this.attributes.set(String(name), String(value))
+      if (name === 'id') this.id = String(value)
+    }
+    getAttribute(name) {
+      return this.attributes.has(String(name)) ? this.attributes.get(String(name)) : null
+    }
+    hasAttribute(name) {
+      return this.attributes.has(String(name))
+    }
+    removeAttribute(name) {
+      this.attributes.delete(String(name))
+    }
+    appendChild(child) {
+      child.parentNode = this
+      this.children.push(child)
+      return child
+    }
+    removeChild(child) {
+      const index = this.children.indexOf(child)
+      if (index >= 0) this.children.splice(index, 1)
+      child.parentNode = null
+    }
+    remove() {
+      if (this.parentNode !== null) this.parentNode.removeChild(this)
+    }
+    addEventListener(type, fn) {
+      if (!this.listeners.has(type)) this.listeners.set(type, [])
+      this.listeners.get(type).push(fn)
+    }
+    removeEventListener(type, fn) {
+      const list = this.listeners.get(type)
+      if (!list) return
+      const index = list.indexOf(fn)
+      if (index >= 0) list.splice(index, 1)
+    }
+    dispatch(type, event) {
+      for (const fn of this.listeners.get(type) ?? []) fn(event)
+    }
+    querySelector(selector) {
+      if (selector === '#skipHint') return this._skipHint ?? null
+      if (selector === '.tc-l0') return this._label ?? null
+      if (selector === '.controls') return null
+      return null
+    }
+    querySelectorAll(selector) {
+      if (selector === 'video') return this._videos ?? []
+      return []
+    }
+  }
+  class FakeVideo extends FakeElement {
+    constructor() {
+      super('video')
+      this.paused = true
+      this.playCalls = 0
+      this.pauseCalls = 0
+    }
+    play() {
+      this.playCalls += 1
+      this.paused = false
+      this.dispatch('play', { currentTarget: this })
+      return Promise.resolve()
+    }
+    pause() {
+      this.pauseCalls += 1
+      this.paused = true
+    }
+  }
+
+  const body = new FakeElement('body')
+  body.setAttribute('data-dsh-tianlight', '')
+  const appRoot = new FakeElement('root')
+  appRoot.setAttribute('id', 'root')
+  const scene = new FakeElement('div')
+  const video = new FakeVideo()
+  scene._videos = [video]
+  const documentFake = {
+    hidden: false,
+    body,
+    documentElement: new FakeElement('html'),
+    createElement: (tag) => {
+      const element = new FakeElement(tag)
+      if (String(tag).toLowerCase() === 'div') {
+        element._skipHint = { textContent: '' }
+        element._label = { textContent: '' }
+      }
+      return element
+    },
+    getElementById: (id) => {
+      if (id === 'root') return appRoot
+      if (id === 'film') return body.children.find((child) => child.id === 'film') ?? null
+      return null
+    },
+    querySelector: (selector) => (selector === '[data-tl-scene]' ? scene : null),
+    querySelectorAll: () => [],
+    addEventListener() {},
+    removeEventListener() {},
+  }
+  const makeStorage = () => {
+    const map = new Map()
+    return {
+      getItem: (key) => (map.has(String(key)) ? map.get(String(key)) : null),
+      setItem: (key, value) => void map.set(String(key), String(value)),
+      removeItem: (key) => void map.delete(String(key)),
+      clear: () => map.clear(),
+      key: (index) => [...map.keys()][index] ?? null,
+      get length() {
+        return map.size
+      },
+    }
+  }
+  const fakeWindow = {
+    __ModuleLoader__: { load: (spec) => { loaded = spec } },
+    addEventListener: (type, fn) => {
+      if (!globalListeners.has(type)) globalListeners.set(type, [])
+      globalListeners.get(type).push(fn)
+    },
+    removeEventListener: (type, fn) => {
+      const list = globalListeners.get(type)
+      if (!list) return
+      const index = list.indexOf(fn)
+      if (index >= 0) list.splice(index, 1)
+    },
+    location: { protocol: 'http:', hash: '' },
+    innerWidth: 1600,
+    innerHeight: 900,
+    devicePixelRatio: 1,
+  }
+  globalThis.window = fakeWindow
+  globalThis.document = documentFake
+  globalThis.localStorage = makeStorage()
+  globalThis.sessionStorage = makeStorage()
+  globalThis.addEventListener = fakeWindow.addEventListener
+  globalThis.removeEventListener = fakeWindow.removeEventListener
+  globalThis.setTimeout = (fn, delay) => {
+    timerSeq += 1
+    timers.set(timerSeq, { fn, delay })
+    return timerSeq
+  }
+  globalThis.clearTimeout = (id) => timers.delete(id)
+  const runDelay = (delay) => {
+    const found = [...timers.entries()].find(([, timer]) => timer.delay === delay)
+    assert.ok(found !== undefined, 'expected a ' + delay + 'ms timer')
+    timers.delete(found[0])
+    found[1].fn()
+  }
+  const filmOverlay = () => body.children.find((child) => child.id === 'film') ?? null
+  const resetScene = () => {
+    for (const child of [...body.children]) body.removeChild(child)
+    appRoot.style.visibility = ''
+    scene.style.visibility = ''
+    video.paused = true
+    video.playCalls = 0
+    video.pauseCalls = 0
+    video.listeners.clear()
+    timers.clear()
+    globalListeners.clear()
+    globalThis.__tlSplashFilm = null
+    fakeWindow.__filmRuntimeApi = null
+    fakeWindow.__filmRuntimeOptions = null
+  }
+
+  let api = null
+  const fakeRuntime = () => {
+    api = {
+      disposed: 0,
+      dispose() {
+        this.disposed += 1
+        // The real runtime removes its own host; the wrapper only calls dispose().
+        const host = body.children.find((child) => child.id === 'film')
+        if (host !== undefined) body.removeChild(host)
+      },
+      skip() {},
+      state: () => ({}),
+    }
+    fakeWindow.__filmRuntimeApi = api
+    return api
+  }
+
+  try {
+    await import(pathToFileURL(clientFile).href + '?stamp=' + Date.now())
+    const film = loaded.factory(() => null).__filmTest
+    assert.ok(film !== undefined, 'instrumented product exposes the film wrapper')
+
+    // 1) normal end: a wallpaper that starts during the film is held, then resumed.
+    resetScene()
+    fakeRuntime()
+    const doneReasons = []
+    const handle = film.installSplashFilm({ onDone: (reason) => doneReasons.push(reason) })
+    assert.ok(filmOverlay() !== null, 'the film host is appended')
+    assert.equal(appRoot.style.visibility, 'hidden', 'the app tree is hidden while the film plays')
+    assert.equal(scene.style.visibility, 'hidden', 'the wallpaper scene is hidden')
+    video.play()
+    assert.equal(video.paused, true, 'a play request during the film is held paused')
+    assert.equal(timers.has(23500) || [...timers.values()].some((timer) => timer.delay === 23500), true, 'the hard stop is armed')
+    fakeWindow.__filmRuntimeOptions.onDone()
+    assert.equal(filmOverlay(), null, 'normal end removes the overlay')
+    assert.equal(appRoot.style.visibility, '', 'normal end restores #root')
+    assert.equal(scene.style.visibility, '', 'normal end restores the scene')
+    assert.equal(video.paused, false, 'normal end resumes the wallpaper that asked to play')
+    assert.equal(api.disposed, 1, 'the runtime is disposed')
+    assert.equal(timers.size, 0, 'normal end clears the root/hard timers')
+    assert.equal(globalListeners.get('error')?.length ?? 0, 0, 'normal end removes the page-error guard')
+    assert.deepEqual(doneReasons, ['done'])
+    assert.equal(globalThis.__tlSplashFilm, null)
+    handle.dispose()
+    assert.equal(api.disposed, 1, 'finishOnce is idempotent')
+
+    // 2) a video that was already playing is paused and resumed.
+    resetScene()
+    video.paused = false
+    fakeRuntime()
+    film.installSplashFilm({})
+    assert.equal(video.paused, true, 'an already-playing wallpaper is paused')
+    assert.equal(video.pauseCalls, 1)
+    fakeWindow.__filmRuntimeOptions.onDone()
+    assert.equal(video.paused, false, 'it is resumed on exit')
+    assert.equal(video.playCalls, 1)
+
+    // 3) a user-paused wallpaper stays paused.
+    resetScene()
+    fakeRuntime()
+    film.installSplashFilm({})
+    assert.equal(video.paused, true)
+    fakeWindow.__filmRuntimeOptions.onDone()
+    assert.equal(video.paused, true, 'a wallpaper that never asked to play is not started')
+    assert.equal(video.playCalls, 0)
+
+    // 4) a performance/GL fallback ends after the 1.8s grace period, not before.
+    resetScene()
+    fakeRuntime()
+    const fallbackReasons = []
+    film.installSplashFilm({ onFallback: (reason) => fallbackReasons.push(reason) })
+    fakeWindow.__filmRuntimeOptions.onFallback('performance')
+    assert.deepEqual(fallbackReasons, ['performance'])
+    assert.ok(filmOverlay() !== null, 'the simple mark keeps the overlay for its animation')
+    runDelay(1800)
+    assert.equal(filmOverlay(), null, 'the fallback grace timer removes the overlay')
+    assert.equal(appRoot.style.visibility, '', 'fallback restores #root')
+    assert.equal(scene.style.visibility, '', 'fallback restores the scene')
+    assert.equal(timers.size, 0, 'fallback clears every timer')
+
+    // 5) the 23.5s hard stop wins even when the runtime never calls onDone.
+    resetScene()
+    fakeRuntime()
+    film.installSplashFilm({})
+    runDelay(23500)
+    assert.equal(filmOverlay(), null, 'the hard stop removes the overlay')
+    assert.equal(appRoot.style.visibility, '', 'the hard stop restores #root')
+    assert.equal(api.disposed, 1)
+    assert.equal(timers.size, 0)
+
+    // 6) an explicit dispose during playback behaves like the hard stop.
+    resetScene()
+    fakeRuntime()
+    const disposes = []
+    const live = film.installSplashFilm({ onDone: (reason) => disposes.push(reason) })
+    live.dispose()
+    assert.equal(filmOverlay(), null, 'dispose removes the overlay immediately')
+    assert.equal(appRoot.style.visibility, '', 'dispose restores #root')
+    assert.equal(scene.style.visibility, '', 'dispose restores the scene')
+    assert.deepEqual(disposes, ['disposed'])
+    assert.equal(timers.size, 0)
+
+    // 7) only an error thrown by this skin's bundle ends the film early.
+    resetScene()
+    fakeRuntime()
+    film.installSplashFilm({})
+    const errorGuard = (globalListeners.get('error') ?? [])[0]
+    assert.equal(typeof errorGuard, 'function', 'a page-error guard is installed')
+    errorGuard({ filename: 'http://127.0.0.1/assets/index.js' })
+    assert.ok(filmOverlay() !== null, 'an unrelated page error does not cut the film')
+    errorGuard({ filename: 'http://127.0.0.1/plugins/??dsh-client-ui-skin-tianlight/client.js' })
+    assert.equal(filmOverlay(), null, 'an error from the skin bundle ends the film')
+    assert.equal(appRoot.style.visibility, '', 'the error exit restores #root')
+    assert.equal(timers.size, 0)
+
+    // 8) the runtime hooks the new recovery paths (source-level guard).
+    assert.match(productSource, /canvas\.addEventListener\('webglcontextlost'/, 'context loss is handled')
+    assert.match(productSource, /enterSimple\('context-lost'\)/, 'context loss falls back to the simple mark')
+    assert.match(productSource, /enterSimple\('render-error'\)/, 'a frame error falls back instead of freezing')
+    assert.match(productSource, /function loop\(now\) \{\n\t\t\t    if \(!playing\) return\n\t\t\t    try \{/, 'the frame loop is exception-safe')
+  } finally {
+    for (const key of savedKeys) {
+      if (saved[key] === undefined) delete globalThis[key]
+      else globalThis[key] = saved[key]
+    }
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 console.log(`tests: ${passed} passed, ${failures.length} failed`)
 for (const failure of failures) console.log('  FAIL ' + failure)
 if (failures.length > 0) process.exit(1)

@@ -3398,13 +3398,25 @@
 				const hidden = document.hidden === true;
 				const visible = hidden === false && (document.visibilityState === undefined || document.visibilityState === "visible");
 				const lowPower = hasLowPower();
+				// The opaque opening film hides the wallpaper and holds its decoder; any
+				// frame-rate/dropped-frame sample taken behind it describes the film's GPU
+				// budget, not the wallpaper's. Sampling there downgraded a healthy 4K video
+				// to a still frame for five minutes (seen on a software renderer). Both
+				// splashes carry [data-tl-splash]; the orphan is purged on the next apply.
+				let splashOverlay = false;
+				try {
+					splashOverlay = document.body !== null && document.querySelector("[data-tl-splash]") !== null;
+				} catch {
+					splashOverlay = false;
+				}
 				return {
-					eligible: focused && visible && lowPower === false && userPaused === false,
+					eligible: focused && visible && lowPower === false && userPaused === false && splashOverlay === false,
 					focused,
 					visible,
 					hidden,
 					lowPower,
 					userPaused,
+					splashOverlay,
 				};
 			}
 			function adaptiveTick() {
@@ -3425,6 +3437,7 @@
 					(gate.visible ? "v" : "-") +
 					(gate.lowPower ? "l" : "-") +
 					(gate.userPaused ? "u" : "-") +
+					(gate.splashOverlay ? "s" : "-") +
 					(gate.eligible ? "1" : "0");
 				if (gateKey !== adaptiveGateKey) {
 					adaptiveGateKey = gateKey;
