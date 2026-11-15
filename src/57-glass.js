@@ -1,4 +1,4 @@
-		//#region glass opacity
+﻿		//#region glass opacity
 		/**
 		 * One multiplier for every glass surface. 1 = the designed look; below makes
 		 * surfaces more see-through, above makes them more solid. Expressed as a
@@ -75,7 +75,9 @@
 		 * `tianlight.glassDepth`; no host setting is involved.
 		 */
 		const GLASS_LIVE_KEY = "tianlight.glassLive";
+		const GLASS_LENS_ID = "tl-glass-lens";
 		let glassLiveLevel = false;
+		let glassLensNode = null;
 
 		function readGlassDepth() {
 			try {
@@ -138,6 +140,84 @@
 		}
 
 		/**
+		 * v2.2.2: the live glass uses an SVG displacement filter on the backdrop, so the
+		 * wallpaper behind a panel is not just blurred 鈥?it is subtly bent like a lens.
+		 * Chromium supports `backdrop-filter: url(#filter) ...` (verified in Edge/Chromium
+		 * headless). The node is created only while live sampling is effective and is
+		 * removed again otherwise, so the default path never carries the filter.
+		 */
+		function ensureGlassLens() {
+			try {
+				if (glassLensNode !== null && glassLensNode.isConnected === true) return glassLensNode;
+				const body = document.body;
+				if (body === null) return null;
+				const existing = document.getElementById(GLASS_LENS_ID);
+				if (existing !== null) {
+					glassLensNode = existing;
+					return glassLensNode;
+				}
+				const ns = "http://www.w3.org/2000/svg";
+				const svg = document.createElementNS(ns, "svg");
+				svg.setAttribute("id", GLASS_LENS_ID);
+				svg.setAttribute("aria-hidden", "true");
+				svg.setAttribute("width", "0");
+				svg.setAttribute("height", "0");
+				svg.setAttribute("data-tl-glass-lens", "");
+				svg.style.cssText = "position:fixed;width:0;height:0;overflow:hidden;pointer-events:none;";
+				const defs = document.createElementNS(ns, "defs");
+				const filter = document.createElementNS(ns, "filter");
+				filter.setAttribute("id", "tl-glass-lens-filter");
+				filter.setAttribute("x", "-15%");
+				filter.setAttribute("y", "-15%");
+				filter.setAttribute("width", "130%");
+				filter.setAttribute("height", "130%");
+				filter.setAttribute("color-interpolation-filters", "sRGB");
+				const turbulence = document.createElementNS(ns, "feTurbulence");
+				turbulence.setAttribute("type", "fractalNoise");
+				turbulence.setAttribute("baseFrequency", "0.01 0.016");
+				turbulence.setAttribute("numOctaves", "1");
+				turbulence.setAttribute("seed", "7");
+				turbulence.setAttribute("result", "lensNoise");
+				const soften = document.createElementNS(ns, "feGaussianBlur");
+				soften.setAttribute("in", "lensNoise");
+				soften.setAttribute("stdDeviation", "1");
+				soften.setAttribute("result", "lensNoiseSoft");
+				const displace = document.createElementNS(ns, "feDisplacementMap");
+				displace.setAttribute("in", "SourceGraphic");
+				displace.setAttribute("in2", "lensNoiseSoft");
+				displace.setAttribute("scale", "26");
+				displace.setAttribute("xChannelSelector", "R");
+				displace.setAttribute("yChannelSelector", "G");
+				filter.appendChild(turbulence);
+				filter.appendChild(soften);
+				filter.appendChild(displace);
+				defs.appendChild(filter);
+				svg.appendChild(defs);
+				body.appendChild(svg);
+				glassLensNode = svg;
+				return svg;
+			} catch (error) {
+				note("glass:lens", error);
+				return null;
+			}
+		}
+
+		function removeGlassLens() {
+			try {
+				if (glassLensNode !== null && glassLensNode.isConnected === true) glassLensNode.remove();
+			} catch (error) {
+				note("glass:lens-remove", error);
+			}
+			glassLensNode = null;
+			try {
+				const stale = document.getElementById(GLASS_LENS_ID);
+				if (stale !== null) stale.remove();
+			} catch {
+				// nothing to remove
+			}
+		}
+
+		/**
 		 * Write the configured and effective live attributes. `off` keeps the stylesheet's
 		 * default static veil; only `effective=on` adds any backdrop-filter, so a disabled
 		 * or low-power live mode costs exactly what it cost before v2.2.0.
@@ -147,6 +227,28 @@
 			if (body === null) return false;
 			glassLiveLevel = live === true;
 			const effective = effectiveGlassLive(glassLiveLevel);
+			// Install the lens BEFORE the attribute makes the stylesheet reference it.
+			if (effective === true) {
+				ensureGlassLens();
+				let supported = false;
+				try {
+					// NB: `CSS` in this closure is the stylesheet string, not the CSSOM
+					// namespace, so the feature probe must read globalThis.CSS.
+					const cssom = globalThis.CSS;
+					supported =
+						cssom !== undefined &&
+						cssom !== null &&
+						typeof cssom.supports === "function" &&
+						(cssom.supports("backdrop-filter", "url(#tl-glass-lens-filter)") ||
+							cssom.supports("-webkit-backdrop-filter", "url(#tl-glass-lens-filter)"));
+				} catch {
+					supported = false;
+				}
+				body.setAttribute("data-tl-glass-lens-support", supported ? "1" : "0");
+			} else {
+				body.removeAttribute("data-tl-glass-lens-support");
+				removeGlassLens();
+			}
 			body.setAttribute("data-tl-glass-live", glassLiveLevel ? "on" : "off");
 			body.setAttribute("data-tl-glass-live-effective", effective ? "on" : "off");
 			return effective;
@@ -196,8 +298,19 @@
 			// later switch to 15fps immediately flattens live sampling without a reload.
 			renderTierController.publish();
 			let depth = readGlassDepth();
-			let effective = applyGlassDepth(depth);
 			glassLiveLevel = readGlassLive();
+			// v2.2.2: a stored "live on + depth off" pair cannot render anything (live is
+			// a modifier of a depth recipe). Older builds could leave that pair behind;
+			// promote it to the soft recipe once, so the live switch does what it says.
+			if (glassLiveLevel === true && depth === "off") {
+				depth = "soft";
+				try {
+					globalThis.localStorage.setItem(GLASS_DEPTH_KEY, depth);
+				} catch {
+					// persistence is optional
+				}
+			}
+			let effective = applyGlassDepth(depth);
 			let liveEffective = applyGlassLive(glassLiveLevel);
 			syncLiquidFallback(effective);
 			glassDepthController = {
@@ -282,6 +395,7 @@
 					body.removeAttribute("data-tl-glass-live-effective");
 					body.removeAttribute("data-tl-render-tier");
 				}
+				removeGlassLens();
 			};
 		}
 		//#endregion

@@ -2318,6 +2318,18 @@ test('v2.2.0 live glass: opt-in only, gated on the effective flag, and user-rese
   assert.match(CLIENT_SOURCE, /function publishRenderTier\(\)/)
   assert.match(CLIENT_SOURCE, /document\.body\.setAttribute\("data-tl-render-tier", renderTier\)/)
   assert.match(CLIENT_SOURCE, /attributeFilter: \["data-tl-lowpower", "data-tl-lowpower-reason", "data-tl-render-tier"\]/)
+  // v2.2.2: a real lens (SVG displacement) on the live backdrop, gated by a
+  // runtime CSS.supports probe so an unsupported browser keeps the plain blur.
+  assert.match(CLIENT_SOURCE, /const GLASS_LENS_ID = "tl-glass-lens"/)
+  assert.match(CLIENT_SOURCE, /function ensureGlassLens\(\)/)
+  assert.match(CLIENT_SOURCE, /feDisplacementMap/)
+  assert.match(CLIENT_SOURCE, /data-tl-glass-lens-support/)
+  assert.match(CLIENT_SOURCE, /url\(#tl-glass-lens-filter\)/)
+  assert.match(CLIENT_SOURCE, /const cssom = globalThis\.CSS/, 'the supports probe must not use the closure CSS string')
+  assert.match(CLIENT_SOURCE, /live on \+ depth off|glassLiveLevel === true && depth === "off"/)
+  // Dark mode owns a smoked-glass recipe; the light live fill must never leak into it.
+  assert.match(CLIENT_SOURCE, /\[data-ds-dark-theme\]\[data-tl-glass-live-effective="on"\]/)
+  assert.match(CLIENT_SOURCE, /--tl-liquid-live-bright: 0\.72/)
 })
 
 test('v2.2.0 pet model picker: provider+model persist and travel through the fixed route', () => {

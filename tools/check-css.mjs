@@ -101,7 +101,7 @@ expect('reduced-motion guard exists', css.includes('prefers-reduced-motion: redu
 expect('desktop titlebar clearance present', css.includes('--dsh-windows-titlebar-height'))
 expect(
   'both panel fills keep a legibility floor (light + dark)',
-  css.includes('max(0.82, calc(0.76 * var(--tl-glass-m, 1)))') &&
+  css.includes('max(0.68, calc(0.62 * var(--tl-glass-m, 1)))') &&
     css.includes('max(0.96, calc(0.88 * var(--tl-glass-m, 1)))'),
 )
 expect('no unresolved template placeholder', !css.includes('${'))
@@ -150,6 +150,12 @@ expect(
   liveRules.every((match) => /data-tl-glass-live-effective="on"/.test(match[1])),
   liveRules.map((match) => match[1].trim()).filter((selector) => /data-tl-glass-live-effective="on"/.test(selector) === false).join(' | '),
 )
+const lensRules = liveBlurRules.filter((match) => /url\(#tl-glass-lens-filter\)/.test(match[2]))
+expect(
+  'the live lens uses an SVG displacement filter gated on runtime support',
+  lensRules.length >= 2 && lensRules.every((match) => /data-tl-glass-lens-support="1"/.test(match[1])),
+  lensRules.map((match) => match[1].trim()).join(' | '),
+)
 expect(
   'live glass covers the large panels and the composer',
   liveRules.some((match) => /\[data-tl-sidebar\]/.test(match[1]) && /\[data-tl-settings\]/.test(match[1])) &&
@@ -157,14 +163,14 @@ expect(
 )
 expect(
   'text-bearing glass keeps a legibility floor (bubble >= 0.30; live lowers decorative fill)',
-  css.includes('--tl-glass-fill: rgba(233, 243, 254, calc(0.20 * var(--tl-glass-m, 1)))') &&
+  css.includes('--tl-glass-fill: rgba(205, 228, 250, calc(0.05 * var(--tl-glass-m, 1)))') &&
     css.includes('--dsw-specific-bubble: rgba(236, 245, 255, 0.30) !important'),
 )
 expect(
   'the old white specular is gone (real / soft / frosted hi alpha lowered)',
-  css.includes('--tl-liquid-hi: 0.18') &&
-    css.includes('--tl-liquid-hi: 0.12') &&
-    css.includes('--tl-liquid-hi: 0.24') &&
+  css.includes('--tl-liquid-hi: 0.12') &&
+    css.includes('--tl-liquid-hi: 0.08') &&
+    css.includes('--tl-liquid-hi: 0.16') &&
     css.includes('--tl-liquid-hi: 0.52') === false,
 )
 

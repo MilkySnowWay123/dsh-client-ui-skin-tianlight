@@ -17,11 +17,14 @@ body[data-dsh-tianlight] {
 	   + up to 0.52 white specular on the same pixel, which read as a grey/white veil
 	   over the wallpaper ("整体泛白") instead of glass. The wallpapers stay the source
 	   of colour; the glass only adds a thin, cool specular edge. */
-	--tl-overlay: rgba(240, 247, 255, 0.74);
+	--tl-overlay: rgba(235, 245, 255, 0.54);
 	/* Composer-only glass. Everything else stays fully transparent; this card is
 	   the one surface that earns a frosted backdrop. */
-	--tl-glass-fill: rgba(233, 243, 254, calc(0.20 * var(--tl-glass-m, 1)));
-	--tl-glass-line: rgba(255, 255, 255, 0.48);
+	/* v2.2.2 "clear glass": the panel is a lens, not a white sheet. The fill is a
+	   near-transparent cool tint; the visible body comes from the backdrop filter and
+	   the 1px light/dark rim, so bright wallpapers stay coloured instead of milky. */
+	--tl-glass-fill: rgba(205, 228, 250, calc(0.05 * var(--tl-glass-m, 1)));
+	--tl-glass-line: rgba(255, 255, 255, 0.60);
 	--tl-glass-blur: 12px;
 	/* Modal-grade surface: a settings panel has to stay readable over the chat, so
 	   it needs its own fill instead of the zeroed bg-layer tokens. The value is high
@@ -32,7 +35,7 @@ body[data-dsh-tianlight] {
 	   reads as "duplicate stacked UI". Data surfaces keep a hard floor.
 	   v2.2.0: slightly less opaque and less pure-white; live mode lowers it further
 	   because its own real backdrop blur carries the legibility. */
-	--tl-panel-fill: rgba(240, 247, 255, max(0.82, calc(0.76 * var(--tl-glass-m, 1))));
+	--tl-panel-fill: rgba(235, 245, 255, max(0.68, calc(0.62 * var(--tl-glass-m, 1))));
 	--tl-ink: #0f2438;
 	--tl-ink-soft: #3a5a78;
 	--tl-ink-faint: #5d7d99;
@@ -2009,9 +2012,9 @@ body[data-dsh-tianlight] {
 	   real time. These are the plain defaults; each depth and the dark theme tune
 	   them below, so the live look still follows the selected depth. */
 	--tl-liquid-live-blur: 14px;
-	--tl-liquid-live-sat: 1.65;
-	--tl-liquid-live-bright: 0.93;
-	--tl-liquid-live-contrast: 1.08;
+	--tl-liquid-live-sat: 1.9;
+	--tl-liquid-live-bright: 0.92;
+	--tl-liquid-live-contrast: 1.1;
 	/* v1.6.1 liquid glass v2, re-tuned in v2.2.0 against the white cast. The
 	   surface/size pairs below are the complete multi-layer recipe every glass
 	   surface paints: a baked feTurbulence grain tile (size --tl-liquid-grain), a
@@ -2045,49 +2048,54 @@ body[data-dsh-tianlight] {
 		inset 1px 1px 0 rgba(240, 249, 255, var(--tl-liquid-rim)),
 		inset -1px -1px 0 rgba(4, 14, 28, calc(var(--tl-liquid-rim) * 0.55)),
 		inset 0 -1px 0 rgba(4, 14, 28, calc(var(--tl-liquid-rim) * 0.40));
+	/* A broad, soft inner edge is what makes a pane read as thick glass rather than a
+	   tinted rectangle: the centre stays clear, the border gathers a little shadow. */
+	--tl-liquid-lens-shadow:
+		inset 0 0 22px rgba(8, 24, 42, 0.10),
+		inset 0 0 60px rgba(8, 24, 42, 0.05);
 	--tl-liquid-glow-shadow: 0 0 calc(6px + 14px * var(--tl-liquid-sheen)) rgba(150, 200, 250, calc(var(--tl-liquid-sheen) * 0.10));
 }
 body[data-dsh-tianlight][data-tl-glass-effective="soft"] {
 	--tl-liquid-blur: 11px;
 	--tl-liquid-sat: 1.3;
-	--tl-liquid-hi: 0.12;
-	--tl-liquid-lo: 0.04;
+	--tl-liquid-hi: 0.08;
+	--tl-liquid-lo: 0.02;
 	--tl-liquid-noise: 0.03;
-	--tl-liquid-sheen: 0.24;
+	--tl-liquid-sheen: 0.18;
 	--tl-liquid-grain: 180px;
-	--tl-liquid-rim: 0.18;
+	--tl-liquid-rim: 0.30;
 	--tl-liquid-live-blur: 13px;
-	--tl-liquid-live-sat: 1.60;
-	--tl-liquid-live-bright: 0.94;
-	--tl-liquid-live-contrast: 1.08;
+	--tl-liquid-live-sat: 1.8;
+	--tl-liquid-live-bright: 0.93;
+	--tl-liquid-live-contrast: 1.1;
 	--tl-liquid-grain-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'140'%20height%3D'140'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.9'%20numOctaves%3D'2'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20type%3D'saturate'%20values%3D'0'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'140'%20height%3D'140'%20filter%3D'url(%23n)'%20opacity%3D'0.035'%2F%3E%3C%2Fsvg%3E");
 }
 body[data-dsh-tianlight][data-tl-glass-effective="real"] {
 	--tl-liquid-blur: 19px;
 	--tl-liquid-sat: 1.5;
-	--tl-liquid-hi: 0.18;
-	--tl-liquid-lo: 0.06;
+	--tl-liquid-hi: 0.12;
+	--tl-liquid-lo: 0.03;
 	--tl-liquid-noise: 0.045;
-	--tl-liquid-sheen: 0.5;
+	--tl-liquid-sheen: 0.35;
 	--tl-liquid-grain: 140px;
-	--tl-liquid-rim: 0.32;
+	--tl-liquid-rim: 0.36;
 	--tl-liquid-live-blur: 18px;
-	--tl-liquid-live-sat: 1.75;
-	--tl-liquid-live-bright: 0.92;
-	--tl-liquid-live-contrast: 1.08;
+	--tl-liquid-live-sat: 1.95;
+	--tl-liquid-live-bright: 0.91;
+	--tl-liquid-live-contrast: 1.1;
 	--tl-liquid-grain-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'140'%20height%3D'140'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.9'%20numOctaves%3D'2'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20type%3D'saturate'%20values%3D'0'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'140'%20height%3D'140'%20filter%3D'url(%23n)'%20opacity%3D'0.05'%2F%3E%3C%2Fsvg%3E");
 }
 body[data-dsh-tianlight][data-tl-glass-effective="frosted"] {
 	--tl-liquid-blur: 26px;
 	--tl-liquid-sat: 0.95;
-	--tl-liquid-hi: 0.24;
-	--tl-liquid-lo: 0.03;
+	--tl-liquid-hi: 0.16;
+	--tl-liquid-lo: 0.02;
 	--tl-liquid-noise: 0.10;
-	--tl-liquid-sheen: 0.10;
+	--tl-liquid-sheen: 0.08;
 	--tl-liquid-grain: 110px;
-	--tl-liquid-rim: 0.38;
+	--tl-liquid-rim: 0.40;
 	--tl-liquid-live-blur: 24px;
-	--tl-liquid-live-sat: 1.08;
+	--tl-liquid-live-sat: 1.1;
 	--tl-liquid-live-bright: 0.98;
 	--tl-liquid-live-contrast: 1.04;
 	--tl-liquid-grain-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'140'%20height%3D'140'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.9'%20numOctaves%3D'2'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20type%3D'saturate'%20values%3D'0'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'140'%20height%3D'140'%20filter%3D'url(%23n)'%20opacity%3D'0.12'%2F%3E%3C%2Fsvg%3E");
@@ -2199,20 +2207,31 @@ body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], 
    wallpaper behind every frame. */
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar], [data-tl-sidebar-col]) {
 	background-color: color-mix(in srgb, var(--tl-glass-fill) 62%, transparent) !important;
-	background-image: var(--tl-liquid-surface) !important;
-	background-size: var(--tl-liquid-surface-size);
+	/* A lens, not a white sheet: one narrow specular streak at the top-left, one cool
+	   refraction tint at the bottom-right, then the grain surface. The 1px bright
+	   right edge is what makes it read as a glass pane. */
+	background-image:
+		linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 26%),
+		radial-gradient(120% 100% at 100% 100%, rgba(70, 150, 240, 0.10) 0%, rgba(70, 150, 240, 0) 62%),
+		var(--tl-liquid-surface) !important;
+	background-size: auto, auto, var(--tl-liquid-surface-size);
+	border-right: 1px solid rgba(255, 255, 255, 0.45);
 	box-shadow:
 		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-lens-shadow),
 		var(--tl-liquid-glow-shadow),
 		0 0 0 0.5px var(--tl-glass-line),
 		0 10px 30px rgba(8, 26, 44, 0.14);
 }
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-settings], [data-tl-wall]) {
-	background-image: var(--tl-liquid-surface) !important;
-	background-size: var(--tl-liquid-surface-size);
+	background-image:
+		linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 22%),
+		var(--tl-liquid-surface) !important;
+	background-size: auto, var(--tl-liquid-surface-size);
 	border-color: var(--tl-glass-line);
 	box-shadow:
 		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-lens-shadow),
 		var(--tl-liquid-glow-shadow),
 		0 18px 60px rgba(8, 26, 44, 0.26);
 }
@@ -2223,11 +2242,14 @@ body[data-dsh-tianlight][data-ds-dark-theme]:is([data-tl-glass-effective="soft"]
 		0 18px 60px rgba(0, 0, 0, 0.55);
 }
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-hub] [data-tl-hub-panel] {
-	background-image: var(--tl-liquid-surface);
-	background-size: var(--tl-liquid-surface-size);
+	background-image:
+		linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 22%),
+		var(--tl-liquid-surface);
+	background-size: auto, var(--tl-liquid-surface-size);
 	border-color: var(--tl-glass-line);
 	box-shadow:
 		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-lens-shadow),
 		var(--tl-liquid-glow-shadow),
 		0 28px 80px rgba(4, 14, 26, 0.45);
 }
@@ -2274,11 +2296,15 @@ body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-eff
    only strengthens the sheen, the hairline, the rim and the saturation, so the pseudo
    layer ownership stays untouched. */
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-composer] {
-	background-image: var(--tl-liquid-surface) !important;
-	background-size: var(--tl-liquid-surface-size);
-	border-color: rgba(255, 255, 255, calc(var(--tl-liquid-hi) + 0.18)) !important;
+	background-image:
+		linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 18%),
+		radial-gradient(120% 140% at 0% 0%, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 48%),
+		var(--tl-liquid-surface) !important;
+	background-size: auto, auto, var(--tl-liquid-surface-size);
+	border-color: rgba(255, 255, 255, calc(var(--tl-liquid-hi) + 0.30)) !important;
 	box-shadow:
 		var(--tl-liquid-rim-shadow),
+		var(--tl-liquid-lens-shadow),
 		var(--tl-liquid-glow-shadow),
 		0 12px 38px rgba(8, 28, 52, 0.26) !important;
 }
@@ -2395,15 +2421,32 @@ body[data-dsh-tianlight][data-ds-dark-theme] {
 /* Live glass must be COLOUR from the wallpaper, not paint: strip most of the
    static white specular/fill and let the sampled backdrop carry the look. This is
    the direct answer to "enabling live glass makes everything too white". */
-body[data-dsh-tianlight][data-tl-glass-live-effective="on"] {
-	--tl-glass-fill: rgba(233, 243, 254, calc(0.12 * var(--tl-glass-m, 1)));
-	--tl-panel-fill: rgba(240, 247, 255, max(0.72, calc(0.62 * var(--tl-glass-m, 1))));
-	--tl-overlay: rgba(240, 247, 255, 0.64);
-	--tl-liquid-hi: 0.06;
-	--tl-liquid-lo: 0.02;
+body[data-dsh-tianlight]:not([data-ds-dark-theme])[data-tl-glass-live-effective="on"] {
+	--tl-glass-fill: rgba(205, 228, 250, calc(0.04 * var(--tl-glass-m, 1)));
+	--tl-panel-fill: rgba(235, 245, 255, max(0.56, calc(0.50 * var(--tl-glass-m, 1))));
+	--tl-overlay: rgba(235, 245, 255, 0.50);
+	--tl-liquid-hi: 0.03;
+	--tl-liquid-lo: 0.01;
+	--tl-liquid-noise: 0.015;
+	--tl-liquid-sheen: 0.06;
+	--tl-liquid-rim: 0.35;
+}
+/* Dark theme must stay dark: the light live fill above was the exact cause of the
+   "white haze" on a dark UI. The pane is smoked glass with a cool specular edge. */
+body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] {
+	/* Smoked glass, not a bright pane: a bright wallpaper is darkened by the pane and
+	   the backdrop filter, so white text keeps its contrast and the pane reads as glass. */
+	--tl-glass-fill: rgba(6, 14, 24, calc(0.40 * var(--tl-glass-m, 1)));
+	--tl-panel-fill: rgba(8, 16, 28, max(0.72, calc(0.66 * var(--tl-glass-m, 1))));
+	--tl-overlay: rgba(8, 16, 28, 0.70);
+	--tl-liquid-hi: 0.08;
+	--tl-liquid-lo: 0.01;
 	--tl-liquid-noise: 0.02;
-	--tl-liquid-sheen: 0.12;
-	--tl-liquid-rim: 0.14;
+	--tl-liquid-sheen: 0.16;
+	--tl-liquid-rim: 0.36;
+	--tl-liquid-live-bright: 0.72;
+	--tl-liquid-live-sat: 1.35;
+	--tl-liquid-live-contrast: 1.06;
 }
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] :is([data-tl-sidebar], [data-tl-sidebar-col], [data-tl-settings], [data-tl-wall], [data-tl-hub-panel]) {
@@ -2421,6 +2464,17 @@ body[data-dsh-tianlight][data-tl-glass-live-effective="on"] {
 	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] :is([data-tl-sidebar], [data-tl-sidebar-col]) {
 		background-color: color-mix(in srgb, var(--tl-glass-fill) 30%, transparent) !important;
 	}
+	/* Dark mode needs more of the smoked fill: 30% of a dark tint over a bright
+	   wallpaper is still a bright pane. */
+	body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] :is([data-tl-sidebar], [data-tl-sidebar-col]) {
+		background-color: color-mix(in srgb, var(--tl-glass-fill) 82%, transparent) !important;
+	}
+	body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] :is([data-tl-settings], [data-tl-wall]) {
+		background-color: color-mix(in srgb, var(--tl-panel-fill) 74%, transparent) !important;
+	}
+	body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] [data-tl-hub] [data-tl-hub-panel] {
+		background-color: color-mix(in srgb, var(--tl-overlay) 78%, transparent) !important;
+	}
 	/* Composer keeps its ::before ownership (a filter on the card itself would
 	   re-anchor its non-portaled tooltips); live only makes that one layer real. */
 	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] [data-tl-composer]::before {
@@ -2432,6 +2486,18 @@ body[data-dsh-tianlight][data-tl-glass-live-effective="on"] {
 	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] :is([data-tl-menu], [data-tl-model], [data-tl-new-chat], [data-tl-weather-chip], [data-tl-rheo][data-tl-rheo-empty], [data-tl-glass-preview]) {
 		-webkit-backdrop-filter: blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
 		backdrop-filter: blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
+	}
+	/* v2.2.2 lens: Chromium accepts an SVG filter inside backdrop-filter, so the
+	   wallpaper behind the large panes is gently bent, not merely blurred. The installer
+	   adds data-tl-glass-lens-support="1" only after CSS.supports proves it and creates
+	   the referenced filter node; the plain blur declarations above stay as fallback. */
+	body[data-dsh-tianlight][data-tl-glass-lens-support="1"][data-tl-glass-live-effective="on"] :is([data-tl-sidebar], [data-tl-sidebar-col], [data-tl-settings], [data-tl-wall], [data-tl-hub-panel]) {
+		-webkit-backdrop-filter: url(#tl-glass-lens-filter) blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
+		backdrop-filter: url(#tl-glass-lens-filter) blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
+	}
+	body[data-dsh-tianlight][data-tl-glass-lens-support="1"][data-tl-glass-live-effective="on"] [data-tl-composer]::before {
+		-webkit-backdrop-filter: url(#tl-glass-lens-filter) blur(max(var(--tl-glass-blur), var(--tl-liquid-blur), var(--tl-liquid-live-blur))) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
+		backdrop-filter: url(#tl-glass-lens-filter) blur(max(var(--tl-glass-blur), var(--tl-liquid-blur), var(--tl-liquid-live-blur))) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
 	}
 	/* The role-hub preview is the control's own feedback: live makes it clear at a
 	   glance, including a tiny moving-wallpaper feel from the real backdrop. */
