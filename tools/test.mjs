@@ -5594,6 +5594,20 @@ await testAsync('version: the film title uses the same version as package.json',
   assert.equal(clientSource.includes('TIANLIGHT 2.0.4'), false, 'the stale 2.0.4 title is gone from the product')
 })
 
+test('release tooling bumps TL_BUILD_VERSION with the film title', () => {
+  const releaseSource = readFileSync(new URL('../tools/release.mjs', import.meta.url), 'utf8')
+  const constantsSource = readFileSync(new URL('../src/10-constants.js', import.meta.url), 'utf8')
+  const owned = /const OWNED_FILES = \[([\s\S]*?)\]/.exec(releaseSource)
+  assert.ok(owned !== null, 'OWNED_FILES is declared in release.mjs')
+  assert.ok(owned[1].includes("'src/10-constants.js'"), 'src/10-constants.js is an owned release file')
+  assert.ok(
+    releaseSource.includes('const constantsPattern = /(const TL_BUILD_VERSION = ")[^"]+(")/'),
+    'release.mjs rewrites TL_BUILD_VERSION from the target version',
+  )
+  assert.ok(releaseSource.includes('TL_BUILD_VERSION -> '), 'the dry-run plan names the film title version line')
+  assert.match(constantsSource, /const TL_BUILD_VERSION = "[^"]+";/, 'the declaration exists in src/10-constants.js')
+})
+
 // ---- long film wrapper: every exit restores the page and clears what it owns ----
 await testAsync('splash film wrapper: normal/skip/fallback/hard-stop/dispose/error all restore the page', async () => {
   const saved = {}

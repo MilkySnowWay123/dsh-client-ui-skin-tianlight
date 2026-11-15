@@ -787,11 +787,15 @@ report(
     /replace(?:All)?\([^)]*HOST_API/.test(publicReleaseSource) === false &&
     /HOST_API[^\n]*\.replace/.test(releaseSource) === false &&
     /HOST_API[^\n]*\.replace/.test(publicReleaseSource) === false &&
-    releaseSource.includes('10-constants.js') === false &&
-    publicReleaseSource.includes('10-constants.js') === false
+    publicReleaseSource.includes('10-constants.js') === false &&
+    // src/10-constants.js also holds HOST_API, but the release may only rewrite the
+    // film-title version next to it. Both conditions are checked: the exact
+    // TL_BUILD_VERSION pattern exists and the HOST_API guards above still hold.
+    releaseSource.includes('const constantsPattern = /(const TL_BUILD_VERSION = ")[^"]+(")/') &&
+    releaseSource.includes('TL_BUILD_VERSION -> ')
     ? 'PASS'
     : 'FAIL',
-  'release tooling never assigns/rewrites the HOST_API handshake (hand-edited route contract only)',
+  'release tooling only rewrites version fields (TL_BUILD_VERSION included) and never the HOST_API handshake',
 )
 
 // ---- 20. R2 energy pass: static scene veil, throttled bridge, unmounted panel ----

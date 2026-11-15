@@ -45,6 +45,7 @@ const OWNED_FILES = [
   'CHANGELOG.md',
   'lib/index.js',
   'lib/client.js',
+  'src/10-constants.js',
 ]
 /** The exact static chain `npm run check` runs, in the same order. */
 const CHECK_CHAIN = [
@@ -482,6 +483,11 @@ plan.push(
     (sameVersion ? 'unchanged' : targetVersion) +
     ' (HOST_API is a route-contract version and is edited by hand only)',
 )
+plan.push(
+  'film title: src/10-constants.js TL_BUILD_VERSION -> ' +
+    (sameVersion ? 'unchanged' : targetVersion) +
+    ' (must equal package.json; tools/test.mjs enforces it)',
+)
 plan.push('product: rebuild lib/client.js with node tools/build.mjs')
 plan.push(
   'branch policy: ' +
@@ -589,6 +595,23 @@ if (!sameVersion) {
       writeText('lib/index.js', next)
       changes.push('lib/index.js')
     }
+  }
+
+  // Film title version: src/10-constants.js is built into lib/client.js, and
+  // tools/test.mjs requires TL_BUILD_VERSION === package.json version. A release
+  // that bumped the manifests but not this line would go red in its own check
+  // chain. Fail loudly if the declaration moved instead of silently skipping it.
+  const constantsPath = join(ROOT, 'src', '10-constants.js')
+  const constantsPattern = /(const TL_BUILD_VERSION = ")[^"]+(")/
+  if (!existsSync(constantsPath)) fail('src/10-constants.js is missing; cannot sync TL_BUILD_VERSION')
+  const constantsText = readText('src/10-constants.js')
+  if (!constantsPattern.test(constantsText)) {
+    fail('src/10-constants.js has no TL_BUILD_VERSION = "..." line; cannot sync the film title version')
+  }
+  const nextConstants = constantsText.replace(constantsPattern, '$1' + targetVersion + '$2')
+  if (nextConstants !== constantsText) {
+    writeText('src/10-constants.js', nextConstants)
+    changes.push('src/10-constants.js')
   }
 }
 
