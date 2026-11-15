@@ -564,11 +564,13 @@ report(
 
 // ---- v2.0.1: exact build fingerprint (host route + hub panels + pack metadata) ----
 const fingerprintPackSource = fs.readFileSync(fileURLToPath(new URL('../tools/pack.mjs', import.meta.url)), 'utf8')
+// v2.1.8: the _fingerprint route moved to lib/routes/settings.js.
+const settingsRouteSource = fs.readFileSync(fileURLToPath(new URL('../lib/routes/settings.js', import.meta.url)), 'utf8')
 const verifyInstallSource = fs.readFileSync(fileURLToPath(new URL('../tools/verify-install.mjs', import.meta.url)), 'utf8')
 const feedbackTemplateSource = fs.readFileSync(fileURLToPath(new URL('../.github/ISSUE_TEMPLATE/feedback.yml', import.meta.url)), 'utf8')
 report(
-  persistentIndexSource.includes("rest === '_fingerprint'") &&
-    persistentIndexSource.includes('buildFingerprint') &&
+  settingsRouteSource.includes('_fingerprint:') &&
+    settingsRouteSource.includes('buildFingerprint') &&
     source.includes('/_fingerprint') &&
     source.includes('data-tl-hub-fingerprint-selftest') &&
     source.includes('data-tl-hub-fingerprint-feedback') &&
@@ -673,14 +675,19 @@ report(
 // one POST route with fixed server-side framing; the page only ever sees text/code.
 const petChatSource = fs.readFileSync(fileURLToPath(new URL('../lib/pet-chat.js', import.meta.url)), 'utf8')
 const petChatHostSource = fs.readFileSync(fileURLToPath(new URL('../lib/index.js', import.meta.url)), 'utf8')
+// v2.1.8: the route bodies moved to lib/routes/*.js, so the same assertions are read
+// from their new homes — the meaning (POST _pet-chat behind the loopback fence, with
+// petLlm capability reporting) is unchanged.
+const petChatRouteSource = fs.readFileSync(fileURLToPath(new URL('../lib/routes/pet.js', import.meta.url)), 'utf8')
+const engineRouteSource = fs.readFileSync(fileURLToPath(new URL('../lib/routes/engine.js', import.meta.url)), 'utf8')
 report(
-  petChatHostSource.includes("rest === '_pet-chat'") &&
-    petChatHostSource.includes('petChat.handle(ctx, req, res)') &&
-    petChatHostSource.includes('petLlm: computePetLlmCapability(ctx)') &&
+  petChatRouteSource.includes("'_pet-chat'") &&
+    petChatRouteSource.includes('petChat.handle(ctx, req, res)') &&
+    engineRouteSource.includes('petLlm: computePetLlmCapability(ctx)') &&
     petChatHostSource.includes('isAllowedLocalHost(req.headers?.host)')
     ? 'PASS'
     : 'FAIL',
-  'v2.0.0 host half exposes POST _pet-chat behind the loopback Host fence and reports capabilities.petLlm',
+  'v2.0.0 host half exposes POST _pet-chat behind the loopback Host fence and reports capabilities.petLlm (v2.1.8: route in lib/routes/pet.js, capability in lib/routes/engine.js, fence in lib/index.js)',
 )
 report(
   petChatSource.includes('PET_CHAT_MAX_BODY_BYTES = 16 * 1024') &&
@@ -1057,8 +1064,8 @@ report(
 const weHostSource = fs.readFileSync(fileURLToPath(new URL('../lib/we-wallpaper/host.mjs', import.meta.url)), 'utf8')
 const transcodeSource = fs.readFileSync(fileURLToPath(new URL('../lib/transcode.js', import.meta.url)), 'utf8')
 report(
-  hostSource.includes('async function buildEngineStatus(') &&
-    hostSource.includes('await ffmpegStatus()') &&
+  engineRouteSource.includes('async function engineStatus(') &&
+    engineRouteSource.includes('await ffmpegStatus()') &&
     hostSource.includes("isAllowedLocalHost(req.headers?.host)") &&
     hostSource.includes('isAllowedLocalHost,') &&
     /function isAllowedLocalHost\(/.test(weHostSource) &&
@@ -1657,7 +1664,7 @@ report(
     source.includes('/\\.(mp4|m4v|mov|webm|png|jpe?g|webp|avif|gif|svg)$/i') === false &&
     source.includes('lifeGuessMediaKind') &&
     mediaTypesSource.includes('export function mediaKindFromName(name)') &&
-    hostSource.includes('mediaKindFromName(name)')
+    fs.readFileSync(fileURLToPath(new URL('../lib/routes/wallpaper.js', import.meta.url)), 'utf8').includes('mediaKindFromName(name)')
     ? 'PASS'
     : 'FAIL',
   'S4: one shared upload pre-flight and one media-kind table (client + host), no duplicated extension lists',
@@ -1703,8 +1710,8 @@ report(
 const sceneProjectSource = fs.readFileSync(fileURLToPath(new URL('../lib/scene-project.js', import.meta.url)), 'utf8')
 report(
   sceneProjectSource.includes("'.svg',") &&
-    hostSource.includes("rest.startsWith('_scene-project/')") &&
-    hostSource.includes('servePath(req, res, filePath, basename(filePath)') &&
+    fs.readFileSync(fileURLToPath(new URL('../lib/routes/scene.js', import.meta.url)), 'utf8').includes("'_scene-project/',") &&
+    fs.readFileSync(fileURLToPath(new URL('../lib/routes/scene.js', import.meta.url)), 'utf8').includes('servePath(req, res, filePath, basename(filePath)') &&
     httpMediaSource.includes('sandbox; default-src')
     ? 'PASS'
     : 'FAIL',
