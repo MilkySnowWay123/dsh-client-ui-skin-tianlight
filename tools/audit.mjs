@@ -89,9 +89,12 @@ for (const kind of kinds) {
 }
 if (!listenerIssue) report('PASS', 'every window/document/media listener is removed on dispose')
 
+// Count timer *calls*, not every property mention: `typeof window.setInterval`
+// guards are not timers, and counting them produced the long-standing false
+// "16 set / 13 clear" warning (13 calls, 13 clears; the three extras were guards).
 const timers = {
-  setTimeout: [count([...source.matchAll(/window\.setTimeout/g)].map(() => 'x'), 'x'), count([...source.matchAll(/window\.clearTimeout/g)].map(() => 'x'), 'x')],
-  setInterval: [count([...source.matchAll(/window\.setInterval/g)].map(() => 'x'), 'x'), count([...source.matchAll(/window\.clearInterval/g)].map(() => 'x'), 'x')],
+  setTimeout: [count([...source.matchAll(/window\.setTimeout\s*\(/g)].map(() => 'x'), 'x'), count([...source.matchAll(/window\.clearTimeout\s*\(/g)].map(() => 'x'), 'x')],
+  setInterval: [count([...source.matchAll(/window\.setInterval\s*\(/g)].map(() => 'x'), 'x'), count([...source.matchAll(/window\.clearInterval\s*\(/g)].map(() => 'x'), 'x')],
 }
 for (const [name, [a, r]] of Object.entries(timers)) {
   if (a === 0) continue
