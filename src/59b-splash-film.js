@@ -1282,7 +1282,7 @@
 			        const avg = measured.reduce((a, b) => a + b, 0) / measured.length
 			        if (!downgraded && renderScale > 0.5 && avg > 20) { renderScale = 0.5; downgraded = true; measured = []; measuredFrames = 0; resize() }
 			        else if (renderScale > 0.45 && avg > 16.7) { renderScale = 0.4; downgraded = true; measured = []; measuredFrames = 0; resize() }
-			        else if (renderScale <= 0.45 && avg > 33) { enterSimple('performance'); return }
+			        else if (renderScale <= 0.45 && avg > 80 && t > 4000) { enterSimple('performance'); return }
 			        else { measured = []; measuredFrames = 0 }
 			      }
 			    }
