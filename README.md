@@ -783,7 +783,7 @@ node tools/release.mjs --dry-run --version 2.0.1-rc.2 --note "…"
 - **第三方**：v0.6.0 内嵌 dsh-we-wallpaper host half（MIT，v0.4.0 @ `61ccaa2`）、wcap（Unlicense）、
   RePKG（MIT，DXT 解码实现依据）、WebWallGL（MIT）；组件、版本、归属与许可全文见
   [docs/THIRD-PARTY.md](docs/THIRD-PARTY.md)
-- **仓库完整版附带默认演示素材**：`assets/bg-4k.mp4`、`assets/cat.png`（约 34MB）；`assets/uploads/`、`state/`、`assets/derived/`（旧版用户数据位置）与其它自加素材不提交；v2.0.1 起用户数据在 DSH profile 目录，根本不在仓库里。替换或再分发前请确认你有使用权，缺失时以渐变兜底
+- **仓库完整版附带默认演示素材**：`assets/bg-4k.mp4`、`assets/cat.png`（约 17MB）；`assets/uploads/`、`state/`、`assets/derived/`（旧版用户数据位置）与其它自加素材不提交；v2.0.1 起用户数据在 DSH profile 目录，根本不在仓库里。替换或再分发前请确认你有使用权，缺失时以渐变兜底
 - 桌宠形象与视频版权归各自权利方；如果只想要轻量代码仓库，删除这两个文件即可
 
 ## 已知取舍
