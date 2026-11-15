@@ -41,6 +41,7 @@ import {
   OFFICIAL_PEER_PACKAGES,
   satisfies,
 } from './compat.mjs'
+import { __test as weatherTest, handleWeatherProxy } from '../lib/weather-proxy.js'
 import { FrameCache, handleFrameCache, handleFrameCacheStatus, sniffImageType, validCacheKey } from '../lib/media-cache.js'
 import {
   buildTranscodeArgs,
@@ -5454,6 +5455,135 @@ await testAsync('splash A: once per session, opt-out, accessibility, skip, 3s gu
     }
     rmSync(dir, { recursive: true, force: true })
   }
+})
+
+// ---- weather proxy (v2.0.5 route): validation, fixed host, deadline, concurrency ----
+function fakeJsonResponse() {
+  const res = {
+    status: 0,
+    headers: {},
+    body: '',
+    writeHead(status, headers) {
+      this.status = status
+      this.headers = headers
+    },
+    end(body) {
+      this.body = body === undefined ? '' : String(body)
+    },
+  }
+  return res
+}
+
+await testAsync('weather proxy: coordinates are validated, bounded and the host is fixed', async () => {
+  const { coordinate, forecastPath, FORECAST_HOST } = weatherTest
+  assert.equal(weatherTest.FORECAST_HOST, 'api.open-meteo.com', 'the only upstream host is a constant')
+  assert.equal(coordinate('31.2304', 90), '31.2304')
+  assert.equal(coordinate('  -0.123456  ', 180), '-0.1235', 'trimmed and rounded to 4 decimals')
+  assert.equal(coordinate('90', 90), '90', 'the poles are inside the range')
+  assert.equal(coordinate('90.0001', 90), null, 'out of range')
+  assert.equal(coordinate('-180.0001', 180), null)
+  assert.equal(coordinate('', 90), null)
+  assert.equal(coordinate('   ', 90), null)
+  assert.equal(coordinate('abc', 90), null)
+  assert.equal(coordinate('1e999', 90), null, 'Infinity is rejected')
+  assert.equal(coordinate('1'.repeat(40), 90), null, 'over-long input is rejected before Number()')
+  assert.equal(coordinate(31.2, 90), null, 'non-strings are rejected')
+  const path = forecastPath('31.2304', '121.4737')
+  assert.match(path, /^\/v1\/forecast\?latitude=31\.2304&longitude=121\.4737&current=.*&timezone=auto$/)
+  assert.equal(path.includes('http'), false, 'the path is relative; the host is supplied by the module')
+  assert.equal(forecastPath('1&x=2', '3').includes('&x=2'), false, 'a coordinate cannot inject a query parameter')
+})
+
+await testAsync('weather proxy: deadline, size cap, status, json and the in-flight cap', async () => {
+  const { requestJson, MAX_BYTES, MAX_INFLIGHT, resetInflight, inflight } = weatherTest
+  const { EventEmitter } = await import('node:events')
+  const makeResponse = (status, body) => {
+    const response = new EventEmitter()
+    response.statusCode = status
+    response.resume = () => {}
+    setImmediate(() => {
+      if (body !== undefined) response.emit('data', Buffer.from(body))
+      response.emit('end')
+    })
+    return response
+  }
+  const makeRequest = (respond) => {
+    const request = new EventEmitter()
+    request.destroyed = false
+    request.destroy = () => {
+      request.destroyed = true
+    }
+    request.end = () => {
+      if (respond) respond(request)
+    }
+    return request
+  }
+
+  // Deadline: no response ever arrives; the hard wall clock still settles it.
+  let timeoutRequest = null
+  const noAnswer = () => {
+    timeoutRequest = makeRequest()
+    return timeoutRequest
+  }
+  await assert.rejects(requestJson('https', '/x', 20, noAnswer), (error) => error.code === 'timeout')
+  assert.equal(timeoutRequest.destroyed, true, 'a timed-out socket is destroyed')
+
+  // A fake transport that answers through the real callback shape.
+  const sendResponse = (status, body) => (options, callback) => {
+    const request = makeRequest()
+    setImmediate(() => callback(makeResponse(status, body)))
+    return request
+  }
+  // A non-200 status is a typed failure, not a JSON parse error.
+  await assert.rejects(requestJson('https', '/x', 200, sendResponse(503)), (error) => error.code === 'status')
+  // Invalid JSON has its own code.
+  await assert.rejects(requestJson('https', '/x', 200, sendResponse(200, 'not json')), (error) => error.code === 'json')
+  // Oversize payload is destroyed, not buffered.
+  let oversizeRequest = null
+  await assert.rejects(
+    requestJson('https', '/x', 200, (options, callback) => {
+      oversizeRequest = makeRequest()
+      setImmediate(() => callback(makeResponse(200, 'x'.repeat(MAX_BYTES + 1))))
+      return oversizeRequest
+    }),
+    (error) => error.code === 'oversize',
+  )
+  assert.equal(oversizeRequest.destroyed, true, 'an oversized upstream is aborted')
+
+  // Invalid parameters never touch the network and answer 400.
+  resetInflight()
+  const invalid = fakeJsonResponse()
+  await handleWeatherProxy(new URL('http://127.0.0.1/skin-tianlight/_weather?latitude=999&longitude=0'), invalid, {
+    requestJson: () => {
+      throw new Error('must not be called')
+    },
+  })
+  assert.equal(invalid.status, 400)
+  assert.match(invalid.body, /"error":"invalid"/)
+
+  // Two requests may be upstream at once; the third is refused with 429.
+  resetInflight()
+  const pending = []
+  const deps = { requestJson: () => new Promise((resolve) => pending.push(resolve)) }
+  const url = new URL('http://127.0.0.1/skin-tianlight/_weather?latitude=1&longitude=2')
+  const first = handleWeatherProxy(url, fakeJsonResponse(), deps)
+  const second = handleWeatherProxy(url, fakeJsonResponse(), deps)
+  const third = fakeJsonResponse()
+  await handleWeatherProxy(url, third, deps)
+  assert.equal(third.status, 429, 'the third concurrent request is refused')
+  assert.match(third.body, /"error":"busy"/)
+  assert.equal(inflight(), MAX_INFLIGHT)
+  for (const resolve of pending) resolve({ ok: true })
+  await Promise.all([first, second])
+  assert.equal(inflight(), 0, 'the in-flight counter is released on every path')
+
+  // Success keeps the transport name for diagnostics.
+  resetInflight()
+  const ok = fakeJsonResponse()
+  await handleWeatherProxy(url, ok, { requestJson: async () => ({ temperature_2m: 12 }) })
+  assert.equal(ok.status, 200)
+  assert.match(ok.body, /"transport":"https"/)
+  resetInflight()
 })
 
 console.log(`tests: ${passed} passed, ${failures.length} failed`)
