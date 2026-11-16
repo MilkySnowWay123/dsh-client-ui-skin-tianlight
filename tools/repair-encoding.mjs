@@ -1,10 +1,68 @@
 // Repairs the UTF-8 damage caused by a PowerShell Get-Content/Set-Content round trip.
 // Every Chinese string in the skin was mangled; the intended text is known exactly,
 // so each damaged line is replaced in place (indentation preserved, line count kept).
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const FILE = fileURLToPath(new URL('../lib/client.js', import.meta.url))
+
+// v2.2.9: the old fixed line table below only repairs one historical incident.
+// `--check` is a non-destructive whole-tree scan used by release validation: it
+// reports U+FFFD and the unmistakable CJK mojibake lead bytes, and exits 1 on a hit.
+// It never writes, so it is safe to run at any point.
+if (process.argv.includes('--check')) {
+  const ROOT = fileURLToPath(new URL('..', import.meta.url))
+  const PATTERNS = [/\uFFFD/, /鈥/, /锛/, /銆/, /瀹/, /鍙/, /鏄/, /鐨/, /绋/, /妫/, /鏆/, /鐣/, /绯/, /鍦/, /绱/, /锟斤拷/]
+  const EXTENSIONS = /\.(?:js|mjs|cjs|md|json|yml|yaml)$/i
+  const SKIP = new Set(['node_modules', '.git', 'dist', 'backup', 'diag'])
+  const hits = []
+  const visit = (path) => {
+    for (const entry of readdirSync(path, { withFileTypes: true })) {
+      if (SKIP.has(entry.name)) continue
+      const full = join(path, entry.name)
+      if (full.endsWith('repair-encoding.mjs')) continue
+      if (entry.isDirectory()) {
+        visit(full)
+      } else if (EXTENSIONS.test(entry.name)) {
+        const lines = readFileSync(full, 'utf8').split('\n')
+        for (let index = 0; index < lines.length; index += 1) {
+          if (PATTERNS.some((pattern) => pattern.test(lines[index]))) {
+            hits.push(full.slice(ROOT.length) + ':' + (index + 1) + ': ' + lines[index].trim().slice(0, 120))
+          }
+        }
+      }
+    }
+  }
+  for (const dir of ['src', 'tools', 'docs', 'lib']) {
+    try {
+      if (statSync(join(ROOT, dir)).isDirectory()) visit(join(ROOT, dir))
+    } catch {
+      // an optional directory is not a failure
+    }
+  }
+  for (const file of ['README.md', 'CHANGELOG.md', 'ARCHITECTURE.md', 'RELEASE-NOTES-v2.2.9.md', 'package.json', 'skin.json']) {
+    try {
+      const full = join(ROOT, file)
+      if (!statSync(full).isFile()) continue
+      const lines = readFileSync(full, 'utf8').split('\n')
+      for (let index = 0; index < lines.length; index += 1) {
+        if (PATTERNS.some((pattern) => pattern.test(lines[index]))) {
+          hits.push(file + ':' + (index + 1) + ': ' + lines[index].trim().slice(0, 120))
+        }
+      }
+    } catch {
+      // optional file
+    }
+  }
+  if (hits.length > 0) {
+    console.log('ENCODING CHECK FAILED (' + hits.length + ' hit(s)):')
+    for (const hit of hits.slice(0, 50)) console.log('  ' + hit)
+    process.exit(1)
+  }
+  console.log('ENCODING CHECK PASSED (no U+FFFD / CJK mojibake in src, tools, docs, lib, release files)')
+  process.exit(0)
+}
 const lines = readFileSync(FILE, 'utf8').split('\n')
 
 /** line number (1-based) -> { mustInclude, text } */

@@ -4,8 +4,10 @@ body[data-dsh-tianlight] [id='root'] {
 	position: relative !important;
 	z-index: 1 !important;
 	/* Surfaces can be fully transparent, so text sits straight on a moving video.
-	   A hairline shadow is inherited by every text node and costs no wallpaper. */
-	text-shadow: 0 1px 2px rgba(255, 255, 255, 0.62), 0 0 1px rgba(255, 255, 255, 0.42);
+	   v2.2.9: light theme uses a faint DARK shadow. The old white 0.62/0.42 halo lit
+	   every glyph from behind and made a bright wallpaper look grey-white overall;
+	   a dark shadow separates dark ink from a bright sky without a glow. */
+	text-shadow: 0 1px 2px rgba(10, 30, 50, 0.24), 0 0 1px rgba(10, 30, 50, 0.16);
 }
 body[data-dsh-tianlight][data-ds-dark-theme] [id='root'] {
 	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.66), 0 0 1px rgba(0, 0, 0, 0.45);
@@ -13,9 +15,9 @@ body[data-dsh-tianlight][data-ds-dark-theme] [id='root'] {
 
 /* ---- left column: forced transparent, whichever variant painted it ----
    Targets are runtime-stamped by the selector bridge from STABLE DSH hooks
-   (data-sidebar-collapsed, the _sidebarCol class suffix), so a DSH build
-   hash change no longer silently drops the rule. */
-body[data-dsh-tianlight] [data-tl-sidebar],
+   (the sidebar Slot and the _sidebarCol class suffix), so a DSH build hash change
+   no longer silently drops the rule. v2.2.9: data-tl-sidebar is gone; on DSH
+   0.2.1 data-sidebar-collapsed lives on the whole app frame, so it is state only. */
 body[data-dsh-tianlight] [data-tl-sidebar-col] {
 	background: transparent !important;
 	background-image: none !important;
@@ -60,10 +62,16 @@ body[data-dsh-tianlight] [data-tl-composer]::before {
 	position: absolute;
 	inset: 0;
 	border-radius: inherit;
-	-webkit-backdrop-filter: blur(var(--tl-glass-blur)) saturate(1.25);
-	backdrop-filter: blur(var(--tl-glass-blur)) saturate(1.25);
 	pointer-events: none;
 	z-index: -1;
+}
+/* v2.2.9: the depth-ON recipe owns the composer blur on the same pseudo element.
+   Keeping the old unconditional blur here would leave a filtered layer when live
+   is off or low power asks for zero backdrop-filter. Depth off keeps the v2.2.8
+   frosted composer unless low power flattens it. */
+body[data-dsh-tianlight][data-tl-glass-effective="off"] [data-tl-composer]::before {
+	-webkit-backdrop-filter: blur(var(--tl-glass-blur)) saturate(1.25);
+	backdrop-filter: blur(var(--tl-glass-blur)) saturate(1.25);
 }
 body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-composer] {
 	/* Same rule as the light card: the drop shadow only, no 1px top highlight. */
@@ -108,7 +116,7 @@ body[data-dsh-tianlight] [data-tl-wall-handle] {
 	border: 0.5px solid var(--tl-glass-line);
 	border-left: none;
 	border-radius: 0 12px 12px 0;
-	background: var(--tl-panel-fill);
+	background: var(--tl-wall-tint, var(--tl-panel-fill));
 	color: var(--tl-ink-soft);
 	font-size: 11px;
 	line-height: 1;
@@ -134,10 +142,15 @@ body[data-dsh-tianlight] [data-tl-wall] {
 	   transition would fight the rAF writes and eat the velocity. */
 	display: none;
 	flex-direction: column;
-	background: var(--tl-panel-fill);
+	/* v2.2.9: the wallpaper-derived tint is low-alpha now; the depth rule paints the
+	   blur on ::before and lets this tint carry only the hue. --tl-panel-fill stays
+	   as the off-depth fallback. */
+	background: var(--tl-wall-tint, var(--tl-panel-fill));
 	border-right: 0.5px solid var(--tl-glass-line);
 	box-shadow: 18px 0 48px rgba(8, 26, 48, 0.28);
-	will-change: transform;
+	/* v2.2.9: no will-change on a glass host. The drag code writes transform on this
+	   element itself; an extra will-change here would make the host a Backdrop Root
+	   for its own ::before blur as well as a containing block for any fixed child. */
 	/* v0.5.3 hardening: the DSH product can leave a full-viewport modal mask
 	   (position:fixed, z-index:1000, pointer-events:auto) mounted while it is visually
 	   gone (first-run / stale popover). Such a mask swallows every real mouse click
@@ -217,7 +230,9 @@ body[data-dsh-tianlight] [data-tl-wall-scrim] {
 	position: fixed;
 	inset: 0;
 	z-index: 1290;
-	background: rgba(10, 22, 38, 0.18);
+	/* v2.2.9: the scrim still catches outside clicks but no longer dims the whole
+	   wallpaper when the wallpaper panel opens. A picker is not a modal. */
+	background: transparent;
 	opacity: 0;
 	pointer-events: none;
 	transition: opacity 0.24s ease;
@@ -1276,8 +1291,8 @@ body[data-dsh-tianlight] [data-tl-bubble] {
 body[data-dsh-tianlight] [data-tl-menu] {
 	background: var(--tl-panel-fill) !important;
 	border: 0.5px solid var(--tl-glass-line);
-	-webkit-backdrop-filter: blur(var(--tl-glass-blur)) saturate(1.2);
-	backdrop-filter: blur(var(--tl-glass-blur)) saturate(1.2);
+	/* v2.2.9: no filter on the host. The depth recipe paints it on ::before, so a
+	   fixed-position menu item/tooltip is never re-anchored. */
 }
 
 /* ---- light reflow: rhythm, radii, surfaces ---- */

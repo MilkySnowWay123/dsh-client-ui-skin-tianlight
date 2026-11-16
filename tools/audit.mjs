@@ -451,7 +451,6 @@ report(
 )
 report(
   [
-    "[data-tl-sidebar]",
     "[data-tl-sidebar-col]",
     "[data-tl-settings]",
     "[data-tl-wall]",
@@ -860,8 +859,8 @@ report(
   "the scene layer no longer carries a live backdrop-filter over the whole viewport",
 )
 report(
-  /\[data-tl-scene\]::after \{[\s\S]{0,300}?background-image: var\(--tl-liquid-surface\)/.test(source) ? "PASS" : "FAIL",
-  "the scene layer still paints the static liquid-glass grain/colour veil",
+  /\[data-tl-scene\]::after \{[\s\S]{0,300}?--tl-liquid-surface/.test(source) ? "FAIL" : "PASS",
+  "v2.2.9: the scene layer no longer paints a glass veil over the wallpaper",
 )
 report(
   /\[data-tl-composer\]::before[\s\S]{0,500}?backdrop-filter\s*:/.test(source) &&

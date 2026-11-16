@@ -119,8 +119,8 @@ expect(
   sceneAfterLive.map((match) => match[1].trim()).join(' | '),
 )
 expect(
-  'scene layer keeps the static liquid-glass surface (colour / grain veil)',
-  sceneAfterRules.some((match) => /background-image\s*:/.test(match[2])),
+  'v2.2.9: the scene layer carries no glass surface (the wallpaper stays crisp)',
+  sceneAfterRules.every((match) => /--tl-liquid-surface/.test(match[2]) === false && /backdrop-filter/.test(match[2]) === false),
 )
 expect(
   'no infinite animation repaints the scene layer',
@@ -129,12 +129,12 @@ expect(
 expect('the removed 22s scene-sheen keyframes are gone', css.includes('@keyframes tl-liquid-sheen') === false)
 // The depth presets still drive the product's own glass: a live blur must remain on at
 // least the composer / menu / model surfaces, otherwise the depth change became a no-op.
-const liveBlurRules = [...blanked.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((match) => /(?:-webkit-)?backdrop-filter\s*:/.test(match[2]))
+const liveBlurRules = [...blanked.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((match) => /(?:-webkit-)?backdrop-filter\s*:\s*(?!none)[^;]+/.test(match[2]))
 expect(
   'bounded product glass keeps a live blur (composer / menu / model)',
   liveBlurRules.some((match) => /\[data-tl-composer\]::before/.test(match[1])) &&
-    liveBlurRules.some((match) => /\[data-tl-menu\]/.test(match[1])) &&
-    liveBlurRules.some((match) => /\[data-tl-model\]/.test(match[1])),
+    liveBlurRules.some((match) => /\[data-tl-menu\]::before/.test(match[1])) &&
+    liveBlurRules.some((match) => /\[data-tl-sidebar-col\]/.test(match[1])),
 )
 // v2.2.6: the composer card had a 0.5px border AND a 1px inset top highlight, which
 // read as a stray second line above the input. One edge only.
@@ -180,21 +180,33 @@ expect(
 expect(
   'live glass is bounded to the composer and the small floating controls',
   liveRules.some((match) => /\[data-tl-composer\]::before/.test(match[1])) &&
-    liveRules.some((match) => /\[data-tl-menu\]/.test(match[1])) &&
-    liveRules.some((match) => /\[data-tl-model\]/.test(match[1])),
+    liveRules.some((match) => /\[data-tl-menu\]::before/.test(match[1])) &&
+    liveRules.some((match) => /\[data-tl-sidebar-col\].*::before/.test(match[1])),
 )
 // v2.2.5: liquid glass must never blur the wallpaper as a whole. Full-viewport nodes
 // (the scene-less fallback, the hub scrim) and large panels (settings / wallpaper panel
 // / hub panel / the sidebar column) must stay filter-free; they carry tint and borders
 // only. A filter there is the reported "the background wallpaper is all blurred".
-const fullSurfaceFiltered = liveBlurRules.filter((match) =>
-  /\[data-tl-liquid-fallback\]|\[data-tl-hub-mask\]|\[data-tl-settings\]|\[data-tl-wall\]|\[data-tl-hub-panel\]|\[data-tl-sidebar/.test(match[1]),
+// v2.2.9: the blur is allowed on the pseudo element of a bounded panel, because a
+// pseudo is not an ancestor of the product's position:fixed children. The host,
+// the frame and every full-viewport scrim stay completely filter-free.
+const fullViewportFiltered = liveBlurRules.filter((match) => /\[data-tl-liquid-fallback\]|\[data-tl-hub-mask\]|\[data-tl-wall-scrim\]|\[data-tl-scene\]|_frame|data-tl-sidebar(?!-col)/.test(match[1]))
+expect('full-viewport scrims, frame and scene receive no backdrop-filter', fullViewportFiltered.length === 0, fullViewportFiltered.map((match) => match[1].trim()).join(' | '))
+const panelHostFiltered = liveBlurRules.filter((match) => {
+  if (/::before/.test(match[1])) return false
+  return /\[data-tl-(?:sidebar-col|wall|settings|hub-panel|menu|composer)\](?!::)/.test(match[1])
+})
+expect('glass panel hosts carry no backdrop-filter (blur lives on ::before)', panelHostFiltered.length === 0, panelHostFiltered.map((match) => match[1].trim()).join(' | '))
+const filteredHosts = [...blanked.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((match) => {
+  if (/::(?:before|after)/.test(match[1])) return false
+  return /\[data-tl-(?:sidebar-col|wall|settings|hub-panel|menu|composer)\]/.test(match[1]) &&
+    /(?:^|;)\s*(?:filter|backdrop-filter|transform|will-change)\s*:/.test(match[2])
+})
+expect('glass panel hosts have no filter/backdrop-filter/transform/will-change', filteredHosts.length === 0, filteredHosts.map((match) => match[1].trim()).join(' | '))
+const framePaintSelectors = [...blanked.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((match) =>
+  /\[data-tl-sidebar\](?!-col)/.test(match[1]) && /(?:background|box-shadow|backdrop-filter|filter)\s*:/.test(match[2]),
 )
-expect(
-  'no full-viewport or large panel receives a backdrop-filter (the wallpaper stays crisp)',
-  fullSurfaceFiltered.length === 0,
-  fullSurfaceFiltered.map((match) => match[1].trim()).join(' | '),
-)
+expect('v2.2.9: no paint rule targets the legacy full-frame data-tl-sidebar', framePaintSelectors.length === 0, framePaintSelectors.map((m) => m[1].trim()).join(' | '))
 // v2.2.7: no hard outline pass. The 1px white sidebar edge and the 1px light/dark rim
 // that every glass surface composed are what read as "a line on every part".
 expect(

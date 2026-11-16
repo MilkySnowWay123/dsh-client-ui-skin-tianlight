@@ -2297,8 +2297,8 @@ test('R2: the scene layer has no full-viewport live blur and no 22s repaint', ()
   assert.equal(/backdrop-filter/.test(rule[1]), false, 'scene layer must not paint a backdrop-filter')
   assert.equal(CLIENT_SOURCE.includes('@keyframes tl-liquid-sheen'), false, 'the scene-sheen keyframes are gone')
   assert.equal(CLIENT_SOURCE.includes('animation: tl-liquid-sheen'), false, 'the 22s scene animation is gone')
-  // ...and the static veil it was replaced with is still there.
-  assert.match(rule[1], /background-image: var\(--tl-liquid-surface\)/, 'static grain/tint veil kept')
+  // ...and v2.2.9 removes the full-viewport glass veil: glass belongs on controls.
+  assert.equal(/--tl-liquid-surface/.test(rule[1]), false, 'scene ::after must not paint the glass surface stack')
   // The product's own bounded glass keeps its blur (the depth presets still do something).
   assert.match(CLIENT_SOURCE, /\[data-tl-composer\]::before \{[\s\S]{0,400}?backdrop-filter:/)
   // v2.2.5: the full-viewport fallback must stay filter-free — a blur there smeared the
@@ -2327,15 +2327,18 @@ test('v2.2.0 live glass: opt-in only, gated on the effective flag, and user-rese
   assert.match(CLIENT_SOURCE, /const GLASS_LENS_ID = "tl-glass-lens"/)
   assert.match(CLIENT_SOURCE, /function ensureGlassLens\(\)/)
   assert.match(CLIENT_SOURCE, /feDisplacementMap/)
-  assert.match(CLIENT_SOURCE, /function lensMapDataUrl\(\)/, 'a radial lens map is generated at runtime')
+  assert.match(CLIENT_SOURCE, /function lensMapDataUrl\(width, height\)/, 'an element-sized edge-band lens map is generated at runtime')
+  assert.match(CLIENT_SOURCE, /GLASS_LENS_BAND = 16/, 'only a narrow edge band is displaced')
+  assert.match(CLIENT_SOURCE, /new ResizeObserver\(scheduleGlassLens\)/, 'the map follows the composer resize')
   assert.match(CLIENT_SOURCE, /createElementNS\(ns, "feImage"\)/, 'the lens map is fed into feDisplacementMap')
   assert.match(CLIENT_SOURCE, /data-tl-glass-lens-support/)
   assert.match(CLIENT_SOURCE, /url\(#tl-glass-lens-filter\)/)
   assert.match(CLIENT_SOURCE, /const cssom = globalThis\.CSS/, 'the supports probe must not use the closure CSS string')
   assert.match(CLIENT_SOURCE, /live on \+ depth off|glassLiveLevel === true && depth === "off"/)
-  // Dark mode owns a smoked-glass recipe; the light live fill must never leak into it.
-  assert.match(CLIENT_SOURCE, /\[data-ds-dark-theme\]\[data-tl-glass-live-effective="on"\]/)
-  assert.match(CLIENT_SOURCE, /--tl-liquid-live-bright: 0\.72/)
+  // Dark mode owns a low-alpha smoked tint; the light wash must never leak into it.
+  assert.match(CLIENT_SOURCE, /\[data-ds-dark-theme\][^{]*\{[^}]*--tl-glass-tint: rgba\(12, 18, 28, calc\(0\.20/)
+  assert.match(CLIENT_SOURCE, /--tl-liquid-live-bright: 0\.92/)
+  assert.match(CLIENT_SOURCE, /storedLive === null \? true : storedLive/, 'a non-off depth defaults to live unless the user explicitly turned it off')
 })
 
 test('v2.2.0 pet model picker: provider+model persist and travel through the fixed route', () => {
@@ -2351,6 +2354,14 @@ test('v2.2.0 pet model picker: provider+model persist and travel through the fix
   assert.match(CLIENT_SOURCE, /data-tl-hub-llm-model/)
   assert.match(CLIENT_SOURCE, /hub\.ai\.llm\.providerHint/)
   assert.match(CLIENT_SOURCE, /https:\/\/api\.x\.ai\/v1/)
+})
+
+test('v2.2.9: the bridge never paints the product frame from data-sidebar-collapsed', () => {
+  assert.match(CLIENT_SOURCE, /const isTooWide = \(node\) =>/)
+  assert.match(CLIENT_SOURCE, /data-tl-sidebar-state", "collapsed"/)
+  assert.match(CLIENT_SOURCE, /data-tl-sidebar-state", collapsed \? "collapsed" : "expanded"/)
+  assert.equal(/if \(hasAttr\(node, "data-sidebar-collapsed"\)\) mark\(node, "data-tl-sidebar"\)/.test(CLIENT_SOURCE), false, 'the frame must never be stamped as a sidebar')
+  assert.equal(/STAMPED_ATTRS = \[\s*"data-tl-sidebar"/.test(CLIENT_SOURCE), false, 'the legacy paint attribute is gone from the bridge')
 })
 
 test('R2: the selector bridge stamps added subtrees; full scans are >=500ms throttled', () => {

@@ -231,7 +231,7 @@
 				// Bound the sidebar every 30 frames: it is stamped later than boot and its
 				// width animates when the user collapses the rail.
 				if (frame % 30 === 0) {
-					const sidebar = document.querySelector("[data-tl-sidebar]");
+					const sidebar = document.querySelector("[data-tl-sidebar-col]");
 					const width = sidebar instanceof HTMLElement ? Math.round(sidebar.getBoundingClientRect().width) : 0;
 					const on = separate && width > 40;
 					if (on !== (rail.getAttribute("data-tl-on") !== null)) {

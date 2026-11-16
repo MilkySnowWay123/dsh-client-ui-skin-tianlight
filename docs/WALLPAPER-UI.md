@@ -161,3 +161,14 @@ node tools/audit.mjs && node tools/check-css.mjs && node tools/verify.mjs
 - 关闭面板再打开，所有状态保持
 - 省电=开（或自动触发）时动态壁纸停在当前帧，关掉后恢复；图片壁纸下不会偷偷解码视频
 - 关皮肤后 `body` 上不留 `data-tl-*` / `--tl-*` 残留
+
+## 液态玻璃 v2.2.9：宿主 / 伪元素分工
+
+- **宿主只上色，不上滤镜。** `[data-tl-sidebar-col]`、`[data-tl-wall]`、`[data-tl-settings]`、`[data-tl-hub-panel]`、`[data-tl-menu]`、`[data-tl-composer]` 本体只写 `background-color`（低 alpha tint）、`isolation: isolate` 和体积阴影，绝不写 `filter` / `backdrop-filter` / `transform` / `will-change`。原因：任何一项都会让产品自己的 `position: fixed` 侧栏开关、tooltip 以该面板为包含块，复现 v2.2.5 的「侧栏图标跑到品牌图标上」。
+- **模糊画在 `::before`。** 伪元素不是那些 fixed 子元素的祖先，`inset: 0; border-radius: inherit; z-index: -1` 即可采样背后的壁纸。大面板允许这一层；整窗 frame、`[data-tl-liquid-fallback]`、`[data-tl-hub-mask]`、`[data-tl-wall-scrim]`、`[data-tl-scene]` 及其伪元素永远不允许 blur。
+- **边缘光画在 `::after`。** 用 1px `padding` + `mask-composite: exclude` 只留边，渐变左上亮（0.55 浅 / 0.28 暗）、中部淡出、右下回光。禁止均匀白色描边。
+- **深度三档只改模糊/饱和度/tint。** soft 10px / real 16–18px / frosted 26px；live off、低电量、15fps 一律移除全部 `backdrop-filter`，把 tint 加深到 0.35（浅）/0.50（暗），面板仍可读。
+- **实时默认。** 深度非 `off` 且用户没有显式关过「实时渲染」时，实时采样默认开启；显式关闭后保持静态玻璃。低电量/15fps 自动降级但不改写用户偏好。
+- **场景层不是玻璃。** `[data-tl-scene]::after` 只属于「时段」暗化；全屏颗粒/暗角/色雾已删除，壁纸保持清晰。
+- **遮罩不是窗帘。** 壁纸面板 scrim 完全透明（只拦截点击）；抽屉遮罩 ≤0.12；真模态 ≤0.20；任何遮罩不带 blur。
+- **透镜只用于 composer。** SVG 位移图按 composer 实际像素尺寸生成，只在距边缘 16px 的圆角带内位移，中心为 128/128（零位移）；ResizeObserver + rAF 更新，关闭实时时销毁。大面板不用透镜，避免把壁纸主体拧弯。

@@ -36,7 +36,6 @@
 		 */
 		function installSelectorBridge() {
 			const STAMPED_ATTRS = [
-				"data-tl-sidebar",
 				"data-tl-sidebar-col",
 				"data-tl-settings",
 				"data-tl-composer",
@@ -102,6 +101,21 @@
 					return false;
 				}
 			};
+			/**
+			 * v2.2.9: a layout column may look like "the sidebar" to a class/attr
+			 * heuristic while actually being the whole frame. A pane that wide is never
+			 * a sidebar surface: painting it turns the full window into smoked glass.
+			 * This is the regression that `data-sidebar-collapsed` caused on DSH 0.2.1
+			 * (`frame[data-sidebar-collapsed]`), so the guard is deliberately stricter
+			 * than `isOversized`.
+			 */
+			const isTooWide = (node) => {
+				try {
+					return node.getBoundingClientRect().width > globalThis.innerWidth * 0.5;
+				} catch {
+					return false;
+				}
+			};
 
 			// ---- shared surface predicates ------------------------------------------
 			// The full pass and the incremental pass classify through the same functions,
@@ -142,12 +156,21 @@
 			 * the composer card.
 			 */
 			const stampSurface = (node, modelScope, hasComposerCard) => {
-				if (isSidebarSlot(node)) mark(node, "data-tl-sidebar-col");
-				if (hasAttr(node, "data-sidebar-collapsed")) mark(node, "data-tl-sidebar");
+				if (isSidebarSlot(node) && isTooWide(node) === false) mark(node, "data-tl-sidebar-col");
+				// v2.2.9: `data-sidebar-collapsed` is the product FRAME on DSH 0.2.1
+				// (`docs/COMPAT-0.3.0.md`). It is state, never a paint target. Expose it
+				// on <body> for state-driven rules, and never stamp the frame.
+				if (hasAttr(node, "data-sidebar-collapsed")) {
+					try {
+						if (document.body !== null) document.body.setAttribute("data-tl-sidebar-state", "collapsed");
+					} catch {
+						// a fake DOM must not break the pass
+					}
+				}
 				// Fallback for a build that renames the column class but keeps the suffix.
 				// This one is a deliberate substring fallback, not a segment match: the
 				// historical `[class*='_sidebarCol']` hook only keeps the suffix stable.
-				if (hasClassSubstring(node, "_sidebarCol")) mark(node, "data-tl-sidebar-col");
+				if (hasClassSubstring(node, "_sidebarCol") && isTooWide(node) === false) mark(node, "data-tl-sidebar-col");
 				// Composer card: stable product data attribute first; the suffix fallback
 				// only runs when no stable attribute exists in the document, and only for
 				// the outermost card that actually owns an editor.
@@ -207,6 +230,10 @@
 				}
 				const scope = readModelScope();
 				const hasComposerCard = document.querySelector("[data-composer-card]") !== null;
+				const collapsed = document.querySelector("[data-sidebar-collapsed]") !== null;
+				if (document.body !== null) {
+					document.body.setAttribute("data-tl-sidebar-state", collapsed ? "collapsed" : "expanded");
+				}
 				for (const node of document.querySelectorAll(SURFACE_SELECTOR)) stampSurface(node, scope, hasComposerCard);
 			};
 
@@ -332,6 +359,11 @@
 				fullTimer = 0;
 				pendingRoots.length = 0;
 				sweepPending = false;
+				try {
+					document.body?.removeAttribute("data-tl-sidebar-state");
+				} catch {
+					// a detached body is fine
+				}
 				for (const node of stamped) {
 					for (const attr of STAMPED_ATTRS) node.removeAttribute(attr);
 				}

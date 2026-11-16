@@ -671,7 +671,7 @@
 			    const vh = Math.max(1, (typeof innerHeight === 'number' ? innerHeight : H))
 			    const sx = W / vw, sy = H / vh
 			    const specs = [
-			      { id: 'sidebar', src: [8, 80, 264, 700], selectors: ['[data-tl-sidebar]', 'aside', 'nav', '[class*="sidebar"]'] },
+			      { id: 'sidebar', src: [8, 80, 264, 700], selectors: ['[data-tl-sidebar-col]', 'aside', 'nav', '[class*="sidebar"]'] },
 			      { id: 'composer', src: [466, 386, 722, 86], selectors: ['textarea', '[contenteditable="true"]'] },
 			      { id: 'topbar', src: [0, 0, 1406, 42], selectors: ['header', '[role="banner"]', '[class*="topbar"]'] },
 			      { id: 'weather', src: [1318, 56, 82, 36], selectors: ['[data-tl-weather]', '[class*="weather"]'] },

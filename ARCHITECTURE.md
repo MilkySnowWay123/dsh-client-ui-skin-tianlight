@@ -128,6 +128,16 @@ DSH 的客户端插件加载约定是"一个插件只有一个 ESM 文件"（见
 - **用户数据**：`<profile.dir>/tianlight`（由 `lib/host-paths.js` 决定）：设置、`uploads/`、`derived/`、`state/`、`we-roots.json`、`migration.json`。legacy 的"插件目录内数据"只复制一次、不删除。
 - **运行时资产**：`assets/` 与 `vendor/` 由宿主半经 `/skin-tianlight/<file>`（Range）与 WE 前缀提供；`assets/bg-4k.mp4`、`assets/cat.png` 是发布包内置的两个演示媒体。
 
+## 5.1 液态玻璃 v2.2.9：宿主不许滤镜，伪元素负责玻璃
+
+- **宿主（`[data-tl-sidebar-col]` / `[data-tl-wall]` / `[data-tl-settings]` / `[data-tl-hub-panel]` / `[data-tl-menu]` / `[data-tl-composer]`）**：只允许低 alpha `background-color`、`isolation: isolate`、`box-shadow`；禁止 `filter` / `backdrop-filter` / `transform` / `will-change`。这些属性会让宿主成为产品自己的 `position: fixed` 子元素（侧栏开关、tooltip）的包含块，即 v2.2.5 的「开关跑到品牌图标上」回归。
+- **`::before`**：唯一的模糊层。`position:absolute; inset:0; border-radius:inherit; z-index:-1; pointer-events:none`，大面板可以带 `backdrop-filter`；它不是 fixed 子元素的祖先。整窗 frame、`[data-tl-liquid-fallback]`、scrim、`[data-tl-scene]` 以及这些节点的伪元素永远禁止 blur。
+- **`::after`**：只画渐变边缘光：1px `padding` + `mask-composite: exclude`，左上亮、右下回光，不是均匀白线；不使用 `border` 或 1px 阴影环。
+- **深度/实时**：soft/real/frosted 只改 blur、saturate、tint；实时关闭、低电量、15fps 一律 `backdrop-filter: none` 并加深 tint。深度非 `off` 且用户没有显式关过实时时，实时默认开启。
+- **场景与遮罩**：`[data-tl-scene]::after` 只属于时段暗化，不画玻璃；壁纸面板 scrim 透明，hub 遮罩 0.18，抽屉 ≤0.12，模态 ≤0.20，全屏遮罩无 blur。
+- **透镜**：仅 composer。按元素实际像素生成圆角边缘带位移图（中心 128/128 零位移），ResizeObserver + rAF 更新；关闭实时或卸载时销毁 filter。
+- **回归门禁**：`tools/check-css.mjs` 断言宿主无 filter、frame/场景/遮罩无 blur、scene 无玻璃表面；`tools/test.mjs` 断言 bridge 不再把 `data-sidebar-collapsed` 映射到绘制目标，以及 lens 图按尺寸生成。
+
 ## 6. 兼容策略与每日巡检
 
 - 三处声明必须一致（`package.json` 的 `engines.dsh` + 官方包 peer、`skin.json.dshCompatibilityRange`），由 `tools/test.mjs` / `tools/audit.mjs` / `tools/verify.mjs` 守住；DSH 只读 `engines.dsh`/peer，不读 `dshCompatibilityRange`。

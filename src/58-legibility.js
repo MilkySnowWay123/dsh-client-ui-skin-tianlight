@@ -19,8 +19,13 @@
 		const LEGIBILITY_DEFAULTS = { enabled: true, threshold: 4.5, boost: 0.12 };
 		const LEGIBILITY_THRESHOLD_MIN = 3;
 		const LEGIBILITY_THRESHOLD_MAX = 7;
-		/** 提亮后面板填充的目标不透明度：仍保留壁纸色相，但文字必须压得住。 */
-		const LEGIBILITY_FILL_ALPHA = 0.97;
+		/**
+		 * v2.2.9: boost is a stronger tint plus a stronger blur, never an opaque sheet.
+		 * 0.40 is the hard ceiling: it preserves the wallpaper's colour while lifting
+		 * the contrast under the panel text. The old 0.97 turned glass into plastic
+		 * the moment the guard fired.
+		 */
+		const LEGIBILITY_FILL_ALPHA = 0.4;
 		/** 两次采样之间的最小间隔：视频每帧都在变，逐帧采样会自己制造抖动。 */
 		const LEGIBILITY_MIN_INTERVAL = 1500;
 
@@ -45,23 +50,29 @@
 			},
 		});
 
-		// Boost 只作用于面板/菜单这类“读字表面”，且全部以 body 作用域开头。
-		// 提高的不透明度通过 --tl-legibility-solid 同时覆盖面板自身的
-		// --tl-panel-fill（sticky 头、分组底都用它），避免只有外层变实。
+		// v2.2.9: boost is a tint ceiling (alpha <= 0.40) plus a stronger blur. The old
+		// --tl-legibility-solid: ...0.97 put an opaque sheet over the glass and defeated
+		// the whole point of the wallpaper. --tl-legibility-solid is kept as the variable
+		// name for compatibility with older saved styles; it now holds a tint.
 		registerTl5Css(String.raw`
 body[data-dsh-tianlight] {
-	--tl-legibility-solid: rgba(250, 252, 255, 0.97);
+	--tl-legibility-solid: rgba(250, 252, 255, 0.40);
 	--tl-legibility-shadow: 0 1px 2px rgba(8, 24, 44, 0.28);
 }
 body[data-dsh-tianlight][data-ds-dark-theme] {
-	--tl-legibility-solid: rgba(14, 22, 36, 0.97);
+	--tl-legibility-solid: rgba(14, 22, 36, 0.40);
 	--tl-legibility-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
 }
 body[data-dsh-tianlight][data-tl-legibility="boost"] [data-tl-wall],
 body[data-dsh-tianlight][data-tl-legibility="boost"] [data-tl-font-panel] {
+	--tl-wall-tint: var(--tl-legibility-solid) !important;
 	--tl-panel-fill: var(--tl-legibility-solid) !important;
 	background-color: var(--tl-legibility-solid) !important;
 	text-shadow: var(--tl-legibility-shadow);
+}
+body[data-dsh-tianlight][data-tl-legibility="boost"]:not([data-tl-lowpower]):not([data-tl-render-tier="15"]) :is([data-tl-wall], [data-tl-font-panel])::before {
+	-webkit-backdrop-filter: blur(max(var(--tl-glass-blur-live, 16px), 28px)) saturate(var(--tl-glass-sat-live, 1.6)) brightness(var(--tl-glass-bright-live, 1)) contrast(var(--tl-glass-contrast-live, 1.04));
+	backdrop-filter: blur(max(var(--tl-glass-blur-live, 16px), 28px)) saturate(var(--tl-glass-sat-live, 1.6)) brightness(var(--tl-glass-bright-live, 1)) contrast(var(--tl-glass-contrast-live, 1.04));
 }
 `);
 
@@ -340,7 +351,7 @@ body[data-dsh-tianlight][data-tl-legibility="boost"] [data-tl-font-panel] {
 				let inlineFill = "";
 				if (host !== null) {
 					try {
-						inlineFill = host.style.getPropertyValue("--tl-panel-fill");
+						inlineFill = host.style.getPropertyValue("--tl-wall-tint") || host.style.getPropertyValue("--tl-panel-fill");
 					} catch {
 						inlineFill = "";
 					}
@@ -370,7 +381,7 @@ body[data-dsh-tianlight][data-tl-legibility="boost"] [data-tl-font-panel] {
 			/** 面板实际底色/正文色（底色取原始状态，不受已提亮影响）。 */
 			const readPanelColors = (sample, dark) => {
 				const host = document.querySelector("[data-tl-wall]") ?? document.querySelector("[data-tl-font-panel]");
-				const fallbackFill = dark ? { r: 10, g: 18, b: 32, a: 0.96 } : { r: 250, g: 252, b: 255, a: 0.94 };
+				const fallbackFill = dark ? { r: 10, g: 18, b: 32, a: 0.4 } : { r: 250, g: 252, b: 255, a: 0.4 };
 				const fallbackInk = dark ? { r: 234, g: 243, b: 255, a: 1 } : { r: 15, g: 36, b: 56, a: 1 };
 				let fill = fallbackFill;
 				let ink = fallbackInk;
@@ -394,7 +405,10 @@ body[data-dsh-tianlight][data-tl-legibility="boost"] [data-tl-font-panel] {
 
 			const boostFillFor = (sample, dark) => {
 				const target = dark ? 8 : 252;
-				const amount = dark ? 0.9 : 0.92;
+				// A tint, not a replacement: 40% of the way to the theme's contrast
+				// colour, capped at alpha 0.40. The stronger backdrop blur above does the
+				// rest of the legibility work.
+				const amount = dark ? 0.4 : 0.4;
 				return {
 					r: Math.round(sample.r + (target - sample.r) * amount),
 					g: Math.round(sample.g + (target - sample.g) * amount),

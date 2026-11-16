@@ -25,6 +25,26 @@
 
 
 
+## [2.2.9] - 2026-11-16
+
+### 发布说明
+
+- 天光 v2.2.9（发布说明见 RELEASE-NOTES-v2.2.9.md）
+
+### 修复
+
+- **P0 开侧栏整窗发暗**：`data-sidebar-collapsed` 属于产品整个 frame，不再映射为 `data-tl-sidebar`；侧栏只标真正的 `[data-slot="sidebar"]` / `_sidebarCol` 列，并加宽度 > 50vw 保险。`body[data-tl-sidebar-state]` 只作状态。
+- **整窗发糊**：删除侧栏全屏颗粒/暗角内阴影、`[data-tl-scene]::after` 玻璃雾面、壁纸面板 scrim 的 0.18 暗层；中枢遮罩 0.42 → 0.18；产品遮罩 token 压到 0.12/0.20，任何遮罩不带 blur。
+- **玻璃不通透**：大面板改为低 alpha tint + `::before backdrop-filter` + `::after` 渐变边缘光；宿主本体禁止 filter/backdrop-filter/transform/will-change。壁纸面板取色不再写 `max(0.96, ...)`，玻璃滑杆生效。
+- **可读性护栏**：从 0.97 实色改为 alpha ≤0.40 的 tint + 更强 blur。
+- **透镜**：按 composer 实际像素生成圆角边缘带位移图，中心零位移；用像素尺寸和 userSpaceOnUse，ResizeObserver + rAF 更新，首屏挂载竞态重试；只用于 composer。
+- **实时默认**：深度非 `off` 且无显式关闭时默认开实时；低电量/15fps 移除全部 backdrop-filter 并加深 tint。
+- 修复 57-glass 注释乱码；清理 20c 中多属性 `!important` 互相覆盖和旧全屏玻璃层。
+
+### 回归
+
+- check-css / test / audit 新增宿主零滤镜、frame/场景/遮罩零 blur、scene 无玻璃表面、bridge 不映射 frame、lens 按尺寸生成等断言；`npm run check` 全绿。
+
 ## [2.2.8] - 2026-11-16
 
 ### 发布说明

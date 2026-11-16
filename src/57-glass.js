@@ -88,7 +88,6 @@
 		const GLASS_LIVE_KEY = "tianlight.glassLive";
 		const GLASS_LENS_ID = "tl-glass-lens";
 		let glassLiveLevel = false;
-		let glassLensNode = null;
 
 		function readGlassDepth() {
 			try {
@@ -123,11 +122,15 @@
 		function readGlassLive() {
 			try {
 				const raw = globalThis.localStorage.getItem(GLASS_LIVE_KEY);
+				// null = no explicit choice. v2.2.9 makes a non-off depth default to live
+				// sampling; an explicit "0" still means static. Live with depth off is
+				// inert in effectiveGlassLive().
+				if (raw === null) return null;
 				return raw === "1" || raw === "on" || raw === "true";
 			} catch {
 				// storage may be blocked
 			}
-			return false;
+			return null;
 		}
 
 		/**
@@ -152,63 +155,135 @@
 
 		/**
 		 * v2.2.2: the live glass uses an SVG displacement filter on the backdrop, so the
-		 * wallpaper behind a panel is not just blurred 鈥?it is subtly bent like a lens.
-		 * Chromium supports `backdrop-filter: url(#filter) ...` (verified in Edge/Chromium
-		 * headless). The node is created only while live sampling is effective and is
-		 * removed again otherwise, so the default path never carries the filter.
+		 * wallpaper behind the composer is not just blurred — it is subtly bent like a
+		 * lens. Chromium supports `backdrop-filter: url(#filter) ...`.
+		 *
+		 * v2.2.9 replaces the stretched radial map (which bent the middle of a wide
+		 * composer and depended on unreliable percentage feImage sizing) with a map
+		 * generated at the element's real pixel size: only a 16px band inside the
+		 * rounded edge is displaced, the centre stays exactly 128/128 (zero offset).
+		 * The filter is re-generated on resize (rAF-throttled). Only the composer uses
+		 * it; a large panel would visibly bend the wallpaper the user is looking at.
 		 */
-		/**
-		 * A radial vector field: R/G encode the horizontal/vertical displacement, with
-		 * zero offset in the centre and a strong outward bend near the rim. `feDisplacementMap`
-		 * on the backdrop then behaves like a convex lens instead of a noisy warp.
-		 * Generated at runtime so the package does not carry a big base64 blob.
-		 */
-		let glassLensMap = "";
-		function lensMapDataUrl() {
-			if (glassLensMap !== "") return glassLensMap;
+		let glassLensNode = null;
+		let glassLensImage = null;
+		let glassLensFilter = null;
+		let glassLensTarget = null;
+		let glassLensObserver = null;
+		let glassLensRaf = 0;
+		let glassLensRetryTimer = 0;
+		let glassLensRetryTries = 0;
+		let glassLensCanUse = false;
+		const GLASS_LENS_BAND = 16;
+
+		function lensMapDataUrl(width, height) {
 			try {
-				const size = 256;
 				const canvas = document.createElement("canvas");
-				canvas.width = size;
-				canvas.height = size;
+				canvas.width = Math.max(1, Math.round(width));
+				canvas.height = Math.max(1, Math.round(height));
 				const context = typeof canvas.getContext === "function" ? canvas.getContext("2d") : null;
 				if (context === null) return "";
-				const image = context.createImageData(size, size);
+				const image = context.createImageData(canvas.width, canvas.height);
 				const data = image.data;
-				for (let y = 0; y < size; y += 1) {
-					const ny = (y / (size - 1)) * 2 - 1;
-					for (let x = 0; x < size; x += 1) {
-						const nx = (x / (size - 1)) * 2 - 1;
-						const radius = Math.min(1, Math.sqrt(nx * nx + ny * ny));
-						const bend = Math.pow(radius, 2.2);
-						const index = (y * size + x) * 4;
-						data[index] = Math.max(0, Math.min(255, Math.round(128 + 127 * nx * bend)));
-						data[index + 1] = Math.max(0, Math.min(255, Math.round(128 + 127 * ny * bend)));
+				for (let y = 0; y < canvas.height; y += 1) {
+					for (let x = 0; x < canvas.width; x += 1) {
+						const dl = x;
+						const dr = canvas.width - 1 - x;
+						const dt = y;
+						const db = canvas.height - 1 - y;
+						const edge = Math.min(dl, dr, dt, db);
+						const index = (y * canvas.width + x) * 4;
+						let dx = 0;
+						let dy = 0;
+						if (edge < GLASS_LENS_BAND) {
+							const strength = Math.pow(1 - edge / GLASS_LENS_BAND, 1.35);
+							if (edge === dl) dx = -strength;
+							else if (edge === dr) dx = strength;
+							else if (edge === dt) dy = -strength;
+							else dy = strength;
+						}
+						data[index] = Math.max(0, Math.min(255, Math.round(128 + 127 * dx)));
+						data[index + 1] = Math.max(0, Math.min(255, Math.round(128 + 127 * dy)));
 						data[index + 2] = 128;
 						data[index + 3] = 255;
 					}
 				}
 				context.putImageData(image, 0, 0);
-				glassLensMap = canvas.toDataURL("image/png");
-				return glassLensMap;
+				return canvas.toDataURL("image/png");
 			} catch (error) {
 				note("glass:lens-map", error);
 				return "";
 			}
 		}
 
+		function refreshGlassLens() {
+			glassLensRaf = 0;
+			const target = glassLensTarget;
+			if (glassLensImage === null || glassLensFilter === null || target === null || target.isConnected !== true) return;
+			try {
+				const rect = target.getBoundingClientRect();
+				const width = Math.max(1, Math.round(rect.width));
+				const height = Math.max(1, Math.round(rect.height));
+				const map = lensMapDataUrl(width, height);
+				if (map === "") return;
+				glassLensImage.setAttribute("href", map);
+				glassLensImage.setAttribute("x", "0");
+				glassLensImage.setAttribute("y", "0");
+				glassLensImage.setAttribute("width", String(width));
+				glassLensImage.setAttribute("height", String(height));
+				glassLensFilter.setAttribute("x", "0");
+				glassLensFilter.setAttribute("y", "0");
+				glassLensFilter.setAttribute("width", String(width));
+				glassLensFilter.setAttribute("height", String(height));
+				glassLensFilter.setAttribute("filterUnits", "userSpaceOnUse");
+			} catch (error) {
+				note("glass:lens-size", error);
+			}
+		}
+
+		function scheduleGlassLens() {
+			if (glassLensRaf !== 0) return;
+			glassLensRaf = globalThis.requestAnimationFrame(refreshGlassLens);
+		}
+
+		/**
+		 * The skin installs before React has necessarily mounted the composer, so a
+		 * one-shot ensureGlassLens() can race the first render. Retry for a few seconds;
+		 * once the target exists the ResizeObserver keeps the filter sized from then on.
+		 */
+		function scheduleGlassLensRetry() {
+			if (glassLensRetryTimer !== 0 || glassLensRetryTries >= 20 || glassLensCanUse !== true) return;
+			glassLensRetryTries += 1;
+			glassLensRetryTimer = globalThis.setTimeout(() => {
+				glassLensRetryTimer = 0;
+				const svg = ensureGlassLens();
+				if (svg !== null) {
+					try {
+						document.body?.setAttribute("data-tl-glass-lens-support", "1");
+					} catch {
+						// detached body
+					}
+					return;
+				}
+				scheduleGlassLensRetry();
+			}, 250);
+		}
+
 		function ensureGlassLens() {
 			try {
-				if (glassLensNode !== null && glassLensNode.isConnected === true) return glassLensNode;
 				const body = document.body;
 				if (body === null) return null;
-				const existing = document.getElementById(GLASS_LENS_ID);
-				if (existing !== null) {
-					glassLensNode = existing;
+				glassLensTarget = document.querySelector("[data-tl-composer]");
+				if (glassLensTarget === null) {
+					scheduleGlassLensRetry();
+					return null;
+				}
+				if (glassLensNode !== null && glassLensNode.isConnected === true) {
+					scheduleGlassLens();
 					return glassLensNode;
 				}
-				const map = lensMapDataUrl();
-				if (map === "") return null;
+				const existing = document.getElementById(GLASS_LENS_ID);
+				if (existing !== null) existing.remove();
 				const ns = "http://www.w3.org/2000/svg";
 				const svg = document.createElementNS(ns, "svg");
 				svg.setAttribute("id", GLASS_LENS_ID);
@@ -220,23 +295,14 @@
 				const defs = document.createElementNS(ns, "defs");
 				const filter = document.createElementNS(ns, "filter");
 				filter.setAttribute("id", "tl-glass-lens-filter");
-				filter.setAttribute("x", "-10%");
-				filter.setAttribute("y", "-10%");
-				filter.setAttribute("width", "120%");
-				filter.setAttribute("height", "120%");
 				filter.setAttribute("color-interpolation-filters", "sRGB");
 				const mapImage = document.createElementNS(ns, "feImage");
-				mapImage.setAttribute("href", map);
-				mapImage.setAttribute("x", "0");
-				mapImage.setAttribute("y", "0");
-				mapImage.setAttribute("width", "100%");
-				mapImage.setAttribute("height", "100%");
 				mapImage.setAttribute("preserveAspectRatio", "none");
 				mapImage.setAttribute("result", "lensMap");
 				const displace = document.createElementNS(ns, "feDisplacementMap");
 				displace.setAttribute("in", "SourceGraphic");
 				displace.setAttribute("in2", "lensMap");
-				displace.setAttribute("scale", "56");
+				displace.setAttribute("scale", "24");
 				displace.setAttribute("xChannelSelector", "R");
 				displace.setAttribute("yChannelSelector", "G");
 				filter.appendChild(mapImage);
@@ -245,6 +311,13 @@
 				svg.appendChild(defs);
 				body.appendChild(svg);
 				glassLensNode = svg;
+				glassLensImage = mapImage;
+				glassLensFilter = filter;
+				refreshGlassLens();
+				if (typeof ResizeObserver === "function") {
+					glassLensObserver = new ResizeObserver(scheduleGlassLens);
+					glassLensObserver.observe(glassLensTarget);
+				}
 				return svg;
 			} catch (error) {
 				note("glass:lens", error);
@@ -253,6 +326,25 @@
 		}
 
 		function removeGlassLens() {
+			try {
+				glassLensObserver?.disconnect();
+			} catch {
+				// already gone
+			}
+			glassLensObserver = null;
+			glassLensTarget = null;
+			glassLensImage = null;
+			glassLensFilter = null;
+			glassLensCanUse = false;
+			glassLensRetryTries = 0;
+			if (glassLensRetryTimer !== 0) {
+				globalThis.clearTimeout(glassLensRetryTimer);
+				glassLensRetryTimer = 0;
+			}
+			if (glassLensRaf !== 0) {
+				globalThis.cancelAnimationFrame(glassLensRaf);
+				glassLensRaf = 0;
+			}
 			try {
 				if (glassLensNode !== null && glassLensNode.isConnected === true) glassLensNode.remove();
 			} catch (error) {
@@ -294,8 +386,13 @@
 				} catch {
 					supported = false;
 				}
-				body.setAttribute("data-tl-glass-lens-support", supported ? "1" : "0");
+				glassLensCanUse = supported;
+				// A missing composer keeps support at "0" until the retry creates the
+				// filter; the CSS never references an SVG filter that is not in the DOM.
+				body.setAttribute("data-tl-glass-lens-support", supported && glassLensNode !== null ? "1" : "0");
+				if (supported && glassLensNode === null) scheduleGlassLensRetry();
 			} else {
+				glassLensCanUse = false;
 				body.removeAttribute("data-tl-glass-lens-support");
 				removeGlassLens();
 			}
@@ -348,7 +445,8 @@
 			// later switch to 15fps immediately flattens live sampling without a reload.
 			renderTierController.publish();
 			let depth = readGlassDepth();
-			glassLiveLevel = readGlassLive();
+			const storedLive = readGlassLive();
+			glassLiveLevel = storedLive === null ? true : storedLive;
 			// v2.2.2: a stored "live on + depth off" pair cannot render anything (live is
 			// a modifier of a depth recipe). Older builds could leave that pair behind;
 			// promote it to the soft recipe once, so the live switch does what it says.

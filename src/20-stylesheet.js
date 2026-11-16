@@ -17,7 +17,7 @@ body[data-dsh-tianlight] {
 	   + up to 0.52 white specular on the same pixel, which read as a grey/white veil
 	   over the wallpaper ("整体泛白") instead of glass. The wallpapers stay the source
 	   of colour; the glass only adds a thin, cool specular edge. */
-	--tl-overlay: rgba(235, 245, 255, 0.54);
+	--tl-overlay: rgba(235, 245, 255, 0.14);
 	/* Composer-only glass. Everything else stays fully transparent; this card is
 	   the one surface that earns a frosted backdrop. */
 	/* v2.2.2 "clear glass": the panel is a lens, not a white sheet. The fill is a
@@ -26,6 +26,21 @@ body[data-dsh-tianlight] {
 	--tl-glass-fill: rgba(205, 228, 250, calc(0.05 * var(--tl-glass-m, 1)));
 	--tl-glass-line: rgba(255, 255, 255, 0);
 	--tl-glass-blur: 12px;
+	/* v2.2.9: real-glass recipe. The tint is a low-alpha colour wash on the HOST;
+	   the blur lives on ::before. All values are final alphas, not stacked
+	   color-mix percentages. The --tl-glass-m multiplier is the opacity slider. */
+	--tl-glass-tint: rgba(255, 255, 255, calc(0.08 * var(--tl-glass-m, 1)));
+	--tl-glass-tint-menu: rgba(255, 255, 255, calc(0.14 * var(--tl-glass-m, 1)));
+	--tl-glass-tint-static: rgba(255, 255, 255, 0.30);
+	--tl-glass-tint-lowpower: rgba(255, 255, 255, 0.35);
+	--tl-glass-blur-live: 16px;
+	--tl-glass-sat-live: 1.8;
+	--tl-glass-bright-live: 1.06;
+	--tl-glass-contrast-live: 1.04;
+	--tl-glass-menu-blur-live: 20px;
+	--tl-glass-edge-hi: rgba(255, 255, 255, 0.55);
+	--tl-glass-edge-mid: rgba(255, 255, 255, 0.12);
+	--tl-glass-edge-lo: rgba(255, 255, 255, 0.22);
 	/* Modal-grade surface: a settings panel has to stay readable over the chat, so
 	   it needs its own fill instead of the zeroed bg-layer tokens. The value is high
 	   on purpose: the panel carries NO backdrop blur unless live mode is on (see
@@ -83,11 +98,12 @@ body[data-dsh-tianlight] {
 	--dsw-alias-bg-document-preview: var(--tl-glass-fill) !important;
 	--dsw-alias-bg-l1: var(--tl-glass-fill) !important;
 	--dsw-alias-bg-layer-4: var(--tl-glass-fill) !important;
-	--dsw-alias-bg-mask-1: rgba(236, 243, 251, 0.58) !important;
-	/* Full-viewport backdrop blur: the single most expensive thing on a page with a
-	   playing video, and the mask is translucent enough without it. */
+	/* v2.2.9: masks are focus cues, not curtains. The sidebar drawer may use the
+	   drop mask (<= 0.12 in spirit); a true modal is capped at 0.20. No token and no
+	   product rule may reintroduce a full-viewport blur. */
+	--dsw-alias-bg-mask-1: rgba(236, 243, 251, 0.12) !important;
 	--dsw-mask-blur: none !important;
-	--dsw-alias-bg-mask-drop: rgba(236, 243, 251, 0.68) !important;
+	--dsw-alias-bg-mask-drop: rgba(236, 243, 251, 0.20) !important;
 	--dsw-alias-bg-skeleton: var(--tl-line) !important;
 	--dsw-alias-fill-l1: rgba(236, 245, 255, 0.30) !important;
 	--dsw-alias-fill-l2: rgba(236, 245, 255, 0.22) !important;
@@ -117,10 +133,22 @@ body[data-dsh-tianlight][data-ds-dark-theme] {
 	--tl-shell: rgba(10, 18, 32, 0);
 	--tl-shell-strong: rgba(16, 27, 45, 0);
 	--tl-shell-soft: rgba(10, 18, 32, 0);
-	--tl-overlay: rgba(12, 22, 38, 0.84);
+	--tl-overlay: rgba(12, 22, 38, 0.30);
 	--tl-glass-fill: rgba(16, 26, 42, calc(0.38 * var(--tl-glass-m, 1)));
 	--tl-glass-line: rgba(150, 195, 250, 0);
 	--tl-glass-blur: 14px;
+	--tl-glass-tint: rgba(12, 18, 28, calc(0.20 * var(--tl-glass-m, 1)));
+	--tl-glass-tint-menu: rgba(12, 18, 28, calc(0.30 * var(--tl-glass-m, 1)));
+	--tl-glass-tint-static: rgba(8, 15, 26, 0.44);
+	--tl-glass-tint-lowpower: rgba(8, 15, 26, 0.50);
+	--tl-glass-blur-live: 18px;
+	--tl-glass-sat-live: 1.6;
+	--tl-glass-bright-live: 0.92;
+	--tl-glass-contrast-live: 1.04;
+	--tl-glass-menu-blur-live: 22px;
+	--tl-glass-edge-hi: rgba(255, 255, 255, 0.28);
+	--tl-glass-edge-mid: rgba(255, 255, 255, 0.10);
+	--tl-glass-edge-lo: rgba(255, 255, 255, 0.16);
 	--tl-panel-fill: rgba(10, 18, 32, max(0.96, calc(0.88 * var(--tl-glass-m, 1))));
 	--tl-ink: #eaf3ff;
 	--tl-ink-soft: #a9c2dc;
@@ -146,9 +174,9 @@ body[data-dsh-tianlight][data-ds-dark-theme] {
 	--dsw-alias-bg-document-preview: var(--tl-glass-fill) !important;
 	--dsw-alias-bg-l1: var(--tl-glass-fill) !important;
 	--dsw-alias-bg-layer-4: var(--tl-glass-fill) !important;
-	--dsw-alias-bg-mask-1: rgba(3, 8, 16, 0.55) !important;
+	--dsw-alias-bg-mask-1: rgba(3, 8, 16, 0.12) !important;
 	--dsw-mask-blur: none !important;
-	--dsw-alias-bg-mask-drop: rgba(3, 8, 16, 0.65) !important;
+	--dsw-alias-bg-mask-drop: rgba(3, 8, 16, 0.20) !important;
 	--dsw-alias-bg-skeleton: var(--tl-line) !important;
 	--dsw-alias-fill-l1: rgba(20, 34, 54, 0.46) !important;
 	--dsw-alias-fill-l2: rgba(20, 34, 54, 0.36) !important;

@@ -3531,15 +3531,17 @@
 				const palette = tl5SampleWallpaperPalette();
 				if (palette === null) return;
 				const dark = document.body !== null && document.body.hasAttribute(DARK_ATTR);
-				// Deliberately saturated: at 12-20% saturation on a 94%-light surface the
-				// panel looked untinted, which is the bug this replaced.
-				const fillLight = dark ? 0.15 : 0.90;
+				// v2.2.9: a TINT, not a fill. The old max(0.96, ...) made the glass opacity
+				// slider inert and turned the panel into coloured plastic. The blur layer
+				// and the tint now share the same low alpha range as every other pane.
+				const fillLight = dark ? 0.18 : 0.92;
 				const fillSat = Math.round(Math.min(0.52, Math.max(0.18, palette.sat)) * 100);
-				const fill = "hsl(" + palette.hue + " " + fillSat + "% " + Math.round(fillLight * 100) + "% / max(0.96, calc(0.94 * var(--tl-glass-m, 1))))";
-				host.style.setProperty("--tl-panel-fill", fill);
+				const alpha = dark ? "calc(0.24 * var(--tl-glass-m, 1))" : "calc(0.10 * var(--tl-glass-m, 1))";
+				const fill = "hsl(" + palette.hue + " " + fillSat + "% " + Math.round(fillLight * 100) + "% / " + alpha + ")";
+				host.style.setProperty("--tl-wall-tint", fill);
 				// The edge handle carries the same tint, so the wallpaper colour is visible
 				// even with the panel closed.
-				handle.style.setProperty("--tl-panel-fill", fill);
+				handle.style.setProperty("--tl-wall-tint", fill);
 				host.style.setProperty(
 					"--tl-accent",
 					"hsl(" + palette.hue + " " + Math.round(palette.sat * 100) + "% " + Math.round((dark ? 0.66 : 0.44) * 100) + "%)",

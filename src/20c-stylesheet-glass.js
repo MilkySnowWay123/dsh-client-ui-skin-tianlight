@@ -238,16 +238,10 @@ body[data-dsh-tianlight] [data-tl-cat] > [data-tl-catmenu] {
 	justify-content: center;
 }
 
-/* ---- v1.0.0 liquid glass depth: off / frosted / soft / real ----
-   The treatment lives on the scene layer (behind the product UI) as a STATIC
-   surface stack: tiled grain + cool tint + diagonal sheen + top-left specular.
-   R2 energy pass: the live backdrop-filter is gone from this layer.
-   Blurring the whole viewport behind a playing 4K wallpaper re-ran the blur for
-   every decoded video frame, for a treatment the period-adaptive overlay
-   (--tl-period-dim 0.02-0.04) usually made nearly invisible. A static gradient /
-   grain veil costs nothing per frame. Glass on the product's own bounded surfaces
-   (composer, menus, pills) keeps its blur; those are small layers, not a
-   full-screen composite. */
+/* ---- legacy liquid-glass tokens (still consumed by the hub preview/pills) ----
+   v2.2.9: the depth is no longer painted on the scene layer. The token stack below
+   remains only for the small self-owned preview swatch; bounded panels use the new
+   host-tint / ::before-blur / ::after-edge recipe at the end of this sheet. */
 body[data-dsh-tianlight] {
 	--tl-liquid-blur: 0px;
 	--tl-liquid-sat: 1;
@@ -292,11 +286,8 @@ body[data-dsh-tianlight] {
 	   sidebar edge was worst). Separation is the surface stack, the broad inner lens
 	   shadow and the outer soft glow; only a 0.12-alpha hairline ring remains. */
 	--tl-liquid-rim-shadow: inset 0 0 0 0 rgba(0, 0, 0, 0);
-	/* A broad, soft inner edge is what makes a pane read as thick glass rather than a
-	   tinted rectangle: the centre stays clear, the border gathers a little shadow. */
-	--tl-liquid-lens-shadow:
-		inset 0 0 22px rgba(8, 24, 42, 0.10),
-		inset 0 0 60px rgba(8, 24, 42, 0.05);
+	/* v2.2.9: the 22px/60px inner lens shadow was the main "the pane base is too dark"
+	   contributor. Bounded surfaces now use one inset top/bottom hairline instead. */
 	--tl-liquid-glow-shadow: 0 0 calc(6px + 14px * var(--tl-liquid-sheen)) rgba(150, 200, 250, calc(var(--tl-liquid-sheen) * 0.10));
 }
 body[data-dsh-tianlight][data-tl-glass-effective="soft"] {
@@ -344,431 +335,214 @@ body[data-dsh-tianlight][data-tl-glass-effective="frosted"] {
 	--tl-liquid-live-contrast: 1.04;
 	--tl-liquid-grain-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'140'%20height%3D'140'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.9'%20numOctaves%3D'2'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20type%3D'saturate'%20values%3D'0'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'140'%20height%3D'140'%20filter%3D'url(%23n)'%20opacity%3D'0.12'%2F%3E%3C%2Fsvg%3E");
 }
-body[data-dsh-tianlight] [data-tl-scene]::after {
-	content: "";
-	position: absolute;
-	inset: -2%;
-	pointer-events: none;
-	z-index: 2;
-	opacity: 1;
-	background-image: var(--tl-liquid-surface);
-	background-size: var(--tl-liquid-surface-size);
+/* v2.2.9: the scene layer is a wallpaper, not glass. The old full-viewport
+   grain + tint + inner vignette ::after here put a fog layer over every wallpaper
+   and fought the time-of-day dim rule in 35-context.js for the same pseudo element.
+   Glass is painted only on bounded controls now. The period dim keeps ::after. */
+
+/* ---- v2.2.9 real glass: tint on the host, blur on ::before, light on ::after ----
+   Contract (regression-tested by tools/check-css.mjs):
+   - the HOST never has filter / backdrop-filter / transform / will-change; those
+     properties would create a containing block for the product's position:fixed
+     sidebar toggle and every non-portaled tooltip;
+   - the blur lives on ::before, which is not an ancestor of those fixed children;
+   - the 1px edge is a GRADIENT on ::after, masked to the border, so it follows the
+     corner radius and never reads as a uniform white ring;
+   - large panels get a low-alpha tint (0.06-0.10 light / 0.16-0.24 dark), not an
+     opaque fill. Depth changes blur/saturation only. Live mode is the only path
+     that re-samples the wallpaper; low power removes every backdrop-filter. */
+body[data-dsh-tianlight] {
+	/* Compatibility tokens still consumed by the hub preview and the small pills. */
+	--tl-liquid-grain: 140px;
+	--tl-liquid-grain-image: none;
+	--tl-liquid-live-bright: 0.92;
 }
-body[data-dsh-tianlight][data-tl-glass-effective="off"] [data-tl-scene]::after {
-	display: none;
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) {
+	--tl-glass-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 30%);
 }
-/* The scene layer is a static veil at every depth now, so low power has nothing
-   extra to flatten here; the panel glass rules below keep their own low-power
-   override. */
-/* v1.5.0: make the selected depth visible on the product's own glass surfaces too
-   (the wallpaper scene is optional, so a scene-only effect can look like "nothing
-   happened"). These are the same glass pills/panels that already use the
-   --tl-glass-* tokens; the depth only boosts blur/saturation and adds a specular
-   inner highlight. */
-body[data-dsh-tianlight][data-tl-glass-effective="soft"] [data-tl-model],
-body[data-dsh-tianlight][data-tl-glass-effective="frosted"] [data-tl-model],
-body[data-dsh-tianlight][data-tl-glass-effective="real"] [data-tl-model],
-body[data-dsh-tianlight][data-tl-glass-effective="soft"] [data-tl-rheo][data-tl-rheo-empty],
-body[data-dsh-tianlight][data-tl-glass-effective="frosted"] [data-tl-rheo][data-tl-rheo-empty],
-body[data-dsh-tianlight][data-tl-glass-effective="real"] [data-tl-rheo][data-tl-rheo-empty] {
-	-webkit-backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
-	backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
+body[data-dsh-tianlight][data-tl-glass-effective="soft"] {
+	--tl-glass-blur-live: 10px;
+	--tl-glass-sat-live: 1.5;
+	--tl-glass-menu-blur-live: 16px;
+}
+body[data-dsh-tianlight][data-tl-glass-effective="frosted"] {
+	--tl-glass-blur-live: 26px;
+	--tl-glass-sat-live: 1.2;
+	--tl-glass-menu-blur-live: 28px;
+	--tl-glass-tint: rgba(255, 255, 255, calc(0.14 * var(--tl-glass-m, 1)));
+	--tl-liquid-grain-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'140'%20height%3D'140'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.9'%20numOctaves%3D'2'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20type%3D'saturate'%20values%3D'0'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'140'%20height%3D'140'%20filter%3D'url(%23n)'%20opacity%3D'0.05'%2F%3E%3C%2Fsvg%3E");
+}
+body[data-dsh-tianlight][data-ds-dark-theme] {
+	--tl-glass-sheen: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 30%);
+	--tl-liquid-live-bright: 0.92;
+}
+body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-effective="frosted"] {
+	--tl-glass-tint: rgba(12, 18, 28, calc(0.26 * var(--tl-glass-m, 1)));
+}
+body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-effective="real"] {
+	--tl-liquid-live-bright: 0.92;
+}
+
+/* One host recipe for every bounded glass surface. The sidebar column is included,
+   but only its runtime-stamped column node ([data-tl-sidebar-col]); the product frame
+   was the v2.2.8 full-window smoked overlay. */
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar-col], [data-tl-wall], [data-tl-settings], [data-tl-hub] [data-tl-hub-panel], [data-tl-menu], [data-tl-composer]) {
+	isolation: isolate;
+	background-color: var(--tl-glass-tint) !important;
+	background-image: var(--tl-glass-sheen) !important;
+	border-color: transparent !important;
 	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi)),
-		0 6px 20px rgba(8, 26, 44, 0.16);
-	/* v2.2.8 final: the pill's own 0.5px edge follows the transparent glass line now;
-	   the inset top highlight above still gives it a rim without a white outline. */
+		inset 0 1px 1px rgba(255, 255, 255, 0.18),
+		inset 0 -1px 1px rgba(0, 0, 0, 0.06),
+		0 8px 32px rgba(0, 0, 0, 0.12) !important;
+}
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-sidebar-col] {
+	/* Anchor for ::before/::after. position:relative alone does NOT change the
+	   containing block of position:fixed descendants; a filter would. */
+	position: relative;
+}
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-wall] {
+	background-color: var(--tl-wall-tint, var(--tl-glass-tint)) !important;
+}
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-menu] {
+	background-color: var(--tl-glass-tint-menu) !important;
+}
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-hub] [data-tl-hub-panel] {
+	background-color: var(--tl-glass-tint-menu) !important;
+}
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([role="dialog"], [role="menu"], [role="listbox"], [role="tooltip"], [role="tabpanel"]) {
+	/* ARIA fallback surfaces that the bridge has not stamped. Tint only: these can be
+	   product-owned layers with their own fixed children, so they never gain a blur. */
+	background-color: var(--tl-glass-tint-menu) !important;
 	border-color: transparent !important;
 }
-body[data-dsh-tianlight][data-tl-glass-effective="real"] [data-tl-model],
-body[data-dsh-tianlight][data-tl-glass-effective="real"] [data-tl-rheo][data-tl-rheo-empty] {
+body[data-dsh-tianlight][data-ds-dark-theme]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar-col], [data-tl-wall], [data-tl-settings], [data-tl-hub] [data-tl-hub-panel], [data-tl-menu], [data-tl-composer]) {
 	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi)),
-		0 8px 26px rgba(8, 26, 44, 0.22);
+		inset 0 1px 1px rgba(255, 255, 255, 0.10),
+		inset 0 -1px 1px rgba(0, 0, 0, 0.10),
+		0 8px 32px rgba(0, 0, 0, 0.35) !important;
 }
-body[data-dsh-tianlight][data-tl-lowpower] [data-tl-model],
-body[data-dsh-tianlight][data-tl-lowpower] [data-tl-rheo][data-tl-rheo-empty] {
-	-webkit-backdrop-filter: blur(3px) saturate(1.05);
-	backdrop-filter: blur(3px) saturate(1.05);
-	box-shadow: none;
+body[data-dsh-tianlight][data-tl-glass-effective="frosted"] :is([data-tl-sidebar-col], [data-tl-wall], [data-tl-settings], [data-tl-hub] [data-tl-hub-panel], [data-tl-composer]) {
+	background-image: var(--tl-liquid-grain-image), var(--tl-glass-sheen) !important;
+	background-size: 140px 140px, auto;
+	background-repeat: repeat, no-repeat;
 }
-/* ---- v1.6.0/v1.6.1: liquid glass on the rest of the interface ----
-   v1.6.1 upgrades this block to the liquid-glass v2 recipe: one shared multi-layer
-   surface (tiled grain + cool tint + diagonal sheen + top-left specular), 1px
-   light/dark inner rim, outer soft glow, softer/deeper blur presets and softer
-   rebound transitions. The v1.6.0 grouping/performance contract is unchanged.
-   v1.6.0 wired the depth preset only into the wallpaper scene layer and the skin's own
-   pills, so changing depth on a normal page looked like "nothing happened". These
-   grouped rules spread the same recipe over every KNOWN glass / popover surface.
-   Hard constraints, in order of importance:
-   - every rule is gated on data-tl-glass-effective=soft|frosted|real, so depth "off"
-     adds zero declarations and the v1.4 look is untouched;
-   - targets are runtime-stamped data-tl-* anchors or stable ARIA roles, never a DSH
-     build-hash class name;
-   - large panels (sidebar / settings / wall / hub panel) get NO extra live
-     backdrop-filter: the only full-size blur left is the scene-less fallback node
-     (and that one exists on a bare page), while these surfaces already paint their
-     own fill. A second full-size blur would re-composite on every video frame;
-   - the transcript bubble list is fill + highlight only: one live blur per bubble
-     would re-composite the wallpaper behind every message of a long session;
-   - input controls get a hairline plus a specular top edge only, never a filter: the
-     caret, IME candidate window and selection must not be re-anchored;
-   - [data-tl-lowpower] flattens all of it (blur <= 3px, no shadow, no animation). */
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar-col], [data-tl-wall], [data-tl-settings], [data-tl-hub] [data-tl-hub-panel], [data-tl-menu], [data-tl-composer])::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	pointer-events: none;
+	z-index: -1;
+	background: transparent;
+}
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar-col], [data-tl-wall], [data-tl-settings], [data-tl-hub] [data-tl-hub-panel], [data-tl-menu], [data-tl-composer])::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	padding: 1px;
+	pointer-events: none;
+	z-index: 1;
+	background: linear-gradient(135deg, var(--tl-glass-edge-hi) 0%, var(--tl-glass-edge-mid) 28%, rgba(255, 255, 255, 0) 50%, rgba(255, 255, 255, 0.06) 72%, var(--tl-glass-edge-lo) 100%);
+	-webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+	-webkit-mask-composite: xor;
+	mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+	mask-composite: exclude;
+}
+/* The sidebar has a fixed child toggle; the pseudo is NOT its ancestor, so the
+   toggle stays anchored to the viewport. Never add a filter to the column itself. */
 
-/* Scene-less fallback. The wallpaper module is optional, so when the scene layer is
-   absent the glass installer inserts one fixed data-tl-liquid-fallback node; it paints
-   the SAME v2 surface stack (grain + cool tint + sheen + specular) plus one stronger
-   backlight gradient, so the selected depth stays visible on a bare page. It is
-   painted beneath the product UI (root is z-index 1, body is transparent) and never
-   intercepts a pointer. */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	/* Live on: the one real glass path. This is the only place a large panel samples
+	   the wallpaper; the pseudo layer keeps every fixed descendant anchored. */
+	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] :is([data-tl-sidebar-col], [data-tl-wall], [data-tl-settings], [data-tl-hub] [data-tl-hub-panel], [data-tl-composer])::before {
+		-webkit-backdrop-filter: blur(var(--tl-glass-blur-live)) saturate(var(--tl-glass-sat-live)) brightness(var(--tl-glass-bright-live)) contrast(var(--tl-glass-contrast-live));
+		backdrop-filter: blur(var(--tl-glass-blur-live)) saturate(var(--tl-glass-sat-live)) brightness(var(--tl-glass-bright-live)) contrast(var(--tl-glass-contrast-live));
+	}
+	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] [data-tl-menu]::before {
+		-webkit-backdrop-filter: blur(var(--tl-glass-menu-blur-live)) saturate(var(--tl-glass-sat-live)) brightness(var(--tl-glass-bright-live)) contrast(var(--tl-glass-contrast-live));
+		backdrop-filter: blur(var(--tl-glass-menu-blur-live)) saturate(var(--tl-glass-sat-live)) brightness(var(--tl-glass-bright-live)) contrast(var(--tl-glass-contrast-live));
+	}
+	/* Composer lens: the SVG filter only bends an 18px band at the rounded edge;
+	   the centre is untouched. It is gated on real depth + runtime support and is
+	   optional; the blur above still works when the browser rejects the SVG filter. */
+	body[data-dsh-tianlight][data-tl-glass-effective="real"][data-tl-glass-lens-support="1"][data-tl-glass-live-effective="on"] [data-tl-composer]::before {
+		-webkit-backdrop-filter: url(#tl-glass-lens-filter) blur(var(--tl-glass-blur-live)) saturate(var(--tl-glass-sat-live)) brightness(var(--tl-glass-bright-live)) contrast(var(--tl-glass-contrast-live));
+		backdrop-filter: url(#tl-glass-lens-filter) blur(var(--tl-glass-blur-live)) saturate(var(--tl-glass-sat-live)) brightness(var(--tl-glass-bright-live)) contrast(var(--tl-glass-contrast-live));
+	}
+}
+
+/* Static fallback = live off, low power and the 15 fps tier. Still tinted glass,
+   never an opaque sheet; and no sampling, so the wallpaper stays crisp. */
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"])[data-tl-glass-live-effective="off"] :is([data-tl-sidebar-col], [data-tl-wall], [data-tl-settings], [data-tl-hub] [data-tl-hub-panel], [data-tl-composer]) {
+	background-color: var(--tl-glass-tint-static) !important;
+}
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"])[data-tl-glass-live-effective="off"] [data-tl-menu] {
+	background-color: var(--tl-glass-tint-menu) !important;
+}
+body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar-col], [data-tl-wall], [data-tl-settings], [data-tl-hub] [data-tl-hub-panel], [data-tl-menu], [data-tl-composer]),
+body[data-dsh-tianlight][data-tl-render-tier="15"]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar-col], [data-tl-wall], [data-tl-settings], [data-tl-hub] [data-tl-hub-panel], [data-tl-menu], [data-tl-composer]) {
+	background-color: var(--tl-glass-tint-lowpower) !important;
+}
+/* Acceptance 5: at low power / 15 fps there is no backdrop-filter anywhere. This
+   includes the base composer fuzz and the small pills that predate the depth presets. */
+body[data-dsh-tianlight][data-tl-lowpower] :is([data-tl-composer], [data-tl-model], [data-tl-rheo][data-tl-rheo-empty], [data-tl-menu], [data-tl-new-chat], [data-tl-weather-chip], [data-tl-glass-preview])::before,
+body[data-dsh-tianlight][data-tl-render-tier="15"] :is([data-tl-composer], [data-tl-model], [data-tl-rheo][data-tl-rheo-empty], [data-tl-menu], [data-tl-new-chat], [data-tl-weather-chip], [data-tl-glass-preview])::before,
+body[data-dsh-tianlight][data-tl-lowpower] :is([data-tl-composer], [data-tl-model], [data-tl-rheo][data-tl-rheo-empty], [data-tl-menu], [data-tl-new-chat], [data-tl-weather-chip], [data-tl-glass-preview]),
+body[data-dsh-tianlight][data-tl-render-tier="15"] :is([data-tl-composer], [data-tl-model], [data-tl-rheo][data-tl-rheo-empty], [data-tl-menu], [data-tl-new-chat], [data-tl-weather-chip], [data-tl-glass-preview]) {
+	-webkit-backdrop-filter: none !important;
+	backdrop-filter: none !important;
+}
+body[data-dsh-tianlight][data-tl-lowpower] :is([data-tl-sidebar-col], [data-tl-wall], [data-tl-settings], [data-tl-hub] [data-tl-hub-panel], [data-tl-menu], [data-tl-composer])::before,
+body[data-dsh-tianlight][data-tl-render-tier="15"] :is([data-tl-sidebar-col], [data-tl-wall], [data-tl-settings], [data-tl-hub] [data-tl-hub-panel], [data-tl-menu], [data-tl-composer])::before {
+	-webkit-backdrop-filter: none !important;
+	backdrop-filter: none !important;
+}
+
+/* Small floating controls keep their existing compact glass. They are host-blurred
+   today; the low-power rule above removes that blur. At real depth the two existing
+   pills use the same saturation as the panels. */
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-model], [data-tl-rheo][data-tl-rheo-empty], [data-tl-new-chat], [data-tl-weather-chip], [data-tl-glass-preview]) {
+	border-color: transparent !important;
+	box-shadow:
+		inset 0 1px 1px rgba(255, 255, 255, 0.16),
+		0 6px 20px rgba(0, 0, 0, 0.14) !important;
+}
+body[data-dsh-tianlight][data-ds-dark-theme]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-model], [data-tl-rheo][data-tl-rheo-empty], [data-tl-new-chat], [data-tl-weather-chip], [data-tl-glass-preview]) {
+	box-shadow:
+		inset 0 1px 1px rgba(255, 255, 255, 0.10),
+		0 6px 20px rgba(0, 0, 0, 0.30) !important;
+}
+
+/* Scene-less fallback: a quiet depth wash behind the UI, never a full-screen blur. */
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-liquid-fallback] {
 	position: fixed;
 	inset: 0;
 	z-index: -1;
 	pointer-events: none;
-	background-image: var(--tl-liquid-surface), var(--tl-liquid-fallback-boost);
-	background-size: var(--tl-liquid-surface-size), auto;
-	/* v2.2.5: NO backdrop-filter here. This node is full-viewport, so a filter on it
-	   blurs the entire wallpaper ("the background is all smeared"). The fallback still
-	   paints the static grain/tint/specular recipe; it simply does not sample live. */
-	box-shadow: var(--tl-liquid-rim-shadow);
+	background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(8, 16, 28, 0.08) 100%);
 }
 body[data-dsh-tianlight][data-tl-glass-effective="off"] [data-tl-liquid-fallback] {
 	display: none;
 }
-body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-liquid-fallback] {
-	background-image: linear-gradient(115deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 60%);
-	background-size: auto;
-	box-shadow: none;
+body[data-dsh-tianlight][data-tl-lowpower] [data-tl-liquid-fallback] {
+	background: rgba(8, 16, 28, 0.12);
 }
 
-/* Group A: heavy surfaces. Fill, v2 surface stack (tiled grain + cool tint + sheen +
-   specular), 1px light/dark inner rim, outer soft glow and a light drop shadow.
-   The sidebar column is the one place the depth adds a fill on purpose: it is a
-   product surface that otherwise stays fully transparent, and "glass everywhere"
-   is the point of this preset. The fill is mixed down so the wallpaper still reads
-   through it. No extra backdrop-filter on these panels: the scene-less fallback
-   node owns the one full-size blur, and a second one would re-composite the
-   wallpaper behind every frame. */
-body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar], [data-tl-sidebar-col]) {
-	background-color: color-mix(in srgb, var(--tl-glass-fill) 62%, transparent) !important;
-	/* A lens, not a white sheet: one narrow specular streak at the top-left, one cool
-	   refraction tint at the bottom-right, then the grain surface. v2.2.7 dropped the
-	   1px bright right edge and the hard rim: the pane reads from the fill, the lens
-	   shadow and the drop shadow, with no outline line. */
-	background-image:
-		linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 26%),
-		radial-gradient(120% 100% at 100% 100%, rgba(70, 150, 240, 0.10) 0%, rgba(70, 150, 240, 0) 62%),
-		var(--tl-liquid-surface) !important;
-	/* v2.2.7: no 1px white right edge. It read as a bright vertical line against the
-	   wallpaper (the reported "line on every surface, worst on the left sidebar"). */
-	background-size: auto, auto, var(--tl-liquid-surface-size);
-	box-shadow:
-		var(--tl-liquid-rim-shadow),
-		var(--tl-liquid-lens-shadow),
-		var(--tl-liquid-glow-shadow),
-		0 0 0 0.5px var(--tl-glass-line),
-		0 10px 30px rgba(8, 26, 44, 0.14);
-}
-/* v2.2.8: same smoked base for the non-live path (depth without live sampling). */
-body[data-dsh-tianlight][data-ds-dark-theme]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar], [data-tl-sidebar-col]) {
-	background-color: rgba(8, 15, 26, 0.66) !important;
-}
-body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-settings], [data-tl-wall]) {
-	background-image:
-		linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 22%),
-		var(--tl-liquid-surface) !important;
-	background-size: auto, var(--tl-liquid-surface-size);
-	border-color: var(--tl-glass-line);
-	box-shadow:
-		var(--tl-liquid-rim-shadow),
-		var(--tl-liquid-lens-shadow),
-		var(--tl-liquid-glow-shadow),
-		0 18px 60px rgba(8, 26, 44, 0.26);
-}
-body[data-dsh-tianlight][data-ds-dark-theme]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-settings], [data-tl-wall]) {
-	box-shadow:
-		var(--tl-liquid-rim-shadow),
-		var(--tl-liquid-glow-shadow),
-		0 18px 60px rgba(0, 0, 0, 0.55);
-}
-body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-hub] [data-tl-hub-panel] {
-	background-image:
-		linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 22%),
-		var(--tl-liquid-surface);
-	background-size: auto, var(--tl-liquid-surface-size);
-	border-color: var(--tl-glass-line);
-	box-shadow:
-		var(--tl-liquid-rim-shadow),
-		var(--tl-liquid-lens-shadow),
-		var(--tl-liquid-glow-shadow),
-		0 28px 80px rgba(4, 14, 26, 0.45);
-}
-
-/* ARIA fallbacks. The bridge stamps the surfaces it recognises; the product also
-   ships plain role="dialog|menu|listbox|tooltip|tabpanel" nodes. Their fill is left
-   alone (an unknown product panel keeps its own legibility floor); the depth adds the
-   v2 light signature: the surface stack, the 1px light/dark rim drawn with a
-   box-shadow (so nothing reflows) and the outer soft glow. */
-body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([role="dialog"], [role="menu"], [role="listbox"]) {
-	background-image: var(--tl-liquid-surface);
-	background-size: var(--tl-liquid-surface-size);
-	box-shadow:
-		var(--tl-liquid-rim-shadow),
-		var(--tl-liquid-glow-shadow),
-		0 0 0 0.5px var(--tl-glass-line),
-		0 12px 34px rgba(8, 26, 44, 0.18);
-}
-
-/* Group B: light surfaces. The flat stack (no tiled grain) keeps a long transcript
-   cheap: hundreds of bubbles must not each paint an SVG noise tile; the detached
-   tooltip/tabpanel surfaces are few enough for the full stack. No per-item blur. */
-body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-bubble], [data-tl-duty], [data-tl-catmenu]) {
-	background-image: var(--tl-liquid-surface-flat) !important;
-	background-size: var(--tl-liquid-surface-flat-size);
-	box-shadow:
-		var(--tl-liquid-rim-shadow),
-		var(--tl-liquid-glow-shadow),
-		0 0 0 0.5px var(--tl-glass-line),
-		0 6px 18px rgba(8, 26, 44, 0.12);
-}
-body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([role="tooltip"], [role="tabpanel"]) {
-	background-image: var(--tl-liquid-surface);
-	background-size: var(--tl-liquid-surface-size);
-	box-shadow:
-		var(--tl-liquid-rim-shadow),
-		var(--tl-liquid-glow-shadow),
-		0 0 0 0.5px var(--tl-glass-line),
-		0 8px 22px rgba(8, 26, 44, 0.16);
-}
-
-/* Composer: the blur already lives on ::before (a backdrop-filter on the card itself
-   would re-anchor its non-portaled tooltips, which are position:fixed). The depth
-   only strengthens the sheen, the hairline, the rim and the saturation, so the pseudo
-   layer ownership stays untouched. */
-body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-composer] {
-	background-image:
-		linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 18%),
-		radial-gradient(120% 140% at 0% 0%, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 48%),
-		var(--tl-liquid-surface) !important;
-	background-size: auto, auto, var(--tl-liquid-surface-size);
-	/* v2.2.8 final: the depth rule used to override the transparent token with a
-	   white 0.38 edge — the "white ring around the chat box" report. The card reads
-	   from its fill, sheen and drop shadow, not from an outline. */
-	border-color: transparent !important;
-	box-shadow:
-		var(--tl-liquid-rim-shadow),
-		var(--tl-liquid-lens-shadow),
-		var(--tl-liquid-glow-shadow),
-		0 12px 38px rgba(8, 28, 52, 0.26) !important;
-}
-body[data-dsh-tianlight][data-ds-dark-theme]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-composer] {
-	box-shadow:
-		var(--tl-liquid-rim-shadow),
-		var(--tl-liquid-glow-shadow),
-		0 12px 38px rgba(0, 0, 0, 0.50) !important;
-}
-
-/* Model pill: the v1.5 rule above already contributes the depth blur, specular edge
-   and border; paint the full v2 stack on top of it. */
-body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-model] {
-	background-image: var(--tl-liquid-surface) !important;
-	background-size: var(--tl-liquid-surface-size);
-	box-shadow:
-		var(--tl-liquid-rim-shadow),
-		var(--tl-liquid-glow-shadow),
-		0 6px 20px rgba(8, 26, 44, 0.16) !important;
-}
-
-/* Floating menus (bridge-stamped): full stack plus a deeper shadow than the bubble
-   tier and the outer glow. */
-body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-menu] {
-	background-image: var(--tl-liquid-surface) !important;
-	background-size: var(--tl-liquid-surface-size);
-	box-shadow:
-		var(--tl-liquid-rim-shadow),
-		var(--tl-liquid-glow-shadow),
-		0 14px 38px rgba(8, 26, 44, 0.22);
-}
-
-/* The live blurs the depth adds or retunes, each exactly one small layer: the stamped
-   floating menu and the composer's existing ::before layer. The popover follows the
-   preset's own blur (it carries a near-opaque panel fill, so the value is safe); the
-   composer keeps max() so a soft depth never makes the typing surface less frosted
-   than off, where legibility matters most. Neither host gains a filter it did not
-   already have, so no position:fixed descendant is re-anchored. */
-@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-	body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-menu] {
-		-webkit-backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
-		backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
-	}
-	body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-composer]::before {
-		-webkit-backdrop-filter: blur(max(var(--tl-glass-blur), var(--tl-liquid-blur))) saturate(var(--tl-liquid-sat));
-		backdrop-filter: blur(max(var(--tl-glass-blur), var(--tl-liquid-blur))) saturate(var(--tl-liquid-sat));
-	}
-}
-
-/* Inputs and editors: a hairline and a specular top edge only. Never a filter here,
-   and no elevation, so typing and IME composition keep their exact anchoring. */
+/* Inputs keep a hairline only; never a filter that could re-anchor IME/caret. */
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) textarea,
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [contenteditable="true"],
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [role="textbox"],
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
-	border-color: rgba(255, 255, 255, calc(var(--tl-liquid-hi) + 0.14));
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi));
+	border-color: color-mix(in srgb, var(--tl-glass-edge-hi) 18%, transparent);
+	box-shadow: none;
 }
 
-/* Low power / 15fps: flatten every decoration the depth just added. Fills may stay
-   (they cost no per-frame compositing) but shadows, v2 surface layers, rim/glow and
-   animation go, and every live blur drops to 3px, matching the v1.5 low-power recipe.
-   The v2 stack is cleared only on the surfaces this block paints one on, so a product
-   background-image elsewhere is never thrown away. */
-body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar], [data-tl-sidebar-col], [data-tl-settings], [data-tl-wall], [data-tl-hub-panel], [data-tl-glass-preview], [data-tl-composer], [data-tl-model], [data-tl-rheo][data-tl-rheo-empty], [data-tl-bubble], [data-tl-menu], [data-tl-duty], [data-tl-catmenu], [role="dialog"], [role="menu"], [role="listbox"], [role="tooltip"], [role="tabpanel"]) {
-	box-shadow: none !important;
-	animation: none !important;
+/* Off-depth keeps the v2.2.8 look: only the rules gated on a non-off effective
+   depth above are new. The old 0.66/0.72 full-frame sidebar overlay is gone. */
+body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-effective="off"] [data-tl-composer] {
+	background: var(--tl-glass-fill) !important;
 }
-body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar], [data-tl-sidebar-col], [data-tl-settings], [data-tl-wall], [data-tl-hub-panel], [data-tl-glass-preview], [data-tl-composer], [data-tl-model], [data-tl-menu], [role="dialog"], [role="menu"], [role="listbox"], [role="tooltip"], [role="tabpanel"]) {
-	background-image: none !important;
-}
-body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-menu] {
-	-webkit-backdrop-filter: blur(3px) saturate(1.05) !important;
-	backdrop-filter: blur(3px) saturate(1.05) !important;
-}
-body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-composer]::before {
-	-webkit-backdrop-filter: blur(3px) saturate(1.05) !important;
-	backdrop-filter: blur(3px) saturate(1.05) !important;
-}
-/* The v1.5 depth rules for the two pills outrank the older low-power rule on
-   specificity, so the flatten needs an explicit depth-scoped override here. */
-body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-model], [data-tl-rheo][data-tl-rheo-empty]) {
-	-webkit-backdrop-filter: blur(3px) saturate(1.05) !important;
-	backdrop-filter: blur(3px) saturate(1.05) !important;
-}
-/* v1.6.1 surfaces (new-chat button, weather chip) flatten with the rest; their blur
-   lives on the element itself (small, no fixed descendants), never on a panel. */
-body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-new-chat], [data-tl-weather-chip]) {
-	box-shadow: none !important;
-	animation: none !important;
-	background-image: none !important;
-	-webkit-backdrop-filter: blur(3px) saturate(1.05) !important;
-	backdrop-filter: blur(3px) saturate(1.05) !important;
-}
-@media (prefers-reduced-motion: reduce) {
-	body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-menu], [data-tl-composer], [data-tl-liquid-fallback], [data-tl-new-chat], [data-tl-weather-chip]) {
-		animation: none !important;
-		transition: none !important;
-	}
-}
-
-/* ---- v2.2.0 real-time (live) glass ------------------------------------------
-   The depth presets are a static veil by design (see the R2 note above). Live mode
-   is the explicit opt-in that buys the real thing: the known glass surfaces get a
-   backdrop-filter, so Chromium re-samples whatever wallpaper frame is behind them.
-   It is gated on data-tl-glass-live-effective="on"; the installer writes that
-   attribute only when the user turned live on AND the low-power / 15 fps guard is
-   clear, so neither the default path nor a degraded path pays for a single extra
-   compositing layer. Only the large, known skin surfaces are sampled: transcript
-   bubbles stay fill-only (one live blur per bubble would re-composite per message). */
-body[data-dsh-tianlight][data-ds-dark-theme] {
-	--tl-liquid-live-bright: 1.02;
-}
-/* Live glass must be COLOUR from the wallpaper, not paint: strip most of the
-   static white specular/fill and let the sampled backdrop carry the look. This is
-   the direct answer to "enabling live glass makes everything too white". */
-body[data-dsh-tianlight]:not([data-ds-dark-theme])[data-tl-glass-live-effective="on"] {
-	--tl-glass-fill: rgba(205, 228, 250, calc(0.04 * var(--tl-glass-m, 1)));
-	--tl-panel-fill: rgba(235, 245, 255, max(0.56, calc(0.50 * var(--tl-glass-m, 1))));
-	--tl-overlay: rgba(235, 245, 255, 0.50);
-	--tl-liquid-hi: 0.03;
-	--tl-liquid-lo: 0.01;
-	--tl-liquid-noise: 0.015;
-	--tl-liquid-sheen: 0.06;
-	--tl-liquid-rim: 0.35;
-}
-/* Dark theme must stay dark: the light live fill above was the exact cause of the
-   "white haze" on a dark UI. The pane is smoked glass with a cool specular edge. */
-body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] {
-	/* Smoked glass, not a bright pane: a bright wallpaper is darkened by the pane and
-	   the backdrop filter, so white text keeps its contrast and the pane reads as glass. */
-	--tl-glass-fill: rgba(6, 14, 24, calc(0.40 * var(--tl-glass-m, 1)));
-	--tl-panel-fill: rgba(8, 16, 28, max(0.72, calc(0.66 * var(--tl-glass-m, 1))));
-	--tl-overlay: rgba(8, 16, 28, 0.70);
-	--tl-liquid-hi: 0.08;
-	--tl-liquid-lo: 0.01;
-	--tl-liquid-noise: 0.02;
-	--tl-liquid-sheen: 0.16;
-	--tl-liquid-rim: 0.36;
-	--tl-liquid-live-blur: 6px;
-	--tl-liquid-live-bright: 0.72;
-	--tl-liquid-live-sat: 1.35;
-	--tl-liquid-live-contrast: 1.06;
-}
-@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-	/* v2.2.5: NEVER put a backdrop-filter on the sidebar containers. DSH Desktop's
-	   sidebar toggle is position:fixed; left:12px; top:6px inside the sidebar column
-	   (dsh-client-ui-sidebar), and a filtered ancestor becomes its containing block —
-	   the toggle then lands on the brand mark instead of the title strip, which is the
-	   "sidebar icon overlaps the product logo / no way to restore the sidebar" report. The sidebar keeps the static recipe (fills below) and simply does not
-	   sample the wallpaper live; the composer keeps its ::before for the same reason.
-	   tools/check-css.mjs fails if a data-tl-sidebar selector comes back into this list. */
-	/* v2.2.5: no live filter on the large panels either. The wallpaper behind them
-	   must stay crisp — a backdrop blur on a panel that covers half the window makes
-	   the whole scene look out of focus. Live mode only adjusts their fill; the real
-	   sampling stays on the composer and the small floating controls. */
-	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] :is([data-tl-settings], [data-tl-wall]) {
-		background-color: color-mix(in srgb, var(--tl-panel-fill) 55%, transparent) !important;
-	}
-	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] [data-tl-hub] [data-tl-hub-panel] {
-		background-color: color-mix(in srgb, var(--tl-overlay) 52%, transparent) !important;
-	}
-	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] :is([data-tl-sidebar], [data-tl-sidebar-col]) {
-		background-color: color-mix(in srgb, var(--tl-glass-fill) 30%, transparent) !important;
-	}
-	/* v2.2.8: dark theme gets a smoked base, not a tint. 82% of a 0.38-alpha fill is
-	   still 0.31 over the wallpaper, and a bright wallpaper shows straight through the
-	   pane — the "left sidebar looks washed out / whitish" report. 0.72 is dark enough
-	   to hold text on any wallpaper while keeping the moving backdrop readable. */
-	body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] :is([data-tl-sidebar], [data-tl-sidebar-col]) {
-		background-color: rgba(8, 15, 26, 0.72) !important;
-	}
-	body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] :is([data-tl-settings], [data-tl-wall]) {
-		background-color: color-mix(in srgb, var(--tl-panel-fill) 74%, transparent) !important;
-	}
-	/* The role hub had the same washed-out top: 78% of the overlay left 0.65 alpha. */
-	body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] [data-tl-hub] [data-tl-hub-panel] {
-		background-color: rgba(9, 17, 30, 0.92) !important;
-	}
-	/* Composer keeps its ::before ownership (a filter on the card itself would
-	   re-anchor its non-portaled tooltips); live only makes that one layer real. */
-	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] [data-tl-composer]::before {
-		-webkit-backdrop-filter: blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
-		backdrop-filter: blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
-	}
-	/* Small floating surfaces upgrade their existing bounded blur; none of them
-	   gains a filter it did not already carry at a non-off depth. */
-	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] :is([data-tl-menu], [data-tl-model], [data-tl-new-chat], [data-tl-weather-chip], [data-tl-rheo][data-tl-rheo-empty], [data-tl-glass-preview]) {
-		-webkit-backdrop-filter: blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
-		backdrop-filter: blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
-	}
-	/* v2.2.2 lens: Chromium accepts an SVG filter inside backdrop-filter, so the
-	   wallpaper behind the glass is gently bent, not merely blurred. v2.2.5 keeps it on
-	   the composer only: the lens is a bounded effect, and bending a half-window panel
-	   also bends the wallpaper the user is looking at. The installer adds
-	   data-tl-glass-lens-support="1" only after CSS.supports proves it. */
-	body[data-dsh-tianlight][data-tl-glass-lens-support="1"][data-tl-glass-live-effective="on"] [data-tl-composer]::before {
-		-webkit-backdrop-filter: url(#tl-glass-lens-filter) blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
-		backdrop-filter: url(#tl-glass-lens-filter) blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
-	}
-	/* The role-hub preview is the control's own feedback: live makes it clear at a
-	   glance, including a tiny moving-wallpaper feel from the real backdrop. */
-	body[data-dsh-tianlight] [data-tl-hub] [data-tl-glass-preview][data-live="on"] {
-		box-shadow:
-			inset 0 1px 0 rgba(235, 247, 255, calc(var(--tl-liquid-hi) + 0.10)),
-			var(--tl-liquid-rim-shadow),
-			0 0 0 0.5px rgba(120, 190, 255, 0.35),
-			var(--tl-liquid-glow-shadow);
-	}
-}
-
 `;
 		//#endregion

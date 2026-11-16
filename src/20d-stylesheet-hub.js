@@ -108,7 +108,9 @@ body[data-dsh-tianlight] [data-tl-hub] {
 body[data-dsh-tianlight] [data-tl-hub-mask] {
 	position: absolute;
 	inset: 0;
-	background: rgba(6, 16, 28, 0.42);
+	/* v2.2.9: a scrim for a floating panel is not a modal. 0.42 read as "the whole
+	   wallpaper went dark" when the hub opened; 0.18 keeps the focus cue. */
+	background: rgba(6, 16, 28, 0.18);
 	/* v2.2.5: no backdrop-filter on the full-screen scrim. It covered the whole window,
 	   so opening the hub smeared the entire wallpaper instead of dimming it. */
 }
