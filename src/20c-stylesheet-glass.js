@@ -429,8 +429,9 @@ body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-eff
 	pointer-events: none;
 	background-image: var(--tl-liquid-surface), var(--tl-liquid-fallback-boost);
 	background-size: var(--tl-liquid-surface-size), auto;
-	-webkit-backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
-	backdrop-filter: blur(var(--tl-liquid-blur)) saturate(var(--tl-liquid-sat));
+	/* v2.2.5: NO backdrop-filter here. This node is full-viewport, so a filter on it
+	   blurs the entire wallpaper ("the background is all smeared"). The fallback still
+	   paints the static grain/tint/specular recipe; it simply does not sample live. */
 	box-shadow: var(--tl-liquid-rim-shadow);
 }
 body[data-dsh-tianlight][data-tl-glass-effective="off"] [data-tl-liquid-fallback] {
@@ -439,8 +440,6 @@ body[data-dsh-tianlight][data-tl-glass-effective="off"] [data-tl-liquid-fallback
 body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-liquid-fallback] {
 	background-image: linear-gradient(115deg, rgba(255, 255, 255, var(--tl-liquid-hi)) 0%, rgba(255, 255, 255, 0) 60%);
 	background-size: auto;
-	-webkit-backdrop-filter: blur(2px) saturate(1.04);
-	backdrop-filter: blur(2px) saturate(1.04);
 	box-shadow: none;
 }
 
@@ -697,12 +696,17 @@ body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] 
 	--tl-liquid-live-contrast: 1.06;
 }
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] :is([data-tl-sidebar], [data-tl-sidebar-col], [data-tl-settings], [data-tl-wall], [data-tl-hub-panel]) {
-		-webkit-backdrop-filter: blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
-		backdrop-filter: blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
-	}
-	/* A lit fill would hide the sampled wallpaper again; live mode trades some of
-	   the static fill for the real blur, which carries at least as much legibility. */
+	/* v2.2.5: NEVER put a backdrop-filter on the sidebar containers. DSH Desktop's
+	   sidebar toggle is position:fixed; left:12px; top:6px inside the sidebar column
+	   (dsh-client-ui-sidebar), and a filtered ancestor becomes its containing block —
+	   the toggle then lands on the brand mark instead of the title strip, which is the
+	   "sidebar icon overlaps the product logo / no way to restore the sidebar" report. The sidebar keeps the static recipe (fills below) and simply does not
+	   sample the wallpaper live; the composer keeps its ::before for the same reason.
+	   tools/check-css.mjs fails if a data-tl-sidebar selector comes back into this list. */
+	/* v2.2.5: no live filter on the large panels either. The wallpaper behind them
+	   must stay crisp — a backdrop blur on a panel that covers half the window makes
+	   the whole scene look out of focus. Live mode only adjusts their fill; the real
+	   sampling stays on the composer and the small floating controls. */
 	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] :is([data-tl-settings], [data-tl-wall]) {
 		background-color: color-mix(in srgb, var(--tl-panel-fill) 55%, transparent) !important;
 	}
@@ -736,13 +740,10 @@ body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] 
 		backdrop-filter: blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
 	}
 	/* v2.2.2 lens: Chromium accepts an SVG filter inside backdrop-filter, so the
-	   wallpaper behind the large panes is gently bent, not merely blurred. The installer
-	   adds data-tl-glass-lens-support="1" only after CSS.supports proves it and creates
-	   the referenced filter node; the plain blur declarations above stay as fallback. */
-	body[data-dsh-tianlight][data-tl-glass-lens-support="1"][data-tl-glass-live-effective="on"] :is([data-tl-sidebar], [data-tl-sidebar-col], [data-tl-settings], [data-tl-wall], [data-tl-hub-panel]) {
-		-webkit-backdrop-filter: url(#tl-glass-lens-filter) blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
-		backdrop-filter: url(#tl-glass-lens-filter) blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
-	}
+	   wallpaper behind the glass is gently bent, not merely blurred. v2.2.5 keeps it on
+	   the composer only: the lens is a bounded effect, and bending a half-window panel
+	   also bends the wallpaper the user is looking at. The installer adds
+	   data-tl-glass-lens-support="1" only after CSS.supports proves it. */
 	body[data-dsh-tianlight][data-tl-glass-lens-support="1"][data-tl-glass-live-effective="on"] [data-tl-composer]::before {
 		-webkit-backdrop-filter: url(#tl-glass-lens-filter) blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));
 		backdrop-filter: url(#tl-glass-lens-filter) blur(var(--tl-liquid-live-blur)) saturate(var(--tl-liquid-live-sat)) brightness(var(--tl-liquid-live-bright)) contrast(var(--tl-liquid-live-contrast));

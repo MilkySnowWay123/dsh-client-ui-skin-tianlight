@@ -2301,7 +2301,10 @@ test('R2: the scene layer has no full-viewport live blur and no 22s repaint', ()
   assert.match(rule[1], /background-image: var\(--tl-liquid-surface\)/, 'static grain/tint veil kept')
   // The product's own bounded glass keeps its blur (the depth presets still do something).
   assert.match(CLIENT_SOURCE, /\[data-tl-composer\]::before \{[\s\S]{0,400}?backdrop-filter:/)
-  assert.match(CLIENT_SOURCE, /\[data-tl-liquid-fallback\] \{[\s\S]{0,500}?backdrop-filter:/)
+  // v2.2.5: the full-viewport fallback must stay filter-free — a blur there smeared the
+  // entire wallpaper ("液态玻璃不要应用到全局").
+  assert.equal(/\[data-tl-liquid-fallback\] \{[\s\S]{0,600}?backdrop-filter:/.test(CLIENT_SOURCE), false, 'the full-viewport fallback must not blur')
+  assert.equal(/\[data-tl-hub-mask\] \{[\s\S]{0,300}?backdrop-filter:/.test(CLIENT_SOURCE), false, 'the full-screen hub scrim must not blur')
 })
 
 test('v2.2.0 live glass: opt-in only, gated on the effective flag, and user-resettable', () => {

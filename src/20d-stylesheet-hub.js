@@ -109,8 +109,8 @@ body[data-dsh-tianlight] [data-tl-hub-mask] {
 	position: absolute;
 	inset: 0;
 	background: rgba(6, 16, 28, 0.42);
-	-webkit-backdrop-filter: blur(3px);
-	backdrop-filter: blur(3px);
+	/* v2.2.5: no backdrop-filter on the full-screen scrim. It covered the whole window,
+	   so opening the hub smeared the entire wallpaper instead of dimming it. */
 }
 body[data-dsh-tianlight] [data-tl-hub-panel] {
 	position: relative;
