@@ -14,17 +14,17 @@
 
 | 项 | 值 |
 |---|---|
-| 支持范围 | `>=0.2.0-rc.1 <0.2.1-0 \|\| >=0.2.1-0 <0.2.2-0 \|\| >=0.2.2-0 <0.3.0-0 \|\| >=0.3.0-0 <0.4.0-0`（同一串写进三处，见 §1b；0.2.x 与 0.3.x 的正式/rc/alpha 均放行） |
-| 0.3 段性质 | **预适配（provisional）**：DSH 0.3.0 尚未发布（npm `latest` = 0.2.2-rc.1、`next` = 0.2.2-rc.3），这一段先放开安装门禁，避免 0.3.0 首发当天被"插件不兼容"直接挡在门外。承诺由每日巡检兑现，见 §10.1、§10.3 与 `docs/COMPAT-0.3.0.md` |
+| 支持范围 | `>=0.2.0-rc.1 <0.2.1-0 \|\| >=0.2.1-0 <0.2.2-0 \|\| >=0.2.2-0 <0.3.0-0`（同一串写进三处，见 §1b；0.2.x 的正式/rc/alpha 均放行，**0.3.x 起被拦下**） |
+| 0.3 决定 | **放弃预适配（2026-11-16）**：0.3 段已收回，0.3.x 重新被门禁拦下——没在真实 0.3 build 上验证过的范围不放开。差异表、检查清单、`guide-diff` 预警**保留**在 `docs/COMPAT-0.3.0.md`，等 0.3.0 真发布按清单验过再放开（见 §10.1） |
 | 管理器展示值 | `dshCompatibility: "0.2.2rc3"`（skin-manager 只接受 `/^\d+\.\d+\.\d+rc\d+$/` 单串；它会安全忽略 `dshCompatibilityRange`） |
 | 实测版本 | 0.2.0-rc.2 · 0.2.1-rc.3（历史 Desktop）· 0.2.1-rc.5（npm 运行时）· 0.2.2-rc.1（npm + Desktop）· 0.2.2-rc.2 / 0.2.2-rc.3（Desktop，作者机） |
-| 不承诺 | 0.4.x 及以后；0.3.x 里**没通过**每日巡检（`dsh-canary` 的 next/alpha 行）的 build |
+| 不承诺 | 0.3.x 及以后（0.3 资料已备，但范围未开放） |
 
 `skin.json` 同时提供只读信息字段（skin-manager 会安全忽略未知字段）：
 
 ```json
 "dshCompatibility": "0.2.2rc3",
-"dshCompatibilityRange": ">=0.2.0-rc.1 <0.2.1-0 || >=0.2.1-0 <0.2.2-0 || >=0.2.2-0 <0.3.0-0 || >=0.3.0-0 <0.4.0-0",
+"dshCompatibilityRange": ">=0.2.0-rc.1 <0.2.1-0 || >=0.2.1-0 <0.2.2-0 || >=0.2.2-0 <0.3.0-0",
 "dshCompatibilityTested": ["0.2.0-rc.2", "0.2.1-rc.3", "0.2.1-rc.5", "0.2.2-rc.1", "0.2.2-rc.2", "0.2.2-rc.3"],
 "version": "2.0.1"
 ```
@@ -459,26 +459,21 @@ node "D:\DeepSeek Harness(2)\diag\skinlab\run.mjs" --scenarios default,panel,clo
 
 ## 10. 0.3 策略与每日巡检（v2.1.6）
 
-### 10.1 0.3 段：从"锁死"改为"预适配 + 巡检兑现"（2026-11-16）
+### 10.1 0.3 段先收回：资料保留，门禁重新锁死（2026-11-16 决定）
 
-皮肤对 DSH 的适配不靠版本分支，靠 `src/65-bridge.js` 的运行时发现（slot 名 → 产品 `data-*` → CSS Module 类名后缀）。
-任何一层在没测过的 build 上失效，皮肤就可能把界面藏住 —— 那比不加载更糟。
+0.3 的预适配做了又撤回，原因写清楚，免得下一个人再放开一次：
 
-但"锁死上限"和"有风险"不是一回事：旧范围把 0.3.0 关在门外，**0.3.0 首发当天所有用户都无法安装**，
-而那时我们连它到底断了哪条钩子都还没跑过。现在的策略是两边都做：
+- DSH 0.3.0 **至今没有发布**（npm `latest` = 0.2.2-rc.1、`next` = 0.2.2-rc.3），没有真实 0.3 build 可测；
+- 预适配的承诺只能靠「每日巡检」兜底，而巡检只能证明钩子还在，证明不了整套皮肤在 0.3 上正常；
+- 一个没验证过的 0.3 装上后可能「页面正常、玻璃全无」或「路由全 404」，比被门禁挡下更难解释。
 
-1. **放开安装门禁**：第四段 `>=0.3.0-0 <0.4.0-0` 写入 `tools/compat.mjs`（唯一来源），同步到
-   `package.json` 的 `engines.dsh` + 两个官方包 peer 和 `skin.json.dshCompatibilityRange`；
-   三处一致性仍由 `test.mjs` / `audit.mjs` / `verify.mjs` 守着。
-2. **承诺由巡检兑现，不由版本号兑现**：`.github/workflows/dsh-canary.yml` 每天对 npm `next` / `alpha`
-   跑 `compat-matrix` / `hook-scan --self-check` / `upgrade-check`；0.3.x 一出现在 `next`，当天就会
-   有 run 记录与失败 issue。0.3.0 的差异表与发版日检查清单见 `docs/COMPAT-0.3.0.md`。
-3. **真断了就发新 patch 收窄**：绝不移动 tag。收窄范围 = 改 `tools/compat.mjs` 一处 + 同步三处声明，
-   发 `2.2.4`（或当前线的新版本）。
-4. **验过再"转正"**：某个 0.3.x build 通过巡检 + 真机冒烟后，把它加进 `skin.json.dshCompatibilityTested`，
-   并在这里把"预适配"改成"已实测"。`dshCompatibility` 的展示值同步更新，但仍是单串 `x.y.zrcN` 格式。
+所以 `dshCompatibilityRange` / `engines.dsh` / 官方包 peer 三处**回到 0.2.x 上限** `<0.3.0-0`，0.3.x 重新被 DSH 门禁拦下。**但资料不扔**（重做成本远高于保留）：
 
-> 结论：0.3 段是**默认放行 + 每日验证 + 断则收窄**，不是"拍脑袋放开"，也不是"锁到测完为止"。
+1. `docs/COMPAT-0.3.0.md`：6 组 50 条宿主契约触点 + §6.1（`handler` → Fetch `resource` 为什么不能顺手补）+ 13 步发版日清单，全部保留。
+2. `tools/guide-diff.mjs`：继续读 DSH 自带 upgrade-guide，报「未读且命中皮肤表面」的条目；仍挂在 canary 的 smoke job（advisory）。
+3. `hook-scan` / `upgrade-check` / `compat-matrix`：每天对 npm `next`/`alpha` 跑。0.3.x 一出现，canary 的范围判断会**失败并开 issue**——这正是现在想要的行为：提醒我们 0.3 来了。
+
+放开 0.3 的唯一路径（发补丁版，不移动 tag）：拿到一个真实 0.3 build → 按清单跑 `guide-diff` / `hook-scan` / `upgrade-check` / `smoke-dsh` → 全绿后**在同一次改动里**把范围加第四段，并把该版本加进 `skin.json.dshCompatibilityTested`。
 
 ### 10.2 DSH 怎么处理"不兼容的插件"：拒绝加载，不是只警告
 
@@ -544,16 +539,18 @@ npm run check   # 静态链，CI 同款
 smoke: PASS
 ```
 
-### 10.5 发现 0.3 预发布版之后（0.3 段已预开放，所以不是"再放范围"）
+### 10.5 发现 0.3 预发布版之后（0.3 是拦下的，所以这是"放开"的流程）
 
-1. 先看 canary 的 issue/run：哪一行失败、哪个工具失败；`smoke` job 里的 `guide-diff` 步骤列出"未读且命中皮肤表面"的指南。
-2. 本地复跑：`node tools/guide-diff.mjs --dsh <root>` → `node tools/hook-scan.mjs --dsh <root> --self-check` →
+1. 先看 canary 的 issue/run：0.3.x 出现在 `next`/`alpha` 时，范围判断会失败并开 issue——那是提醒，不是故障。
+   同时看 `smoke` job 的 `guide-diff` 步骤：它列出「未读且命中皮肤表面」的升级指南。
+2. 本地对一个真实的 0.3 build 复跑（顺序固定）：
+   `node tools/guide-diff.mjs --dsh <root>` → `node tools/hook-scan.mjs --dsh <root> --self-check` →
    `node tools/upgrade-check.mjs --dsh <root>` → `node tools/smoke-dsh.mjs --dsh <root>`，
-   再按 `docs/COMPAT-0.3.0.md` 的差异表逐条对照（表格里每一行都有"验证方法"）。
-3. **全绿 → 转正**：把该版本加进 `skin.json.dshCompatibilityTested`，更新 `dshCompatibility` 展示值与
-   `docs/COMPAT-0.3.0.md` 的结论列，发一个补丁版本。**范围不需要再改**（0.3 段已覆盖），
-   除非要收窄到某个具体 build。
-4. **不绿 → 收窄 + 修桥**：先改 `src/65-bridge.js` 的发现逻辑（或对应片段）并重跑第 2 步；
-   如果该 0.3 build 明确不可用，再改 `tools/compat.mjs` 一处常量把范围收窄（发新 patch，不移动 tag），
-   三处声明由测试同步。
-
+   再按 `docs/COMPAT-0.3.0.md` 的差异表逐条对照（每行都有验证方法），特别是 §6.1 的路由约束。
+3. **全绿 → 放开**（同一次改动，发补丁版）：
+   - `tools/compat.mjs` 的范围加第四段 `>=0.3.0-0 <0.4.0-0`（唯一来源，三处声明由测试同步）；
+   - `skin.json.dshCompatibilityTested` 加**这个确切的 0.3 版本**（不是"0.3 线"）；
+   - 更新 `docs/COMPATIBILITY.md` §1/§10.1 与 `docs/COMPAT-0.3.0.md` 的结论列；
+   - 推 tag 时仍然**一次一个**并 `verify-tag-run`。
+4. **不绿 → 继续拦着并修**：修 `src/65-bridge.js` 的发现逻辑或 §6.1 的 Fetch 迁移，重跑第 2 步；
+   在修好之前**不要**放开范围——被门禁挡下是正确行为。

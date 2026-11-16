@@ -26,20 +26,22 @@
 //                 `semver.satisfies(runtime, range, { includePrerelease: true })`.
 //   - Declaring BOTH keeps the gate working on every supported line.
 //
-// 0.3.0 (2026-11-16): the fourth branch is PROVISIONAL. DSH 0.3.0 is not published
-// yet (npm `latest` = 0.2.2-rc.1, `next` = 0.2.2-rc.3), so the branch exists to keep
-// the install gate from blocking a 0.3.0 before the skin can even be evaluated — the
-// old range turned the first 0.3.0 into "plugin incompatible" with no data. The
-// promise attached to it is the canary, not optimism:
-//   - `tools/hook-scan.mjs` / `tools/upgrade-check.mjs` run against npm `next`/`alpha`
-//     daily (.github/workflows/dsh-canary.yml) and fail the day a 0.3.x build drops a
-//     hook the selector bridge needs;
-//   - docs/COMPAT-0.3.0.md holds the surface-by-surface diff table to re-run on a
-//     real 0.3.0 prerelease;
-//   - when a 0.3.0 build passes, add it to skin.json.dshCompatibilityTested and drop
-//     the "provisional" note; when it fails, publish a patch that narrows the range
-//     BEFORE 0.3.0 goes stable (a new version, never a moved tag).
-export const DSH_COMPAT_RANGE = '>=0.2.0-rc.1 <0.2.1-0 || >=0.2.1-0 <0.2.2-0 || >=0.2.2-0 <0.3.0-0 || >=0.3.0-0 <0.4.0-0'
+// 0.3 story (decided 2026-11-16): **0.3 support is DROPPED for now.** DSH 0.3.0 is not
+// published (npm `latest` = 0.2.2-rc.1, `next` = 0.2.2-rc.3) and nothing has been
+// verified against a real 0.3 build, so the upper bound stays at `<0.3.0-0`: a 0.3.x
+// install is blocked by DSH's compatibility gate instead of loading a skin that may be
+// half-missing. The research is kept, not thrown away — re-opening this range is a
+// one-line change plus the release-day checklist:
+//   - docs/COMPAT-0.3.0.md: the surface-by-surface diff table (6 groups / 50 touchpoints)
+//     and the 13-step release-day checklist; its §6.1 records why the host route
+//     `handler` -> Fetch `resource` migration cannot be a one-field change;
+//   - tools/guide-diff.mjs: lists the installed DSH's own upgrade-guide items newer than
+//     the newest tested version that touch a skin surface (wired into the canary);
+//   - tools/hook-scan.mjs / tools/upgrade-check.mjs: run against npm `next`/`alpha`
+//     daily, so the day a 0.3.0 lands the canary says which hook broke.
+// Re-open only after a real 0.3.x build passes hook-scan + upgrade-check + smoke, and add
+// that exact version to skin.json.dshCompatibilityTested in the same change.
+export const DSH_COMPAT_RANGE = '>=0.2.0-rc.1 <0.2.1-0 || >=0.2.1-0 <0.2.2-0 || >=0.2.2-0 <0.3.0-0'
 
 /** Versions that MUST satisfy DSH_COMPAT_RANGE (acceptance samples). */
 export const DSH_COMPAT_MUST_MATCH = [
@@ -51,17 +53,18 @@ export const DSH_COMPAT_MUST_MATCH = [
   '0.2.2-alpha.3',
   '0.2.2-rc.1',
   '0.2.2',
+  '0.2.2-rc.3',
+]
+
+/** Versions that MUST NOT satisfy it: older lines and every 0.3.x / 0.4.x (stable or pre). */
+export const DSH_COMPAT_MUST_NOT_MATCH = [
+  '0.1.9',
+  '0.2.0-alpha.3',
   '0.3.0-0',
   '0.3.0-alpha.1',
   '0.3.0-rc.1',
   '0.3.0',
-  '0.3.1',
-]
-
-/** Versions that MUST NOT satisfy it: older lines and every 0.4.x (stable or pre). */
-export const DSH_COMPAT_MUST_NOT_MATCH = [
-  '0.1.9',
-  '0.2.0-alpha.3',
+  '0.3.7',
   '0.4.0-0',
   '0.4.0',
   '1.0.0',

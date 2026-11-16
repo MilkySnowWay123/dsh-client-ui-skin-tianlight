@@ -570,7 +570,7 @@ npm 包：**`dsh-client-ui-skin-tianlight`**（公开 registry，预构建、免
 
 > 预发布版本（版本号含 `-rc.`）在 GitHub 上标记为 Pre-release，`releases/latest/download/...` 只指向最新的**正式版**；要装预发布请从对应 tag 的 Release 页手动下载。
 
-### DSH Desktop（0.2.0 / 0.2.1 / 0.2.2 / 0.3.x，单包安装）
+### DSH Desktop（0.2.0 / 0.2.1 / 0.2.2，单包安装）
 
 1. 把本仓库目录（或 Release 解包后的 `dsh-client-ui-skin-tianlight/` 目录）放到任意位置，建议用纯 ASCII 路径。
 2. 在 DSH Desktop 的**插件管理器**里选择「安装本地目录 / Install from local folder」，指向该目录。Desktop 的 profile（本版为 `desktop`）由 Electron 管理，**不要**手动编辑 profile 目录下的 `package.json` / `cordis.patch.yml`；安装器会以 `link:` 依赖引用本包，并且只登记 `dsh-client-ui-skin-tianlight` 这一条 bundle。
@@ -723,7 +723,7 @@ assets/
 
 | 项 | 说明 |
 |---|---|
-| 支持范围 | **DSH 0.2.0 / 0.2.1 / 0.2.2 已实测；0.3.x 为预适配**（同一串 `>=0.2.0-rc.1 <0.2.1-0 \|\| >=0.2.1-0 <0.2.2-0 \|\| >=0.2.2-0 <0.3.0-0 \|\| >=0.3.0-0 <0.4.0-0`，一份构建通用）。0.3.0 尚未发布时先放开安装门禁，避免首发当天被"插件不兼容"挡下；承诺由每日 `dsh-canary` 对 npm `next`/`alpha` 兑现，差异表见 [docs/COMPAT-0.3.0.md](docs/COMPAT-0.3.0.md)；0.4.x 起仍由门禁拦下。矩阵与源码证据见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) |
+| 支持范围 | **DSH 0.2.0 / 0.2.1 / 0.2.2**（含 rc/alpha：`>=0.2.0-rc.1 <0.2.1-0 \|\| >=0.2.1-0 <0.2.2-0 \|\| >=0.2.2-0 <0.3.0-0`），一份构建通用；**0.3.x 暂不支持**（已放弃预适配：0.3.0 尚未发布，没在真实 0.3 上验证过的范围不放开，装 0.3 会被 DSH 门禁拦下）。0.3 的差异表/检查清单/预警工具保留在 [docs/COMPAT-0.3.0.md](docs/COMPAT-0.3.0.md)，等 0.3.0 真发布再按清单验证后放开。矩阵与源码证据见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) |
 | 测试版本 | 真实运行时实测：`0.2.0-rc.2`、`0.2.1-rc.5`（npm）、`0.2.2-rc.1`（npm + 本机 Desktop 实机）；`0.2.1-rc.3` Desktop 为 v0.3.0 基线 |
 | v0.5.0 验证状态 | 已整合 git `72d72fe`：724,684 字符 / 21 片段，静态链全 PASS（test 61/61）；运行时矩阵 **4/4 运行时 PASS，323/323 断言，0 console error**（web 80/80 ×3 + Desktop 83/83），旧宿主 × 新客户端降级 **17/17 PASS**；详见 [docs/RELEASE-0.5.0.md](docs/RELEASE-0.5.0.md) §4、残余风险 §9 |
 | v0.5.1 验证状态 | 已整合 git `7282d94`：768,962 字符 / 21 片段，静态链全 PASS（test 61/61）；运行时矩阵 **4/4 运行时 PASS，387/387 断言**（web 96/96 ×3 + Desktop 99/99；0 failed / 0 skipped / 0 console error），C4 默认关闭态零外部请求（0 open-meteo），旧宿主降级 17/17 PASS；详见 [docs/RELEASE-0.5.1.md](docs/RELEASE-0.5.1.md) §8 |

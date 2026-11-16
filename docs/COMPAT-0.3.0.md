@@ -1,4 +1,4 @@
-# 天光皮肤 × DSH 0.3.0：宿主契约触点盘点（只读）
+# 天光皮肤 × DSH 0.3.0：宿主契约触点盘点（0.3 暂不支持；资料保留，放开前先验证）
 
 - 盘点对象：本仓库当前工作树（`src/*.js` 片段（按 `tools/build.mjs` 的 FRAGMENTS 顺序拼接）→ `lib/client.js` 浏览器半；`lib/index.js` + `lib/routes/*` 宿主半）。
 - 实测宿主：DSH **0.2.2-rc.3**（Desktop，asar `D:\dsh\resources\app.asar`）。0.3.0 未发布（`latest=0.2.2-rc.1`、`next=0.2.2-rc.3`），故「0.3.0 风险」列**全部是推理，不是实测**。
@@ -9,7 +9,7 @@
 
 1. **硬风险（整包不出现）**：`window.__ModuleLoader__.load({id,factory})`（§6-1）若改契约，皮肤客户端在 ESM 顶层直接 ReferenceError，无任何 try/catch——壁纸/玻璃/桌宠全无。
 2. **硬风险（功能级全灭）**：宿主 `webServer.register({kind:'prefix',path,handler})` 走的是**遗留 `handler` 分支**（§6-4）；0.2.2-rc.3 官方包已统一改用 Fetch 风格 `resource`，该分支一旦在 0.3.0 删除，18 条精确路由 + 5 条前缀 + 资源兜底全 404。**不能靠"再挂一个 resource"兜底**（会让写路由全 405，见 §6.1），只能整包改 Fetch 语义。
-3. **硬风险（与 DOM 无关，发版流程）**：`engines.dsh` / 两个 optional peer / `skin.json.dshCompatibilityRange` 决定安装与 profile 启动能否启用（`dsh/docs/upgrade-guide/v0.2.1-alpha.3/plugin-engines-dsh`：`engines.dsh` 单独判定，peer 被忽略，命中即 `IncompatiblePlugin`）。**本条盘点时 0.3 臂只在工作树里**（`package.json` 的 `engines.dsh` + 两个 optional peer、`skin.json.dshCompatibilityRange`）；提交后以 HEAD 为准，发版前用清单第 2 条自查。
+3. **门禁现状（2026-11-16 决定）**：0.3 预适配已**撤回**，engines.dsh / 两个 optional peer / skin.json.dshCompatibilityRange 都回到 <0.3.0-0，0.3.x 会被 DSH 门禁拦下（跳过整层）。本文与清单**保留**：放开 0.3 前必须先拿到真实 0.3 build，按第 6 节清单全绿后再在同一次改动里放开范围并登记 dshCompatibilityTested。
 4. **中风险（静默）**：DOM 钩子层（`data-slot` / `data-composer-card` / `data-sidebar-collapsed` / `_newSession` 等）在 0.2.2-rc.3 全部真实存在；0.3.0 改名或改 shadow DOM 时桥**零命中且不报错**——壁纸在、玻璃全无。
 5. **中风险（认知纠正）**：皮肤**不是**「不注册 slot」——它注册 4 处：`conversation.input.right`×2（推理滑杆、字体按钮）、`settings.section` 与 `sidebar.footer.action`（WE 壁纸库）。
 6. **软风险**：`locale` / `theme` / `slots` / `remote.session` / `remote.llm` / `uiWorkspace` / `llm` / `agentDefaultModel` / `profileContext` 全部已包 try/catch + 存在性探测，缺一个只丢一个功能；`--dsw-*` token 改名只丢对应那层样式。

@@ -131,7 +131,7 @@ DSH 的客户端插件加载约定是"一个插件只有一个 ESM 文件"（见
 ## 6. 兼容策略与每日巡检
 
 - 三处声明必须一致（`package.json` 的 `engines.dsh` + 官方包 peer、`skin.json.dshCompatibilityRange`），由 `tools/test.mjs` / `tools/audit.mjs` / `tools/verify.mjs` 守住；DSH 只读 `engines.dsh`/peer，不读 `dshCompatibilityRange`。
-- 支持范围：DSH 0.2.0 / 0.2.1 / 0.2.2（含 rc/alpha）**已实测**；0.3.x 为**预适配**（`>=0.3.0-0 <0.4.0-0`，见 `tools/compat.mjs` 注释），由每日巡检兑现承诺，差异表见 [docs/COMPAT-0.3.0.md](docs/COMPAT-0.3.0.md)。
+- 支持范围：DSH 0.2.0 / 0.2.1 / 0.2.2（含 rc/alpha）**已实测**；**0.3.x 暂不支持**（2026-11-16 放弃预适配：上限回到 `<0.3.0-0`，门禁重新拦下，DSH 会跳过整层而不是加载一个没验证过的皮肤）。0.3 的差异表、§6.1 路由迁移约束与 13 步发版日清单保留在 [docs/COMPAT-0.3.0.md](docs/COMPAT-0.3.0.md)，等真实 0.3 build 验过再放开。
 - 发布侧：tag 必须**一个一个推**；单次 push 超过 3 个 tag 时 GitHub 不产生 push 事件，`release.yml` 不会启动。推完用 `node tools/verify-tag-run.mjs <tag>` 确认 run 存在（`tools/release.mjs` 的收尾提示与 `PUBLISH.md` 都写了这条）；补发走 `workflow_dispatch` 的 `tag` 输入，不动 tag。
 - 每日巡检：`.github/workflows/dsh-canary.yml`（npm `next`、`alpha`、最新已测版本对照；三个工具 + 范围判断；越界开 issue）；策略细节见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) §10。
 - 升级前本地复验：`node tools/compat-matrix.mjs --dsh …`、`node tools/hook-scan.mjs --self-check`、`node tools/upgrade-check.mjs`、`node tools/smoke-dsh.mjs --dsh …`。

@@ -4745,7 +4745,7 @@ test('v2.0.0 client half wires the built-in dsh adapter, labels and provider pic
 const SKIN_MANIFEST = JSON.parse(readFileSync(new URL('../skin.json', import.meta.url), 'utf8'))
 const PACKAGE_MANIFEST = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
 
-test('DSH compatibility range matches 0.2.0/0.2.1/0.2.2/0.3.x stable and prerelease builds', () => {
+test('DSH compatibility range matches 0.2.0/0.2.1/0.2.2 stable and prerelease builds', () => {
   for (const version of DSH_COMPAT_MUST_MATCH) {
     assert.equal(satisfies(version, DSH_COMPAT_RANGE), true, version + ' must match (plain semver)')
     assert.equal(satisfies(version, DSH_COMPAT_RANGE, { includePrerelease: true }), true, version + ' must match (harness includePrerelease)')
@@ -4753,19 +4753,16 @@ test('DSH compatibility range matches 0.2.0/0.2.1/0.2.2/0.3.x stable and prerele
   for (const version of ['0.2.0-rc.2', '0.2.1-alpha.1', '0.2.1-rc.5', '0.2.2-rc.1', '0.2.2']) {
     assert.equal(satisfies(version, DSH_COMPAT_RANGE), true, version + ' must match')
   }
-  // The 0.3 branch is the provisional one: it must accept the day a 0.3.0 lands
-  // (that is the whole point — the old upper bound blocked the install outright).
-  for (const version of ['0.3.0-0', '0.3.0-alpha.1', '0.3.0-rc.1', '0.3.0', '0.3.7']) {
-    assert.equal(satisfies(version, DSH_COMPAT_RANGE), true, version + ' must match (0.3 branch)')
-  }
 })
 
-test('DSH compatibility range blocks 0.4.x and later (stable and prerelease)', () => {
+test('DSH compatibility range blocks 0.3.x and later (0.3 support dropped, materials kept)', () => {
+  // Decision 2026-11-16: 0.3 support is dropped until a real 0.3 build passes. The
+  // install gate must keep blocking it — an unverified 0.3 skin is worse than none.
   for (const version of DSH_COMPAT_MUST_NOT_MATCH) {
     assert.equal(satisfies(version, DSH_COMPAT_RANGE), false, version + ' must not match (plain semver)')
     assert.equal(satisfies(version, DSH_COMPAT_RANGE, { includePrerelease: true }), false, version + ' must not match (includePrerelease)')
   }
-  for (const version of ['0.4.0-0', '0.4.0-rc.1', '0.4.0']) {
+  for (const version of ['0.3.0-0', '0.3.0-alpha.1', '0.3.0-rc.1', '0.3.0', '0.4.0']) {
     assert.equal(satisfies(version, DSH_COMPAT_RANGE), false, version + ' must not match')
   }
 })

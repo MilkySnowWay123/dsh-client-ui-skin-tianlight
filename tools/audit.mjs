@@ -557,15 +557,15 @@ report(
     // regression evidence for the bug this guarded: the old broad range silently
     // excluded every 0.2.1-* / 0.2.2-* prerelease build under default semver.
     satisfies('0.2.1-rc.5', LEGACY_BROAD_RANGE) === false &&
-    // v2.2.4: the 0.3 branch is provisional on purpose — a 0.3.0 must be installable
-    // before the day it ships (a blocked install cannot be "verified later"), and the
-    // commit is kept honest by the daily canary instead of the range. The 0.4 upper
-    // bound is what stays hard.
-    satisfies('0.3.0-rc.1', DSH_COMPAT_RANGE) === true &&
+    // Decision 2026-11-16: 0.3 support was dropped, so the gate must block it again.
+    // The research stays in docs/COMPAT-0.3.0.md and the canary; re-opening the range
+    // requires a real 0.3 build passing the checklist first.
+    satisfies('0.3.0-rc.1', DSH_COMPAT_RANGE) === false &&
+    satisfies('0.3.0', DSH_COMPAT_RANGE) === false &&
     satisfies('0.4.0-0', DSH_COMPAT_RANGE) === false
     ? 'PASS'
     : 'FAIL',
-  'v2.2.4 DSH range: 0.2.x (incl. rc/alpha) + provisional 0.3.x installed; 0.4.x blocked',
+  'v2.2.4 DSH range: 0.2.x (incl. rc/alpha) supported; 0.3.x+ blocked (0.3 dropped, materials kept)',
 )
 
 // ---- v2.0.1: author default appearance (preset file <-> embedded client constant) ----
