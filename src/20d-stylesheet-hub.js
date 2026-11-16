@@ -397,7 +397,7 @@ body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-eff
 	background-color: color-mix(in srgb, var(--tl-glass-fill) 72%, transparent) !important;
 	background-image: var(--tl-liquid-surface) !important;
 	background-size: var(--tl-liquid-surface-size);
-	border-color: rgba(255, 255, 255, calc(var(--tl-liquid-rim) + 0.16)) !important;
+	border-color: transparent !important;
 	box-shadow:
 		var(--tl-liquid-rim-shadow),
 		var(--tl-liquid-glow-shadow),
@@ -510,7 +510,7 @@ body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-eff
 	background-color: color-mix(in srgb, var(--tl-glass-fill) 78%, transparent);
 	background-image: var(--tl-liquid-surface);
 	background-size: var(--tl-liquid-surface-size);
-	border-color: rgba(255, 255, 255, calc(var(--tl-liquid-rim) + 0.14));
+	border-color: transparent;
 	box-shadow:
 		var(--tl-liquid-rim-shadow),
 		var(--tl-liquid-glow-shadow),

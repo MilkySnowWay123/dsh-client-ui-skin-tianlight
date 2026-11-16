@@ -144,6 +144,19 @@ expect(
   composerCardRules.length > 0 && composerCardRules.every((body) => /inset 0 1px 0/.test(body) === false),
   composerCardRules.map((body) => body.trim().slice(0, 120)).join(' | '),
 )
+// v2.2.8: the depth presets must not repaint a white outline on the composer or the
+// model pill. --tl-glass-line is fully transparent; an explicit rgba(255,255,255,…)
+// border reinstated the "white ring" the preview report named, so any such rule fails.
+const whiteOutlineRules = [...blanked.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(
+  (match) =>
+    /\[data-tl-(?:composer|model)\]/.test(match[1]) &&
+    /border-color\s*:\s*rgba\(\s*255\s*,\s*255\s*,\s*255/.test(match[2]),
+)
+expect(
+  'the composer and the model pill keep no white border in the depth path',
+  whiteOutlineRules.length === 0,
+  whiteOutlineRules.map((match) => match[1].trim().slice(0, 120)).join(' | '),
+)
 
 // ---- v2.2.0 live glass: every real-time filter must be gated on the installer's
 // effective flag, so the default path (and low power / 15 fps) adds no compositing.
@@ -193,8 +206,8 @@ expect(
   css.includes('--tl-liquid-rim-shadow: inset 0 0 0 0 rgba(0, 0, 0, 0)'),
 )
 expect(
-  'skin hairlines stay faint (glass line alpha <= 0.12)',
-  css.includes('--tl-glass-line: rgba(255, 255, 255, 0.12)') && css.includes('--tl-glass-line: rgba(150, 195, 250, 0.10)'),
+  'skin hairlines are gone (glass line fully transparent)',
+  css.includes('--tl-glass-line: rgba(255, 255, 255, 0)') && css.includes('--tl-glass-line: rgba(150, 195, 250, 0)'),
 )
 
 expect(
