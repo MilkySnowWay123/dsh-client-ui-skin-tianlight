@@ -376,7 +376,9 @@ body[data-dsh-tianlight][data-tl-glass-effective="real"] [data-tl-rheo][data-tl-
 	box-shadow:
 		inset 0 1px 0 rgba(255, 255, 255, var(--tl-liquid-hi)),
 		0 6px 20px rgba(8, 26, 44, 0.16);
-	border-color: rgba(255, 255, 255, calc(var(--tl-liquid-hi) + 0.18)) !important;
+	/* v2.2.8 final: the pill's own 0.5px edge follows the transparent glass line now;
+	   the inset top highlight above still gives it a rim without a white outline. */
+	border-color: transparent !important;
 }
 body[data-dsh-tianlight][data-tl-glass-effective="real"] [data-tl-model],
 body[data-dsh-tianlight][data-tl-glass-effective="real"] [data-tl-rheo][data-tl-rheo-empty] {
@@ -550,7 +552,10 @@ body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-eff
 		radial-gradient(120% 140% at 0% 0%, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 48%),
 		var(--tl-liquid-surface) !important;
 	background-size: auto, auto, var(--tl-liquid-surface-size);
-	border-color: rgba(255, 255, 255, calc(var(--tl-liquid-hi) + 0.30)) !important;
+	/* v2.2.8 final: the depth rule used to override the transparent token with a
+	   white 0.38 edge — the "white ring around the chat box" report. The card reads
+	   from its fill, sheen and drop shadow, not from an outline. */
+	border-color: transparent !important;
 	box-shadow:
 		var(--tl-liquid-rim-shadow),
 		var(--tl-liquid-lens-shadow),
