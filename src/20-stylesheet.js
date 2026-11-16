@@ -24,7 +24,7 @@ body[data-dsh-tianlight] {
 	   near-transparent cool tint; the visible body comes from the backdrop filter and
 	   the 1px light/dark rim, so bright wallpapers stay coloured instead of milky. */
 	--tl-glass-fill: rgba(205, 228, 250, calc(0.05 * var(--tl-glass-m, 1)));
-	--tl-glass-line: rgba(255, 255, 255, 0.12);
+	--tl-glass-line: rgba(255, 255, 255, 0);
 	--tl-glass-blur: 12px;
 	/* Modal-grade surface: a settings panel has to stay readable over the chat, so
 	   it needs its own fill instead of the zeroed bg-layer tokens. The value is high
@@ -39,8 +39,8 @@ body[data-dsh-tianlight] {
 	--tl-ink: #0f2438;
 	--tl-ink-soft: #3a5a78;
 	--tl-ink-faint: #5d7d99;
-	--tl-line: rgba(112, 156, 202, 0.16);
-	--tl-line-strong: rgba(86, 134, 186, 0.24);
+	--tl-line: rgba(112, 156, 202, 0.06);
+	--tl-line-strong: rgba(86, 134, 186, 0.12);
 	--tl-accent: #2b74c9;
 	--tl-accent-soft: rgba(43, 116, 201, 0.14);
 	--tl-code: rgba(236, 244, 252, 0.40);
@@ -119,14 +119,14 @@ body[data-dsh-tianlight][data-ds-dark-theme] {
 	--tl-shell-soft: rgba(10, 18, 32, 0);
 	--tl-overlay: rgba(12, 22, 38, 0.84);
 	--tl-glass-fill: rgba(16, 26, 42, calc(0.38 * var(--tl-glass-m, 1)));
-	--tl-glass-line: rgba(150, 195, 250, 0.10);
+	--tl-glass-line: rgba(150, 195, 250, 0);
 	--tl-glass-blur: 14px;
 	--tl-panel-fill: rgba(10, 18, 32, max(0.96, calc(0.88 * var(--tl-glass-m, 1))));
 	--tl-ink: #eaf3ff;
 	--tl-ink-soft: #a9c2dc;
 	--tl-ink-faint: #7f9bb8;
-	--tl-line: rgba(126, 178, 232, 0.14);
-	--tl-line-strong: rgba(142, 194, 246, 0.22);
+	--tl-line: rgba(126, 178, 232, 0.06);
+	--tl-line-strong: rgba(142, 194, 246, 0.12);
 	--tl-accent: #7fb6ff;
 	--tl-accent-soft: rgba(127, 182, 255, 0.16);
 	--tl-code: rgba(10, 20, 34, 0.44);

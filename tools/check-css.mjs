@@ -193,8 +193,8 @@ expect(
   css.includes('--tl-liquid-rim-shadow: inset 0 0 0 0 rgba(0, 0, 0, 0)'),
 )
 expect(
-  'skin hairlines stay faint (glass line alpha <= 0.12)',
-  css.includes('--tl-glass-line: rgba(255, 255, 255, 0.12)') && css.includes('--tl-glass-line: rgba(150, 195, 250, 0.10)'),
+  'skin hairlines are gone (glass line fully transparent)',
+  css.includes('--tl-glass-line: rgba(255, 255, 255, 0)') && css.includes('--tl-glass-line: rgba(150, 195, 250, 0)'),
 )
 
 expect(

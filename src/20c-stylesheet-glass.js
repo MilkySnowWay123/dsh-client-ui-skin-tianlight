@@ -468,6 +468,10 @@ body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-eff
 		0 0 0 0.5px var(--tl-glass-line),
 		0 10px 30px rgba(8, 26, 44, 0.14);
 }
+/* v2.2.8: same smoked base for the non-live path (depth without live sampling). */
+body[data-dsh-tianlight][data-ds-dark-theme]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar], [data-tl-sidebar-col]) {
+	background-color: rgba(8, 15, 26, 0.66) !important;
+}
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-settings], [data-tl-wall]) {
 	background-image:
 		linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 22%),
@@ -715,16 +719,19 @@ body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] 
 	body[data-dsh-tianlight][data-tl-glass-live-effective="on"] :is([data-tl-sidebar], [data-tl-sidebar-col]) {
 		background-color: color-mix(in srgb, var(--tl-glass-fill) 30%, transparent) !important;
 	}
-	/* Dark mode needs more of the smoked fill: 30% of a dark tint over a bright
-	   wallpaper is still a bright pane. */
+	/* v2.2.8: dark theme gets a smoked base, not a tint. 82% of a 0.38-alpha fill is
+	   still 0.31 over the wallpaper, and a bright wallpaper shows straight through the
+	   pane — the "left sidebar looks washed out / whitish" report. 0.72 is dark enough
+	   to hold text on any wallpaper while keeping the moving backdrop readable. */
 	body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] :is([data-tl-sidebar], [data-tl-sidebar-col]) {
-		background-color: color-mix(in srgb, var(--tl-glass-fill) 82%, transparent) !important;
+		background-color: rgba(8, 15, 26, 0.72) !important;
 	}
 	body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] :is([data-tl-settings], [data-tl-wall]) {
 		background-color: color-mix(in srgb, var(--tl-panel-fill) 74%, transparent) !important;
 	}
+	/* The role hub had the same washed-out top: 78% of the overlay left 0.65 alpha. */
 	body[data-dsh-tianlight][data-ds-dark-theme][data-tl-glass-live-effective="on"] [data-tl-hub] [data-tl-hub-panel] {
-		background-color: color-mix(in srgb, var(--tl-overlay) 78%, transparent) !important;
+		background-color: rgba(9, 17, 30, 0.92) !important;
 	}
 	/* Composer keeps its ::before ownership (a filter on the card itself would
 	   re-anchor its non-portaled tooltips); live only makes that one layer real. */
