@@ -566,6 +566,14 @@ try {
   const errors = pluginErrors(cdp)
   assert('no console error from this plugin', errors.length === 0, errors.length === 0 ? String(cdp.consoleCount) + ' console call(s) total' : errors.length + ' error(s)')
   if (errors.length > 0) throw new Error('this plugin logged errors')
+
+  // Optional pixel evidence: `--shot <file>` writes the final page for a visual review
+  // (a CSS change can pass every assertion and still look wrong).
+  const shotPath = option('--shot', null)
+  if (shotPath !== null) {
+    await cdp.screenshot(shotPath)
+    console.log('smoke: screenshot ' + shotPath)
+  }
 } catch (error) {
   exitCode = 1
   console.error('smoke: FAILED: ' + (error instanceof Error ? error.message : String(error)))

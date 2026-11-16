@@ -136,6 +136,14 @@ expect(
     liveBlurRules.some((match) => /\[data-tl-menu\]/.test(match[1])) &&
     liveBlurRules.some((match) => /\[data-tl-model\]/.test(match[1])),
 )
+// v2.2.6: the composer card had a 0.5px border AND a 1px inset top highlight, which
+// read as a stray second line above the input. One edge only.
+const composerCardRules = [...blanked.matchAll(/\[data-tl-composer\](?!::before)[^{]*\{([^{}]*)\}/g)].map((match) => match[1])
+expect(
+  'the composer card draws one edge, not two (no 1px inset top highlight)',
+  composerCardRules.length > 0 && composerCardRules.every((body) => /inset 0 1px 0/.test(body) === false),
+  composerCardRules.map((body) => body.trim().slice(0, 120)).join(' | '),
+)
 
 // ---- v2.2.0 live glass: every real-time filter must be gated on the installer's
 // effective flag, so the default path (and low power / 15 fps) adds no compositing.
