@@ -864,11 +864,13 @@ report(
   "the scene layer still paints the static liquid-glass grain/colour veil",
 )
 report(
-  /\[data-tl-composer\]::before[\s\S]{0,500}?backdrop-filter/.test(source) &&
-    /\[data-tl-liquid-fallback\][\s\S]{0,500}?backdrop-filter/.test(source)
+  /\[data-tl-composer\]::before[\s\S]{0,500}?backdrop-filter\s*:/.test(source) &&
+    // v2.2.5: the full-viewport fallback must NOT blur; that smeared the whole wallpaper.
+    // Require a DECLARATION (`backdrop-filter:`), not just the word in a comment.
+    /\[data-tl-liquid-fallback\][\s\S]{0,700}?(?:-webkit-)?backdrop-filter\s*:/.test(source) === false
     ? "PASS"
     : "FAIL",
-  "panel glass and the scene-less fallback keep their bounded live blur (depth semantics unchanged)",
+  "composer keeps its bounded live blur; the full-viewport fallback paints no blur (wallpaper stays crisp)",
 )
 // B) The selector bridge must no longer run a full document scan from the mutation
 // rAF: added nodes are stamped incrementally and the full pass is a >=500ms fallback.

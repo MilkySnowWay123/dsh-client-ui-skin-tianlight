@@ -153,13 +153,26 @@ expect(
 const lensRules = liveBlurRules.filter((match) => /url\(#tl-glass-lens-filter\)/.test(match[2]))
 expect(
   'the live lens uses an SVG displacement filter gated on runtime support',
-  lensRules.length >= 2 && lensRules.every((match) => /data-tl-glass-lens-support="1"/.test(match[1])),
+  lensRules.length >= 1 && lensRules.every((match) => /data-tl-glass-lens-support="1"/.test(match[1])),
   lensRules.map((match) => match[1].trim()).join(' | '),
 )
 expect(
-  'live glass covers the large panels and the composer',
-  liveRules.some((match) => /\[data-tl-sidebar\]/.test(match[1]) && /\[data-tl-settings\]/.test(match[1])) &&
-    liveRules.some((match) => /\[data-tl-composer\]::before/.test(match[1])),
+  'live glass is bounded to the composer and the small floating controls',
+  liveRules.some((match) => /\[data-tl-composer\]::before/.test(match[1])) &&
+    liveRules.some((match) => /\[data-tl-menu\]/.test(match[1])) &&
+    liveRules.some((match) => /\[data-tl-model\]/.test(match[1])),
+)
+// v2.2.5: liquid glass must never blur the wallpaper as a whole. Full-viewport nodes
+// (the scene-less fallback, the hub scrim) and large panels (settings / wallpaper panel
+// / hub panel / the sidebar column) must stay filter-free; they carry tint and borders
+// only. A filter there is the reported "the background wallpaper is all blurred".
+const fullSurfaceFiltered = liveBlurRules.filter((match) =>
+  /\[data-tl-liquid-fallback\]|\[data-tl-hub-mask\]|\[data-tl-settings\]|\[data-tl-wall\]|\[data-tl-hub-panel\]|\[data-tl-sidebar/.test(match[1]),
+)
+expect(
+  'no full-viewport or large panel receives a backdrop-filter (the wallpaper stays crisp)',
+  fullSurfaceFiltered.length === 0,
+  fullSurfaceFiltered.map((match) => match[1].trim()).join(' | '),
 )
 expect(
   'text-bearing glass keeps a legibility floor (bubble >= 0.30; live lowers decorative fill)',
