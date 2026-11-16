@@ -37,6 +37,7 @@ import { isTextPath, normalizeTextBuffer, normalizeTextTree } from './pack-text.
 import * as tlInstaller from '../bin/installer.mjs'
 import {
   DSH_COMPAT_MUST_MATCH,
+  DSH_COMPAT_MUST_NOT_MATCH,
   DSH_COMPAT_RANGE,
   LEGACY_BROAD_RANGE,
   OFFICIAL_PEER_PACKAGES,
@@ -4754,10 +4755,15 @@ test('DSH compatibility range matches 0.2.0/0.2.1/0.2.2 stable and prerelease bu
   }
 })
 
-test('DSH compatibility range blocks 0.3.x and later (stable and prerelease)', () => {
-  for (const version of ['0.3.0-rc.1', '0.3.0-alpha.1', '0.3.0', '0.4.0']) {
+test('DSH compatibility range blocks 0.3.x and later (0.3 support dropped, materials kept)', () => {
+  // Decision 2026-11-16: 0.3 support is dropped until a real 0.3 build passes. The
+  // install gate must keep blocking it — an unverified 0.3 skin is worse than none.
+  for (const version of DSH_COMPAT_MUST_NOT_MATCH) {
     assert.equal(satisfies(version, DSH_COMPAT_RANGE), false, version + ' must not match (plain semver)')
     assert.equal(satisfies(version, DSH_COMPAT_RANGE, { includePrerelease: true }), false, version + ' must not match (includePrerelease)')
+  }
+  for (const version of ['0.3.0-0', '0.3.0-alpha.1', '0.3.0-rc.1', '0.3.0', '0.4.0']) {
+    assert.equal(satisfies(version, DSH_COMPAT_RANGE), false, version + ' must not match')
   }
 })
 
@@ -6306,6 +6312,27 @@ await testAsync('splash film wrapper: normal/skip/fallback/hard-stop/dispose/err
     }
     rmSync(dir, { recursive: true, force: true })
   }
+})
+
+// v2.2.4: the loader call is evaluated before any factory body runs, so the envelope
+// guards it instead of throwing an uncaught error owned by nobody. This is the only
+// fail-hard point the skin cannot wrap in try/catch; the test pins the fail-soft path.
+await testAsync('the client envelope reports a missing module loader instead of throwing', async () => {
+  const savedWindow = globalThis.window
+  const savedWarn = console.warn
+  const warnings = []
+  try {
+    delete globalThis.window
+    console.warn = (...args) => warnings.push(args.map((part) => String(part)).join(' '))
+    await import(new URL('../lib/client.js', import.meta.url).href + '?envelope-guard=' + Date.now())
+  } finally {
+    console.warn = savedWarn
+    if (savedWindow === undefined) delete globalThis.window
+    else globalThis.window = savedWindow
+  }
+  assert.equal(warnings.length, 1, 'exactly one diagnostic, no uncaught error')
+  assert.match(warnings[0], /client module loader contract missing/, 'the missing contract is named')
+  assert.match(warnings[0], /__ModuleLoader__/, 'the expected contract is named')
 })
 
 console.log(`tests: ${passed} passed, ${failures.length} failed`)

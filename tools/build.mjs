@@ -24,15 +24,26 @@ const FRAGMENTS = [
   '10-constants.js',
   '11-platform.js',
   '12-schema.js',
+  '12b-schema-sync.js',
+  '12c-schema-eng.js',
   '13-i18n.js',
   '20-stylesheet.js',
+  '20b-stylesheet-shell.js',
+  '20c-stylesheet-glass.js',
+  '20d-stylesheet-hub.js',
   '30-wallpaper.js',
+  '30b-wallpaper-scene.js',
   '31-engine-extra.js',
   '32-effects.js',
   '35-context.js',
   '40-companion.js',
+  '40b-companion-install.js',
+  '40c-companion-duty.js',
   '42-life.js',
   '44-pet-brain.js',
+  '44b-pet-state.js',
+  '44c-pet-llm.js',
+  '44d-pet-mind.js',
   '48-pet-agent.js',
   '50-rheostat.js',
   '55-lowpower.js',
@@ -40,11 +51,15 @@ const FRAGMENTS = [
   '58-legibility.js',
   '59-splash.js',
   '59b-splash-film.js',
+  '59c-splash-film-runtime.js',
+  '59d-splash-film-install.js',
   '60-zones.js',
   '65-bridge.js',
   '70-sidebar.js',
+  '70b-wallpaper-sidebar-panel.js',
   '72-we-library.js',
   '76-role-hub.js',
+  '76b-role-hub-install.js',
   '90-font.js',
   '95-a11y.js',
   '99-apply.js',
@@ -97,13 +112,16 @@ const text = parts.join('')
 
 // Cheap product invariants: the loader envelope and every region must survive assembly.
 const problems = []
-if (!text.startsWith('window.__ModuleLoader__.load(')) problems.push('loader envelope missing')
+// v2.2.4: the load call sits inside a guard IIFE so a renamed/removed loader contract
+// reports one named line instead of throwing an uncaught error before any factory runs.
+if (!text.startsWith('(function () {\n')) problems.push('loader envelope guard missing')
+if (!text.includes('loader.load({')) problems.push('loader.load call missing')
 // apply() may be async since v0.5.0 (it awaits the host-settings bootstrap).
 if (!/^[ \t]+(async )?function apply\(ctx\) \{/m.test(text)) problems.push('apply() missing')
 for (const region of REGIONS) {
   if (!text.includes('//#region ' + region)) problems.push('region missing: ' + region)
 }
-if (!/}\);\n$/.test(text)) problems.push('product does not end with the module close')
+if (!/\t\}\);\n\}\)\(\);\n$/.test(text)) problems.push('product does not end with the module close')
 if (problems.length > 0) {
   console.error('build refused:')
   for (const problem of problems) console.error('  - ' + problem)
