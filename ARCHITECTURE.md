@@ -17,39 +17,44 @@ DSH 的客户端插件加载约定是"一个插件只有一个 ESM 文件"（见
 | 5 | `12b-schema-sync.js` | schema | 60912 | 设置镜像与宿主同步：迁移、冲突重放、备份/恢复、跨标签广播 |
 | 6 | `12c-schema-eng.js` | schema | 14643 | 模块标签/描述与工程面板分区（含 tl5-eng 样式） |
 | 7 | `13-i18n.js` | i18n | 16333 | 中英文字典与 `registerTl5Strings` |
-| 8 | `20-stylesheet.js` | stylesheet | 144872 | 全部 CSS：玻璃、分区、字体、无障碍、开机动画 |
-| 9 | `30-wallpaper.js` | wallpaper | 96828 | 壁纸目录/变体/图层/播放设置（场景运行时见 30b） |
-| 10 | `30b-wallpaper-scene.js` | wallpaper | 80385 | 壁纸场景运行时：video/image/scene 挂载、播放控制与释放（installScene） |
-| 11 | `31-engine-extra.js` | wallpaper engine extras | 56604 | WebWallGL 场景引擎桥与预览 |
-| 12 | `32-effects.js` | ambient effects | 41348 | 环境特效（光斑、雨雪、尘埃） |
-| 13 | `35-context.js` | smart context | 99750 | 智能情境：时段、天气、专注联动 |
-| 14 | `40-companion.js` | companion | 37749 | 桌宠外观、形象库、动作包与聊天记录存储（运行时见 40b，职责通道见 40c） |
-| 15 | `40b-companion-install.js` | companion | 65125 | 桌宠运行时：拖拽、心情、互动菜单（installCompanion） |
-| 16 | `40c-companion-duty.js` | companion | 8503 | 桌宠职责通道：role pack 动作归一化与派发 |
-| 17 | `42-life.js` | life rhythm | 52033 | 生活节奏、预算、回忆与延后队列 |
-| 18 | `44-pet-brain.js` | pet brain | 26187 | 桌宠权限模型、能力分级与提示词常量 |
-| 19 | `44b-pet-state.js` | pet brain | 48648 | 桌宠状态：存储、权限/暂停/配额、审计、本地回复 |
-| 20 | `44c-pet-llm.js` | pet brain | 29224 | 桌宠 LLM 通道：适配器、能力调用、聊天/历史/上下文 |
-| 21 | `44d-pet-mind.js` | pet brain | 32285 | 桌宠私密思考引擎：预算、思考、tick 与 API |
-| 22 | `48-pet-agent.js` | pet agent | 23685 | 桌宠接入 DSH Agent（受控） |
-| 23 | `50-rheostat.js` | reasoning rheostat | 20501 | 推理滑杆（只影响本会话展示） |
-| 24 | `55-lowpower.js` | low power | 10650 | 省电模式：三输入一决策，暂停壁纸与镜像 |
-| 25 | `57-glass.js` | glass opacity | 17730 | 液态玻璃三档与深度、v2.2.0 实时渲染开关 |
-| 26 | `58-legibility.js` | legibility | 25156 | 可读性对比/字号/字距 |
-| 27 | `59-splash.js` | splash | 25280 | 开机动画：`splashPlan` 单点决策 + 简洁 A 版 |
-| 28 | `59b-splash-film.js` | （splash 长片） | 110910 | 18.5 秒长片（WebGL/WAAPI，自带硬停与释放） |
-| 29 | `60-zones.js` | zone framing | 12967 | 分区取景（主图/轨道） |
-| 30 | `65-bridge.js` | selector bridge | 17988 | 运行时选择器桥：slot → 产品 `data-*` → 类名后缀 |
-| 31 | `70-sidebar.js` | wallpaper sidebar | 59244 | 壁纸面板 i18n、分享/导入导出编解码助手（组件见 70b） |
-| 32 | `70b-wallpaper-sidebar-panel.js` | wallpaper sidebar | 152219 | 壁纸面板 React 组件 WallpaperPanel：来源/清单/图层/播放/库（约 3850 行） |
-| 33 | `72-we-library.js` | we library | 60116 | Wallpaper Engine 库与场景选择 |
-| 34 | `76-role-hub.js` | role hub | 74825 | 角色中枢 i18n 字典、常量与通用助手（运行时见 76b） |
-| 35 | `76b-role-hub-install.js` | role hub | 181030 | 角色中枢运行时：全屏 overlay、各卡片与状态（installRoleHub，约 3800 行） |
-| 36 | `90-font.js` | font panel | 32193 | 字体面板（内置字体清单/拖拽） |
-| 37 | `95-a11y.js` | accessibility | 20675 | 无障碍（键盘、焦点、对比度） |
-| 38 | `99-apply.js` | apply | 17196 | `apply(ctx)`：按固定顺序安装/注册每个模块，单例与热重载 |
+| 8 | `20-stylesheet.js` | stylesheet | 19286 | 全部 CSS：玻璃、分区、字体、无障碍、开机动画 |
+| 9 | `20b-stylesheet-shell.js` | stylesheet | 40851 | CSS 外壳层：产品 DOM 抬高、字体面板、覆盖层、取景、桥接面 |
+| 10 | `20c-stylesheet-glass.js` | stylesheet | 40827 | CSS 桌宠/省电/液态玻璃（三档 + 实时透镜） |
+| 11 | `20d-stylesheet-hub.js` | stylesheet | 44164 | CSS 中枢/新表面/开机动画 + installStyles 注入 |
+| 12 | `30-wallpaper.js` | wallpaper | 96828 | 壁纸目录/变体/图层/播放设置（场景运行时见 30b） |
+| 13 | `30b-wallpaper-scene.js` | wallpaper | 80385 | 壁纸场景运行时：video/image/scene 挂载、播放控制与释放（installScene） |
+| 14 | `31-engine-extra.js` | wallpaper engine extras | 56604 | WebWallGL 场景引擎桥与预览 |
+| 15 | `32-effects.js` | ambient effects | 41348 | 环境特效（光斑、雨雪、尘埃） |
+| 16 | `35-context.js` | smart context | 99750 | 智能情境：时段、天气、专注联动 |
+| 17 | `40-companion.js` | companion | 37749 | 桌宠外观、形象库、动作包与聊天记录存储（运行时见 40b，职责通道见 40c） |
+| 18 | `40b-companion-install.js` | companion | 65125 | 桌宠运行时：拖拽、心情、互动菜单（installCompanion） |
+| 19 | `40c-companion-duty.js` | companion | 8503 | 桌宠职责通道：role pack 动作归一化与派发 |
+| 20 | `42-life.js` | life rhythm | 52033 | 生活节奏、预算、回忆与延后队列 |
+| 21 | `44-pet-brain.js` | pet brain | 26187 | 桌宠权限模型、能力分级与提示词常量 |
+| 22 | `44b-pet-state.js` | pet brain | 48648 | 桌宠状态：存储、权限/暂停/配额、审计、本地回复 |
+| 23 | `44c-pet-llm.js` | pet brain | 29224 | 桌宠 LLM 通道：适配器、能力调用、聊天/历史/上下文 |
+| 24 | `44d-pet-mind.js` | pet brain | 32285 | 桌宠私密思考引擎：预算、思考、tick 与 API |
+| 25 | `48-pet-agent.js` | pet agent | 23685 | 桌宠接入 DSH Agent（受控） |
+| 26 | `50-rheostat.js` | reasoning rheostat | 20501 | 推理滑杆（只影响本会话展示） |
+| 27 | `55-lowpower.js` | low power | 10650 | 省电模式：三输入一决策，暂停壁纸与镜像 |
+| 28 | `57-glass.js` | glass opacity | 17730 | 液态玻璃三档与深度、v2.2.0 实时渲染开关 |
+| 29 | `58-legibility.js` | legibility | 25156 | 可读性对比/字号/字距 |
+| 30 | `59-splash.js` | splash | 25280 | 开机动画：`splashPlan` 单点决策 + 简洁 A 版 |
+| 31 | `59b-splash-film.js` | （splash 长片） | 110910 | 18.5 秒长片（WebGL/WAAPI，自带硬停与释放） |
+| 32 | `60-zones.js` | zone framing | 12967 | 分区取景（主图/轨道） |
+| 33 | `65-bridge.js` | selector bridge | 17988 | 运行时选择器桥：slot → 产品 `data-*` → 类名后缀 |
+| 34 | `70-sidebar.js` | wallpaper sidebar | 59630 | 壁纸面板 i18n、分享/导入导出编解码助手（组件见 70b） |
+| 35 | `70b-wallpaper-sidebar-panel.js` | wallpaper sidebar | 152600 | 壁纸面板 React 组件 WallpaperPanel：来源/清单/图层/播放/库（约 3850 行） |
+| 36 | `72-we-library.js` | we library | 60116 | Wallpaper Engine 库与场景选择 |
+| 37 | `76-role-hub.js` | role hub | 74825 | 角色中枢 i18n 字典、常量与通用助手（运行时见 76b） |
+| 38 | `76b-role-hub-install.js` | role hub | 181030 | 角色中枢运行时：全屏 overlay、各卡片与状态（installRoleHub，约 3800 行） |
+| 39 | `90-font.js` | font panel | 32193 | 字体面板（内置字体清单/拖拽） |
+| 40 | `95-a11y.js` | accessibility | 20675 | 无障碍（键盘、焦点、对比度） |
+| 41 | `99-apply.js` | apply | 17196 | `apply(ctx)`：按固定顺序安装/注册每个模块，单例与热重载 |
 
 依赖表、跨片段引用清单和"新增引用就失败"的门禁见 [docs/DEPS.md](docs/DEPS.md)。
+
+拆分边界（哪些能按顶层声明机械切、哪些是单一巨型安装器/组件只能阶段 2 重构）与逐文件切点见 [docs/SPLIT-PLAN.md](docs/SPLIT-PLAN.md)；切分工具 `tools/split-fragment.mjs` 强制同名 region、连续区间与顶层边界。
 
 ## 2. 宿主半：模块
 

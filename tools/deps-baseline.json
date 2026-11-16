@@ -3,12 +3,12 @@
   "generator": "tools/deps.mjs",
   "note": "Reviewed cross-fragment top-level references. Regenerate deliberately with `node tools/deps.mjs`; `npm run check` fails on any reference missing here.",
   "totals": {
-    "fragments": 38,
-    "declarations": 1213,
-    "declarationSites": 1213,
-    "references": 667,
-    "referenceOccurrences": 3534,
-    "edges": 169,
+    "fragments": 41,
+    "declarations": 1216,
+    "declarationSites": 1216,
+    "references": 670,
+    "referenceOccurrences": 3538,
+    "edges": 172,
     "unused": 2
   },
   "references": [
@@ -433,19 +433,37 @@
       "count": 1
     },
     {
-      "from": "20-stylesheet.js",
+      "from": "20d-stylesheet-hub.js",
+      "name": "CSS",
+      "declaredIn": "20-stylesheet.js",
+      "count": 1
+    },
+    {
+      "from": "20d-stylesheet-hub.js",
+      "name": "CSS_GLASS",
+      "declaredIn": "20c-stylesheet-glass.js",
+      "count": 1
+    },
+    {
+      "from": "20d-stylesheet-hub.js",
+      "name": "CSS_SHELL",
+      "declaredIn": "20b-stylesheet-shell.js",
+      "count": 1
+    },
+    {
+      "from": "20d-stylesheet-hub.js",
       "name": "CSS_TAG_ID",
       "declaredIn": "10-constants.js",
       "count": 2
     },
     {
-      "from": "20-stylesheet.js",
+      "from": "20d-stylesheet-hub.js",
       "name": "PLUGIN_ID",
       "declaredIn": "10-constants.js",
       "count": 1
     },
     {
-      "from": "20-stylesheet.js",
+      "from": "20d-stylesheet-hub.js",
       "name": "tl5CssText",
       "declaredIn": "11-platform.js",
       "count": 1
@@ -2890,7 +2908,7 @@
       "from": "70b-wallpaper-sidebar-panel.js",
       "name": "React",
       "declaredIn": "10-constants.js",
-      "count": 359
+      "count": 360
     },
     {
       "from": "70b-wallpaper-sidebar-panel.js",
@@ -3921,7 +3939,7 @@
     {
       "from": "99-apply.js",
       "name": "installStyles",
-      "declaredIn": "20-stylesheet.js",
+      "declaredIn": "20d-stylesheet-hub.js",
       "count": 1
     },
     {

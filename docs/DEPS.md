@@ -17,24 +17,27 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 
 | 指标 | 数值 |
 | --- | --- |
-| 片段数 | 38 |
-| 共享顶层名字 | 1213（声明点 1213） |
-| 跨片段引用（去重） | 667 |
-| 跨片段引用（出现次数） | 3534 |
-| 依赖边 | 169 |
+| 片段数 | 41 |
+| 共享顶层名字 | 1216（声明点 1216） |
+| 跨片段引用（去重） | 670 |
+| 跨片段引用（出现次数） | 3538 |
+| 依赖边 | 172 |
 
 ## 2. 片段表
 
 | 片段 | region | 声明数 | 顶层引用数 | 依赖的片段（名字数） | 被哪些片段依赖（名字数） |
 | --- | --- | --- | --- | --- | --- |
 | `00-envelope.js` |  | 0 | 4 | — | — |
-| `10-constants.js` | constants | 23 | 35 | — | `11-platform` (1), `12-schema` (2), `12b-schema-sync` (1), `12c-schema-eng` (1), `13-i18n` (2), `20-stylesheet` (2), `30-wallpaper` (3), `30b-wallpaper-scene` (4), `31-engine-extra` (3), `32-effects` (2), `35-context` (3), `40-companion` (2), `40b-companion-install` (2), `40c-companion-duty` (1), `42-life` (3), `44-pet-brain` (1), `44b-pet-state` (4), `44c-pet-llm` (1), `44d-pet-mind` (1), `50-rheostat` (2), `55-lowpower` (1), `57-glass` (3), `58-legibility` (3), `59-splash` (2), `59b-splash-film` (2), `60-zones` (1), `70-sidebar` (2), `70b-wallpaper-sidebar-panel` (8), `72-we-library` (3), `76-role-hub` (3), `76b-role-hub-install` (1), `90-font` (2), `95-a11y` (2), `99-apply` (3) |
-| `11-platform.js` | platform | 52 | 425 | `10-constants` (1), `30-wallpaper` (1) | `12-schema` (2), `12b-schema-sync` (3), `12c-schema-eng` (5), `13-i18n` (1), `20-stylesheet` (1), `30-wallpaper` (2), `30b-wallpaper-scene` (2), `31-engine-extra` (5), `32-effects` (6), `35-context` (5), `40b-companion-install` (1), `42-life` (1), `58-legibility` (3), `59-splash` (1), `70-sidebar` (2), `70b-wallpaper-sidebar-panel` (7), `72-we-library` (4), `76b-role-hub-install` (2), `90-font` (4), `95-a11y` (4), `99-apply` (7) |
+| `10-constants.js` | constants | 23 | 35 | — | `11-platform` (1), `12-schema` (2), `12b-schema-sync` (1), `12c-schema-eng` (1), `13-i18n` (2), `20d-stylesheet-hub` (2), `30-wallpaper` (3), `30b-wallpaper-scene` (4), `31-engine-extra` (3), `32-effects` (2), `35-context` (3), `40-companion` (2), `40b-companion-install` (2), `40c-companion-duty` (1), `42-life` (3), `44-pet-brain` (1), `44b-pet-state` (4), `44c-pet-llm` (1), `44d-pet-mind` (1), `50-rheostat` (2), `55-lowpower` (1), `57-glass` (3), `58-legibility` (3), `59-splash` (2), `59b-splash-film` (2), `60-zones` (1), `70-sidebar` (2), `70b-wallpaper-sidebar-panel` (8), `72-we-library` (3), `76-role-hub` (3), `76b-role-hub-install` (1), `90-font` (2), `95-a11y` (2), `99-apply` (3) |
+| `11-platform.js` | platform | 52 | 425 | `10-constants` (1), `30-wallpaper` (1) | `12-schema` (2), `12b-schema-sync` (3), `12c-schema-eng` (5), `13-i18n` (1), `20d-stylesheet-hub` (1), `30-wallpaper` (2), `30b-wallpaper-scene` (2), `31-engine-extra` (5), `32-effects` (6), `35-context` (5), `40b-companion-install` (1), `42-life` (1), `58-legibility` (3), `59-splash` (1), `70-sidebar` (2), `70b-wallpaper-sidebar-panel` (7), `72-we-library` (4), `76b-role-hub-install` (2), `90-font` (4), `95-a11y` (4), `99-apply` (7) |
 | `12-schema.js` | schema | 60 | 438 | `10-constants` (2), `11-platform` (2), `13-i18n` (1) | `12b-schema-sync` (42), `12c-schema-eng` (1), `13-i18n` (1), `76b-role-hub-install` (1) |
 | `12b-schema-sync.js` | schema | 51 | 1027 | `10-constants` (1), `11-platform` (3), `12-schema` (42), `13-i18n` (2) | `12c-schema-eng` (2), `70b-wallpaper-sidebar-panel` (1), `99-apply` (3) |
 | `12c-schema-eng.js` | schema | 3 | 151 | `10-constants` (1), `11-platform` (5), `12-schema` (1), `12b-schema-sync` (2), `13-i18n` (2) | — |
 | `13-i18n.js` | i18n | 19 | 153 | `10-constants` (2), `11-platform` (1), `12-schema` (1) | `12-schema` (1), `12b-schema-sync` (2), `12c-schema-eng` (2), `30-wallpaper` (2), `30b-wallpaper-scene` (1), `31-engine-extra` (3), `32-effects` (2), `35-context` (4), `40-companion` (2), `40b-companion-install` (2), `42-life` (2), `44-pet-brain` (1), `44b-pet-state` (1), `44c-pet-llm` (1), `44d-pet-mind` (1), `50-rheostat` (3), `55-lowpower` (2), `58-legibility` (2), `59-splash` (1), `70-sidebar` (1), `70b-wallpaper-sidebar-panel` (3), `72-we-library` (4), `76-role-hub` (2), `76b-role-hub-install` (1), `90-font` (2), `95-a11y` (4), `99-apply` (3) |
-| `20-stylesheet.js` | stylesheet | 2 | 17 | `10-constants` (2), `11-platform` (1) | `99-apply` (1) |
+| `20-stylesheet.js` | stylesheet | 1 | 1 | — | `20d-stylesheet-hub` (1) |
+| `20b-stylesheet-shell.js` | stylesheet | 1 | 1 | — | `20d-stylesheet-hub` (1) |
+| `20c-stylesheet-glass.js` | stylesheet | 1 | 1 | — | `20d-stylesheet-hub` (1) |
+| `20d-stylesheet-hub.js` | stylesheet | 2 | 20 | `10-constants` (2), `11-platform` (1), `20-stylesheet` (1), `20b-stylesheet-shell` (1), `20c-stylesheet-glass` (1) | `99-apply` (1) |
 | `30-wallpaper.js` | wallpaper | 186 | 1152 | `10-constants` (3), `11-platform` (2), `13-i18n` (2) | `11-platform` (1), `30b-wallpaper-scene` (40), `31-engine-extra` (6), `32-effects` (1), `35-context` (1), `40b-companion-install` (1), `55-lowpower` (2), `58-legibility` (1), `60-zones` (1), `70b-wallpaper-sidebar-panel` (24), `72-we-library` (2) |
 | `30b-wallpaper-scene.js` | wallpaper | 1 | 744 | `10-constants` (4), `11-platform` (2), `13-i18n` (1), `30-wallpaper` (40), `31-engine-extra` (1), `35-context` (1), `55-lowpower` (1) | `99-apply` (1) |
 | `31-engine-extra.js` | wallpaper engine extras | 27 | 640 | `10-constants` (3), `11-platform` (5), `13-i18n` (3), `30-wallpaper` (6), `32-effects` (1), `35-context` (1) | `30b-wallpaper-scene` (1), `99-apply` (1) |
@@ -58,13 +61,13 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `60-zones.js` | zone framing | 13 | 197 | `10-constants` (1), `30-wallpaper` (1) | `55-lowpower` (1), `70b-wallpaper-sidebar-panel` (6), `99-apply` (1) |
 | `65-bridge.js` | selector bridge | 2 | 179 | — | `99-apply` (2) |
 | `70-sidebar.js` | wallpaper sidebar | 13 | 95 | `10-constants` (2), `11-platform` (2), `13-i18n` (1) | `70b-wallpaper-sidebar-panel` (6), `99-apply` (1) |
-| `70b-wallpaper-sidebar-panel.js` | wallpaper sidebar | 44 | 1307 | `10-constants` (8), `11-platform` (7), `12b-schema-sync` (1), `13-i18n` (3), `30-wallpaper` (24), `32-effects` (2), `35-context` (2), `55-lowpower` (2), `57-glass` (2), `58-legibility` (2), `60-zones` (6), `70-sidebar` (6), `90-font` (2) | — |
+| `70b-wallpaper-sidebar-panel.js` | wallpaper sidebar | 44 | 1308 | `10-constants` (8), `11-platform` (7), `12b-schema-sync` (1), `13-i18n` (3), `30-wallpaper` (24), `32-effects` (2), `35-context` (2), `55-lowpower` (2), `57-glass` (2), `58-legibility` (2), `60-zones` (6), `70-sidebar` (6), `90-font` (2) | — |
 | `72-we-library.js` | we library | 57 | 642 | `10-constants` (3), `11-platform` (4), `13-i18n` (4), `30-wallpaper` (2) | `99-apply` (1) |
 | `76-role-hub.js` | role hub | 54 | 399 | `10-constants` (3), `13-i18n` (2), `44d-pet-mind` (1), `48-pet-agent` (1), `57-glass` (1) | `76b-role-hub-install` (53) |
 | `76b-role-hub-install.js` | role hub | 1 | 3544 | `10-constants` (1), `11-platform` (2), `12-schema` (1), `13-i18n` (1), `44b-pet-state` (1), `59-splash` (6), `76-role-hub` (53) | `99-apply` (1) |
 | `90-font.js` | font panel | 20 | 424 | `10-constants` (2), `11-platform` (4), `13-i18n` (2), `58-legibility` (3) | `70b-wallpaper-sidebar-panel` (2), `99-apply` (1) |
 | `95-a11y.js` | accessibility | 7 | 356 | `10-constants` (2), `11-platform` (4), `13-i18n` (4) | `99-apply` (1) |
-| `99-apply.js` | apply | 5 | 242 | `10-constants` (3), `11-platform` (7), `12b-schema-sync` (3), `13-i18n` (3), `20-stylesheet` (1), `30b-wallpaper-scene` (1), `31-engine-extra` (1), `32-effects` (1), `35-context` (2), `40b-companion-install` (1), `40c-companion-duty` (2), `42-life` (1), `44d-pet-mind` (1), `48-pet-agent` (1), `50-rheostat` (1), `55-lowpower` (1), `57-glass` (3), `58-legibility` (1), `59-splash` (2), `60-zones` (1), `65-bridge` (2), `70-sidebar` (1), `72-we-library` (1), `76b-role-hub-install` (1), `90-font` (1), `95-a11y` (1) | — |
+| `99-apply.js` | apply | 5 | 242 | `10-constants` (3), `11-platform` (7), `12b-schema-sync` (3), `13-i18n` (3), `20d-stylesheet-hub` (1), `30b-wallpaper-scene` (1), `31-engine-extra` (1), `32-effects` (1), `35-context` (2), `40b-companion-install` (1), `40c-companion-duty` (2), `42-life` (1), `44d-pet-mind` (1), `48-pet-agent` (1), `50-rheostat` (1), `55-lowpower` (1), `57-glass` (3), `58-legibility` (1), `59-splash` (2), `60-zones` (1), `65-bridge` (2), `70-sidebar` (1), `72-we-library` (1), `76b-role-hub-install` (1), `90-font` (1), `95-a11y` (1) | — |
 
 ## 3. 跨片段引用清单
 
@@ -140,9 +143,12 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `13-i18n.js` | `React` | `10-constants.js` | 2 |
 | `13-i18n.js` | `TL5_SCHEMA_STRINGS` | `12-schema.js` | 2 |
 | `13-i18n.js` | `tl5Diag` | `11-platform.js` | 1 |
-| `20-stylesheet.js` | `CSS_TAG_ID` | `10-constants.js` | 2 |
-| `20-stylesheet.js` | `PLUGIN_ID` | `10-constants.js` | 1 |
-| `20-stylesheet.js` | `tl5CssText` | `11-platform.js` | 1 |
+| `20d-stylesheet-hub.js` | `CSS` | `20-stylesheet.js` | 1 |
+| `20d-stylesheet-hub.js` | `CSS_GLASS` | `20c-stylesheet-glass.js` | 1 |
+| `20d-stylesheet-hub.js` | `CSS_SHELL` | `20b-stylesheet-shell.js` | 1 |
+| `20d-stylesheet-hub.js` | `CSS_TAG_ID` | `10-constants.js` | 2 |
+| `20d-stylesheet-hub.js` | `PLUGIN_ID` | `10-constants.js` | 1 |
+| `20d-stylesheet-hub.js` | `tl5CssText` | `11-platform.js` | 1 |
 | `30-wallpaper.js` | `ASSET_BASE` | `10-constants.js` | 10 |
 | `30-wallpaper.js` | `note` | `10-constants.js` | 9 |
 | `30-wallpaper.js` | `publishTl5Metrics` | `11-platform.js` | 1 |
@@ -549,7 +555,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `70b-wallpaper-sidebar-panel.js` | `probeUrlKind` | `30-wallpaper.js` | 1 |
 | `70b-wallpaper-sidebar-panel.js` | `PROVIDERS` | `30-wallpaper.js` | 1 |
 | `70b-wallpaper-sidebar-panel.js` | `RATIOS` | `60-zones.js` | 1 |
-| `70b-wallpaper-sidebar-panel.js` | `React` | `10-constants.js` | 359 |
+| `70b-wallpaper-sidebar-panel.js` | `React` | `10-constants.js` | 360 |
 | `70b-wallpaper-sidebar-panel.js` | `readGlass` | `57-glass.js` | 2 |
 | `70b-wallpaper-sidebar-panel.js` | `readLowPowerMode` | `55-lowpower.js` | 3 |
 | `70b-wallpaper-sidebar-panel.js` | `readPanelRecent` | `70-sidebar.js` | 1 |
@@ -721,7 +727,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `99-apply.js` | `installSelectorBridge` | `65-bridge.js` | 1 |
 | `99-apply.js` | `installSettingsRuntime` | `12b-schema-sync.js` | 1 |
 | `99-apply.js` | `installSplashEntry` | `59-splash.js` | 1 |
-| `99-apply.js` | `installStyles` | `20-stylesheet.js` | 1 |
+| `99-apply.js` | `installStyles` | `20d-stylesheet-hub.js` | 1 |
 | `99-apply.js` | `installWallpaperSidebar` | `70-sidebar.js` | 1 |
 | `99-apply.js` | `installWeatherChip` | `35-context.js` | 1 |
 | `99-apply.js` | `installWeLibrary` | `72-we-library.js` | 1 |
@@ -759,8 +765,11 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `13-i18n.js` | `10-constants.js` | 2 | 6 |
 | `13-i18n.js` | `11-platform.js` | 1 | 1 |
 | `13-i18n.js` | `12-schema.js` | 1 | 2 |
-| `20-stylesheet.js` | `10-constants.js` | 2 | 3 |
-| `20-stylesheet.js` | `11-platform.js` | 1 | 1 |
+| `20d-stylesheet-hub.js` | `10-constants.js` | 2 | 3 |
+| `20d-stylesheet-hub.js` | `11-platform.js` | 1 | 1 |
+| `20d-stylesheet-hub.js` | `20-stylesheet.js` | 1 | 1 |
+| `20d-stylesheet-hub.js` | `20b-stylesheet-shell.js` | 1 | 1 |
+| `20d-stylesheet-hub.js` | `20c-stylesheet-glass.js` | 1 | 1 |
 | `30-wallpaper.js` | `10-constants.js` | 3 | 23 |
 | `30-wallpaper.js` | `11-platform.js` | 2 | 5 |
 | `30-wallpaper.js` | `13-i18n.js` | 2 | 62 |
@@ -849,7 +858,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `70-sidebar.js` | `10-constants.js` | 2 | 3 |
 | `70-sidebar.js` | `11-platform.js` | 2 | 2 |
 | `70-sidebar.js` | `13-i18n.js` | 1 | 1 |
-| `70b-wallpaper-sidebar-panel.js` | `10-constants.js` | 8 | 373 |
+| `70b-wallpaper-sidebar-panel.js` | `10-constants.js` | 8 | 374 |
 | `70b-wallpaper-sidebar-panel.js` | `11-platform.js` | 7 | 8 |
 | `70b-wallpaper-sidebar-panel.js` | `12b-schema-sync.js` | 1 | 6 |
 | `70b-wallpaper-sidebar-panel.js` | `13-i18n.js` | 3 | 5 |
@@ -889,7 +898,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `99-apply.js` | `11-platform.js` | 7 | 13 |
 | `99-apply.js` | `12b-schema-sync.js` | 3 | 3 |
 | `99-apply.js` | `13-i18n.js` | 3 | 3 |
-| `99-apply.js` | `20-stylesheet.js` | 1 | 1 |
+| `99-apply.js` | `20d-stylesheet-hub.js` | 1 | 1 |
 | `99-apply.js` | `30b-wallpaper-scene.js` | 1 | 1 |
 | `99-apply.js` | `31-engine-extra.js` | 1 | 1 |
 | `99-apply.js` | `32-effects.js` | 1 | 1 |

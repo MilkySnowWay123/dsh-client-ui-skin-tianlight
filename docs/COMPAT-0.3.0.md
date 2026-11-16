@@ -113,3 +113,11 @@
 10. 三个 slot 入口到位：DSH 设置里有「壁纸库」页、侧栏底部有壁纸按钮、输入行右侧有字体按钮。
 11. 桌宠与模型：`__dshTianlightInstance.pet()/agent()/hub()` 均非 null；中枢 provider 下拉 `[data-tl-hub-llm-provider-count]` > 0；`curl` 一次 `_pet-chat` 返回 JSON 而非 404。
 12. 回滚验证（证明 0.3.0 的 dispose 仍干净）：禁用插件后 `document.querySelectorAll('[data-tl-sidebar-col],[data-tl-composer],[data-tl-model],[data-tl-new-chat]').length===0`、`!!document.querySelector('style[data-plugin-css="ui-skin-tianlight/tianlight.css"]')===false`、`document.body.hasAttribute('data-dsh-tianlight')===false`。
+13. 皮肤自有标识（0.3.0 若改插件 CSS 归属或 loader 的 id 规则，先在这里断）：五个名字必须同时成立且彼此对应——`skin.json.wiring.id === "ui-skin-tianlight"`、CSS 标签 `data-plugin-css="ui-skin-tianlight/tianlight.css"`（及 `id` 同值）、`body[data-dsh-tianlight]`（皮肤作用域根，**不是**产品属性）、客户端模块 `id: "dsh-client-ui-skin-tianlight"`、`package.json.dsh.client.platform === "web"`。断言：
+    ```js
+    ({ css: !!document.querySelector('style[data-plugin-css="ui-skin-tianlight/tianlight.css"]'),
+       body: document.body.hasAttribute('data-dsh-tianlight'),
+       lang: document.body.getAttribute('data-tl-lang'),
+       loaded: typeof globalThis.__dshTianlightInstance === 'object' })
+    ```
+    任何一项为 false：先看 Console 有无 `[ui-skin-tianlight] react-missing` / `glyph` / 路由自检告警，再判断是 loader 契约（§6-1）还是 CSS 认领机制变了。皮肤自有的 `data-tl-*` 不进 Checklist——那些是皮肤自己打的，不依赖宿主。

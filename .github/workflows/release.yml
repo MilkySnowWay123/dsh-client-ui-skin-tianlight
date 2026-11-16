@@ -52,6 +52,9 @@ jobs:
           # checking out the branch HEAD would publish different code than the tag.
           ref: ${{ inputs.tag || github.ref }}
           fetch-depth: 0
+          # The contract step proves the checkout IS the tag (`git describe --tags
+          # --exact-match`), so the tag refs must exist locally in both paths.
+          fetch-tags: true
       - name: resolve target tag and commit
         id: target
         shell: bash
