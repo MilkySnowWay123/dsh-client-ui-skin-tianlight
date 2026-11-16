@@ -182,6 +182,21 @@ expect(
   fullSurfaceFiltered.length === 0,
   fullSurfaceFiltered.map((match) => match[1].trim()).join(' | '),
 )
+// v2.2.7: no hard outline pass. The 1px white sidebar edge and the 1px light/dark rim
+// that every glass surface composed are what read as "a line on every part".
+expect(
+  'the sidebar pane draws no 1px edge line',
+  /\[data-tl-sidebar[^{]*\{[^}]*border-right\s*:\s*1px/.test(css) === false,
+)
+expect(
+  'glass surfaces compose no 1px rim any more',
+  css.includes('--tl-liquid-rim-shadow: inset 0 0 0 0 rgba(0, 0, 0, 0)'),
+)
+expect(
+  'skin hairlines stay faint (glass line alpha <= 0.12)',
+  css.includes('--tl-glass-line: rgba(255, 255, 255, 0.12)') && css.includes('--tl-glass-line: rgba(150, 195, 250, 0.10)'),
+)
+
 expect(
   'text-bearing glass keeps a legibility floor (bubble >= 0.30; live lowers decorative fill)',
   css.includes('--tl-glass-fill: rgba(205, 228, 250, calc(0.05 * var(--tl-glass-m, 1)))') &&

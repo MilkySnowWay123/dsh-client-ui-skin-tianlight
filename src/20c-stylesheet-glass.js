@@ -287,14 +287,11 @@ body[data-dsh-tianlight] {
 		linear-gradient(180deg, rgba(9, 24, 42, 0) 0%, rgba(9, 24, 42, 0) 76%, rgba(9, 24, 42, calc(0.05 + var(--tl-liquid-noise) * 0.55)) 100%);
 	--tl-liquid-surface-flat-size: auto, auto, auto, auto;
 	--tl-liquid-fallback-boost: radial-gradient(120% 90% at 18% 6%, rgba(170, 215, 255, calc(0.03 + var(--tl-liquid-sheen) * 0.06)) 0%, rgba(120, 170, 230, 0) 62%);
-	/* The 1px light/dark inner edge trio and the outer soft glow, shared by every
-	   surface so one box-shadow declaration composes the full v2 rim. The bottom
-	   inset is the v2.2.0 "thickness" edge that keeps the glass from flattening
-	   into a white sheet. */
-	--tl-liquid-rim-shadow:
-		inset 1px 1px 0 rgba(240, 249, 255, var(--tl-liquid-rim)),
-		inset -1px -1px 0 rgba(4, 14, 28, calc(var(--tl-liquid-rim) * 0.55)),
-		inset 0 -1px 0 rgba(4, 14, 28, calc(var(--tl-liquid-rim) * 0.40));
+	/* v2.2.7: the shared 1px light/dark rim is gone, and so is the sidebar's 1px white
+	   right edge — those were the "every surface has an obvious line" report (the
+	   sidebar edge was worst). Separation is the surface stack, the broad inner lens
+	   shadow and the outer soft glow; only a 0.12-alpha hairline ring remains. */
+	--tl-liquid-rim-shadow: inset 0 0 0 0 rgba(0, 0, 0, 0);
 	/* A broad, soft inner edge is what makes a pane read as thick glass rather than a
 	   tinted rectangle: the centre stays clear, the border gathers a little shadow. */
 	--tl-liquid-lens-shadow:
@@ -454,14 +451,16 @@ body[data-dsh-tianlight][data-tl-lowpower]:is([data-tl-glass-effective="soft"], 
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar], [data-tl-sidebar-col]) {
 	background-color: color-mix(in srgb, var(--tl-glass-fill) 62%, transparent) !important;
 	/* A lens, not a white sheet: one narrow specular streak at the top-left, one cool
-	   refraction tint at the bottom-right, then the grain surface. The 1px bright
-	   right edge is what makes it read as a glass pane. */
+	   refraction tint at the bottom-right, then the grain surface. v2.2.7 dropped the
+	   1px bright right edge and the hard rim: the pane reads from the fill, the lens
+	   shadow and the drop shadow, with no outline line. */
 	background-image:
 		linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 26%),
 		radial-gradient(120% 100% at 100% 100%, rgba(70, 150, 240, 0.10) 0%, rgba(70, 150, 240, 0) 62%),
 		var(--tl-liquid-surface) !important;
+	/* v2.2.7: no 1px white right edge. It read as a bright vertical line against the
+	   wallpaper (the reported "line on every surface, worst on the left sidebar"). */
 	background-size: auto, auto, var(--tl-liquid-surface-size);
-	border-right: 1px solid rgba(255, 255, 255, 0.45);
 	box-shadow:
 		var(--tl-liquid-rim-shadow),
 		var(--tl-liquid-lens-shadow),
