@@ -242,6 +242,18 @@
 		const weatherController = {
 			read: weatherSnapshot,
 			state: weatherSnapshot,
+			/**
+			 * v2.2.11: notify subscribers without persisting. An automatic poll that
+			 * returns the SAME code/temperature still refreshes the "updated at" time,
+			 * but must not write the synced snapshot (that bumps the host revision).
+			 * Before this, weatherFreshAt advanced invisibly and the chip kept showing
+			 * the old timestamp until the values themselves changed or a manual
+			 * refresh wrote the whole snapshot.
+			 */
+			touch: () => {
+				weatherNotify();
+				return weatherSnapshot();
+			},
 			apply: (patch) => {
 				if (patch !== null && typeof patch === "object") {
 					if (patch.enabled === true || patch.enabled === false) weatherState.enabled = patch.enabled;
@@ -2144,6 +2156,9 @@ body[data-dsh-tianlight] [data-tl-group="context"] .tl-fx-hint {
 					const currentWeather = weatherController.state();
 					const unchanged = currentWeather.lastError === "" && weatherValuesEqual(currentWeather.last, last);
 					if (unchanged && source !== "manual") {
+						// The value did not change, but this poll DID succeed: repaint the
+						// chip/hub with the new "updated at" time without a storage write.
+						weatherController.touch();
 						applyWeatherAmbience(last.code, last.isDay);
 						return true;
 					}

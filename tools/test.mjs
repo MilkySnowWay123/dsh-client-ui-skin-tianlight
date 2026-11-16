@@ -2356,6 +2356,13 @@ test('v2.2.0 pet model picker: provider+model persist and travel through the fix
   assert.match(CLIENT_SOURCE, /https:\/\/api\.x\.ai\/v1/)
 })
 
+test('v2.2.11: an unchanged weather poll still repaints the updated-at time', () => {
+  assert.match(CLIENT_SOURCE, /touch: \(\) => \{\s*weatherNotify\(\);/)
+  assert.match(CLIENT_SOURCE, /if \(unchanged && source !== "manual"\) \{[\s\S]{0,500}?weatherController\.touch\(\);/)
+  assert.match(CLIENT_SOURCE, /weatherFreshAt = Date\.now\(\)/)
+  assert.match(CLIENT_SOURCE, /updatedAt: last === null \? null : Math\.max\(Number\(last\.at\) \|\| 0, weatherFreshAt\)/)
+})
+
 test('v2.2.9: the bridge never paints the product frame from data-sidebar-collapsed', () => {
   assert.match(CLIENT_SOURCE, /const isTooWide = \(node\) =>/)
   assert.match(CLIENT_SOURCE, /data-tl-sidebar-state", "collapsed"/)

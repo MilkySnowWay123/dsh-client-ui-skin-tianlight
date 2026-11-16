@@ -27,7 +27,7 @@
 		 * must equal `package.json` `version`; tools/test.mjs fails the chain when the
 		 * two drift (the 2.1.0-2.1.3 builds printed a stale "2.0.4").
 		 */
-		const TL_BUILD_VERSION = "2.2.10";
+		const TL_BUILD_VERSION = "2.2.11";
 
 		/**
 		 * Host identity last reported by `_engines`: `build` is the host's
