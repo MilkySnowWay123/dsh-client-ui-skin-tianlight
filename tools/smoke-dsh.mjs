@@ -534,6 +534,18 @@ try {
     throw new Error('composer did not appear with splash off')
   }
 
+  // 5b. v2.2.4: a fresh profile (no `tianlight.glassDepth` key) must render the SHIPPED
+  // default, `off`. The defect this pins: the fragment fallback said `soft` while the
+  // default appearance JSON said `off`, so a first install and a cleared key disagreed.
+  // `off` must also mean no live sampling (effective off), which is the energy promise.
+  const glassDefault = await cdp.waitFor('document.body.getAttribute("data-tl-glass-depth") === "off"', 5_000)
+  const glassState = await cdp.eval(
+    '(() => ({ depth: document.body.getAttribute("data-tl-glass-depth"), effective: document.body.getAttribute("data-tl-glass-effective"), live: document.body.getAttribute("data-tl-glass-live") }))()',
+  )
+  if (!assert('glass defaults to off on a fresh profile', glassDefault.ok && glassState?.effective === 'off', JSON.stringify(glassState))) {
+    throw new Error('glass did not default to the shipped off level')
+  }
+
   // 6. splash long -> film starts, ends within budget, page usable
   await cdp.seed('long')
   const filmStarted = Date.now()
