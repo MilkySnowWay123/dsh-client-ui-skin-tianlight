@@ -1289,7 +1289,9 @@ body[data-dsh-tianlight] ::-webkit-scrollbar-track {
 	background: transparent;
 }
 body[data-dsh-tianlight] ::-webkit-scrollbar-thumb {
-	background: var(--tl-line-strong);
+	/* v2.2.8: the divider tokens dropped to near-invisible, but a scrollbar must stay
+	   usable. This is a control, not a decorative line, so it keeps its own alphas. */
+	background: rgba(140, 180, 220, 0.38);
 	border: 3px solid transparent;
 	border-radius: 999px;
 	background-clip: padding-box;
