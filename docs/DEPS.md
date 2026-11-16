@@ -17,18 +17,18 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 
 | 指标 | 数值 |
 | --- | --- |
-| 片段数 | 41 |
+| 片段数 | 43 |
 | 共享顶层名字 | 1216（声明点 1216） |
-| 跨片段引用（去重） | 670 |
-| 跨片段引用（出现次数） | 3538 |
-| 依赖边 | 172 |
+| 跨片段引用（去重） | 675 |
+| 跨片段引用（出现次数） | 3543 |
+| 依赖边 | 175 |
 
 ## 2. 片段表
 
 | 片段 | region | 声明数 | 顶层引用数 | 依赖的片段（名字数） | 被哪些片段依赖（名字数） |
 | --- | --- | --- | --- | --- | --- |
-| `00-envelope.js` |  | 0 | 4 | — | — |
-| `10-constants.js` | constants | 23 | 35 | — | `11-platform` (1), `12-schema` (2), `12b-schema-sync` (1), `12c-schema-eng` (1), `13-i18n` (2), `20d-stylesheet-hub` (2), `30-wallpaper` (3), `30b-wallpaper-scene` (4), `31-engine-extra` (3), `32-effects` (2), `35-context` (3), `40-companion` (2), `40b-companion-install` (2), `40c-companion-duty` (1), `42-life` (3), `44-pet-brain` (1), `44b-pet-state` (4), `44c-pet-llm` (1), `44d-pet-mind` (1), `50-rheostat` (2), `55-lowpower` (1), `57-glass` (3), `58-legibility` (3), `59-splash` (2), `59b-splash-film` (2), `60-zones` (1), `70-sidebar` (2), `70b-wallpaper-sidebar-panel` (8), `72-we-library` (3), `76-role-hub` (3), `76b-role-hub-install` (1), `90-font` (2), `95-a11y` (2), `99-apply` (3) |
+| `00-envelope.js` |  | 0 | 16 | — | — |
+| `10-constants.js` | constants | 23 | 35 | — | `11-platform` (1), `12-schema` (2), `12b-schema-sync` (1), `12c-schema-eng` (1), `13-i18n` (2), `20d-stylesheet-hub` (2), `30-wallpaper` (3), `30b-wallpaper-scene` (4), `31-engine-extra` (3), `32-effects` (2), `35-context` (3), `40-companion` (2), `40b-companion-install` (2), `40c-companion-duty` (1), `42-life` (3), `44-pet-brain` (1), `44b-pet-state` (4), `44c-pet-llm` (1), `44d-pet-mind` (1), `50-rheostat` (2), `55-lowpower` (1), `57-glass` (3), `58-legibility` (3), `59-splash` (2), `59c-splash-film-runtime` (1), `59d-splash-film-install` (2), `60-zones` (1), `70-sidebar` (2), `70b-wallpaper-sidebar-panel` (8), `72-we-library` (3), `76-role-hub` (3), `76b-role-hub-install` (1), `90-font` (2), `95-a11y` (2), `99-apply` (3) |
 | `11-platform.js` | platform | 52 | 425 | `10-constants` (1), `30-wallpaper` (1) | `12-schema` (2), `12b-schema-sync` (3), `12c-schema-eng` (5), `13-i18n` (1), `20d-stylesheet-hub` (1), `30-wallpaper` (2), `30b-wallpaper-scene` (2), `31-engine-extra` (5), `32-effects` (6), `35-context` (5), `40b-companion-install` (1), `42-life` (1), `58-legibility` (3), `59-splash` (1), `70-sidebar` (2), `70b-wallpaper-sidebar-panel` (7), `72-we-library` (4), `76b-role-hub-install` (2), `90-font` (4), `95-a11y` (4), `99-apply` (7) |
 | `12-schema.js` | schema | 60 | 438 | `10-constants` (2), `11-platform` (2), `13-i18n` (1) | `12b-schema-sync` (42), `12c-schema-eng` (1), `13-i18n` (1), `76b-role-hub-install` (1) |
 | `12b-schema-sync.js` | schema | 51 | 1027 | `10-constants` (1), `11-platform` (3), `12-schema` (42), `13-i18n` (2) | `12c-schema-eng` (2), `70b-wallpaper-sidebar-panel` (1), `99-apply` (3) |
@@ -56,8 +56,10 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `55-lowpower.js` | low power | 4 | 164 | `10-constants` (1), `13-i18n` (2), `30-wallpaper` (2), `60-zones` (1) | `30b-wallpaper-scene` (1), `32-effects` (1), `44d-pet-mind` (1), `59-splash` (1), `70b-wallpaper-sidebar-panel` (2), `99-apply` (1) |
 | `57-glass.js` | glass opacity | 26 | 213 | `10-constants` (3) | `35-context` (1), `44b-pet-state` (1), `70b-wallpaper-sidebar-panel` (2), `76-role-hub` (1), `99-apply` (3) |
 | `58-legibility.js` | legibility | 24 | 321 | `10-constants` (3), `11-platform` (3), `13-i18n` (2), `30-wallpaper` (1) | `70b-wallpaper-sidebar-panel` (2), `90-font` (3), `99-apply` (1) |
-| `59-splash.js` | splash | 42 | 389 | `10-constants` (2), `11-platform` (1), `13-i18n` (1), `55-lowpower` (1), `59b-splash-film` (1) | `76b-role-hub-install` (6), `99-apply` (2) |
-| `59b-splash-film.js` | splash | 5 | 822 | `10-constants` (2) | `59-splash` (1) |
+| `59-splash.js` | splash | 42 | 389 | `10-constants` (2), `11-platform` (1), `13-i18n` (1), `55-lowpower` (1), `59d-splash-film-install` (1) | `76b-role-hub-install` (6), `99-apply` (2) |
+| `59b-splash-film.js` | splash | 3 | 0 | — | `59d-splash-film-install` (3) |
+| `59c-splash-film-runtime.js` | splash | 1 | 648 | `10-constants` (1) | `59d-splash-film-install` (1) |
+| `59d-splash-film-install.js` | splash | 1 | 183 | `10-constants` (2), `59b-splash-film` (3), `59c-splash-film-runtime` (1) | `59-splash` (1) |
 | `60-zones.js` | zone framing | 13 | 197 | `10-constants` (1), `30-wallpaper` (1) | `55-lowpower` (1), `70b-wallpaper-sidebar-panel` (6), `99-apply` (1) |
 | `65-bridge.js` | selector bridge | 2 | 179 | — | `99-apply` (2) |
 | `70-sidebar.js` | wallpaper sidebar | 13 | 95 | `10-constants` (2), `11-platform` (2), `13-i18n` (1) | `70b-wallpaper-sidebar-panel` (6), `99-apply` (1) |
@@ -511,13 +513,18 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `58-legibility.js` | `useTl5I18n` | `13-i18n.js` | 1 |
 | `58-legibility.js` | `wallpaperController` | `30-wallpaper.js` | 1 |
 | `59-splash.js` | `BODY_ATTR` | `10-constants.js` | 2 |
-| `59-splash.js` | `installSplashFilm` | `59b-splash-film.js` | 2 |
+| `59-splash.js` | `installSplashFilm` | `59d-splash-film-install.js` | 2 |
 | `59-splash.js` | `lowPowerController` | `55-lowpower.js` | 3 |
 | `59-splash.js` | `note` | `10-constants.js` | 8 |
 | `59-splash.js` | `TL_T` | `13-i18n.js` | 2 |
 | `59-splash.js` | `tl5Diag` | `11-platform.js` | 12 |
-| `59b-splash-film.js` | `PLUGIN_ID` | `10-constants.js` | 1 |
-| `59b-splash-film.js` | `TL_BUILD_VERSION` | `10-constants.js` | 2 |
+| `59c-splash-film-runtime.js` | `TL_BUILD_VERSION` | `10-constants.js` | 1 |
+| `59d-splash-film-install.js` | `createSplashFilmRuntime` | `59c-splash-film-runtime.js` | 1 |
+| `59d-splash-film-install.js` | `PLUGIN_ID` | `10-constants.js` | 1 |
+| `59d-splash-film-install.js` | `SPLASH_FILM_CSS` | `59b-splash-film.js` | 1 |
+| `59d-splash-film-install.js` | `SPLASH_FILM_DOM` | `59b-splash-film.js` | 1 |
+| `59d-splash-film-install.js` | `SPLASH_FILM_SHADERS` | `59b-splash-film.js` | 2 |
+| `59d-splash-film-install.js` | `TL_BUILD_VERSION` | `10-constants.js` | 1 |
 | `60-zones.js` | `railFrameStep` | `10-constants.js` | 1 |
 | `60-zones.js` | `wallpaperController` | `30-wallpaper.js` | 2 |
 | `70-sidebar.js` | `note` | `10-constants.js` | 2 |
@@ -851,8 +858,11 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `59-splash.js` | `11-platform.js` | 1 | 12 |
 | `59-splash.js` | `13-i18n.js` | 1 | 2 |
 | `59-splash.js` | `55-lowpower.js` | 1 | 3 |
-| `59-splash.js` | `59b-splash-film.js` | 1 | 2 |
-| `59b-splash-film.js` | `10-constants.js` | 2 | 3 |
+| `59-splash.js` | `59d-splash-film-install.js` | 1 | 2 |
+| `59c-splash-film-runtime.js` | `10-constants.js` | 1 | 1 |
+| `59d-splash-film-install.js` | `10-constants.js` | 2 | 2 |
+| `59d-splash-film-install.js` | `59b-splash-film.js` | 3 | 4 |
+| `59d-splash-film-install.js` | `59c-splash-film-runtime.js` | 1 | 1 |
 | `60-zones.js` | `10-constants.js` | 1 | 1 |
 | `60-zones.js` | `30-wallpaper.js` | 1 | 2 |
 | `70-sidebar.js` | `10-constants.js` | 2 | 3 |

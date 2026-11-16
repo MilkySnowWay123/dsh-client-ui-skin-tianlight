@@ -418,4 +418,5 @@
 		exports.apply = apply;
 		return module.exports;
 	}
-});
+	});
+})();

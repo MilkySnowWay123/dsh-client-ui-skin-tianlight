@@ -10,17 +10,17 @@ DSH 的客户端插件加载约定是"一个插件只有一个 ESM 文件"（见
 
 | # | 片段 | region | 字节 | 职责 |
 | --- | --- | --- | --- | --- |
-| 1 | `00-envelope.js` | （外壳） | 233 | 拼装外壳：`window.__ModuleLoader__.load` + factory/module/exports |
+| 1 | `00-envelope.js` | （外壳） | 1330 | 拼装外壳：`window.__ModuleLoader__.load` + factory/module/exports |
 | 2 | `10-constants.js` | constants | 5749 | 常量、`HOST_API` 契约、`TL_BUILD_VERSION`、诊断入口 `note`/`tl5Diag` |
 | 3 | `11-platform.js` | platform | 24569 | 模块注册表、TL5 指标/诊断总线、平台环境探测 |
 | 4 | `12-schema.js` | schema | 29827 | 设置 schema、默认外观、数据键与 repair 校验（存储/同步见 12b，工程面板见 12c） |
 | 5 | `12b-schema-sync.js` | schema | 60912 | 设置镜像与宿主同步：迁移、冲突重放、备份/恢复、跨标签广播 |
 | 6 | `12c-schema-eng.js` | schema | 14643 | 模块标签/描述与工程面板分区（含 tl5-eng 样式） |
 | 7 | `13-i18n.js` | i18n | 16333 | 中英文字典与 `registerTl5Strings` |
-| 8 | `20-stylesheet.js` | stylesheet | 19286 | 全部 CSS：玻璃、分区、字体、无障碍、开机动画 |
-| 9 | `20b-stylesheet-shell.js` | stylesheet | 40851 | CSS 外壳层：产品 DOM 抬高、字体面板、覆盖层、取景、桥接面 |
-| 10 | `20c-stylesheet-glass.js` | stylesheet | 40827 | CSS 桌宠/省电/液态玻璃（三档 + 实时透镜） |
-| 11 | `20d-stylesheet-hub.js` | stylesheet | 44164 | CSS 中枢/新表面/开机动画 + installStyles 注入 |
+| 8 | `20-stylesheet.js` | stylesheet | 19284 | 全部 CSS：玻璃、分区、字体、无障碍、开机动画 |
+| 9 | `20b-stylesheet-shell.js` | stylesheet | 40848 | CSS 外壳层：产品 DOM 抬高、字体面板、覆盖层、取景、桥接面 |
+| 10 | `20c-stylesheet-glass.js` | stylesheet | 40824 | CSS 桌宠/省电/液态玻璃（三档 + 实时透镜） |
+| 11 | `20d-stylesheet-hub.js` | stylesheet | 44161 | CSS 中枢/新表面/开机动画 + installStyles 注入 |
 | 12 | `30-wallpaper.js` | wallpaper | 96828 | 壁纸目录/变体/图层/播放设置（场景运行时见 30b） |
 | 13 | `30b-wallpaper-scene.js` | wallpaper | 80385 | 壁纸场景运行时：video/image/scene 挂载、播放控制与释放（installScene） |
 | 14 | `31-engine-extra.js` | wallpaper engine extras | 56604 | WebWallGL 场景引擎桥与预览 |
@@ -40,17 +40,19 @@ DSH 的客户端插件加载约定是"一个插件只有一个 ESM 文件"（见
 | 28 | `57-glass.js` | glass opacity | 17730 | 液态玻璃三档与深度、v2.2.0 实时渲染开关 |
 | 29 | `58-legibility.js` | legibility | 25156 | 可读性对比/字号/字距 |
 | 30 | `59-splash.js` | splash | 25280 | 开机动画：`splashPlan` 单点决策 + 简洁 A 版 |
-| 31 | `59b-splash-film.js` | （splash 长片） | 110910 | 18.5 秒长片（WebGL/WAAPI，自带硬停与释放） |
-| 32 | `60-zones.js` | zone framing | 12967 | 分区取景（主图/轨道） |
-| 33 | `65-bridge.js` | selector bridge | 17988 | 运行时选择器桥：slot → 产品 `data-*` → 类名后缀 |
-| 34 | `70-sidebar.js` | wallpaper sidebar | 59630 | 壁纸面板 i18n、分享/导入导出编解码助手（组件见 70b） |
-| 35 | `70b-wallpaper-sidebar-panel.js` | wallpaper sidebar | 152600 | 壁纸面板 React 组件 WallpaperPanel：来源/清单/图层/播放/库（约 3850 行） |
-| 36 | `72-we-library.js` | we library | 60116 | Wallpaper Engine 库与场景选择 |
-| 37 | `76-role-hub.js` | role hub | 74825 | 角色中枢 i18n 字典、常量与通用助手（运行时见 76b） |
-| 38 | `76b-role-hub-install.js` | role hub | 181030 | 角色中枢运行时：全屏 overlay、各卡片与状态（installRoleHub，约 3800 行） |
-| 39 | `90-font.js` | font panel | 32193 | 字体面板（内置字体清单/拖拽） |
-| 40 | `95-a11y.js` | accessibility | 20675 | 无障碍（键盘、焦点、对比度） |
-| 41 | `99-apply.js` | apply | 17196 | `apply(ctx)`：按固定顺序安装/注册每个模块，单例与热重载 |
+| 31 | `59b-splash-film.js` | （splash 长片） | 35573 | 18.5 秒长片（WebGL/WAAPI，自带硬停与释放） |
+| 32 | `59c-splash-film-runtime.js` | splash | 67430 | 长片运行时：WebGL 场景 / Canvas 字形 / 时间线（createSplashFilmRuntime） |
+| 33 | `59d-splash-film-install.js` | splash | 7975 | 长片安装与降级：挂载、跳过、清理（installSplashFilm） |
+| 34 | `60-zones.js` | zone framing | 12967 | 分区取景（主图/轨道） |
+| 35 | `65-bridge.js` | selector bridge | 17988 | 运行时选择器桥：slot → 产品 `data-*` → 类名后缀 |
+| 36 | `70-sidebar.js` | wallpaper sidebar | 59630 | 壁纸面板 i18n、分享/导入导出编解码助手（组件见 70b） |
+| 37 | `70b-wallpaper-sidebar-panel.js` | wallpaper sidebar | 152600 | 壁纸面板 React 组件 WallpaperPanel：来源/清单/图层/播放/库（约 3850 行） |
+| 38 | `72-we-library.js` | we library | 60116 | Wallpaper Engine 库与场景选择 |
+| 39 | `76-role-hub.js` | role hub | 74825 | 角色中枢 i18n 字典、常量与通用助手（运行时见 76b） |
+| 40 | `76b-role-hub-install.js` | role hub | 181030 | 角色中枢运行时：全屏 overlay、各卡片与状态（installRoleHub，约 3800 行） |
+| 41 | `90-font.js` | font panel | 32193 | 字体面板（内置字体清单/拖拽） |
+| 42 | `95-a11y.js` | accessibility | 20675 | 无障碍（键盘、焦点、对比度） |
+| 43 | `99-apply.js` | apply | 17203 | `apply(ctx)`：按固定顺序安装/注册每个模块，单例与热重载 |
 
 依赖表、跨片段引用清单和"新增引用就失败"的门禁见 [docs/DEPS.md](docs/DEPS.md)。
 

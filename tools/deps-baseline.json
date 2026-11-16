@@ -3,12 +3,12 @@
   "generator": "tools/deps.mjs",
   "note": "Reviewed cross-fragment top-level references. Regenerate deliberately with `node tools/deps.mjs`; `npm run check` fails on any reference missing here.",
   "totals": {
-    "fragments": 41,
+    "fragments": 43,
     "declarations": 1216,
     "declarationSites": 1216,
-    "references": 670,
-    "referenceOccurrences": 3538,
-    "edges": 172,
+    "references": 675,
+    "referenceOccurrences": 3543,
+    "edges": 175,
     "unused": 2
   },
   "references": [
@@ -2643,7 +2643,7 @@
     {
       "from": "59-splash.js",
       "name": "installSplashFilm",
-      "declaredIn": "59b-splash-film.js",
+      "declaredIn": "59d-splash-film-install.js",
       "count": 2
     },
     {
@@ -2671,16 +2671,46 @@
       "count": 12
     },
     {
-      "from": "59b-splash-film.js",
+      "from": "59c-splash-film-runtime.js",
+      "name": "TL_BUILD_VERSION",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "59d-splash-film-install.js",
+      "name": "createSplashFilmRuntime",
+      "declaredIn": "59c-splash-film-runtime.js",
+      "count": 1
+    },
+    {
+      "from": "59d-splash-film-install.js",
       "name": "PLUGIN_ID",
       "declaredIn": "10-constants.js",
       "count": 1
     },
     {
-      "from": "59b-splash-film.js",
+      "from": "59d-splash-film-install.js",
+      "name": "SPLASH_FILM_CSS",
+      "declaredIn": "59b-splash-film.js",
+      "count": 1
+    },
+    {
+      "from": "59d-splash-film-install.js",
+      "name": "SPLASH_FILM_DOM",
+      "declaredIn": "59b-splash-film.js",
+      "count": 1
+    },
+    {
+      "from": "59d-splash-film-install.js",
+      "name": "SPLASH_FILM_SHADERS",
+      "declaredIn": "59b-splash-film.js",
+      "count": 2
+    },
+    {
+      "from": "59d-splash-film-install.js",
       "name": "TL_BUILD_VERSION",
       "declaredIn": "10-constants.js",
-      "count": 2
+      "count": 1
     },
     {
       "from": "60-zones.js",

@@ -6317,6 +6317,27 @@ await testAsync('splash film wrapper: normal/skip/fallback/hard-stop/dispose/err
   }
 })
 
+// v2.2.4: the loader call is evaluated before any factory body runs, so the envelope
+// guards it instead of throwing an uncaught error owned by nobody. This is the only
+// fail-hard point the skin cannot wrap in try/catch; the test pins the fail-soft path.
+await testAsync('the client envelope reports a missing module loader instead of throwing', async () => {
+  const savedWindow = globalThis.window
+  const savedWarn = console.warn
+  const warnings = []
+  try {
+    delete globalThis.window
+    console.warn = (...args) => warnings.push(args.map((part) => String(part)).join(' '))
+    await import(new URL('../lib/client.js', import.meta.url).href + '?envelope-guard=' + Date.now())
+  } finally {
+    console.warn = savedWarn
+    if (savedWindow === undefined) delete globalThis.window
+    else globalThis.window = savedWindow
+  }
+  assert.equal(warnings.length, 1, 'exactly one diagnostic, no uncaught error')
+  assert.match(warnings[0], /client module loader contract missing/, 'the missing contract is named')
+  assert.match(warnings[0], /__ModuleLoader__/, 'the expected contract is named')
+})
+
 console.log(`tests: ${passed} passed, ${failures.length} failed`)
 for (const failure of failures) console.log('  FAIL ' + failure)
 if (failures.length > 0) process.exit(1)

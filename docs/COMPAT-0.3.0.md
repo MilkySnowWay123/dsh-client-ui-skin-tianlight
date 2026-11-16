@@ -8,7 +8,7 @@
 ## 结论摘要
 
 1. **硬风险（整包不出现）**：`window.__ModuleLoader__.load({id,factory})`（§6-1）若改契约，皮肤客户端在 ESM 顶层直接 ReferenceError，无任何 try/catch——壁纸/玻璃/桌宠全无。
-2. **硬风险（功能级全灭）**：宿主 `webServer.register({kind:'prefix',path,handler})` 走的是**遗留 `handler` 分支**（§6-4）；0.2.2-rc.3 官方包已统一改用 Fetch 风格 `resource`，该分支一旦在 0.3.0 删除，18 条精确路由 + 5 条前缀 + 资源兜底全 404。
+2. **硬风险（功能级全灭）**：宿主 `webServer.register({kind:'prefix',path,handler})` 走的是**遗留 `handler` 分支**（§6-4）；0.2.2-rc.3 官方包已统一改用 Fetch 风格 `resource`，该分支一旦在 0.3.0 删除，18 条精确路由 + 5 条前缀 + 资源兜底全 404。**不能靠"再挂一个 resource"兜底**（会让写路由全 405，见 §6.1），只能整包改 Fetch 语义。
 3. **硬风险（与 DOM 无关，发版流程）**：`engines.dsh` / 两个 optional peer / `skin.json.dshCompatibilityRange` 决定安装与 profile 启动能否启用（`dsh/docs/upgrade-guide/v0.2.1-alpha.3/plugin-engines-dsh`：`engines.dsh` 单独判定，peer 被忽略，命中即 `IncompatiblePlugin`）。**本条盘点时 0.3 臂只在工作树里**（`package.json` 的 `engines.dsh` + 两个 optional peer、`skin.json.dshCompatibilityRange`）；提交后以 HEAD 为准，发版前用清单第 2 条自查。
 4. **中风险（静默）**：DOM 钩子层（`data-slot` / `data-composer-card` / `data-sidebar-collapsed` / `_newSession` 等）在 0.2.2-rc.3 全部真实存在；0.3.0 改名或改 shadow DOM 时桥**零命中且不报错**——壁纸在、玻璃全无。
 5. **中风险（认知纠正）**：皮肤**不是**「不注册 slot」——它注册 4 处：`conversation.input.right`×2（推理滑杆、字体按钮）、`settings.section` 与 `sidebar.footer.action`（WE 壁纸库）。
@@ -93,6 +93,28 @@
 | `uiWorkspace`（Agent 通道的会话列表） | Cordis 服务（client） | `src/48-pet-agent.js:558-569` | 存在（asar:`dsh-client-ui-workspace/lib/client.js` 的 `super(ctx,'uiWorkspace')` 即服务键） | 中枢 Agent 卡的目标会话列表空 | fail-soft（inject 内 try/catch） | 软 | 中枢 Agent 卡「目标会话」下拉非空 |
 | CSS 来源：`--dsw-*` 产品 token + 自建 `--tl-*`；`<style data-plugin-css>` 注入 | CSS 机制 | `src/20-stylesheet.js:3,49-170,3766-3782` | 存在（asar:`dsh-client-modules/lib/client.js` 用 `data-plugin`/`data-plugin-css` 认领插件注入的 `<style>`） | `<style>` 被拒/被清理 → 整页无皮肤样式（DOM 与桌宠仍在） | fail-soft（`document` 缺失直接 noop；重复注入复用已有标签，`:3768-3771`） | 软（皮肤自己 append，不走 adoptedStyleSheets） | `!!document.querySelector('style[data-plugin-css="ui-skin-tianlight/tianlight.css"]')` |
 | 开机遮罩给 `#root` 打 `data-tl-splash-blur` | DOM | `src/59-splash.js:607-614`、`src/20-stylesheet.js:3709` | 依赖 `#root`（见 §1） | 片尾「产品从模糊变清晰」缺失 | fail-soft（`if (appRoot !== null)`） | 软 | 看开机收尾是否模糊到清晰 |
+
+### 6.1 为什么不能"顺手"补一个 Fetch `resource`（已复核，重要）
+
+有人会想：既然官方改用 `resource`，那就给同一个路由对象同时挂 `handler` 和 `resource`。
+**这会更糟，不能这么做。** `dsh-host-webserver` 的 HTTP 分发顺序（`lib/index.js:469-471`）是：
+
+1. `typeof responder === 'function'` → 当 handler；
+2. `'resource' in responder` → 走 Fetch 资源分支（**不看 method**）；
+3. `responder.handler(req, res)`。
+
+也就是说，路由对象一旦带 `resource`，**所有方法**（包括本插件的写路由：`_settings` PUT、`_upload` POST、`_pet-chat` POST、`_import`/`_bundle`/`_transcode`）都会走 `resource`；
+而 `readResource()` 对非 GET/HEAD 在匹配之前就返回 405。结果：读通了、写全挂。
+`register()` 也不允许同一 `(kind, path)` 注册两次（重复即 throw，`lib/index.js:375-382`），所以"一条 handler 路由 + 一条 resource 路由"同样不可行。
+
+结论：`handler` → `resource` 是**整包重写**（`lib/http-media.js` 的 Range/流式、8 条写路由、两道同源围栏都要变成 Request/Response 语义），不是补一个字段。0.3.0 若真的删掉 legacy 分支，正确顺序是：
+
+1. 先按清单确认是这一条（`curl` 404 + 宿主控制台出现 route self-check FAILED）；
+2. 新建 `lib/fetch-resource.js`：把 `handle(ctx, req, res)` 跑在 Node `http` shim 上，响应体用 `Readable.toWeb` 转成 `Response`（Range/HEAD 语义保持不变）；
+3. 所有路由改注册 `resource`，`scheduleRouteSelfCheck` 改为调用 `webServer.readResource()`；
+4. 在 `tools/test.mjs` 给 shim 补单测（GET/HEAD/206/POST 必须 405/同源 403）后再发版。
+
+在此之前，**保留 `handler` 是唯一正确选择**——它是 0.2.x 里唯一能同时服务读和写的方法。
 
 ## 0.3.0 发版日检查清单（按顺序执行）
 
