@@ -3,12 +3,12 @@
   "generator": "tools/deps.mjs",
   "note": "Reviewed cross-fragment top-level references. Regenerate deliberately with `node tools/deps.mjs`; `npm run check` fails on any reference missing here.",
   "totals": {
-    "fragments": 28,
-    "declarations": 1163,
-    "declarationSites": 1163,
-    "references": 307,
-    "referenceOccurrences": 2272,
-    "edges": 124,
+    "fragments": 38,
+    "declarations": 1213,
+    "declarationSites": 1213,
+    "references": 667,
+    "referenceOccurrences": 3534,
+    "edges": 169,
     "unused": 2
   },
   "references": [
@@ -34,30 +34,12 @@
       "from": "12-schema.js",
       "name": "MODULE_DEFS",
       "declaredIn": "11-platform.js",
-      "count": 3
+      "count": 2
     },
     {
       "from": "12-schema.js",
-      "name": "moduleController",
-      "declaredIn": "11-platform.js",
-      "count": 8
-    },
-    {
-      "from": "12-schema.js",
-      "name": "React",
+      "name": "note",
       "declaredIn": "10-constants.js",
-      "count": 46
-    },
-    {
-      "from": "12-schema.js",
-      "name": "registerTl5Css",
-      "declaredIn": "11-platform.js",
-      "count": 1
-    },
-    {
-      "from": "12-schema.js",
-      "name": "registerTl5PanelSection",
-      "declaredIn": "11-platform.js",
       "count": 1
     },
     {
@@ -68,54 +50,360 @@
     },
     {
       "from": "12-schema.js",
-      "name": "setTl5Language",
-      "declaredIn": "13-i18n.js",
-      "count": 1
-    },
-    {
-      "from": "12-schema.js",
-      "name": "STORAGE_KEY",
-      "declaredIn": "10-constants.js",
-      "count": 1
-    },
-    {
-      "from": "12-schema.js",
-      "name": "subscribeTl5Metrics",
-      "declaredIn": "11-platform.js",
-      "count": 1
-    },
-    {
-      "from": "12-schema.js",
-      "name": "TL_T",
-      "declaredIn": "13-i18n.js",
-      "count": 2
-    },
-    {
-      "from": "12-schema.js",
-      "name": "TL5_METRICS",
-      "declaredIn": "11-platform.js",
-      "count": 1
-    },
-    {
-      "from": "12-schema.js",
-      "name": "tl5Diag",
-      "declaredIn": "11-platform.js",
-      "count": 11
-    },
-    {
-      "from": "12-schema.js",
-      "name": "tl5Language",
-      "declaredIn": "13-i18n.js",
-      "count": 1
-    },
-    {
-      "from": "12-schema.js",
       "name": "tl5MediaKindFromName",
       "declaredIn": "11-platform.js",
       "count": 1
     },
     {
-      "from": "12-schema.js",
+      "from": "12b-schema-sync.js",
+      "name": "MODULE_DEFS",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "moduleController",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "registerSchemaStrings",
+      "declaredIn": "12-schema.js",
+      "count": 2
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairCompanionSetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairFontFamilySetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairFontPositionSetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairFpsSetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairGlassSetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairJsonObjectSetting",
+      "declaredIn": "12-schema.js",
+      "count": 4
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairLanguageSetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairLayersSetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairLibrarySetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairLowPowerSetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairModulesSetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairPlaybackSetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairRotationSetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairShaderSetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairSyncRevisionSetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairWallpaperSetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairZonesSetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "setTl5Language",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "STORAGE_KEY",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_BACKUP_KEY",
+      "declaredIn": "12-schema.js",
+      "count": 2
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_BACKUP_MAX_BYTES",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_BC_NAME",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_CONFLICT_RETRY_MAX",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_HOST_BACKUP_KEY",
+      "declaredIn": "12-schema.js",
+      "count": 3
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_HOST_BACKUP_MAX_BYTES",
+      "declaredIn": "12-schema.js",
+      "count": 2
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_HOST_TIMEOUT_MS",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_HOST_WRITE_TIMEOUT_MS",
+      "declaredIn": "12-schema.js",
+      "count": 3
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_LANGUAGE_MODES",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_MIRROR_CONFLICT_MAX",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_MIRROR_DEBOUNCE_MS",
+      "declaredIn": "12-schema.js",
+      "count": 2
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_MIRROR_RETRY_MAX",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_MIRROR_RETRY_MS",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_PUSH_RETRY_DELAY_MS",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_SCHEMA_KEY",
+      "declaredIn": "12-schema.js",
+      "count": 3
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_SCHEMA_VERSION",
+      "declaredIn": "12-schema.js",
+      "count": 6
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_SETTINGS_ROUTE",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_SYNC_REVISION_KEY",
+      "declaredIn": "12-schema.js",
+      "count": 5
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "tl5ApplyDefaultAppearance",
+      "declaredIn": "12-schema.js",
+      "count": 3
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "tl5Diag",
+      "declaredIn": "11-platform.js",
+      "count": 11
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "tl5IsPlainObject",
+      "declaredIn": "12-schema.js",
+      "count": 13
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "tl5Json",
+      "declaredIn": "12-schema.js",
+      "count": 8
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "tl5Language",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "tl5Storage",
+      "declaredIn": "12-schema.js",
+      "count": 12
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "tl5StorageKeys",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "tl5SyncableKey",
+      "declaredIn": "12-schema.js",
+      "count": 9
+    },
+    {
+      "from": "12c-schema-eng.js",
+      "name": "moduleController",
+      "declaredIn": "11-platform.js",
+      "count": 6
+    },
+    {
+      "from": "12c-schema-eng.js",
+      "name": "React",
+      "declaredIn": "10-constants.js",
+      "count": 46
+    },
+    {
+      "from": "12c-schema-eng.js",
+      "name": "registerTl5Css",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "12c-schema-eng.js",
+      "name": "registerTl5PanelSection",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "12c-schema-eng.js",
+      "name": "schemaRuntime",
+      "declaredIn": "12b-schema-sync.js",
+      "count": 1
+    },
+    {
+      "from": "12c-schema-eng.js",
+      "name": "settingsStore",
+      "declaredIn": "12b-schema-sync.js",
+      "count": 8
+    },
+    {
+      "from": "12c-schema-eng.js",
+      "name": "subscribeTl5Metrics",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "12c-schema-eng.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 2
+    },
+    {
+      "from": "12c-schema-eng.js",
+      "name": "TL5_METRICS",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "12c-schema-eng.js",
+      "name": "tl5IsPlainObject",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "12c-schema-eng.js",
       "name": "useTl5I18n",
       "declaredIn": "13-i18n.js",
       "count": 1
@@ -166,37 +454,13 @@
       "from": "30-wallpaper.js",
       "name": "ASSET_BASE",
       "declaredIn": "10-constants.js",
-      "count": 12
+      "count": 10
     },
     {
       "from": "30-wallpaper.js",
-      "name": "contextController",
-      "declaredIn": "35-context.js",
-      "count": 4
-    },
-    {
-      "from": "30-wallpaper.js",
-      "name": "effectiveShaderFps",
+      "name": "note",
       "declaredIn": "10-constants.js",
-      "count": 4
-    },
-    {
-      "from": "30-wallpaper.js",
-      "name": "FOCAL_X",
-      "declaredIn": "10-constants.js",
-      "count": 1
-    },
-    {
-      "from": "30-wallpaper.js",
-      "name": "lowPowerController",
-      "declaredIn": "55-lowpower.js",
-      "count": 3
-    },
-    {
-      "from": "30-wallpaper.js",
-      "name": "moduleController",
-      "declaredIn": "11-platform.js",
-      "count": 4
+      "count": 9
     },
     {
       "from": "30-wallpaper.js",
@@ -214,25 +478,319 @@
       "from": "30-wallpaper.js",
       "name": "TL_T",
       "declaredIn": "13-i18n.js",
-      "count": 67
+      "count": 61
     },
     {
       "from": "30-wallpaper.js",
       "name": "tl5Diag",
       "declaredIn": "11-platform.js",
-      "count": 7
-    },
-    {
-      "from": "30-wallpaper.js",
-      "name": "transitionController",
-      "declaredIn": "31-engine-extra.js",
       "count": 4
     },
     {
       "from": "30-wallpaper.js",
       "name": "VIDEO_CANDIDATES",
       "declaredIn": "10-constants.js",
+      "count": 4
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "ADAPTIVE_DEFAULTS",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "ADAPTIVE_PROBE_COOLDOWN_MS",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "ADAPTIVE_RECOVER_FPS",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "ADAPTIVE_VIDEO_DROP_MIN",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "ADAPTIVE_VIDEO_DROP_RATIO",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "ADAPTIVE_VIDEO_GAP_MS",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "adaptiveDecision",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "adaptiveHooks",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "adaptiveSampleIsLow",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "applyLayers",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "applyPlayback",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "ASSET_BASE",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "audioController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 4
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "cancelFrameCacheCapture",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "captureFrameCache",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "contextController",
+      "declaredIn": "35-context.js",
+      "count": 4
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "createRotationRuntime",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "createShaderRenderer",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "effectiveShaderFps",
+      "declaredIn": "10-constants.js",
+      "count": 4
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "FOCAL_X",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "frameCacheController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "groupVariantItems",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "listRotationCandidates",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "lowPowerController",
+      "declaredIn": "55-lowpower.js",
+      "count": 3
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "moduleController",
+      "declaredIn": "11-platform.js",
+      "count": 4
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "pickCachedVariant",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "prepareWallpaper",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "publishAdaptive",
+      "declaredIn": "30-wallpaper.js",
+      "count": 3
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "publishSceneStatus",
+      "declaredIn": "30-wallpaper.js",
+      "count": 9
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "readCatalog",
+      "declaredIn": "30-wallpaper.js",
+      "count": 3
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "readLayers",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "readPlayback",
+      "declaredIn": "30-wallpaper.js",
+      "count": 4
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "readRotation",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "readShaderSettings",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "releaseFrameCacheUrls",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "resolutionLabel",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "resolveAutoWallpaper",
+      "declaredIn": "30-wallpaper.js",
+      "count": 4
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "resolveVariantChoice",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "resolveWallpaper",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "resolveWallpaperChoice",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "rotationRuntime",
+      "declaredIn": "30-wallpaper.js",
+      "count": 4
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "saveWallpaperChoice",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "scenePlayback",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "sceneStatus",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
       "count": 6
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "tl5Diag",
+      "declaredIn": "11-platform.js",
+      "count": 3
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "transitionController",
+      "declaredIn": "31-engine-extra.js",
+      "count": 4
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "VIDEO_CANDIDATES",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "wallpaperController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 25
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
+      "name": "webWallpaperSrc",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
     },
     {
       "from": "31-engine-extra.js",
@@ -514,36 +1072,12 @@
       "from": "40-companion.js",
       "name": "note",
       "declaredIn": "10-constants.js",
-      "count": 53
-    },
-    {
-      "from": "40-companion.js",
-      "name": "petBrainInternal",
-      "declaredIn": "44-pet-brain.js",
-      "count": 3
-    },
-    {
-      "from": "40-companion.js",
-      "name": "petLlmHintText",
-      "declaredIn": "44-pet-brain.js",
-      "count": 2
-    },
-    {
-      "from": "40-companion.js",
-      "name": "readRenderTier",
-      "declaredIn": "10-constants.js",
-      "count": 1
+      "count": 14
     },
     {
       "from": "40-companion.js",
       "name": "registerTl5Strings",
       "declaredIn": "13-i18n.js",
-      "count": 1
-    },
-    {
-      "from": "40-companion.js",
-      "name": "resolveCompanionArt",
-      "declaredIn": "30-wallpaper.js",
       "count": 1
     },
     {
@@ -554,21 +1088,213 @@
     },
     {
       "from": "40-companion.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 2
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "CAT_SVG",
+      "declaredIn": "40-companion.js",
+      "count": 4
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "companionDutyBridge",
+      "declaredIn": "40-companion.js",
+      "count": 2
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "DUTY_CHOICE_LABELS",
+      "declaredIn": "40-companion.js",
+      "count": 1
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "lastSavedState",
+      "declaredIn": "40-companion.js",
+      "count": 1
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "LINES",
+      "declaredIn": "40-companion.js",
+      "count": 7
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "loadState",
+      "declaredIn": "40-companion.js",
+      "count": 1
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 33
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "PET_CHATS_USER_MAX",
+      "declaredIn": "40-companion.js",
+      "count": 2
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "petActionsApi",
+      "declaredIn": "40-companion.js",
+      "count": 2
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "petBrainInternal",
+      "declaredIn": "44d-pet-mind.js",
+      "count": 3
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "petChatsActive",
+      "declaredIn": "40-companion.js",
+      "count": 3
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "petChatsApi",
+      "declaredIn": "40-companion.js",
+      "count": 2
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "petChatsAppend",
+      "declaredIn": "40-companion.js",
+      "count": 2
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "petChatsCreate",
+      "declaredIn": "40-companion.js",
+      "count": 2
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "petChatsEditUserMessage",
+      "declaredIn": "40-companion.js",
+      "count": 1
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "petChatsRead",
+      "declaredIn": "40-companion.js",
+      "count": 1
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "petChatsRemove",
+      "declaredIn": "40-companion.js",
+      "count": 1
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "petChatsSetActive",
+      "declaredIn": "40-companion.js",
+      "count": 1
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "petLlmHintText",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "pick",
+      "declaredIn": "40-companion.js",
+      "count": 7
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "previousPetActionsGlobal",
+      "declaredIn": "40-companion.js",
+      "count": 2
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "previousPetChatsGlobal",
+      "declaredIn": "40-companion.js",
+      "count": 2
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "readRenderTier",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "resolveCompanionArt",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "40b-companion-install.js",
+      "name": "saveState",
+      "declaredIn": "40-companion.js",
+      "count": 2
+    },
+    {
+      "from": "40b-companion-install.js",
       "name": "subscribeTl5I18n",
       "declaredIn": "13-i18n.js",
       "count": 1
     },
     {
-      "from": "40-companion.js",
+      "from": "40b-companion-install.js",
       "name": "TL_T",
       "declaredIn": "13-i18n.js",
-      "count": 47
+      "count": 45
     },
     {
-      "from": "40-companion.js",
+      "from": "40b-companion-install.js",
       "name": "tl5OverlayRegister",
       "declaredIn": "11-platform.js",
       "count": 2
+    },
+    {
+      "from": "40c-companion-duty.js",
+      "name": "companionDutyBridge",
+      "declaredIn": "40-companion.js",
+      "count": 13
+    },
+    {
+      "from": "40c-companion-duty.js",
+      "name": "DUTY_ACTION_EVENT",
+      "declaredIn": "40-companion.js",
+      "count": 1
+    },
+    {
+      "from": "40c-companion-duty.js",
+      "name": "DUTY_CHANNEL_VERSION",
+      "declaredIn": "40-companion.js",
+      "count": 2
+    },
+    {
+      "from": "40c-companion-duty.js",
+      "name": "DUTY_EVENT",
+      "declaredIn": "40-companion.js",
+      "count": 2
+    },
+    {
+      "from": "40c-companion-duty.js",
+      "name": "DUTY_LIMITS",
+      "declaredIn": "40-companion.js",
+      "count": 9
+    },
+    {
+      "from": "40c-companion-duty.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 6
     },
     {
       "from": "42-life.js",
@@ -591,7 +1317,7 @@
     {
       "from": "42-life.js",
       "name": "petBrainInternal",
-      "declaredIn": "44-pet-brain.js",
+      "declaredIn": "44d-pet-mind.js",
       "count": 6
     },
     {
@@ -622,42 +1348,6 @@
       "from": "44-pet-brain.js",
       "name": "ASSET_BASE",
       "declaredIn": "10-constants.js",
-      "count": 3
-    },
-    {
-      "from": "44-pet-brain.js",
-      "name": "companionDutyBridge",
-      "declaredIn": "40-companion.js",
-      "count": 3
-    },
-    {
-      "from": "44-pet-brain.js",
-      "name": "glassDepthController",
-      "declaredIn": "57-glass.js",
-      "count": 6
-    },
-    {
-      "from": "44-pet-brain.js",
-      "name": "HOST_API",
-      "declaredIn": "10-constants.js",
-      "count": 1
-    },
-    {
-      "from": "44-pet-brain.js",
-      "name": "lowPowerController",
-      "declaredIn": "55-lowpower.js",
-      "count": 4
-    },
-    {
-      "from": "44-pet-brain.js",
-      "name": "petChatsRecentContext",
-      "declaredIn": "40-companion.js",
-      "count": 2
-    },
-    {
-      "from": "44-pet-brain.js",
-      "name": "readRenderTier",
-      "declaredIn": "10-constants.js",
       "count": 2
     },
     {
@@ -667,33 +1357,1125 @@
       "count": 1
     },
     {
-      "from": "44-pet-brain.js",
+      "from": "44b-pet-state.js",
+      "name": "ASSET_BASE",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "companionDutyBridge",
+      "declaredIn": "40-companion.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "glassDepthController",
+      "declaredIn": "57-glass.js",
+      "count": 6
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "HOST_API",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 12
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_AI_KEY",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_AUDIT_ACTIONS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_AUDIT_CAPS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_AUDIT_DEFAULT_LIMIT",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_AUDIT_MAX",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_CONSENT_CAPS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_CONSENT_TICKET_TTL_MS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_DAILY_LIMIT_DEFAULT",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_DAILY_LIMIT_MAX",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_FORBIDDEN_CAPS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 6
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_GRANTABLE_CAPS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_HIGH_CAPS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_HOST_LLM_FETCH_TIMEOUT_MS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_HOST_LLM_ROUTE",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_HOST_LLM_UNCONFIGURED_REASONS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_HOST_MODELS_FETCH_TIMEOUT_MS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_HOST_MODELS_ROUTE",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_LLM_CODES",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_LLM_HINT_KEYS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_LLM_MODEL_KEY",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_LLM_PROVIDER_KEY",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_LOCAL_DAILY_LIMIT",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_LOCAL_MINUTE_LIMIT",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_MEDIUM_CAPS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_MINUTE_CALL_LIMIT",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_PAUSE_KEY",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_PERIOD_KEYS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_PERMISSIONS_KEY",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_SAFE_CAPS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 7
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_SESSION_ONLY_CAPS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "PET_VERSION",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "petLocalContextReply",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
+      "name": "petMindFallbackState",
+      "declaredIn": "44d-pet-mind.js",
+      "count": 1
+    },
+    {
+      "from": "44b-pet-state.js",
       "name": "rememberHostIdentity",
       "declaredIn": "10-constants.js",
       "count": 1
     },
     {
-      "from": "44-pet-brain.js",
+      "from": "44b-pet-state.js",
       "name": "TL_T",
       "declaredIn": "13-i18n.js",
-      "count": 65
+      "count": 35
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "companionDutyBridge",
+      "declaredIn": "40-companion.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 15
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "PET_CHAT_CONTEXT_MAX",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "PET_DAILY_LIMIT_DEFAULT",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "PET_HIGH_CAPS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "PET_INPUT_MAX",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "PET_LLM_MAX_CHARS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "PET_LLM_TIMEOUT_MS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "PET_LLM_TIMEOUT_TOKEN",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "PET_LOCAL_REPLY_MAX",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "PET_MIND_CONTEXT_MESSAGES",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "PET_MINUTE_CALL_LIMIT",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "PET_REPLY_MAX",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "PET_SAY_MAX",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "PET_SYSTEM_PROMPT",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "PET_VERSION",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petAdapter",
+      "declaredIn": "44b-pet-state.js",
+      "count": 9
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petAi",
+      "declaredIn": "44b-pet-state.js",
+      "count": 4
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petAudit",
+      "declaredIn": "44b-pet-state.js",
+      "count": 19
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petAuditRing",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petCapabilityAdapters",
+      "declaredIn": "44b-pet-state.js",
+      "count": 5
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petChargeLlm",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petChatsRecentContext",
+      "declaredIn": "40-companion.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petClipText",
+      "declaredIn": "44b-pet-state.js",
+      "count": 11
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petEnsureDay",
+      "declaredIn": "44b-pet-state.js",
+      "count": 5
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petGranted",
+      "declaredIn": "44b-pet-state.js",
+      "count": 7
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petHostLlmProbe",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petHostLlmStatus",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petHostLlmUnavailableCode",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petInstalled",
+      "declaredIn": "44b-pet-state.js",
+      "count": 5
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petLastReplyAt",
+      "declaredIn": "44b-pet-state.js",
+      "count": 3
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petLifeStatus",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petLlmAutoSuppressed",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petLlmMinuteCount",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petLlmModel",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petLlmProvider",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petLlmQuota",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petLlmRouting",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petLocalDay",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petLocalMinute",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petLocalRateOk",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petLocalReply",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petLocalReplyRing",
+      "declaredIn": "44b-pet-state.js",
+      "count": 3
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petLocalReplySeed",
+      "declaredIn": "44b-pet-state.js",
+      "count": 4
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petMindLastThought",
+      "declaredIn": "44d-pet-mind.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petNonNegativeInt",
+      "declaredIn": "44b-pet-state.js",
+      "count": 12
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petNormalizeLlmCode",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petNumber",
+      "declaredIn": "44b-pet-state.js",
+      "count": 4
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petPauseAt",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petPaused",
+      "declaredIn": "44b-pet-state.js",
+      "count": 9
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petPeriodLabel",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petPermissionMap",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petSavePause",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petStripControls",
+      "declaredIn": "44b-pet-state.js",
+      "count": 3
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petTodayTurns",
+      "declaredIn": "44b-pet-state.js",
+      "count": 3
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "petTurns",
+      "declaredIn": "44b-pet-state.js",
+      "count": 4
+    },
+    {
+      "from": "44c-pet-llm.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 8
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "companionDutyBridge",
+      "declaredIn": "40-companion.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "lowPowerController",
+      "declaredIn": "55-lowpower.js",
+      "count": 4
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "PET_MIND_DEFAULT_INTERVAL",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "PET_MIND_DIGEST_MAX",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "PET_MIND_GOAL_KEYS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "PET_MIND_INTERVALS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "PET_MIND_KEY",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "PET_MIND_LLM_DAILY_LIMIT",
+      "declaredIn": "44-pet-brain.js",
+      "count": 4
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "PET_MIND_PROMPT",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "PET_MIND_RECENT_LIMIT",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "PET_MIND_THOUGHT_MAX",
+      "declaredIn": "44-pet-brain.js",
+      "count": 4
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "PET_MIND_THOUGHT_MAX_CHARS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "PET_MIND_THOUGHT_MIN_CHARS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 3
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "PET_MIND_TICK_MS",
+      "declaredIn": "44-pet-brain.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "PET_MIND_VERSION",
+      "declaredIn": "44-pet-brain.js",
+      "count": 7
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "PET_VERSION",
+      "declaredIn": "44-pet-brain.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petAdapter",
+      "declaredIn": "44b-pet-state.js",
+      "count": 3
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petAi",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petAudit",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petAuditRead",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petAuditRing",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petCallLlm",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petCapabilityAdapters",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petChat",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petChatHistory",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petClearCapabilityAdapter",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petClearLLM",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petClipText",
+      "declaredIn": "44b-pet-state.js",
+      "count": 6
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petClockLabel",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petDayKey",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petGrant",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petGranted",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petGrants",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petHostLlm",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petHostLlmProbe",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petHostLlmStatus",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petHostModels",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petInstalled",
+      "declaredIn": "44b-pet-state.js",
+      "count": 7
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petInvokeCapability",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petLastReplyAt",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petLife",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petLifeStatus",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petLlmAutoSuppressed",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petLlmMinute",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petLlmModel",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petLlmProvider",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petLoadAi",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petLoadPause",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petLoadPermissions",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petLocalDay",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petLocalMinute",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petLocalReplyRing",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petMaybeProactive",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 3
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petMindBusy",
+      "declaredIn": "44b-pet-state.js",
+      "count": 6
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petMindLocalPeriod",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petMindState",
+      "declaredIn": "44b-pet-state.js",
+      "count": 44
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petMindSubscribers",
+      "declaredIn": "44b-pet-state.js",
+      "count": 5
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petMindTimer",
+      "declaredIn": "44b-pet-state.js",
+      "count": 5
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petNonNegativeInt",
+      "declaredIn": "44b-pet-state.js",
+      "count": 12
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petNumber",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petPause",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petPaused",
+      "declaredIn": "44b-pet-state.js",
+      "count": 5
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petPeriodLabel",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petPermissionRows",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petProactiveVerdict",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petReadJson",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petReadLlmModel",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petReadLlmProvider",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petRecordExternal",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petRequestUiConsent",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petResume",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petRevoke",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petSanitizeLlmReply",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petSay",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petScrubPersistedPermissions",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petSetCapabilityAdapter",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petSetLLM",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petSetLlmModel",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petSetLlmProvider",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petStatus",
+      "declaredIn": "44c-pet-llm.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petStripControls",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petTodayKey",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petTodayTurns",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petTurns",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "petWriteJson",
+      "declaredIn": "44b-pet-state.js",
+      "count": 1
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "readRenderTier",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "44d-pet-mind.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 22
     },
     {
       "from": "48-pet-agent.js",
       "name": "petAgentChatAllowed",
-      "declaredIn": "44-pet-brain.js",
+      "declaredIn": "44b-pet-state.js",
       "count": 1
     },
     {
       "from": "48-pet-agent.js",
       "name": "petAgentPaused",
-      "declaredIn": "44-pet-brain.js",
+      "declaredIn": "44b-pet-state.js",
       "count": 1
     },
     {
       "from": "48-pet-agent.js",
       "name": "petRecordExternal",
-      "declaredIn": "44-pet-brain.js",
+      "declaredIn": "44b-pet-state.js",
       "count": 1
     },
     {
@@ -766,7 +2548,7 @@
       "from": "57-glass.js",
       "name": "note",
       "declaredIn": "10-constants.js",
-      "count": 2
+      "count": 5
     },
     {
       "from": "57-glass.js",
@@ -896,201 +2678,15 @@
     },
     {
       "from": "70-sidebar.js",
-      "name": "applyTypography",
-      "declaredIn": "90-font.js",
-      "count": 2
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "ASSET_BASE",
-      "declaredIn": "10-constants.js",
-      "count": 6
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "audioController",
-      "declaredIn": "30-wallpaper.js",
-      "count": 6
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "clampNumber",
-      "declaredIn": "30-wallpaper.js",
-      "count": 3
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "CONTEXT_DEFAULTS",
-      "declaredIn": "35-context.js",
-      "count": 2
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "contextController",
-      "declaredIn": "35-context.js",
-      "count": 6
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "cropWindow",
-      "declaredIn": "60-zones.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "DARK_ATTR",
-      "declaredIn": "10-constants.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "EFFECTS_DEFAULTS",
-      "declaredIn": "32-effects.js",
-      "count": 2
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "effectsController",
-      "declaredIn": "32-effects.js",
-      "count": 6
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "glassController",
-      "declaredIn": "57-glass.js",
-      "count": 6
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "HOST_API",
-      "declaredIn": "10-constants.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "LAYER_BLEND_LABELS",
-      "declaredIn": "30-wallpaper.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "LAYER_LABELS",
-      "declaredIn": "30-wallpaper.js",
-      "count": 2
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "layerController",
-      "declaredIn": "30-wallpaper.js",
-      "count": 5
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "LEGIBILITY_DEFAULTS",
-      "declaredIn": "58-legibility.js",
-      "count": 2
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "legibilityController",
-      "declaredIn": "58-legibility.js",
-      "count": 6
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "LIBRARY_TAG_LENGTH",
-      "declaredIn": "30-wallpaper.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "LIBRARY_TAG_MAX",
-      "declaredIn": "30-wallpaper.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "listWallpapers",
-      "declaredIn": "30-wallpaper.js",
-      "count": 4
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "lowPowerController",
-      "declaredIn": "55-lowpower.js",
-      "count": 8
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "normalizeZones",
-      "declaredIn": "60-zones.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
       "name": "note",
       "declaredIn": "10-constants.js",
-      "count": 4
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "playbackController",
-      "declaredIn": "30-wallpaper.js",
-      "count": 4
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "probeUrlKind",
-      "declaredIn": "30-wallpaper.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "PROVIDERS",
-      "declaredIn": "30-wallpaper.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "RATIOS",
-      "declaredIn": "60-zones.js",
-      "count": 1
+      "count": 2
     },
     {
       "from": "70-sidebar.js",
       "name": "React",
       "declaredIn": "10-constants.js",
-      "count": 360
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "readGlass",
-      "declaredIn": "57-glass.js",
-      "count": 2
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "readLowPowerMode",
-      "declaredIn": "55-lowpower.js",
-      "count": 3
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "readTypography",
-      "declaredIn": "90-font.js",
-      "count": 4
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "readWallpaperChoice",
-      "declaredIn": "30-wallpaper.js",
-      "count": 3
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "readZones",
-      "declaredIn": "60-zones.js",
-      "count": 2
+      "count": 1
     },
     {
       "from": "70-sidebar.js",
@@ -1106,174 +2702,408 @@
     },
     {
       "from": "70-sidebar.js",
-      "name": "rememberHostIdentity",
-      "declaredIn": "10-constants.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "renderTierController",
-      "declaredIn": "10-constants.js",
-      "count": 2
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "resolveWallpaperChoice",
-      "declaredIn": "30-wallpaper.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "ROTATION_INTERVALS",
-      "declaredIn": "30-wallpaper.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "rotationController",
-      "declaredIn": "30-wallpaper.js",
-      "count": 6
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "sampleVideoFrames",
-      "declaredIn": "30-wallpaper.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "sceneStatusController",
-      "declaredIn": "30-wallpaper.js",
-      "count": 2
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "settingsStore",
-      "declaredIn": "12-schema.js",
-      "count": 6
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "SHADER_DEFAULTS",
-      "declaredIn": "30-wallpaper.js",
-      "count": 4
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "SHADER_PRESETS",
-      "declaredIn": "30-wallpaper.js",
-      "count": 3
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "SHADER_SOURCES",
-      "declaredIn": "30-wallpaper.js",
-      "count": 2
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "shaderController",
-      "declaredIn": "30-wallpaper.js",
-      "count": 4
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "subscribeTl5I18n",
-      "declaredIn": "13-i18n.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "TL_T",
-      "declaredIn": "13-i18n.js",
-      "count": 3
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "tl5MediaKindFromName",
-      "declaredIn": "11-platform.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "tl5OverlayOpenAllowed",
-      "declaredIn": "11-platform.js",
-      "count": 2
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "tl5OverlayRegister",
-      "declaredIn": "11-platform.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
-      "name": "tl5PanelSections",
-      "declaredIn": "11-platform.js",
-      "count": 1
-    },
-    {
-      "from": "70-sidebar.js",
       "name": "tl5ReadRecent",
       "declaredIn": "11-platform.js",
       "count": 1
     },
     {
-      "from": "70-sidebar.js",
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "applyTypography",
+      "declaredIn": "90-font.js",
+      "count": 2
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "ASSET_BASE",
+      "declaredIn": "10-constants.js",
+      "count": 6
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "audioController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 6
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "clampNumber",
+      "declaredIn": "30-wallpaper.js",
+      "count": 3
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "clearTl5ShareHash",
+      "declaredIn": "70-sidebar.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "CONTEXT_DEFAULTS",
+      "declaredIn": "35-context.js",
+      "count": 2
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "contextController",
+      "declaredIn": "35-context.js",
+      "count": 6
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "cropWindow",
+      "declaredIn": "60-zones.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "DARK_ATTR",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "EFFECTS_DEFAULTS",
+      "declaredIn": "32-effects.js",
+      "count": 2
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "effectsController",
+      "declaredIn": "32-effects.js",
+      "count": 6
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "glassController",
+      "declaredIn": "57-glass.js",
+      "count": 6
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "HOST_API",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "LAYER_BLEND_LABELS",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "LAYER_LABELS",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "layerController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 5
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "LEGIBILITY_DEFAULTS",
+      "declaredIn": "58-legibility.js",
+      "count": 2
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "legibilityController",
+      "declaredIn": "58-legibility.js",
+      "count": 6
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "LIBRARY_TAG_LENGTH",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "LIBRARY_TAG_MAX",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "listWallpapers",
+      "declaredIn": "30-wallpaper.js",
+      "count": 4
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "lowPowerController",
+      "declaredIn": "55-lowpower.js",
+      "count": 8
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "normalizeZones",
+      "declaredIn": "60-zones.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "PANEL_BUNDLE_LIMIT",
+      "declaredIn": "70-sidebar.js",
+      "count": 2
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "PANEL_LIST_RETRY_MS",
+      "declaredIn": "70-sidebar.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "playbackController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 4
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "probeUrlKind",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "PROVIDERS",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "RATIOS",
+      "declaredIn": "60-zones.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "React",
+      "declaredIn": "10-constants.js",
+      "count": 359
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "readGlass",
+      "declaredIn": "57-glass.js",
+      "count": 2
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "readLowPowerMode",
+      "declaredIn": "55-lowpower.js",
+      "count": 3
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "readPanelRecent",
+      "declaredIn": "70-sidebar.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "readTl5ShareHash",
+      "declaredIn": "70-sidebar.js",
+      "count": 2
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "readTypography",
+      "declaredIn": "90-font.js",
+      "count": 4
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "readWallpaperChoice",
+      "declaredIn": "30-wallpaper.js",
+      "count": 3
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "readZones",
+      "declaredIn": "60-zones.js",
+      "count": 2
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "rememberHostIdentity",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "renderTierController",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "resolveWallpaperChoice",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "ROTATION_INTERVALS",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "rotationController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 6
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "sampleVideoFrames",
+      "declaredIn": "30-wallpaper.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "sceneStatusController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "settingsStore",
+      "declaredIn": "12b-schema-sync.js",
+      "count": 6
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "SHADER_DEFAULTS",
+      "declaredIn": "30-wallpaper.js",
+      "count": 4
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "SHADER_PRESETS",
+      "declaredIn": "30-wallpaper.js",
+      "count": 3
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "SHADER_SOURCES",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "shaderController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 4
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "subscribeTl5I18n",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 3
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "tl5Base64UrlEncode",
+      "declaredIn": "70-sidebar.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "tl5MediaKindFromName",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "tl5OverlayOpenAllowed",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "tl5OverlayRegister",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "tl5PanelSections",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
       "name": "tl5RememberRecent",
       "declaredIn": "11-platform.js",
       "count": 1
     },
     {
-      "from": "70-sidebar.js",
+      "from": "70b-wallpaper-sidebar-panel.js",
       "name": "tl5SampleWallpaperPalette",
       "declaredIn": "11-platform.js",
       "count": 1
     },
     {
-      "from": "70-sidebar.js",
+      "from": "70b-wallpaper-sidebar-panel.js",
       "name": "tl5ValidateUploadFile",
       "declaredIn": "11-platform.js",
       "count": 1
     },
     {
-      "from": "70-sidebar.js",
+      "from": "70b-wallpaper-sidebar-panel.js",
       "name": "UPLOAD_LIMIT",
       "declaredIn": "10-constants.js",
       "count": 1
     },
     {
-      "from": "70-sidebar.js",
+      "from": "70b-wallpaper-sidebar-panel.js",
       "name": "useTl5I18n",
       "declaredIn": "13-i18n.js",
       "count": 1
     },
     {
-      "from": "70-sidebar.js",
+      "from": "70b-wallpaper-sidebar-panel.js",
       "name": "validateShaderSource",
       "declaredIn": "30-wallpaper.js",
       "count": 2
     },
     {
-      "from": "70-sidebar.js",
+      "from": "70b-wallpaper-sidebar-panel.js",
       "name": "wallpaperController",
       "declaredIn": "30-wallpaper.js",
       "count": 8
     },
     {
-      "from": "70-sidebar.js",
+      "from": "70b-wallpaper-sidebar-panel.js",
       "name": "wallpaperLibraryController",
       "declaredIn": "30-wallpaper.js",
       "count": 2
     },
     {
-      "from": "70-sidebar.js",
+      "from": "70b-wallpaper-sidebar-panel.js",
       "name": "ZONE_DEFAULTS",
       "declaredIn": "60-zones.js",
       "count": 2
     },
     {
-      "from": "70-sidebar.js",
+      "from": "70b-wallpaper-sidebar-panel.js",
       "name": "zoneController",
       "declaredIn": "60-zones.js",
       "count": 16
@@ -1358,12 +3188,6 @@
     },
     {
       "from": "76-role-hub.js",
-      "name": "ASSET_BASE",
-      "declaredIn": "10-constants.js",
-      "count": 2
-    },
-    {
-      "from": "76-role-hub.js",
       "name": "glassDepthController",
       "declaredIn": "57-glass.js",
       "count": 2
@@ -1382,6 +3206,12 @@
     },
     {
       "from": "76-role-hub.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "76-role-hub.js",
       "name": "petAgentInternal",
       "declaredIn": "48-pet-agent.js",
       "count": 3
@@ -1389,32 +3219,8 @@
     {
       "from": "76-role-hub.js",
       "name": "petBrainInternal",
-      "declaredIn": "44-pet-brain.js",
+      "declaredIn": "44d-pet-mind.js",
       "count": 3
-    },
-    {
-      "from": "76-role-hub.js",
-      "name": "petLlmHintText",
-      "declaredIn": "44-pet-brain.js",
-      "count": 2
-    },
-    {
-      "from": "76-role-hub.js",
-      "name": "readSplashForceMotion",
-      "declaredIn": "59-splash.js",
-      "count": 2
-    },
-    {
-      "from": "76-role-hub.js",
-      "name": "readSplashSound",
-      "declaredIn": "59-splash.js",
-      "count": 2
-    },
-    {
-      "from": "76-role-hub.js",
-      "name": "readSplashStyle",
-      "declaredIn": "59-splash.js",
-      "count": 2
     },
     {
       "from": "76-role-hub.js",
@@ -1424,42 +3230,396 @@
     },
     {
       "from": "76-role-hub.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 6
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "ASSET_BASE",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_AGENT_GRANT_REASON_KEYS",
+      "declaredIn": "76-role-hub.js",
+      "count": 4
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_AGENT_REASON_KEYS",
+      "declaredIn": "76-role-hub.js",
+      "count": 3
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_AGENT_TARGET_NEW",
+      "declaredIn": "76-role-hub.js",
+      "count": 5
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_AI_HOST_REASON_KEYS",
+      "declaredIn": "76-role-hub.js",
+      "count": 2
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_AI_INPUT_MAX",
+      "declaredIn": "76-role-hub.js",
+      "count": 4
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_AI_LLM_HINT_KEYS",
+      "declaredIn": "76-role-hub.js",
+      "count": 2
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_AI_REASON_KEYS",
+      "declaredIn": "76-role-hub.js",
+      "count": 3
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_AUDIT_LIMIT",
+      "declaredIn": "76-role-hub.js",
+      "count": 2
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_CAP_KEYS",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_DOM_ID",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_DRAFT_KEY",
+      "declaredIn": "76-role-hub.js",
+      "count": 3
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_GLASS_LABEL_KEYS",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_GLASS_LEVELS",
+      "declaredIn": "76-role-hub.js",
+      "count": 4
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_LLM_PROVIDERS_MAX",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_LOG_MAX",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_MEDIA_REASON_KEYS",
+      "declaredIn": "76-role-hub.js",
+      "count": 2
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_MIND_INTERVALS",
+      "declaredIn": "76-role-hub.js",
+      "count": 4
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_MIND_REASON_KEYS",
+      "declaredIn": "76-role-hub.js",
+      "count": 2
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_PACK_ACTIONS",
+      "declaredIn": "76-role-hub.js",
+      "count": 5
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_PACK_LABEL_KEYS",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_PACK_LABEL_MAX",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_PACK_LINE_MAX",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_PACK_LINES_MAX",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_REFRESH_MS",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_RISK_KEYS",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_SELFTEST_ITEM_KEYS",
+      "declaredIn": "76-role-hub.js",
+      "count": 2
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_UPLOAD_MAX_BYTES",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_VERSION",
+      "declaredIn": "76-role-hub.js",
+      "count": 2
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_WEATHER_REASON_KEYS",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "HUB_WEATHER_STATE_KEYS",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubAdapterId",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubAgentPermission",
+      "declaredIn": "76-role-hub.js",
+      "count": 3
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubBrowserWindow",
+      "declaredIn": "76-role-hub.js",
+      "count": 6
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubChatResult",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubClock",
+      "declaredIn": "76-role-hub.js",
+      "count": 3
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubCopyText",
+      "declaredIn": "76-role-hub.js",
+      "count": 3
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubCreate",
+      "declaredIn": "76-role-hub.js",
+      "count": 234
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubDateTime",
+      "declaredIn": "76-role-hub.js",
+      "count": 2
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubDownloadJson",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubGlassDepthController",
+      "declaredIn": "76-role-hub.js",
+      "count": 6
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubGlassLabel",
+      "declaredIn": "76-role-hub.js",
+      "count": 7
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubLifeEngine",
+      "declaredIn": "76-role-hub.js",
+      "count": 16
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubPeriodLabel",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubPetActions",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubPetAgent",
+      "declaredIn": "76-role-hub.js",
+      "count": 10
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubPetBrain",
+      "declaredIn": "76-role-hub.js",
+      "count": 20
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubPetMind",
+      "declaredIn": "76-role-hub.js",
+      "count": 9
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubReasonLabel",
+      "declaredIn": "76-role-hub.js",
+      "count": 13
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubTry",
+      "declaredIn": "76-role-hub.js",
+      "count": 66
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubVersionString",
+      "declaredIn": "76-role-hub.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubWeather",
+      "declaredIn": "76-role-hub.js",
+      "count": 4
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "hubWeatherSnapshot",
+      "declaredIn": "76-role-hub.js",
+      "count": 4
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "isSyntheticUserEvent",
+      "declaredIn": "76-role-hub.js",
+      "count": 8
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "petLlmHintText",
+      "declaredIn": "44b-pet-state.js",
+      "count": 2
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "readSplashForceMotion",
+      "declaredIn": "59-splash.js",
+      "count": 2
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "readSplashSound",
+      "declaredIn": "59-splash.js",
+      "count": 2
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "readSplashStyle",
+      "declaredIn": "59-splash.js",
+      "count": 2
+    },
+    {
+      "from": "76b-role-hub-install.js",
       "name": "setSplashForceMotion",
       "declaredIn": "59-splash.js",
       "count": 1
     },
     {
-      "from": "76-role-hub.js",
+      "from": "76b-role-hub-install.js",
       "name": "setSplashSound",
       "declaredIn": "59-splash.js",
       "count": 1
     },
     {
-      "from": "76-role-hub.js",
+      "from": "76b-role-hub-install.js",
       "name": "setSplashStyle",
       "declaredIn": "59-splash.js",
       "count": 1
     },
     {
-      "from": "76-role-hub.js",
+      "from": "76b-role-hub-install.js",
       "name": "TL_T",
       "declaredIn": "13-i18n.js",
-      "count": 431
+      "count": 425
     },
     {
-      "from": "76-role-hub.js",
+      "from": "76b-role-hub-install.js",
       "name": "tl5ApplyDefaultAppearance",
       "declaredIn": "12-schema.js",
       "count": 1
     },
     {
-      "from": "76-role-hub.js",
+      "from": "76b-role-hub-install.js",
       "name": "tl5OverlayRegister",
       "declaredIn": "11-platform.js",
       "count": 1
     },
     {
-      "from": "76-role-hub.js",
+      "from": "76b-role-hub-install.js",
       "name": "tl5ValidateUploadFile",
       "declaredIn": "11-platform.js",
       "count": 1
@@ -1599,7 +3759,7 @@
     {
       "from": "99-apply.js",
       "name": "bootstrapSettingsRuntime",
-      "declaredIn": "12-schema.js",
+      "declaredIn": "12b-schema-sync.js",
       "count": 1
     },
     {
@@ -1623,7 +3783,7 @@
     {
       "from": "99-apply.js",
       "name": "dutyChannelStatus",
-      "declaredIn": "40-companion.js",
+      "declaredIn": "40c-companion-duty.js",
       "count": 1
     },
     {
@@ -1647,7 +3807,7 @@
     {
       "from": "99-apply.js",
       "name": "installCompanion",
-      "declaredIn": "40-companion.js",
+      "declaredIn": "40b-companion-install.js",
       "count": 1
     },
     {
@@ -1659,7 +3819,7 @@
     {
       "from": "99-apply.js",
       "name": "installDutyChannel",
-      "declaredIn": "40-companion.js",
+      "declaredIn": "40c-companion-duty.js",
       "count": 1
     },
     {
@@ -1725,19 +3885,19 @@
     {
       "from": "99-apply.js",
       "name": "installPetBrain",
-      "declaredIn": "44-pet-brain.js",
+      "declaredIn": "44d-pet-mind.js",
       "count": 1
     },
     {
       "from": "99-apply.js",
       "name": "installRoleHub",
-      "declaredIn": "76-role-hub.js",
+      "declaredIn": "76b-role-hub-install.js",
       "count": 1
     },
     {
       "from": "99-apply.js",
       "name": "installScene",
-      "declaredIn": "30-wallpaper.js",
+      "declaredIn": "30b-wallpaper-scene.js",
       "count": 1
     },
     {
@@ -1749,7 +3909,7 @@
     {
       "from": "99-apply.js",
       "name": "installSettingsRuntime",
-      "declaredIn": "12-schema.js",
+      "declaredIn": "12b-schema-sync.js",
       "count": 1
     },
     {
@@ -1803,7 +3963,7 @@
     {
       "from": "99-apply.js",
       "name": "settingsStore",
-      "declaredIn": "12-schema.js",
+      "declaredIn": "12b-schema-sync.js",
       "count": 1
     },
     {

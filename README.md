@@ -532,6 +532,11 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 
 ## 安装
 
+> **安装/升级后「像没生效」，几乎都是同一件事：DSH 没有真正退出。**
+> DSH Desktop 关掉窗口后仍驻留托盘，旧进程继续持有旧插件文件，新装的浏览器半也不会被加载。正确顺序是：
+> **① 彻底退出 DSH（窗口关闭 + 托盘图标右键 → 退出）→ ② 任务管理器确认没有 `DeepSeek Harness.exe` → ③ 重新打开 DSH → ④ 页面按 `Ctrl+F5` 强制刷新。**
+> 只按 `Ctrl+F5` 而不退进程，看到的仍是旧构建；改动宿主半（`lib/index.js` / `HOST_API`）时更是必须整进程重启。后面每一节的「生效方式」都以这条前提为准。
+
 本皮肤是**标准 DSH bundle**：`package.json` 的 `dsh.bundle.patch` 指向包内自带的 `cordis.patch.yml`，由它插入 `ui-skin-tianlight` 这一行；浏览器半由 `dsh.client` 提供。**只安装这一个包即可**，旧教程里的第二个 enable bundle（`@local/dsh-enable-tianlight`）已废弃，不要再装。
 
 ### 从 npm 安装（推荐，一条命令）
@@ -565,12 +570,12 @@ npm 包：**`dsh-client-ui-skin-tianlight`**（公开 registry，预构建、免
 
 > 预发布版本（版本号含 `-rc.`）在 GitHub 上标记为 Pre-release，`releases/latest/download/...` 只指向最新的**正式版**；要装预发布请从对应 tag 的 Release 页手动下载。
 
-### DSH Desktop（0.2.0 / 0.2.1 / 0.2.2，单包安装）
+### DSH Desktop（0.2.0 / 0.2.1 / 0.2.2 / 0.3.x，单包安装）
 
 1. 把本仓库目录（或 Release 解包后的 `dsh-client-ui-skin-tianlight/` 目录）放到任意位置，建议用纯 ASCII 路径。
 2. 在 DSH Desktop 的**插件管理器**里选择「安装本地目录 / Install from local folder」，指向该目录。Desktop 的 profile（本版为 `desktop`）由 Electron 管理，**不要**手动编辑 profile 目录下的 `package.json` / `cordis.patch.yml`；安装器会以 `link:` 依赖引用本包，并且只登记 `dsh-client-ui-skin-tianlight` 这一条 bundle。
 3. 确认 `ui-skin-tianlight` 这一行处于 **enabled** 状态。该行由本包的 `cordis.patch.yml` 自带，profile 的 `cordis.patch.yml` 不需要、也不应该再手写同 id 的行（重复插入会重复挂载插件）。
-4. **重启 DSH Desktop**（v0.5.0 宿主半新增路由，必须重启一次）。之后只改浏览器半（`src/` → `lib/client.js`）时 Ctrl+F5 刷新即可，不用重启。
+4. **完全退出 DSH Desktop（含托盘图标）再重新打开**（v0.5.0 宿主半新增路由，必须重启一次；托盘没退等于没重启）。打开页面后按 **Ctrl+F5** 强制刷新，才会加载新的浏览器半。之后只改浏览器半（`src/` → `lib/client.js`）时 Ctrl+F5 刷新即可，不用重启。
 
 > **关键前提**：机器级 `$DSH_HOME/cordis.patch.yml`（Windows 默认 `%USERPROFILE%\.dsh\cordis.patch.yml`）的优先级**高于** bundle 自带的 patch。如果里面残留旧 skin-manager 生成的 `ui-skin-tianlight` + `disabled: true`，行的 enabled 会被覆盖、皮肤静默不出现——删掉该行再重启。处理见下方「故障排查」第 1 条。
 
@@ -626,6 +631,15 @@ $DSH_HOME/profiles/<profile>/tianlight/
 
 ## 故障排查
 
+**最常见：装完/升级完「像没生效」。** 先确认 DSH 真的退干净了：关闭窗口后它仍在托盘运行，旧进程会让新插件不加载，表现就是皮肤不出现、玻璃没变化、版本指纹还是旧版号。托盘图标右键 →「退出」→ 任务管理器确认没有 `DeepSeek Harness.exe` → 重开 DSH → 页面按 **Ctrl+F5**。缺任何一步都可能是旧构建。判断依据（角色中枢 → 自检/反馈里的指纹、或 DevTools Console）：
+
+```js
+__dshTianlightInstance.glass()   // { depth, effective }：当前玻璃档位与实际生效档
+__dshTianlightInstance.features  // 当前宿主实际渲染的钩子层（getter，直接读，不加括号）
+fetch('/skin-tianlight/_fingerprint').then(r => r.json())
+// → { version, commit, clientSha256, hostApi, dshVersion, install }；与 build-manifest.json 对照
+```
+
 ### 1. 皮肤不出现，`ui-skin-tianlight` 被禁用（home patch 覆盖）
 
 机器级 `$DSH_HOME/cordis.patch.yml`（Windows 默认 `%USERPROFILE%\.dsh\cordis.patch.yml`）的优先级高于 bundle 自带的 patch。检查其中是否有一条旧 skin-manager 生成的：
@@ -658,6 +672,19 @@ Windows 开启「减少动态效果 / Reduce motion」后，皮肤省电模式�
 网页壁纸只识别 WE 目录中 `project.json` 声明为 `web` 的项目；场景需要 WebGL2 与 `scene.pkg`/`scene.json`。引擎或首帧失败会自动回落上一张可播壁纸。检查来源目录是否配置在「WE 目录」里、目录名是否为 ASCII。
 
 ## 壁纸
+
+### 自带壁纸 ≠ 推荐天空壁纸
+
+两件事分开说，避免装完觉得「货不对板」：
+
+| | 内容 | 怎么来 |
+|---|---|---|
+| **自带壁纸**（默认） | `assets/bg-4k.mp4`：**紫调人物循环**（3840×2160，H.264）。它是随包分发的演示素材，不是「新海诚式天空」那张图 | 装好即用，不需要操作 |
+| **推荐天空壁纸** | 新海诚式白日天空（青蓝/暖光、云层与光斑）是产品的视觉主张，但不是随包素材 | 壁纸面板 →「URL 地址」粘贴天空视频/图片直链；或把天空视频放进 `assets/uploads/`（面板「上传壁纸」）或 `assets/` 后刷新 |
+
+- 皮肤会在壁纸面板 ①「来源」下直接显示这条说明（`data-tl-wall-bundle-note`），不需要翻文档。
+- 系统**不内置**天空素材是版权与体积决定（`assets/` 已随包 16MB 人物循环）；想换成天空，最省事的是自备一段 1080p60 天空视频，命名 `bg-main.mp4` 放进 `assets/`——自动选择会优先它（HEVC/H.264 均可，不支持的编码会自动跳过）。
+- 文档/宣传里出现的「新海诚式天光」指**配色与玻璃质感**（青蓝天光、半透明面板、日光透射），不指具体某张壁纸；首次安装看到紫调人物循环属正常默认。
 
 ### Wallpaper Engine 库（v0.6.0，自动检测）
 
@@ -696,7 +723,7 @@ assets/
 
 | 项 | 说明 |
 |---|---|
-| 支持范围 | **DSH 0.2.0 / 0.2.1 / 0.2.2**（含 rc/alpha：`>=0.2.0-rc.1 <0.2.1-0 \|\| >=0.2.1-0 <0.2.2-0 \|\| >=0.2.2-0 <0.3.0-0`），一份构建通用；0.3.x 起被 DSH 安装/启动门禁拦下；矩阵与源码证据见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) |
+| 支持范围 | **DSH 0.2.0 / 0.2.1 / 0.2.2 已实测；0.3.x 为预适配**（同一串 `>=0.2.0-rc.1 <0.2.1-0 \|\| >=0.2.1-0 <0.2.2-0 \|\| >=0.2.2-0 <0.3.0-0 \|\| >=0.3.0-0 <0.4.0-0`，一份构建通用）。0.3.0 尚未发布时先放开安装门禁，避免首发当天被"插件不兼容"挡下；承诺由每日 `dsh-canary` 对 npm `next`/`alpha` 兑现，差异表见 [docs/COMPAT-0.3.0.md](docs/COMPAT-0.3.0.md)；0.4.x 起仍由门禁拦下。矩阵与源码证据见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) |
 | 测试版本 | 真实运行时实测：`0.2.0-rc.2`、`0.2.1-rc.5`（npm）、`0.2.2-rc.1`（npm + 本机 Desktop 实机）；`0.2.1-rc.3` Desktop 为 v0.3.0 基线 |
 | v0.5.0 验证状态 | 已整合 git `72d72fe`：724,684 字符 / 21 片段，静态链全 PASS（test 61/61）；运行时矩阵 **4/4 运行时 PASS，323/323 断言，0 console error**（web 80/80 ×3 + Desktop 83/83），旧宿主 × 新客户端降级 **17/17 PASS**；详见 [docs/RELEASE-0.5.0.md](docs/RELEASE-0.5.0.md) §4、残余风险 §9 |
 | v0.5.1 验证状态 | 已整合 git `7282d94`：768,962 字符 / 21 片段，静态链全 PASS（test 61/61）；运行时矩阵 **4/4 运行时 PASS，387/387 断言**（web 96/96 ×3 + Desktop 99/99；0 failed / 0 skipped / 0 console error），C4 默认关闭态零外部请求（0 open-meteo），旧宿主降级 17/17 PASS；详见 [docs/RELEASE-0.5.1.md](docs/RELEASE-0.5.1.md) §8 |

@@ -775,6 +775,13 @@ if (prepareOnly) {
   console.log('\npush (manual, after reviewing; push the branch BEFORE the tag — CI verifies the tag is reachable from it):')
   console.log('  git push origin ' + branch)
   console.log('  git push origin ' + tagName)
+  console.log('  node tools/verify-tag-run.mjs ' + tagName + '   # MUST print "run FOUND"')
+  console.log('')
+  console.log('  Push tags ONE AT A TIME. GitHub creates no push event when a single push')
+  console.log('  carries more than three tags: a batch push lands the tags but starts NO')
+  console.log('  release runs (this is how v2.2.0-v2.2.3 shipped by hand). If the check')
+  console.log('  says MISSING, publish from the same immutable tag with:')
+  console.log('  gh workflow run release.yml -f tag=' + tagName)
 
   console.log('\nimmutable-tag rule: once pushed, ' + tagName + ' must never be moved, recreated or deleted.')
   const fixVersion = prerelease ? 'v' + targetVersion.replace(/-.*$/, '') + '-rc.2' : 'v' + bumpVersion(targetParsed, 'patch').parts.join('.')

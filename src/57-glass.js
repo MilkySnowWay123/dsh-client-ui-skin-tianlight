@@ -62,7 +62,18 @@
 		 */
 		const GLASS_DEPTH_KEY = "tianlight.glassDepth";
 		const GLASS_DEPTHS = ["off", "frosted", "soft", "real"];
-		const GLASS_DEPTH_DEFAULT = "soft";
+		/**
+		 * v2.2.4: the MISSING-KEY default is `off`, identical to the value the skin writes
+		 * on a fresh install (`TL5_DEFAULT_APPEARANCE_JSON` in src/12-schema.js carries
+		 * `"tianlight.glassDepth":"off"`). The two used to disagree — `soft` here, `off`
+		 * there — so a first-run user saw no glass while a cleared key rendered the soft
+		 * recipe, and neither state matched the release notes.
+		 *
+		 * Shipping quiet is deliberate: real-time glass pauses on low battery and at
+		 * 15fps, so the product promise is "liquid glass is available", not "liquid glass
+		 * is forced on". The role hub's glass card carries the one-line opt-in hint.
+		 */
+		const GLASS_DEPTH_DEFAULT = "off";
 		let glassDepthController = null;
 		/**
 		 * v2.2.0 "live" mode. The depth presets above are a STATIC veil: they look like

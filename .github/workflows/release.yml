@@ -13,15 +13,32 @@ name: release
 #     version mismatches (it exits non-zero, so the job goes red).
 #
 # `tools/pack.mjs` is the only packing path; CI and a local release run are identical.
+#
+# WHY `workflow_dispatch` EXISTS (2026-11-16): GitHub creates NO push event when one
+# `git push` carries more than three tags. Pushing v2.2.0-v2.2.3 together therefore
+# published nothing — the tags landed on the remote and zero `release` runs existed,
+# which is indistinguishable from a successful batch until someone looks. The Push
+# rules are now: push ONE tag at a time, then run
+#   node tools/verify-tag-run.mjs v<version>
+# to prove a run was created; if it was not, dispatch this workflow with that tag.
+# The dispatch path checks out the tag (never the branch HEAD), runs the same steps,
+# and stays idempotent (gh release edit + upload --clobber), so it can also re-publish
+# an existing Release without moving the immutable tag.
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to build and publish, e.g. v2.3.0 (must already exist)'
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
@@ -31,29 +48,49 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # A dispatch has no tag ref, so it must name the immutable tag explicitly;
+          # checking out the branch HEAD would publish different code than the tag.
+          ref: ${{ inputs.tag || github.ref }}
           fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: resolve target tag and commit
+        id: target
+        shell: bash
+        # GITHUB_SHA is the dispatched branch's commit for workflow_dispatch, not the
+        # input tag, so the release identity is resolved from the checkout itself.
+        run: |
+          set -euo pipefail
+          tag="${{ inputs.tag }}"
+          if [ -z "${tag}" ]; then tag="${GITHUB_REF_NAME}"; fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "target: ${tag} @ $(git rev-parse --short HEAD)"
       - name: tag/version + branch contract
         shell: bash
+        env:
+          TAG: ${{ steps.target.outputs.tag }}
+          SHA: ${{ steps.target.outputs.sha }}
         run: |
           set -euo pipefail
           version="$(node -p "require('./package.json').version")"
           expected="v${version}"
-          if [ "${GITHUB_REF_NAME}" != "${expected}" ]; then
-            echo "::error::tag ${GITHUB_REF_NAME} does not match package.json ${expected}"
+          if [ "${TAG}" != "${expected}" ]; then
+            echo "::error::tag ${TAG} does not match package.json ${expected}"
+            exit 1
+          fi
+          actual="$(git describe --tags --exact-match "${SHA}" 2>/dev/null || true)"
+          if [ "${actual}" != "${expected}" ]; then
+            echo "::error::the checked-out commit is not ${expected} (found: '${actual}'). For a dispatched run the tag must already exist on the remote; for a tag push the tag must point at the commit that carries package.json ${version}."
             exit 1
           fi
           git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main +refs/heads/dev:refs/remotes/origin/dev
           case "${version}" in
             *-*)
               echo "pre-release ${version}: must be reachable from dev"
-              git merge-base --is-ancestor "${GITHUB_SHA}" origin/dev
+              git merge-base --is-ancestor "${SHA}" origin/dev
               ;;
             *)
               echo "stable ${version}: must be reachable from main (main only carries released code)"
-              git merge-base --is-ancestor "${GITHUB_SHA}" origin/main
+              git merge-base --is-ancestor "${SHA}" origin/main
               ;;
           esac
       - name: static checks (npm run check)
@@ -61,7 +98,7 @@ jobs:
       - name: build distributable (the only packing path)
         run: node tools/pack.mjs
       - name: assemble and verify release attachments
-        run: node tools/release-artifacts.mjs --commit "${GITHUB_SHA}"
+        run: node tools/release-artifacts.mjs --commit "${{ steps.target.outputs.sha }}"
       - name: release notes file present
         shell: bash
         run: |
@@ -79,25 +116,28 @@ jobs:
       - name: publish GitHub Release + attachments (idempotent)
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.target.outputs.tag }}
         shell: bash
         run: |
           set -euo pipefail
           version="$(node -p "require('./package.json').version")"
-          tag="v${version}"
           notes="RELEASE-NOTES-v${version}.md"
           title="$(head -n 1 "${notes}" | sed -e 's/^# *//' -e 's/\r$//')"
           prerelease_flag=""
           case "${version}" in *-*) prerelease_flag="--prerelease" ;; esac
-          if gh release view "${tag}" >/dev/null 2>&1; then
-            echo "updating release ${tag}"
-            gh release edit "${tag}" --title "${title}" --notes-file "${notes}" ${prerelease_flag}
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "updating release ${TAG}"
+            gh release edit "${TAG}" --title "${title}" --notes-file "${notes}" ${prerelease_flag}
           else
-            echo "creating release ${tag}"
-            gh release create "${tag}" --title "${title}" --notes-file "${notes}" ${prerelease_flag}
+            echo "creating release ${TAG}"
+            gh release create "${TAG}" --title "${title}" --notes-file "${notes}" ${prerelease_flag}
           fi
-          gh release upload "${tag}" \
+          gh release upload "${TAG}" \
             "dist/release/dsh-client-ui-skin-tianlight-${version}.tgz" \
             "dist/release/dsh-client-ui-skin-tianlight.tgz" \
             "dist/release/SHA256SUMS.txt" \
             "dist/release/build-manifest.json" \
             --clobber
+          echo ""
+          echo "release ${TAG} published from ${GITHUB_SHA}"
+          echo "verify locally: node tools/verify-tag-run.mjs ${TAG}"

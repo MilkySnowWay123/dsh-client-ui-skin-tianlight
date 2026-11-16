@@ -35,6 +35,15 @@
 
 - 发布工具会拒绝：稳定版跑在非 `main` 分支、预发布跑在非 `dev` 分支、目标 tag 已存在（本地**或远端**，只做一次只读 `git ls-remote`，`--offline` 可跳过）。
 - **先推分支、再推 tag**：发布 CI 会校验稳定版 tag 可从 `origin/main` 追溯、预发布 tag 可从 `origin/dev` 追溯。
+- **一次只推一个 tag，推完立刻验证。** 单次 `git push` 携带 **超过 3 个 tag** 时，GitHub **不产生 push 事件**：tag 会上到远端，但 `.github/workflows/release.yml` **一次都不会启动**（不会报错、不会排队，和"已经成功"无法区分）。2026-11-16 的 v2.2.0–v2.2.3 就是这么丢的：四个 tag 一起推，零个 run，最后用 GitHub API 手工补了四个 Release。
+
+  ```bash
+  git push origin v2.3.0          # 一个 tag 一次
+  node tools/verify-tag-run.mjs v2.3.0   # 必须输出 "release workflow run FOUND"
+  ```
+
+  `verify-tag-run.mjs` 退出码：`0` 已触发（会打印 status/conclusion）、`3` **没触发**、`4` API 读不到。看到 `MISSING` 时**不要移动/重打 tag**，用同一个不可变 tag 补发：`gh workflow run release.yml -f tag=v2.3.0`（或 Actions → release → Run workflow → 填 tag）。补发走同一条打包路径且幂等（`gh release edit` + `upload --clobber`）。
+
 
 ## 三、推送 `v*` tag 后 CI 做什么（干净环境）
 
@@ -52,6 +61,10 @@
 6. `gh release create/edit`：标题取 notes 第一行；版本号含 `-` 时自动标记 **Pre-release**；上传 4 个附件（重复运行幂等，`--clobber`）。
 
 分支/PR 的静态检查在 `.github/workflows/check.yml`（Node 20 + 22），另有 `main-is-released` 守卫。
+
+> **`workflow_dispatch` 补发入口**：`release.yml` 除 `push: tags` 外还有 `workflow_dispatch` 输入 `tag`。补发时 checkout 的是**该 tag 指向的提交**（不是分支 HEAD），其余步骤相同；因此补发不会把未发布代码打进 Release，也不需要动 tag。触发条件里仍然校验 tag == `v` + `package.json` version、稳定版可追溯到 `main`、预发布可追溯到 `dev`。
+>
+> **发布完成的判据是"run 存在且 success"，不是"tag 推上去了"。** 推完每个 tag 跑一次 `node tools/verify-tag-run.mjs <tag>`；Release 四件套再由 `node tools/verify-tag-run.mjs` 的输出 URL 打开核对附件。
 
 ## 四、Release 的 4 个附件
 

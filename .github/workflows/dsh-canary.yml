@@ -288,6 +288,14 @@ jobs:
           # The CLI package depends on base + web-app, so one install gives us `dsh web`.
           npm install --ignore-scripts --no-audit --no-fund "@deepseek-ai/dsh@$DSH_VERSION"
           echo "root=$root/node_modules/@deepseek-ai" >> "$GITHUB_OUTPUT"
+      - name: upgrade guide diff (advisory)
+        # Early warning for the 0.3 surface table: list every upgrade guide newer than
+        # the newest version in skin.json.dshCompatibilityTested whose summary names a
+        # surface this skin actually touches (docs/COMPAT-0.3.0-SURFACES.md). Advisory:
+        # a guide can describe a change the skin deliberately does not use, so this must
+        # never fail the canary — but it should be read on the day a new DSH ships.
+        continue-on-error: true
+        run: node tools/guide-diff.mjs --dsh "${{ steps.install.outputs.root }}"
       - name: runtime smoke (headless Chrome + CDP)
         run: node tools/smoke-dsh.mjs --dsh "${{ steps.install.outputs.root }}"
       - name: upload smoke evidence

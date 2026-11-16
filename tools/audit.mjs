@@ -371,7 +371,15 @@ report(
 )
 
 // ---- 11. v1.5.0 visibility & feedback: default glass, weather, self-test, feedback ----
-report(source.includes('const GLASS_DEPTH_DEFAULT = "soft"') ? "PASS" : "FAIL", "liquid glass defaults to the visible soft level")
+// The fallback and the shipped default must agree. v1.5.0-v2.2.3 declared `soft` here
+// and `off` in TL5_DEFAULT_APPEARANCE_JSON, so a fresh install showed no glass while a
+// cleared key showed the soft recipe; one default is a product decision, two is a bug.
+const glassFallback = /const GLASS_DEPTH_DEFAULT = "(off|frosted|soft|real)"/.exec(source)?.[1] ?? ""
+const glassShipped = /"tianlight\.glassDepth":"(off|frosted|soft|real)"/.exec(source)?.[1] ?? ""
+report(
+  glassFallback !== "" && glassFallback === glassShipped ? "PASS" : "FAIL",
+  "liquid glass missing-key default matches the shipped default (" + (glassFallback || "?") + " / " + (glassShipped || "?") + ")",
+)
 report(
   source.includes("globalThis.tianlightWeather") && source.includes("summary(") ? "PASS" : "FAIL",
   "weather controller is exposed with a localized summary for the pet hub",
@@ -549,10 +557,15 @@ report(
     // regression evidence for the bug this guarded: the old broad range silently
     // excluded every 0.2.1-* / 0.2.2-* prerelease build under default semver.
     satisfies('0.2.1-rc.5', LEGACY_BROAD_RANGE) === false &&
-    satisfies('0.3.0-rc.1', DSH_COMPAT_RANGE) === false
+    // v2.2.4: the 0.3 branch is provisional on purpose — a 0.3.0 must be installable
+    // before the day it ships (a blocked install cannot be "verified later"), and the
+    // commit is kept honest by the daily canary instead of the range. The 0.4 upper
+    // bound is what stays hard.
+    satisfies('0.3.0-rc.1', DSH_COMPAT_RANGE) === true &&
+    satisfies('0.4.0-0', DSH_COMPAT_RANGE) === false
     ? 'PASS'
     : 'FAIL',
-  'v2.0.1 DSH range has explicit prerelease branches (0.2.x incl. rc/alpha matches; 0.3.x blocked)',
+  'v2.2.4 DSH range: 0.2.x (incl. rc/alpha) + provisional 0.3.x installed; 0.4.x blocked',
 )
 
 // ---- v2.0.1: author default appearance (preset file <-> embedded client constant) ----
