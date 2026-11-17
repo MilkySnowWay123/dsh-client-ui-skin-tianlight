@@ -6909,15 +6909,24 @@ await testAsync('v2.2.12: plain HTTP through a configured proxy uses the absolut
   const { default: http } = await import('node:http')
   const { resetInflight, resetProxyCache } = weatherTest
   const seen = []
+  // Track every socket: a keep-alive connection held by the global agent makes
+  // server.close() wait forever on Linux and the whole check step hangs.
+  const sockets = new Set()
+  const track = (socket) => {
+    sockets.add(socket)
+    socket.once('close', () => sockets.delete(socket))
+    socket.on('error', () => {})
+  }
   const server = http.createServer((request, response) => {
     seen.push(request.url)
     response.writeHead(200, { 'content-type': 'application/json' })
     response.end(JSON.stringify(weatherPayload(13)))
   })
+  server.on('connection', track)
   server.on('connect', (request, socket) => {
     // The https attempt tunnels; answer the CONNECT and close so its TLS fails fast.
     seen.push('CONNECT ' + request.url)
-    socket.on('error', () => {})
+    track(socket)
     socket.end('HTTP/1.1 502 Bad Gateway\r\n\r\n')
   })
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
@@ -6943,7 +6952,14 @@ await testAsync('v2.2.12: plain HTTP through a configured proxy uses the absolut
     else process.env.HTTP_PROXY = savedProxy
     resetProxyCache()
     resetInflight()
-    await new Promise((resolve) => server.close(resolve))
+    for (const socket of sockets) {
+      try {
+        socket.destroy()
+      } catch {
+        // already gone
+      }
+    }
+    await Promise.race([new Promise((resolve) => server.close(resolve)), waitMs(1500)])
   }
 })
 
@@ -6952,18 +6968,26 @@ await testAsync('v2.2.12: HTTPS through a proxy opens a CONNECT tunnel to the fi
   const { default: net } = await import('node:net')
   const { startRequestJson } = weatherTest
   const authority = []
+  const sockets = new Set()
+  const track = (socket) => {
+    sockets.add(socket)
+    socket.once('close', () => sockets.delete(socket))
+    socket.on('error', () => {})
+  }
   const origin = http.createServer((request, response) => {
     response.writeHead(200, { 'content-type': 'application/json' })
     response.end(JSON.stringify(weatherPayload(3)))
   })
+  origin.on('connection', track)
   await new Promise((resolve) => origin.listen(0, '127.0.0.1', resolve))
   const proxy = http.createServer()
+  proxy.on('connection', track)
   proxy.on('connect', (request, socket) => {
     authority.push(request.url)
-    socket.on('error', () => {})
+    track(socket)
     socket.write('HTTP/1.1 200 Connection Established\r\n\r\n')
     const upstream = net.connect(origin.address().port, '127.0.0.1')
-    upstream.on('error', () => {})
+    track(upstream)
     socket.pipe(upstream).pipe(socket)
   })
   await new Promise((resolve) => proxy.listen(0, '127.0.0.1', resolve))
@@ -6972,6 +6996,7 @@ await testAsync('v2.2.12: HTTPS through a proxy opens a CONNECT tunnel to the fi
   const fakeTls = {
     connect: () => {
       const socket = net.connect(origin.address().port, '127.0.0.1')
+      track(socket)
       setImmediate(() => socket.emit('secureConnect'))
       return socket
     },
@@ -6988,8 +7013,17 @@ await testAsync('v2.2.12: HTTPS through a proxy opens a CONNECT tunnel to the fi
     assert.equal(payload.current.temperature_2m, 3)
     assert.deepEqual(authority, ['api.open-meteo.com:443'], 'the tunnel is opened to the fixed host only')
   } finally {
-    await new Promise((resolve) => proxy.close(resolve))
-    await new Promise((resolve) => origin.close(resolve))
+    // The piped tunnel sockets never close on their own (nothing is written through
+    // them), so destroy them explicitly; otherwise close() waits forever on Linux.
+    for (const socket of sockets) {
+      try {
+        socket.destroy()
+      } catch {
+        // already gone
+      }
+    }
+    await Promise.race([new Promise((resolve) => proxy.close(resolve)), waitMs(1500)])
+    await Promise.race([new Promise((resolve) => origin.close(resolve)), waitMs(1500)])
   }
 })
 
@@ -7045,4 +7079,7 @@ await testAsync('v2.2.12: every dynamic hub weather key resolves in both diction
 
 console.log(`tests: ${passed} passed, ${failures.length} failed`)
 for (const failure of failures) console.log('  FAIL ' + failure)
-if (failures.length > 0) process.exit(1)
+// Every test cleans up after itself, but a leaked socket, keep-alive connection or
+// timer must never hang the whole check step: a Linux CI runner once waited 25
+// minutes on one. The suite owns nothing after this point, so exit explicitly.
+process.exit(failures.length > 0 ? 1 : 0)
