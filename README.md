@@ -1,10 +1,33 @@
 # 天光（TIANLIGHT）— DSH Web 皮肤插件
 
-新海诚式的天光配色，全屏循环动态壁纸置于界面之下，玻璃质感面板、可拖拽的薄荷小猫桌宠，以及一套自建的排版与壁纸控制面板。v0.5.1 起它是一套**可开关、可观测、可回滚**的工作台：模块开关、宿主设置同步、智能情境（含天气联动）、特效与氛围、系统音频、网页壁纸、导入导出包与配方分享；v0.5.2 是**自检修复版**（设置数据安全 / i18n 完整性 / 面板体验），v0.5.3 是**大修版**（快捷壁纸 / 点击链路 / 语言解耦 / 情境安全默认），v0.6.0 起**自动接入本机 Wallpaper Engine 库**（无需填写目录，点一张即应用），v0.7.0 新增**职责通道**（角色包/职责引擎 → 桌宠气泡与用户选择，只改浏览器半、无需重启 DSH）。v2.2.4–v2.2.8 连续修正液态玻璃：默认关闭、侧栏开关归位、实时玻璃只作用于输入框与小组件（壁纸保持清晰）、去掉所有描边白线，暗色侧栏/角色中枢改用烟熏底。
+新海诚式的天光配色，全屏循环动态壁纸置于界面之下，玻璃质感面板、可拖拽的薄荷小猫桌宠，以及一套自建的排版与壁纸控制面板。v0.5.1 起它是一套**可开关、可观测、可回滚**的工作台：模块开关、宿主设置同步、智能情境（含天气联动）、特效与氛围、系统音频、网页壁纸、导入导出包与配方分享；v0.5.2 是**自检修复版**（设置数据安全 / i18n 完整性 / 面板体验），v0.5.3 是**大修版**（快捷壁纸 / 点击链路 / 语言解耦 / 情境安全默认），v0.6.0 起**自动接入本机 Wallpaper Engine 库**（无需填写目录，点一张即应用），v0.7.0 新增**职责通道**（角色包/职责引擎 → 桌宠气泡与用户选择，只改浏览器半、无需重启 DSH）。v2.2.4–v2.2.8 连续修正液态玻璃：默认关闭、侧栏开关归位、实时玻璃只作用于输入框与小组件（壁纸保持清晰）、去掉所有描边白线，暗色侧栏/角色中枢改用烟熏底；**v2.2.9** 把大面板改成「宿主上色 + `::before` 真模糊 + `::after` 渐变边缘光」，并修掉开侧栏时整窗发暗/发糊；**v2.2.10** 是同一份最终代码的 npm 补发版；**v2.2.11** 修复天气自动轮询成功、但数值未变时「更新于」不前进的问题。
 
 > 这是一个 **DSH（DeepSeek Harness）Web GUI 皮肤插件**，不是独立应用。它是一个标准 DSH bundle：`dsh.bundle.patch` 负责插入 `ui-skin-tianlight` 行，`dsh.client` 提供浏览器半；Web GUI 与 DSH Desktop 共用同一前端。
 >
 > npm 包名 `dsh-client-ui-skin-tianlight`（v2.0.2 起；旧链接安装包名 `@dsh-external/dsh-client-ui-skin-tianlight`）· 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
+
+**当前版本：v2.2.11**（npm `latest` = 2.2.11；GitHub Release = [v2.2.11](https://github.com/MilkySnowWay123/dsh-client-ui-skin-tianlight/releases/tag/v2.2.11)）。npm 2.2.9 是发布处理期间留下的旧构建，2.2.9 / 2.2.10 均已 deprecated，安装请用 `@latest`。
+
+## v2.2.11 · 天气「更新于」恢复前进
+
+自动轮询成功、但 Open-Meteo 返回的 code/温度/isDay 与上次完全相同时，旧代码只更新了内存里的 `weatherFreshAt` 就返回：既没有写同步快照（为了不抬高宿主 revision），也没有通知订阅者。结果天气胶囊和角色中枢一直显示上一次数值变化的时间，看起来像「天气停住了」。
+
+这一版新增 `weatherController.touch()`：只调用 `weatherNotify()`，不落盘、不抬高 revision；自动轮询命中 unchanged 分支时调用它，胶囊的「更新于」现在会按最近一次成功请求前进。天气值本身仍是 15/30/60/120 分钟轮询；Open-Meteo current 约 15 分钟一档，数值不变是正常的，想更及时可在角色中枢改为 15 分钟并点「立即刷新」。详见 [RELEASE-NOTES-v2.2.11.md](RELEASE-NOTES-v2.2.11.md)。
+
+## v2.2.10 · npm 补发版
+
+v2.2.9 在 npm 发布处理期间被 registry 固定为一个较早的构建，而当前 npm 账户没有可用的 2FA 接收器，无法 unpublish 已公开的 2.2.9。2.2.10 是**同一份最终代码**的补发版：功能、截图、回归与 v2.2.9 的 GitHub Release 相同，仅版本号/构建元数据不同。npm 2.2.9 旧 tarball 和 2.2.10 均已 deprecated，`latest` 指向 2.2.11。详见 [RELEASE-NOTES-v2.2.10.md](RELEASE-NOTES-v2.2.10.md)。
+
+## v2.2.9 · 通透真玻璃，修掉开侧栏整窗变暗/发糊
+
+这一版处理三组问题：
+
+- **整窗发暗/发糊**：DSH 的 `data-sidebar-collapsed` 在 0.2.1 属于整个应用 frame，旧桥却把它标成 `data-tl-sidebar`，全屏铺 0.66/0.72 黑底，左栏再叠一层后接近 0.9；同一批规则还带全屏颗粒、内暗角和 22/60px 阴影。现在 `data-sidebar-collapsed` 只作 `body[data-tl-sidebar-state]` 状态，侧栏只标真正的 `[data-slot="sidebar"]` / `_sidebarCol` 列，并加宽度 > 50vw 保险。
+- **场景层与遮罩**：删除 `[data-tl-scene]::after` 的全屏玻璃雾（时段暗化保留），壁纸面板 scrim 改为透明，hub 遮罩 0.42 → 0.18，产品遮罩 token 压到 0.12/0.20；任何全屏遮罩都不带 blur。
+- **真玻璃与透镜**：大面板宿主只留低 alpha tint、`isolation` 和体积阴影，模糊画在 `::before`，渐变边缘光画在 `::after`（左上亮、右下回光，不是均匀白线）。宿主本体禁止 filter/backdrop-filter/transform/will-change，避免 fixed 侧栏开关和 tooltip 被重锚。壁纸面板取色不再写 `max(0.96, ...)`，玻璃滑杆生效；可读性护栏 0.97 实色改为 alpha ≤0.40 tint + 更强 blur；浅色 `#root` 白色文字光晕改深色淡阴影。
+- **实时与降级**：深度非 `off` 且用户没有显式关闭时，实时采样默认开启；低电量/15fps 移除全部 `backdrop-filter` 并把 tint 加深到 0.35（浅）/0.50（暗）。composer 透镜按实际像素生成圆角边缘带位移图，中心零位移，ResizeObserver + rAF 更新。
+
+验证：`npm run check` 157 tests / 0 failed；侧栏外像素变化抽样点 0.00%、区域均值最大 0.42%；4K 视频 10s 在 real + live + 左栏 + 壁纸面板下 120.1 rAF fps / 601 视频帧 / 0 丢帧（2.2.8 基线 120.0 / 600 / 0）。截图见 [screenshots/v2.2.9/](screenshots/v2.2.9)。详见 [RELEASE-NOTES-v2.2.9.md](RELEASE-NOTES-v2.2.9.md)。
 
 ## v2.2.8 · 去掉所有描边，暗色侧栏与角色中枢压实
 
@@ -477,6 +500,8 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 **语言**：⑦ 工程分区切换「跟随 DSH / 中文 / English」，立即生效；显式选择会同步切换 DSH 语言，locale 服务缺席时只切天光自己的文案。
 
 ## 版本历史
+
+> v2.0.0 之后的逐版说明以上方各节为准；`v2.2.9`、`v2.2.10`、`v2.2.11` 已补齐。下面保留 v1.x 的旧记录。
 
 - **v1.6.4（2026-11-10）**：正式版（公开 v1.0.3）——桌宠「AI 对话」（输入条+气泡回复、识别图片/视频形象、顶部自动翻转、权限/配额不变）；每个自定义形象一套动作名+回复（按 mediaId 生效、只提交改动项、切语言不冻结）；中枢形象文件名常显列表 + 下拉选项可读性修复；全代码审查修复 H1/H2/M1/M2/M3/M4/M5。详见 [docs/RELEASE-1.6.4.md](docs/RELEASE-1.6.4.md) 与 [docs/REVIEW-1.6.4.md](docs/REVIEW-1.6.4.md)。
 - **v1.6.3（2026-11-10）**：显示名统一为「天光」（`skin.json.name` + README 标题；skin id/包名/data 属性/设置键不变，无迁移成本）；完成 DSH 0.2.0-rc.2 / 0.2.1-rc.5 / 0.2.2-rc.1 三线兼容性实证（bundles 72/77/86、三行 verdict COMPATIBLE、hook-scan 与 upgrade-check 全绿，桥分层发现无需版本分支）；公开上传版本命名为 **v1.0.2**（内部构建 1.6.3）。详见 [docs/RELEASE-1.6.3.md](docs/RELEASE-1.6.3.md)。
