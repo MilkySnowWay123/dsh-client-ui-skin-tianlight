@@ -322,6 +322,17 @@
 				"hub.weather.invalidCoords": "坐标不合法：纬度 -90..90、经度 -180..180。",
 				"hub.weather.resolveFailed": "无法解析城市：{reason}",
 				"hub.weather.refreshed": "天气已刷新。",
+				"hub.weather.refreshedVia": "天气已刷新 · 来源：{route} · 耗时 {ms} ms",
+				"hub.weather.refreshFailed": "刷新失败：{reason}",
+				"hub.weather.route.direct": "直连",
+				"hub.weather.route.hostHttps": "宿主 https",
+				"hub.weather.route.hostHttp": "宿主 http",
+				"hub.weather.route.unknown": "未知路线",
+				"hub.weather.observed": "观测 {time}",
+				"hub.weather.recentSuccess": "最近成功请求 {time}",
+				"hub.weather.staleData": "数据来自 {time}，正在更新",
+				"hub.weather.staleFailed": "数据来自 {time}，更新失败：{reason}",
+				"hub.weather.restartHint": "请完全退出 DSH 后重开：宿主天气代理还是旧版本。",
 				"hub.weather.failed": "操作失败：{reason}",
 				"hub.weather.reason.default": "未知原因",
 				"hub.weather.reason.network": "网络不可用",
@@ -330,6 +341,9 @@
 				"hub.weather.reason.geocode": "城市解析失败",
 				"hub.weather.reason.geolocation": "定位不可用",
 				"hub.weather.reason.unavailable": "天气服务不可用",
+				"hub.weather.reason.busy": "宿主忙（正在为其他窗口取天气）",
+				"hub.weather.reason.hostStale": "宿主天气代理还是旧版本",
+				"hub.weather.reason.upstream": "上游返回错误（{status}）",
 				"hub.weather.state.unavailable": "不可用",
 				"hub.weather.state.disabled": "未启用",
 				"hub.weather.state.noLocation": "无位置",
@@ -738,6 +752,17 @@
 				"hub.weather.invalidCoords": "Invalid coordinates: latitude -90..90, longitude -180..180.",
 				"hub.weather.resolveFailed": "Could not resolve the city: {reason}",
 				"hub.weather.refreshed": "Weather refreshed.",
+				"hub.weather.refreshedVia": "Weather refreshed · via {route} · {ms} ms",
+				"hub.weather.refreshFailed": "Refresh failed: {reason}",
+				"hub.weather.route.direct": "direct",
+				"hub.weather.route.hostHttps": "host https",
+				"hub.weather.route.hostHttp": "host http",
+				"hub.weather.route.unknown": "unknown route",
+				"hub.weather.observed": "observed {time}",
+				"hub.weather.recentSuccess": "last success {time}",
+				"hub.weather.staleData": "data from {time}, updating",
+				"hub.weather.staleFailed": "data from {time}, update failed: {reason}",
+				"hub.weather.restartHint": "Fully quit DSH and reopen it: the host weather proxy is still the old version.",
 				"hub.weather.failed": "Action failed: {reason}",
 				"hub.weather.reason.default": "unknown reason",
 				"hub.weather.reason.network": "network unavailable",
@@ -746,6 +771,9 @@
 				"hub.weather.reason.geocode": "could not resolve the city",
 				"hub.weather.reason.geolocation": "geolocation unavailable",
 				"hub.weather.reason.unavailable": "weather service unavailable",
+				"hub.weather.reason.busy": "the host is busy (fetching for another window)",
+				"hub.weather.reason.hostStale": "the host weather proxy is still the old version",
+				"hub.weather.reason.upstream": "upstream error ({status})",
 				"hub.weather.state.unavailable": "unavailable",
 				"hub.weather.state.disabled": "off",
 				"hub.weather.state.noLocation": "no location",
@@ -937,6 +965,8 @@
 			noLocation: "hub.weather.state.noLocation",
 			waiting: "hub.weather.state.waiting",
 			error: "hub.weather.state.error",
+			// v2.2.12: 有旧数据但过期/更新失败——仍显示读数，只降级标注。
+			stale: "hub.weather.state.stale",
 			normal: "hub.weather.state.normal",
 		};
 		/** Raw summary().error codes from the weather engine (not localized by it). */
@@ -947,6 +977,9 @@
 			geocode: "hub.weather.reason.geocode",
 			geolocation: "hub.weather.reason.geolocation",
 			unavailable: "hub.weather.reason.unavailable",
+			// v2.2.12
+			busy: "hub.weather.reason.busy",
+			"host-stale": "hub.weather.reason.hostStale",
 		};
 		/** Static key map for the seven self-test rows. */
 		const HUB_SELFTEST_ITEM_KEYS = {
@@ -1281,8 +1314,16 @@
 				runtime: snapshot.runtime === true,
 				last,
 				text: typeof snapshot.text === "string" ? snapshot.text : "",
+				reading: typeof snapshot.reading === "string" ? snapshot.reading : "",
 				error: typeof snapshot.error === "string" ? snapshot.error : "",
+				errorReason: typeof snapshot.errorReason === "string" ? snapshot.errorReason : "",
 				updatedAt: Number.isFinite(snapshot.updatedAt) ? snapshot.updatedAt : null,
+				// v2.2.12: v2.2.11 之前只有 updatedAt，看不出数据其实来自昨天。
+				stale: snapshot.stale === true,
+				observedAt: Number.isFinite(snapshot.observedAt) ? snapshot.observedAt : null,
+				freshAt: Number.isFinite(snapshot.freshAt) ? snapshot.freshAt : null,
+				route: typeof snapshot.route === "string" ? snapshot.route : "",
+				intervalMin: Number.isFinite(snapshot.intervalMin) ? snapshot.intervalMin : 30,
 			};
 		}
 

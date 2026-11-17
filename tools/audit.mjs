@@ -997,14 +997,17 @@ report(
 )
 // C) Weather: no forced request on visibility, and an unchanged automatic fetch
 // must not rewrite the synced snapshot (and so must not bump the settings revision).
+// v2.2.12: the freshness watermark is success-only (`lastWeatherSuccessAt`) and the
+// readings live in the localStorage-only cache key, so a poll never writes settings.
 report(
-  source.includes('let lastWeatherFetchAt = 0;') &&
+  source.includes('let lastWeatherSuccessAt = 0;') &&
     source.includes('const weatherValuesEqual = (left, right) =>') &&
-    source.includes('fetchWeather("visible")') &&
+    source.includes('if (lastWeatherSuccessAt === 0 || now() - lastWeatherSuccessAt >= intervalMs)') &&
+    source.includes('dueFetch("visible")') &&
     !source.includes('reconcileWeather(true)')
     ? 'PASS'
     : 'FAIL',
-  'weather only refreshes on visibility when stale, and never rewrites an unchanged snapshot',
+  'weather only refreshes on visibility when the last SUCCESS is older than the interval, and never rewrites an unchanged snapshot',
 )
 
 // ---- 22. R4A pet-security closure: no privilege through replaceable globals ----

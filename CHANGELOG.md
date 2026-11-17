@@ -25,6 +25,26 @@
 
 
 
+## [2.2.12] - 2026-11-17
+
+### 发布说明
+
+- 天光 v2.2.12：天气刷新不再互相作废、不再串行等 18 秒、宿主兜底走系统代理；读数与配置分家（旧数据标 stale，不伪装成实时）。发布说明与实测数据见 RELEASE-NOTES-v2.2.12.md。
+
+### 修复
+
+- **刷新失败的主因**：`fetchWeatherDirect` 与城市解析共用一个 `weatherRequestToken`，任何新请求都会把在跑的请求在返回时变成 `aborted`，而 `aborted` 直接 `return false`（不写错误、不重试、不走宿主兜底）。改为单飞（inflight Promise）+ 城市解析独立 token，只有 dispose 才算 aborted。
+- **手动刷新只有「等待中」**：`refresh()` 只返回布尔值。改为 `{ ok, error, transport, ms }`，中枢说清「来源 + 耗时」或具体失败原因（超时 / 不可达 / 宿主忙 / 上游状态码）。
+- **失败会把下一次补刷推迟一整轮**：`lastWeatherFetchAt` 在请求开始时写入，失败也算。改为只在成功时写 `lastWeatherSuccessAt`。
+- **隐藏/被遮挡时重试被吃掉**：退避定时器到点在隐藏状态下直接 return，级数已消耗且不补。改为挂起（retryPending），变可见后立即执行。
+- **Windows 遮挡导致长期不刷新**：轮询 tick 在 `document.hidden` 时永远跳过。补齐 visible / online / focus / 睡眠唤醒（60 s 时钟跳变 > 3 min）四条追平路径。
+- **慢网络一次刷新最长 18.5 秒**：直连 8 s → 宿主 https 2.5 s → 宿主 http 8 s 串行。改为直连与宿主并发、宿主内 https/http 并发，总预算 10 s，并记住上次成功路线。
+- **宿主兜底不走系统代理**：裸 `node:https/http` 不读代理。补齐 `HTTPS_PROXY/HTTP_PROXY/ALL_PROXY`（大小写）与 Windows 注册表 `ProxyEnable/ProxyServer`，https 走 CONNECT 隧道，响应带 `via`。
+- **旧数据没有过期标记**：胶囊只按「有 last 且无 error」显示 ready。新增 `summary().stale`（2×间隔与 3 小时取小）与胶囊灰显 + 小失败标记；中枢分开展示「观测时间」与「最近成功请求」。
+- **读数进了宿主设置同步**：配置与读数同住 `tianlight.weather`，宿主 revision 更高就整体采纳，可能把别的窗口的旧读数/旧报错盖回来，手动刷新还抬 revision。拆成 `tianlight.weather`（配置，同步）+ `tianlight.weather.cache`（读数，本机 DATA key，不同步），带一次性迁移。
+- **上游非 200 一律报 network**：改成 `upstream-<状态码>`；`payload.error === true` 时把 `reason` 记进诊断。
+- **插件更新后宿主还是旧路由**：客户端带 `api=2`、宿主回 `apiVersion`；旧宿主答不了时返回 `host-stale`，中枢提示「请完全退出 DSH 后重开」。
+
 ## [2.2.11] - 2026-11-16
 
 ### 发布说明

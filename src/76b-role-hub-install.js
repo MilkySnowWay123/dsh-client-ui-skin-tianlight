@@ -1336,10 +1336,39 @@
 				if (ui !== null && ui.weatherNote !== null && ui.weatherNote !== undefined) ui.weatherNote.textContent = text;
 			};
 			/**
+			 * v2.2.12：把 summary().error 的错误码翻成人话。`upstream-429` 要带状态码，
+			 * 否则用户只看到一个裸码，分不清“被限流”和“网络不通”。
+			 */
+			const hubWeatherReason = (code) => {
+				const text = typeof code === "string" ? code : "";
+				const upstream = /^upstream-([1-5][0-9][0-9])$/.exec(text);
+				if (upstream !== null) return TL_T("hub.weather.reason.upstream", { status: upstream[1] });
+				return hubReasonLabel(text, HUB_WEATHER_REASON_KEYS, "hub.weather.reason.default");
+			};
+			const hubWeatherRouteLabel = (route) => {
+				if (route === "direct") return TL_T("hub.weather.route.direct");
+				if (route === "host-https") return TL_T("hub.weather.route.hostHttps");
+				if (route === "host-http") return TL_T("hub.weather.route.hostHttp");
+				return TL_T("hub.weather.route.unknown");
+			};
+			const hubWeatherClock = (at) => {
+				const value = Number(at);
+				if (!Number.isFinite(value) || value <= 0) return "";
+				try {
+					return new Date(value).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+				} catch {
+					return "";
+				}
+			};
+			/**
 			 * Render the weather snapshot with the v1.5 precedence:
 			 * disabled -> unmounted (!runtime) -> no location -> error -> ready -> waiting.
 			 * `text` is already localized by the engine, so prefer it and only append the
 			 * raw error code for diagnostics.
+			 *
+			 * v2.2.12: 有读数时永远先给读数（旧数据也显示），两个时间分开写——「观测」
+			 * 是上游采样时间（Open-Meteo 约 15 分钟一档），「最近成功请求」是本页真正
+			 * 取到数据的时间；再按 stale/失败加一个标记，而不是整块换成「错误」。
 			 */
 			const refreshWeather = () => {
 				if (ui === null) return;
@@ -1361,20 +1390,33 @@
 					} else if (snapshot.hasLocation !== true) {
 						state = "noLocation";
 						statusText = snapshot.text !== "" ? snapshot.text : TL_T("hub.weather.noLocation");
+					} else if (snapshot.last !== null) {
+						state = snapshot.error !== "" || snapshot.stale === true ? "stale" : "normal";
+						const reading =
+							snapshot.reading !== "" ? snapshot.reading : snapshot.text !== "" ? snapshot.text : TL_T("hub.weather.state.normal");
+						const observed = hubWeatherClock(snapshot.observedAt);
+						const fresh = hubWeatherClock(snapshot.freshAt);
+						const parts = [reading];
+						if (snapshot.error !== "") {
+							parts.push(TL_T("hub.weather.staleFailed", { time: observed === "" ? "—" : observed, reason: hubWeatherReason(snapshot.error) }));
+						} else if (snapshot.stale === true) {
+							parts.push(TL_T("hub.weather.staleData", { time: observed === "" ? "—" : observed }));
+						} else if (observed !== "") {
+							parts.push(TL_T("hub.weather.observed", { time: observed }));
+						}
+						if (fresh !== "") parts.push(TL_T("hub.weather.recentSuccess", { time: fresh }));
+						statusText = parts.join(" · ");
 					} else if (snapshot.error !== "") {
 						state = "error";
-						const reason = hubReasonLabel(snapshot.error, HUB_WEATHER_REASON_KEYS, "hub.weather.reason.default");
+						const reason = hubWeatherReason(snapshot.error);
 						statusText = snapshot.text !== "" ? snapshot.text : TL_T("hub.weather.error", { reason });
 						statusText += " (" + snapshot.error + ")";
-					} else if (snapshot.last !== null) {
-						state = "normal";
-						const at = snapshot.updatedAt !== null ? snapshot.updatedAt : snapshot.last !== null && Number.isFinite(snapshot.last.at) ? snapshot.last.at : 0;
-						const base = snapshot.text !== "" ? snapshot.text : TL_T("hub.weather.state.normal");
-						statusText = at > 0 ? base + " · " + TL_T("hub.weather.updated", { time: hubDateTime(at) }) : base;
 					} else {
 						state = "waiting";
 						statusText = snapshot.text !== "" ? snapshot.text : TL_T("hub.weather.waiting");
 					}
+					// §2.8: 插件更新后宿主路由可能还是旧代码——只有整退出 DSH 才会换。
+					if (snapshot.error === "host-stale") statusText += " " + TL_T("hub.weather.restartHint");
 				}
 				ui.weatherStatus.textContent = statusText;
 				ui.weatherStatus.setAttribute("data-tl-hub-weather-state", state);
@@ -1494,8 +1536,30 @@
 							setWeatherNote(TL_T("hub.weather.failed", { reason: TL_T("hub.weather.reason.default") }));
 							return;
 						}
+						// v2.2.12: refresh() 返回 { ok, error, transport, ms }（v2.2.11 只有布尔值）。
+						// 成功说清「来源 + 耗时」，失败说清原因——不再笼统地显示「等待中」。
 						const fresh = await weather.refresh();
-						setWeatherNote(fresh === true ? TL_T("hub.weather.refreshed") : TL_T("hub.weather.waiting"));
+						const ok = fresh === true || (fresh !== null && typeof fresh === "object" && fresh.ok === true);
+						if (ok === true) {
+							const transport =
+								fresh !== null && typeof fresh === "object" && typeof fresh.transport === "string" ? fresh.transport : "";
+							const ms =
+								fresh !== null && typeof fresh === "object" && Number.isFinite(Number(fresh.ms))
+									? String(Math.max(0, Math.round(Number(fresh.ms))))
+									: "0";
+							setWeatherNote(
+								transport === ""
+									? TL_T("hub.weather.refreshed")
+									: TL_T("hub.weather.refreshedVia", { route: hubWeatherRouteLabel(transport), ms }),
+							);
+							return;
+						}
+						const error =
+							fresh !== null && typeof fresh === "object" && typeof fresh.error === "string" && fresh.error !== ""
+								? fresh.error
+								: "";
+						const reason = error === "" ? TL_T("hub.weather.reason.default") : hubWeatherReason(error);
+						setWeatherNote(TL_T("hub.weather.refreshFailed", { reason }));
 					}),
 				);
 			};

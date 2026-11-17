@@ -135,6 +135,9 @@
 			"tianlight.life.v1",
 			"tianlight.pet.agent.v1",
 			"tianlight.cache.known",
+			// v2.2.12: 天气读数（last/lastError/fetchedAt/route）只属于写出它的浏览器。
+			// 和配置分开存，宿主 map 再新也盖不回旧报错，手动刷新也不再抬 revision。
+			"tianlight.weather.cache",
 		];
 		function tl5DataKey(key) {
 			return TL5_DATA_KEYS.indexOf(key) >= 0;

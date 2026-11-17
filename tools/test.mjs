@@ -2356,11 +2356,18 @@ test('v2.2.0 pet model picker: provider+model persist and travel through the fix
   assert.match(CLIENT_SOURCE, /https:\/\/api\.x\.ai\/v1/)
 })
 
-test('v2.2.11: an unchanged weather poll still repaints the updated-at time', () => {
+test('v2.2.11/v2.2.12: an unchanged weather poll still repaints the updated-at time', () => {
   assert.match(CLIENT_SOURCE, /touch: \(\) => \{\s*weatherNotify\(\);/)
-  assert.match(CLIENT_SOURCE, /if \(unchanged && source !== "manual"\) \{[\s\S]{0,500}?weatherController\.touch\(\);/)
-  assert.match(CLIENT_SOURCE, /weatherFreshAt = Date\.now\(\)/)
-  assert.match(CLIENT_SOURCE, /updatedAt: last === null \? null : Math\.max\(Number\(last\.at\) \|\| 0, weatherFreshAt\)/)
+  assert.match(
+    CLIENT_SOURCE,
+    /if \(unchanged === true\) \{[\s\S]{0,600}?controller\.apply\(\{ fetchedAt: at, route: outcome\.route \}\);[\s\S]{0,200}?controller\.touch\(\);/,
+    'the unchanged-but-successful poll repaints without rewriting the reading',
+  )
+  assert.match(CLIENT_SOURCE, /weatherFreshAt = Math\.max\(weatherFreshAt, Number\(weatherState\.fetchedAt\) \|\| 0\)/)
+  assert.match(
+    CLIENT_SOURCE,
+    /const updatedAt = last === null \? null : Math\.max\(Number\(last\.at\) \|\| 0, weatherFreshAt\) \|\| last\.at;/,
+  )
 })
 
 test('v2.2.9: the bridge never paints the product frame from data-sidebar-collapsed', () => {
@@ -6354,6 +6361,647 @@ await testAsync('the client envelope reports a missing module loader instead of 
   assert.equal(warnings.length, 1, 'exactly one diagnostic, no uncaught error')
   assert.match(warnings[0], /client module loader contract missing/, 'the missing contract is named')
   assert.match(warnings[0], /__ModuleLoader__/, 'the expected contract is named')
+})
+
+// ---- v2.2.12: weather refresh (single-flight, parallel routes, retry, staleness) ----
+// The network state machine was factored into `createWeatherRuntime(deps)` so it can
+// be extracted from the built bundle and driven with fake fetch/timers — no DSH boot,
+// no real network. The model (cache split, summary, chip) is extracted the same way.
+const WEATHER_MODEL_SOURCE = (() => {
+  const start = CLIENT_SOURCE.indexOf('const WEATHER_KEY = "tianlight.weather";')
+  const end = CLIENT_SOURCE.indexOf('function installWeatherChip()')
+  assert.ok(start > 0, 'the weather model starts at WEATHER_KEY')
+  assert.ok(end > start, 'the weather model precedes installWeatherChip')
+  return CLIENT_SOURCE.slice(start, end)
+})()
+
+const WEATHER_RUNTIME_SOURCE = (() => {
+  const start = CLIENT_SOURCE.indexOf('function createWeatherRuntime(')
+  const end = CLIENT_SOURCE.indexOf('function installContextRuntime(')
+  assert.ok(start > 0, 'createWeatherRuntime is present')
+  assert.ok(end > start, 'createWeatherRuntime precedes installContextRuntime')
+  return CLIENT_SOURCE.slice(start, end)
+})()
+
+function makeMemoryStorage(seed = {}) {
+  const map = new Map(Object.entries(seed))
+  return {
+    getItem: (key) => (map.has(key) ? map.get(key) : null),
+    setItem: (key, value) => map.set(key, String(value)),
+    removeItem: (key) => map.delete(key),
+    key: (index) => [...map.keys()][index] ?? null,
+    get length() {
+      return map.size
+    },
+    dump: () => Object.fromEntries(map),
+  }
+}
+
+/** Evaluate the extracted weather model against a private localStorage copy. */
+function loadWeatherModel(seed = {}) {
+  const storage = makeMemoryStorage(seed)
+  const savedStorage = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+  const savedGlobal = globalThis.tianlightWeather
+  Object.defineProperty(globalThis, 'localStorage', { value: storage, configurable: true, writable: true })
+  const translate = (key, params) => (params === undefined ? key : key + JSON.stringify(params))
+  const diagnostics = []
+  const factory = new Function(
+    'note',
+    'TL_T',
+    'tl5Diag',
+    WEATHER_MODEL_SOURCE +
+      '\nreturn { weatherController, weatherState, readWeatherSettings, readWeatherCache, weatherConfigFromState, weatherCacheFromState, weatherSummary, weatherStaleInfo, weatherChipState, weatherChipVisibleParts, weatherChipDetail, normalizeWeatherForecast, WEATHER_KEY, WEATHER_CACHE_KEY };',
+  )
+  const api = factory(
+    () => {},
+    translate,
+    (channel, data) => diagnostics.push({ channel, data }),
+  )
+  return {
+    ...api,
+    storage,
+    translate,
+    diagnostics,
+    restore: () => {
+      if (savedStorage === undefined) delete globalThis.localStorage
+      else Object.defineProperty(globalThis, 'localStorage', savedStorage)
+      if (savedGlobal === undefined) delete globalThis.tianlightWeather
+      else globalThis.tianlightWeather = savedGlobal
+    },
+  }
+}
+
+function weatherPayload(temperature = 20.5, code = 2, isDay = 1) {
+  return { current: { temperature_2m: temperature, weather_code: code, is_day: isDay, time: '2026-11-17T14:15' } }
+}
+
+function jsonResponse(payload, status = 200) {
+  return { ok: status >= 200 && status < 300, status, json: async () => payload }
+}
+
+function makeWeatherFetch(routes) {
+  const calls = { direct: 0, host: 0, geocode: 0, urls: [] }
+  const run = (handler, init) => {
+    if (handler === 'hang') {
+      return new Promise((resolve, reject) => {
+        const signal = init !== undefined && init !== null ? init.signal : null
+        const abort = () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' }))
+        if (signal !== null && signal !== undefined && signal.aborted === true) abort()
+        else if (signal !== null && signal !== undefined) signal.addEventListener('abort', abort)
+      })
+    }
+    if (handler === 'fail') return Promise.reject(Object.assign(new Error('network down'), { code: 'ECONNRESET' }))
+    if (typeof handler === 'function') return handler(init)
+    if (handler === undefined) return Promise.reject(new Error('unexpected route'))
+    return Promise.resolve(jsonResponse(handler))
+  }
+  const fetchImpl = (url, init) => {
+    calls.urls.push(url)
+    if (url.includes('/_weather')) {
+      calls.host += 1
+      return run(routes.host, init)
+    }
+    if (url.includes('geocoding')) {
+      calls.geocode += 1
+      return run(routes.geocode, init)
+    }
+    calls.direct += 1
+    return run(routes.direct, init)
+  }
+  return { fetchImpl, calls }
+}
+
+function makeClock(start = 1763337600000) {
+  const state = { value: start }
+  return {
+    now: () => state.value,
+    advance: (ms) => {
+      state.value += ms
+    },
+    set: (value) => {
+      state.value = value
+    },
+  }
+}
+
+function makeFakeController(initial = {}) {
+  const state = {
+    enabled: true,
+    provider: 'open-meteo',
+    city: '',
+    latitude: 23.1083,
+    longitude: 112.4912,
+    intervalMin: 30,
+    last: null,
+    lastError: '',
+    fetchedAt: 0,
+    route: '',
+    ...initial,
+  }
+  let notifications = 0
+  return {
+    state: () => ({ ...state, last: state.last === null ? null : { ...state.last } }),
+    apply: (patch) => {
+      Object.assign(state, patch)
+      notifications += 1
+      return { ...state }
+    },
+    touch: () => {
+      notifications += 1
+      return { ...state }
+    },
+    notifications: () => notifications,
+    raw: state,
+  }
+}
+
+function createWeatherEngine(options = {}) {
+  const createWeatherRuntime = new Function(WEATHER_RUNTIME_SOURCE + '\nreturn createWeatherRuntime;')()
+  const clock = options.clock ?? makeClock()
+  const controller = options.controller ?? makeFakeController(options.state)
+  const documentRef = options.document ?? { hidden: false }
+  const limits = {
+    intervals: [15, 30, 60, 120],
+    routes: ['direct', 'host-https', 'host-http'],
+    directTimeoutMs: 200,
+    hostTimeoutMs: 200,
+    totalBudgetMs: 400,
+    headStartMs: 5,
+    retryDelaysMs: [25, 30, 40],
+    wakeGapMs: 40,
+    busyWaitMs: 5,
+    apiVersion: 2,
+    ...(options.limits ?? {}),
+  }
+  const runtime = createWeatherRuntime({
+    controller,
+    normalize: (payload) => {
+      if (payload === null || typeof payload !== 'object' || payload.current === null || typeof payload.current !== 'object') return null;
+      return {
+        code: Number(payload.current.weather_code),
+        temperatureC: Number(payload.current.temperature_2m),
+        isDay: payload.current.is_day === 1,
+        at: clock.now(),
+        observedAt: 0,
+      }
+    },
+    ambience: options.ambience ?? (() => {}),
+    coerceCoordinate: (value, limit) => {
+      const number = Number(value)
+      return Number.isFinite(number) && Math.abs(number) <= limit ? number : null
+    },
+    fetch: options.fetchImpl,
+    AbortController,
+    document: documentRef,
+    navigator: { geolocation: { getCurrentPosition: (ok) => ok({ coords: { latitude: 1, longitude: 2 } }) } },
+    clock: clock.now,
+    timers: { setTimeout, clearTimeout, setInterval, clearInterval },
+    endpoints: {
+      forecast: 'https://api.open-meteo.com/v1/forecast',
+      geocode: 'https://geocoding-api.open-meteo.com/v1/search',
+      host: '/skin-tianlight',
+    },
+    limits,
+    alive: options.alive ?? (() => true),
+    note: () => {},
+    diag: () => {},
+  })
+  return { runtime, controller, documentRef, limits, clock }
+}
+
+const waitMs = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const waitFor = async (predicate, timeoutMs = 1500) => {
+  const started = Date.now()
+  while (Date.now() - started < timeoutMs) {
+    if (predicate()) return true
+    await waitMs(5)
+  }
+  return false
+}
+
+const ensureWeatherRuntime = () => new Function(WEATHER_RUNTIME_SOURCE + '\nreturn createWeatherRuntime;')()
+
+test('v2.2.12: the client asks the host route for API version 2', () => {
+  assert.match(CLIENT_SOURCE, /const WEATHER_API_VERSION = 2;/)
+  assert.match(CLIENT_SOURCE, /"&api=" \+\s*String\(limits\.apiVersion\)/)
+  assert.match(CLIENT_SOURCE, /const WEATHER_CACHE_KEY = "tianlight\.weather\.cache";/)
+  assert.match(CLIENT_SOURCE, /function migrateLegacyWeatherReadings\(parsed, cache, config\)/)
+})
+
+await testAsync('v2.2.12: three concurrent refreshes are ONE attempt and the same success', async () => {
+  const clock = makeClock()
+  const { fetchImpl, calls } = makeWeatherFetch({
+    direct: () =>
+      new Promise((resolve) => {
+        setTimeout(() => resolve(jsonResponse(weatherPayload(21))), 25)
+      }),
+    host: 'hang',
+  })
+  const { runtime, controller } = createWeatherEngine({ clock, fetchImpl, state: { route: 'direct' } })
+  const results = await Promise.all([runtime.refresh(), runtime.refresh(), runtime.refresh()])
+  assert.equal(calls.direct, 1, 'exactly one direct request (one attempt) for three callers')
+  assert.ok(calls.host <= 1, 'the losing transport is started at most once')
+  for (const result of results) {
+    assert.equal(result.ok, true)
+    assert.equal(result.transport, 'direct')
+    assert.equal(result.error, '')
+  }
+  assert.equal(controller.state().fetchedAt, clock.now(), 'the success time is the injected clock')
+  assert.equal(controller.state().last.temperatureC, 21)
+  runtime.stop()
+})
+
+await testAsync('v2.2.12: a manual refresh during an automatic poll joins it and never reports aborted', async () => {
+  const clock = makeClock()
+  let release = null
+  const gate = new Promise((resolve) => {
+    release = resolve
+  })
+  const { fetchImpl, calls } = makeWeatherFetch({
+    direct: () => gate.then(() => jsonResponse(weatherPayload(18))),
+    host: 'hang',
+  })
+  const { runtime } = createWeatherEngine({ clock, fetchImpl, state: { route: 'direct' } })
+  runtime.start()
+  const manual = runtime.refresh()
+  await waitMs(10)
+  release()
+  const result = await manual
+  assert.equal(result.ok, true, 'the manual caller gets the success, not an abort')
+  assert.notEqual(result.error, 'aborted')
+  assert.equal(calls.direct, 1, 'the manual call did not start a second attempt')
+  runtime.stop()
+})
+
+await testAsync('v2.2.12: a failure does not move the success watermark, and visibility retries once stale', async () => {
+  const clock = makeClock()
+  let mode = 'ok'
+  const { fetchImpl, calls } = makeWeatherFetch({
+    direct: () => (mode === 'ok' ? Promise.resolve(jsonResponse(weatherPayload(19))) : Promise.reject(new Error('down'))),
+    host: 'fail',
+  })
+  const { runtime, controller } = createWeatherEngine({
+    clock,
+    fetchImpl,
+    state: { route: 'direct' },
+    limits: { retryDelaysMs: [2000, 3000, 4000] },
+  })
+  const first = await runtime.refresh()
+  assert.equal(first.ok, true)
+  const successAt = runtime.state().lastWeatherSuccessAt
+  assert.ok(successAt > 0, 'a success records the watermark')
+  mode = 'fail'
+  const failed = await runtime.refresh()
+  assert.equal(failed.ok, false)
+  assert.equal(failed.error, 'network')
+  assert.equal(runtime.state().lastWeatherSuccessAt, successAt, 'a failure must not advance the watermark')
+  assert.equal(controller.state().lastError, 'network')
+  const before = calls.direct
+  runtime.visible()
+  await waitMs(15)
+  assert.equal(calls.direct, before, 'a visible window does not refetch before the interval passes')
+  clock.advance(31 * 60000)
+  runtime.visible()
+  assert.equal(await waitFor(() => calls.direct > before), true, 'after the interval a visible window refetches')
+  runtime.stop()
+})
+
+await testAsync('v2.2.12: a retry that comes due while hidden keeps its level and runs when visible', async () => {
+  const clock = makeClock()
+  const documentRef = { hidden: false }
+  const { fetchImpl, calls } = makeWeatherFetch({ direct: 'fail', host: 'fail' })
+  const { runtime } = createWeatherEngine({
+    clock,
+    fetchImpl,
+    document: documentRef,
+    limits: { retryDelaysMs: [20, 60, 90] },
+  })
+  const failed = await runtime.refresh()
+  assert.equal(failed.ok, false)
+  assert.equal(runtime.state().retryStep, 0, 'scheduling a retry does not consume a level')
+  documentRef.hidden = true
+  await waitMs(45)
+  assert.equal(runtime.state().retryPending, true, 'the due retry is parked while hidden')
+  assert.equal(runtime.state().retryStep, 0, 'the parked retry consumed no backoff level')
+  const before = calls.direct
+  documentRef.hidden = false
+  runtime.visible()
+  assert.equal(await waitFor(() => calls.direct > before), true, 'the parked retry runs as soon as the window is visible')
+  assert.equal(runtime.state().retryPending, false)
+  assert.equal(runtime.state().retryStep, 1, 'the real attempt consumes one level')
+  runtime.stop()
+})
+
+await testAsync('v2.2.12: a hanging direct route does not delay the host fallback', async () => {
+  const clock = makeClock()
+  const { fetchImpl, calls } = makeWeatherFetch({
+    direct: 'hang',
+    host: () =>
+      new Promise((resolve) => {
+        setTimeout(() => resolve(jsonResponse({ ok: true, apiVersion: 2, transport: 'https', payload: weatherPayload(17) })), 20)
+      }),
+  })
+  const { runtime, controller } = createWeatherEngine({
+    clock,
+    fetchImpl,
+    limits: { directTimeoutMs: 400, hostTimeoutMs: 400, totalBudgetMs: 700 },
+  })
+  const started = Date.now()
+  const result = await runtime.refresh()
+  const elapsed = Date.now() - started
+  assert.equal(result.ok, true)
+  assert.equal(result.transport, 'host-https')
+  assert.ok(elapsed < 300, 'the answer is not serialized behind the direct timeout (took ' + elapsed + 'ms)')
+  assert.equal(calls.direct, 1)
+  assert.equal(controller.state().route, 'host-https', 'the working route is remembered for the next attempt')
+  runtime.stop()
+})
+
+await testAsync('v2.2.12: an upstream 429 is reported as upstream-429, not network', async () => {
+  const clock = makeClock()
+  const fetchImpl = (url, init) => {
+    if (url.includes('/_weather')) return Promise.reject(new Error('host down'))
+    return Promise.resolve(jsonResponse({ error: true, reason: 'rate limited' }, 429))
+  }
+  const { runtime, controller } = createWeatherEngine({ clock, fetchImpl })
+  const result = await runtime.refresh()
+  assert.equal(result.ok, false)
+  assert.equal(result.error, 'upstream-429')
+  assert.equal(controller.state().lastError, 'upstream-429')
+  runtime.stop()
+})
+
+await testAsync('v2.2.12: an old host route reports host-stale instead of a bare network error', async () => {
+  const clock = makeClock()
+  const { fetchImpl } = makeWeatherFetch({
+    direct: 'fail',
+    host: { ok: false, error: 'timeout' },
+  })
+  const { runtime, controller } = createWeatherEngine({ clock, fetchImpl })
+  const result = await runtime.refresh()
+  assert.equal(result.ok, false)
+  assert.equal(result.error, 'host-stale')
+  assert.equal(controller.state().lastError, 'host-stale')
+  runtime.stop()
+})
+
+test('v2.2.12: the weather model moved readings out of the synced key', () => {
+  const legacy = {
+    enabled: true,
+    provider: 'open-meteo',
+    city: '肇庆',
+    latitude: 23.1083,
+    longitude: 112.4912,
+    intervalMin: 30,
+    last: { code: 2, temperatureC: 20.7, isDay: false, at: 1794843579101 },
+    lastError: 'timeout',
+  }
+  const model = loadWeatherModel({ 'tianlight.weather': JSON.stringify(legacy) })
+  try {
+    const config = JSON.parse(model.storage.getItem('tianlight.weather'))
+    const cache = JSON.parse(model.storage.getItem('tianlight.weather.cache'))
+    assert.equal('last' in config, false, 'the synced key no longer carries readings')
+    assert.equal('lastError' in config, false)
+    assert.equal(config.city, '肇庆', 'the configuration survives the migration')
+    assert.equal(cache.last.code, 2, 'the reading moved into the local-only cache')
+    assert.equal(cache.lastError, 'timeout')
+    assert.equal(cache.fetchedAt, 1794843579101)
+    assert.equal(model.weatherState.last.temperatureC, 20.7, 'the migrated reading is visible immediately')
+    assert.equal(model.weatherState.lastError, 'timeout')
+  } finally {
+    model.restore()
+  }
+})
+
+test('v2.2.12: writing a reading never touches the synced key', () => {
+  const model = loadWeatherModel()
+  try {
+    model.weatherController.apply({ enabled: true, city: 'A', latitude: 1, longitude: 2 })
+    const configAfterConfig = model.storage.getItem('tianlight.weather')
+    assert.deepEqual(Object.keys(JSON.parse(configAfterConfig)).sort(), [
+      'city',
+      'enabled',
+      'intervalMin',
+      'latitude',
+      'longitude',
+      'provider',
+    ])
+    model.weatherController.apply({
+      last: { code: 0, temperatureC: 25, isDay: true, at: 1000, observedAt: 900 },
+      lastError: '',
+      fetchedAt: 1000,
+      route: 'direct',
+    })
+    assert.equal(model.storage.getItem('tianlight.weather'), configAfterConfig, 'the synced key is untouched')
+    const cache = JSON.parse(model.storage.getItem('tianlight.weather.cache'))
+    assert.equal(cache.last.code, 0)
+    assert.equal(cache.fetchedAt, 1000)
+    assert.equal(cache.route, 'direct')
+    assert.equal(model.weatherSummary().updatedAt, 1000)
+    assert.equal(model.weatherSummary().route, 'direct')
+  } finally {
+    model.restore()
+  }
+})
+
+test('v2.2.12: stale is 2 intervals or 3 hours, whichever comes first', () => {
+  const model = loadWeatherModel()
+  try {
+    const now = 1763337600000
+    assert.equal(model.weatherStaleInfo(now - 30 * 60000, 30, now).stale, false)
+    assert.equal(model.weatherStaleInfo(now - 61 * 60000, 30, now).stale, true)
+    assert.equal(model.weatherStaleInfo(now - 2 * 3600000, 120, now).stale, false, 'a 2h interval tolerates 2h')
+    assert.equal(model.weatherStaleInfo(now - 3 * 3600000 - 1000, 120, now).stale, true, 'the 3h cap wins for long intervals')
+    assert.equal(model.weatherStaleInfo(null, 30, now).stale, false, 'no reading is never "stale"')
+    assert.equal(model.weatherStaleInfo(now - 3600000 - 1000, 30, now).stale, true)
+  } finally {
+    model.restore()
+  }
+})
+
+test('v2.2.12: the chip keeps the temperature when the data is stale or the refresh failed', () => {
+  const model = loadWeatherModel()
+  try {
+    const last = { code: 2, temperatureC: 25, isDay: true, at: 1000, observedAt: 900 }
+    const base = { enabled: true, runtime: true, hasLocation: true, last, updatedAt: 1000 }
+    assert.equal(model.weatherChipState({ ...base, error: '', stale: false }), 'ready')
+    assert.equal(model.weatherChipState({ ...base, error: '', stale: true }), 'stale')
+    assert.equal(model.weatherChipState({ ...base, error: 'timeout', stale: false }), 'stale', 'old data + failure is not "error"')
+    assert.equal(model.weatherChipState({ ...base, last: null, error: 'timeout' }), 'error')
+    const parts = model.weatherChipVisibleParts('stale', { ...base, error: 'timeout' })
+    assert.equal(parts.temp, '25°C', 'the temperature stays visible')
+    assert.equal(parts.desc.length > 0, true)
+    const detail = model.weatherChipDetail('stale', { ...base, error: 'upstream-429' })
+    assert.match(detail, /429/, 'the upstream status is named')
+    assert.match(detail, /weather\.chip\.detailStaleError/, 'the stale wording is used')
+  } finally {
+    model.restore()
+  }
+})
+
+test('v2.2.12: the reading cache is a per-browser data key (never mirrored)', () => {
+  assert.match(
+    CLIENT_SOURCE,
+    /const TL5_DATA_KEYS = \[[\s\S]{0,900}?"tianlight\.weather\.cache"/,
+    'the client data-key list owns the reading cache',
+  )
+  const stripped = stripDataSettings({
+    settings: { 'tianlight.weather.cache': '{"last":1}', 'tianlight.weather': '{"enabled":true}' },
+  })
+  assert.equal('tianlight.weather.cache' in stripped.settings, false, 'the host strips it from the mirror')
+  assert.equal('tianlight.weather' in stripped.settings, true, 'the configuration still travels')
+})
+
+await testAsync('v2.2.12: the host route races https against http and answers with the faster one', async () => {
+  const { resetInflight } = weatherTest
+  resetInflight()
+  const started = Date.now()
+  const res = fakeJsonResponse()
+  const seen = []
+  await handleWeatherProxy(new URL('http://127.0.0.1/skin-tianlight/_weather?latitude=1&longitude=2'), res, {
+    requestJson: (transport) => {
+      seen.push(transport)
+      if (transport === 'https') {
+        return new Promise((resolve) => {
+          setTimeout(() => resolve({ current: { temperature_2m: 1 } }), 600)
+        })
+      }
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(weatherPayload(12)), 20)
+      })
+    },
+  })
+  const elapsed = Date.now() - started
+  assert.equal(res.status, 200)
+  assert.match(res.body, /"transport":"http"/)
+  assert.match(res.body, /"via":"direct"/)
+  assert.match(res.body, /"apiVersion":2/)
+  assert.deepEqual(seen.slice().sort(), ['http', 'https'], 'both transports are started')
+  assert.ok(elapsed < 400, 'the hanging https does not block the http answer (took ' + elapsed + 'ms)')
+  resetInflight()
+})
+
+test('v2.2.12: the host honours the system proxy environment variables', async () => {
+  const { parseProxy, proxyFromEnv, proxyFromServerValue, parseRegistryQuery } = weatherTest
+  assert.deepEqual(parseProxy('127.0.0.1:7890'), { host: '127.0.0.1', port: 7890, scheme: 'http', auth: '' })
+  assert.deepEqual(parseProxy('http://127.0.0.1:7890/'), { host: '127.0.0.1', port: 7890, scheme: 'http', auth: '' })
+  assert.equal(parseProxy('socks5://127.0.0.1:7890'), null, 'SOCKS is not supported and is ignored')
+  assert.equal(parseProxy('not a proxy'), null)
+  assert.equal(parseProxy('http://user:pass@127.0.0.1:7890').auth.startsWith('Basic '), true)
+  assert.equal(proxyFromEnv({ HTTPS_PROXY: 'http://127.0.0.1:7890' }).port, 7890)
+  assert.equal(proxyFromEnv({ https_proxy: '127.0.0.1:7891' }).port, 7891)
+  assert.equal(proxyFromEnv({ ALL_PROXY: 'http://127.0.0.1:7892' }).port, 7892)
+  assert.equal(proxyFromEnv({ NO_PROXY: '*' }), null)
+  assert.equal(proxyFromServerValue('http=127.0.0.1:1;https=127.0.0.1:2').port, 2, 'https entry wins')
+  assert.equal(proxyFromServerValue('127.0.0.1:3').port, 3)
+  assert.equal(
+    parseRegistryQuery('    ProxyEnable    REG_DWORD    0x0\r\n    ProxyServer    REG_SZ    127.0.0.1:4\r\n'),
+    null,
+    'a disabled proxy is ignored',
+  )
+  assert.equal(
+    parseRegistryQuery('    ProxyEnable    REG_DWORD    0x1\r\n    ProxyServer    REG_SZ    http=127.0.0.1:4\r\n').port,
+    4,
+  )
+})
+
+await testAsync('v2.2.12: plain HTTP through a configured proxy uses the absolute-URI form', async () => {
+  const { default: http } = await import('node:http')
+  const { resetInflight, resetProxyCache } = weatherTest
+  const seen = []
+  const server = http.createServer((request, response) => {
+    seen.push(request.url)
+    response.writeHead(200, { 'content-type': 'application/json' })
+    response.end(JSON.stringify(weatherPayload(13)))
+  })
+  server.on('connect', (request, socket) => {
+    // The https attempt tunnels; answer the CONNECT and close so its TLS fails fast.
+    seen.push('CONNECT ' + request.url)
+    socket.on('error', () => {})
+    socket.end('HTTP/1.1 502 Bad Gateway\r\n\r\n')
+  })
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+  const port = server.address().port
+  const savedProxy = process.env.HTTP_PROXY
+  resetInflight()
+  resetProxyCache()
+  process.env.HTTP_PROXY = 'http://127.0.0.1:' + port
+  try {
+    const res = fakeJsonResponse()
+    await handleWeatherProxy(new URL('http://127.0.0.1/skin-tianlight/_weather?latitude=1&longitude=2'), res, {})
+    assert.equal(res.status, 200)
+    assert.match(res.body, /"via":"proxy"/)
+    assert.match(res.body, /"transport":"http"/)
+    assert.equal(
+      seen.some((line) => line.startsWith('http://api.open-meteo.com/v1/forecast')),
+      true,
+      'the proxy received an absolute-URI request for the fixed host',
+    )
+    assert.equal(res.body.includes('temperature_2m'), true)
+  } finally {
+    if (savedProxy === undefined) delete process.env.HTTP_PROXY
+    else process.env.HTTP_PROXY = savedProxy
+    resetProxyCache()
+    resetInflight()
+    await new Promise((resolve) => server.close(resolve))
+  }
+})
+
+await testAsync('v2.2.12: HTTPS through a proxy opens a CONNECT tunnel to the fixed host', async () => {
+  const { default: http } = await import('node:http')
+  const { default: net } = await import('node:net')
+  const { startRequestJson } = weatherTest
+  const authority = []
+  const origin = http.createServer((request, response) => {
+    response.writeHead(200, { 'content-type': 'application/json' })
+    response.end(JSON.stringify(weatherPayload(3)))
+  })
+  await new Promise((resolve) => origin.listen(0, '127.0.0.1', resolve))
+  const proxy = http.createServer()
+  proxy.on('connect', (request, socket) => {
+    authority.push(request.url)
+    socket.on('error', () => {})
+    socket.write('HTTP/1.1 200 Connection Established\r\n\r\n')
+    const upstream = net.connect(origin.address().port, '127.0.0.1')
+    upstream.on('error', () => {})
+    socket.pipe(upstream).pipe(socket)
+  })
+  await new Promise((resolve) => proxy.listen(0, '127.0.0.1', resolve))
+  // Stand-in for node:tls: the tunnel plumbing (CONNECT + HTTP over the tunnelled
+  // socket) is what is under test here; skip the handshake that needs a real cert.
+  const fakeTls = {
+    connect: () => {
+      const socket = net.connect(origin.address().port, '127.0.0.1')
+      setImmediate(() => socket.emit('secureConnect'))
+      return socket
+    },
+  }
+  try {
+    const payload = await startRequestJson(
+      'https',
+      '/v1/forecast?latitude=1&longitude=2',
+      2000,
+      null,
+      { host: '127.0.0.1', port: proxy.address().port, scheme: 'http', auth: '' },
+      fakeTls,
+    ).promise
+    assert.equal(payload.current.temperature_2m, 3)
+    assert.deepEqual(authority, ['api.open-meteo.com:443'], 'the tunnel is opened to the fixed host only')
+  } finally {
+    await new Promise((resolve) => proxy.close(resolve))
+    await new Promise((resolve) => origin.close(resolve))
+  }
+})
+
+test('v2.2.12: the hub names the refresh route, the reason and the two timestamps', () => {
+  assert.match(CLIENT_SOURCE, /hub\.weather\.refreshedVia/)
+  assert.match(CLIENT_SOURCE, /hub\.weather\.refreshFailed/)
+  assert.match(CLIENT_SOURCE, /hub\.weather\.staleFailed/)
+  assert.match(CLIENT_SOURCE, /hub\.weather\.recentSuccess/)
+  assert.match(CLIENT_SOURCE, /hub\.weather\.restartHint/)
+  assert.match(CLIENT_SOURCE, /hub\.weather\.reason\.upstream/)
+  assert.match(CLIENT_SOURCE, /data-tl-weather-stale/)
+  assert.match(CLIENT_SOURCE, /fetchWeather\(changed === true \? "enable" : "manual"\)/)
 })
 
 console.log(`tests: ${passed} passed, ${failures.length} failed`)
