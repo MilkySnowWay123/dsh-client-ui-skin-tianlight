@@ -7004,6 +7004,45 @@ test('v2.2.12: the hub names the refresh route, the reason and the two timestamp
   assert.match(CLIENT_SOURCE, /fetchWeather\(changed === true \? "enable" : "manual"\)/)
 })
 
+await testAsync('v2.2.12: every dynamic hub weather key resolves in both dictionaries', async () => {
+  // HUB_WEATHER_STATE_KEYS / HUB_WEATHER_REASON_KEYS are used through TL_T(map[state]),
+  // which the static i18n audit cannot see. A missing entry ships a raw key to the UI
+  // (the "hub.weather.state.stale" leak this test was written for), so check them by
+  // loading the product's dictionaries.
+  const pattern = (name) => new RegExp('const ' + name + ' = \\{([\\s\\S]*?)\\};')
+  const blocks = ['HUB_WEATHER_STATE_KEYS', 'HUB_WEATHER_REASON_KEYS'].map((name) => pattern(name).exec(CLIENT_SOURCE))
+  for (const match of blocks) assert.ok(match !== null, 'the weather key map exists in the product')
+  const keys = [...blocks.map((match) => match[1]).join('\n').matchAll(/"([a-z]+\.[A-Za-z0-9_.]+)"/g)].map((match) => match[1])
+  assert.ok(keys.length >= 10, 'collected the map keys (got ' + keys.length + ')')
+  const instrumented = CLIENT_SOURCE.replace('exports.apply = apply;', 'exports.apply = apply;\n\t\texports.__tl5Strings = TL5_STRINGS;')
+  assert.notEqual(instrumented, CLIENT_SOURCE, 'the product exposes its dictionaries for this check')
+  const dir = mkdtempSync(join(tmpdir(), 'tl-dyn-keys-'))
+  const file = join(dir, 'client.mjs')
+  writeFileSync(file, instrumented)
+  const savedWindow = globalThis.window
+  let loaded = null
+  globalThis.window = {
+    __ModuleLoader__: { load: (spec) => { loaded = spec } },
+  }
+  try {
+    await import(pathToFileURL(file).href + '?dynamic=' + Date.now())
+    assert.ok(loaded !== null, 'the loader received the module')
+    const exportsObj = loaded.factory(() => {
+      throw new Error('no imports expected')
+    })
+    const zh = exportsObj.__tl5Strings.zh
+    const en = exportsObj.__tl5Strings.en
+    for (const key of keys) {
+      assert.equal(typeof zh[key], 'string', 'zh dictionary has ' + key)
+      assert.equal(typeof en[key], 'string', 'en dictionary has ' + key)
+    }
+  } finally {
+    if (savedWindow === undefined) delete globalThis.window
+    else globalThis.window = savedWindow
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 console.log(`tests: ${passed} passed, ${failures.length} failed`)
 for (const failure of failures) console.log('  FAIL ' + failure)
 if (failures.length > 0) process.exit(1)

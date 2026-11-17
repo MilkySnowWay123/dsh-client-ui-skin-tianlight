@@ -1,12 +1,25 @@
 # 天光（TIANLIGHT）— DSH Web 皮肤插件
 
-新海诚式的天光配色，全屏循环动态壁纸置于界面之下，玻璃质感面板、可拖拽的薄荷小猫桌宠，以及一套自建的排版与壁纸控制面板。v0.5.1 起它是一套**可开关、可观测、可回滚**的工作台：模块开关、宿主设置同步、智能情境（含天气联动）、特效与氛围、系统音频、网页壁纸、导入导出包与配方分享；v0.5.2 是**自检修复版**（设置数据安全 / i18n 完整性 / 面板体验），v0.5.3 是**大修版**（快捷壁纸 / 点击链路 / 语言解耦 / 情境安全默认），v0.6.0 起**自动接入本机 Wallpaper Engine 库**（无需填写目录，点一张即应用），v0.7.0 新增**职责通道**（角色包/职责引擎 → 桌宠气泡与用户选择，只改浏览器半、无需重启 DSH）。v2.2.4–v2.2.8 连续修正液态玻璃：默认关闭、侧栏开关归位、实时玻璃只作用于输入框与小组件（壁纸保持清晰）、去掉所有描边白线，暗色侧栏/角色中枢改用烟熏底；**v2.2.9** 把大面板改成「宿主上色 + `::before` 真模糊 + `::after` 渐变边缘光」，并修掉开侧栏时整窗发暗/发糊；**v2.2.10** 是同一份最终代码的 npm 补发版；**v2.2.11** 修复天气自动轮询成功、但数值未变时「更新于」不前进的问题。
+新海诚式的天光配色，全屏循环动态壁纸置于界面之下，玻璃质感面板、可拖拽的薄荷小猫桌宠，以及一套自建的排版与壁纸控制面板。v0.5.1 起它是一套**可开关、可观测、可回滚**的工作台：模块开关、宿主设置同步、智能情境（含天气联动）、特效与氛围、系统音频、网页壁纸、导入导出包与配方分享；v0.5.2 是**自检修复版**（设置数据安全 / i18n 完整性 / 面板体验），v0.5.3 是**大修版**（快捷壁纸 / 点击链路 / 语言解耦 / 情境安全默认），v0.6.0 起**自动接入本机 Wallpaper Engine 库**（无需填写目录，点一张即应用），v0.7.0 新增**职责通道**（角色包/职责引擎 → 桌宠气泡与用户选择，只改浏览器半、无需重启 DSH）。v2.2.4–v2.2.8 连续修正液态玻璃：默认关闭、侧栏开关归位、实时玻璃只作用于输入框与小组件（壁纸保持清晰）、去掉所有描边白线，暗色侧栏/角色中枢改用烟熏底；**v2.2.9** 把大面板改成「宿主上色 + `::before` 真模糊 + `::after` 渐变边缘光」，并修掉开侧栏时整窗发暗/发糊；**v2.2.10** 是同一份最终代码的 npm 补发版；**v2.2.11** 修复天气自动轮询成功、但数值未变时「更新于」不前进的问题；**v2.2.12** 重做天气刷新（单飞、直连/宿主并发、宿主走系统代理、旧数据标 stale）。
 
 > 这是一个 **DSH（DeepSeek Harness）Web GUI 皮肤插件**，不是独立应用。它是一个标准 DSH bundle：`dsh.bundle.patch` 负责插入 `ui-skin-tianlight` 行，`dsh.client` 提供浏览器半；Web GUI 与 DSH Desktop 共用同一前端。
 >
 > npm 包名 `dsh-client-ui-skin-tianlight`（v2.0.2 起；旧链接安装包名 `@dsh-external/dsh-client-ui-skin-tianlight`）· 布线行 `ui-skin-tianlight` · body 属性 `data-dsh-tianlight`
 
-**当前版本：v2.2.11**（npm `latest` = 2.2.11；GitHub Release = [v2.2.11](https://github.com/MilkySnowWay123/dsh-client-ui-skin-tianlight/releases/tag/v2.2.11)）。npm 2.2.9 是发布处理期间留下的旧构建，2.2.9 / 2.2.10 均已 deprecated，安装请用 `@latest`。
+**当前版本：v2.2.12**（npm `latest` = 2.2.12；GitHub Release = [v2.2.12](https://github.com/MilkySnowWay123/dsh-client-ui-skin-tianlight/releases/tag/v2.2.12)）。npm 2.2.9 是发布处理期间留下的旧构建，2.2.9 / 2.2.10 均已 deprecated，安装请用 `@latest`。
+
+## v2.2.12 · 天气刷新：单飞、并发、代理与「过期」标记
+
+手动刷新失败、旧数据长期挂着、慢网络一次刷新要等十几秒——这一版把这三件事一起修了，并在真实的 DSH Desktop 渲染进程里（`dsh-app://`，隔离实例 + CDP）跑完了实测与验收。
+
+- **刷新失败的主因**：直连与城市解析共用一个 `weatherRequestToken`，任何新请求都会把在跑的请求在返回时变成 `aborted`，而 `aborted` 直接 `return false`（不写错误、不重试、不走宿主兜底）。改为单飞（inflight Promise）+ 城市解析独立 token，只有 dispose 才算 aborted；手动刷新会加入正在跑的那次，失败再补一次。
+- **慢网络**：直连 8 s → 宿主 https 2.5 s → 宿主 http 8 s 串行（最坏 18.5 s）。改为直连与宿主并发、宿主内 https/http 并发，10 s 总预算，并记住上次成功路线（`tianlight.weather.cache` 的 `route`）让它先跑。
+- **宿主兜底走系统代理**：读 `HTTPS_PROXY/HTTP_PROXY/ALL_PROXY`（大小写）与 Windows 注册表 `ProxyEnable/ProxyServer`，https 走 CONNECT 隧道，响应带 `via`；`/skin-tianlight/_weather` 增加 `apiVersion: 2`，旧宿主答不了时报 `host-stale` 并提示整退出重开。
+- **旧数据不再伪装成实时**：新增 `summary().stale`（2×间隔与 3 小时取小）与胶囊灰显 + 失败小标记；中枢分开展示「观测时间」（payload 的 `current.time`）与「最近成功请求」。
+- **读数与配置分家**：`tianlight.weather`（配置，同步）+ `tianlight.weather.cache`（读数，本机 DATA key，不同步），带一次性迁移；重启后不会再被宿主 map 的旧读数/旧报错盖回来，手动刷新也不再抬高 revision。
+- **手动刷新说清原因**：`refresh()` 返回 `{ ok, error, transport, ms }`，中枢显示「已刷新 · 来源：宿主 http · 耗时 631 ms」或「刷新失败：网络不可用」；上游非 200 报 `upstream-<状态码>`。
+
+实测（本机，2026-11-17）：`api.open-meteo.com` 的 HTTPS 整段不通（TLS 握手 >15 s 无响应），明文 HTTP 540 ms 正常；旧宿主串行 10.5 s 超时 ×3；新宿主并发 578 ms 返回；三连刷新 1 126 ms 拿到三个相同结果；模拟断网 `refresh()` 985 ms 给出 `network`、胶囊保留旧温度灰显，恢复网络 + `online` 后 1 006 ms 刷新成功。`npm run check` 176 tests / 0 failed。详见 [RELEASE-NOTES-v2.2.12.md](RELEASE-NOTES-v2.2.12.md)。
 
 ## v2.2.11 · 天气「更新于」恢复前进
 
@@ -501,7 +514,7 @@ v0.5.0 的 P0–P4 功能全部保留；这一版是增量补丁，同一份构�
 
 ## 版本历史
 
-> v2.0.0 之后的逐版说明以上方各节为准；`v2.2.9`、`v2.2.10`、`v2.2.11` 已补齐。下面保留 v1.x 的旧记录。
+> v2.0.0 之后的逐版说明以上方各节为准；`v2.2.9`、`v2.2.10`、`v2.2.11`、`v2.2.12` 已补齐。下面保留 v1.x 的旧记录。
 
 - **v1.6.4（2026-11-10）**：正式版（公开 v1.0.3）——桌宠「AI 对话」（输入条+气泡回复、识别图片/视频形象、顶部自动翻转、权限/配额不变）；每个自定义形象一套动作名+回复（按 mediaId 生效、只提交改动项、切语言不冻结）；中枢形象文件名常显列表 + 下拉选项可读性修复；全代码审查修复 H1/H2/M1/M2/M3/M4/M5。详见 [docs/RELEASE-1.6.4.md](docs/RELEASE-1.6.4.md) 与 [docs/REVIEW-1.6.4.md](docs/REVIEW-1.6.4.md)。
 - **v1.6.3（2026-11-10）**：显示名统一为「天光」（`skin.json.name` + README 标题；skin id/包名/data 属性/设置键不变，无迁移成本）；完成 DSH 0.2.0-rc.2 / 0.2.1-rc.5 / 0.2.2-rc.1 三线兼容性实证（bundles 72/77/86、三行 verdict COMPATIBLE、hook-scan 与 upgrade-check 全绿，桥分层发现无需版本分支）；公开上传版本命名为 **v1.0.2**（内部构建 1.6.3）。详见 [docs/RELEASE-1.6.3.md](docs/RELEASE-1.6.3.md)。

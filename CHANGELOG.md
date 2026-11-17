@@ -31,10 +31,6 @@
 
 - 天光 v2.2.12 —— 天气刷新修复（单飞、并发、代理、过期标记）（发布说明见 RELEASE-NOTES-v2.2.12.md）
 
-### 发布说明
-
-- 天光 v2.2.12：天气刷新不再互相作废、不再串行等 18 秒、宿主兜底走系统代理；读数与配置分家（旧数据标 stale，不伪装成实时）。发布说明与实测数据见 RELEASE-NOTES-v2.2.12.md。
-
 ### 修复
 
 - **刷新失败的主因**：`fetchWeatherDirect` 与城市解析共用一个 `weatherRequestToken`，任何新请求都会把在跑的请求在返回时变成 `aborted`，而 `aborted` 直接 `return false`（不写错误、不重试、不走宿主兜底）。改为单飞（inflight Promise）+ 城市解析独立 token，只有 dispose 才算 aborted。
