@@ -296,7 +296,9 @@
 								const dx = (cw - dw) * (zone.fx / 100);
 								const dy = (ch - dh) * (zone.fy / 100);
 								if (zone.fit === "contain") {
-									surface.fillStyle = "#0a1420";
+									// v2.3.0: the letterbox colour follows the scheme (light #e9f1f9,
+									// dark #0a1420) through the same token the CSS declares.
+									surface.fillStyle = tl5ThemeCssVar("--tl-letterbox", "#0a1420");
 									surface.fillRect(0, 0, cw, ch);
 								}
 								surface.drawImage(source, dx, dy, dw, dh);

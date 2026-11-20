@@ -197,17 +197,11 @@ body[data-dsh-tianlight] .tl5-a11y-note {
 			live.setAttribute("aria-live", "polite");
 			live.setAttribute("aria-atomic", "true");
 			body.appendChild(live);
-			let liveTimer = 0;
-			const announce = (text) => {
-				if (typeof text !== "string" || text === "") return;
-				if (liveTimer !== 0) window.clearTimeout(liveTimer);
-				// 清空后再写入：读屏器只播报变化的节点。
-				live.textContent = "";
-				liveTimer = window.setTimeout(() => {
-					liveTimer = 0;
-					live.textContent = text;
-				}, 40);
-			};
+			// v2.3.0: publish the live region to the shared announcer so fragments that
+			// run before this one (the appearance toggle) can speak through it. The
+			// release runs in this installer's disposer, so a teardown leaves no writer.
+			const releaseAnnouncer = tl5AnnounceRegister(live);
+			const announce = (text) => tl5Announce(text);
 
 			let wallHost = null;
 			let fontHost = null;
@@ -531,9 +525,10 @@ body[data-dsh-tianlight] .tl5-a11y-note {
 				if (typeof disposeShortcut === "function") disposeShortcut();
 				if (typeof disposeWallpaperShortcut === "function") disposeWallpaperShortcut();
 				if (typeof unsubscribeI18n === "function") unsubscribeI18n();
-				if (liveTimer !== 0) {
-					window.clearTimeout(liveTimer);
-					liveTimer = 0;
+				try {
+					releaseAnnouncer();
+				} catch {
+					// the platform announcer may already be gone
 				}
 				for (const timer of pendingFocus.values()) window.clearTimeout(timer);
 				pendingFocus.clear();

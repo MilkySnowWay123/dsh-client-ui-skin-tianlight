@@ -501,13 +501,10 @@
 				// ---- recipe v2 import / export ----
 				const [presetText, setPresetText] = React.useState("");
 				const [presetStatus, setPresetStatus] = React.useState("");
-				const resolveThemeService = () => {
-					try {
-						return typeof ctx?.get === "function" ? ctx.get("theme") : undefined;
-					} catch {
-						return undefined;
-					}
-				};
+				// v2.3.0: the one shared accessor from the platform theme bridge. A private
+				// ctx.get("theme") probe here ran at panel mount (a different time than the
+				// bridge's injection) and could disagree with it after a hot reload.
+				const resolveThemeService = () => tl5ThemeService() ?? undefined;
 				/**
 				 * Recipe v2 = v1 fields + the v0.5.0 sections. effects/context/legibility
 				 * are declared in fragments that run before this one; readTypography /
@@ -1124,6 +1121,21 @@
 					const model = { items: nextItems };
 					wallpaperLibraryController.write(model);
 					setLibrary(model);
+				};
+				/** v2.3.0: record this library entry as the light/dark slot wallpaper. */
+				const assignAppearanceSlot = (slot, id) => {
+					const api = globalThis.tianlightAppearance;
+					if (api === null || api === undefined || typeof api.apply !== "function") return;
+					try {
+						api.apply({ wallpapers: { [slot]: id } });
+						setNote(
+							t("appearance.wallpaper.applySlot", {
+								slot: slot === "dark" ? t("appearance.mode.dark") : t("appearance.mode.light"),
+							}),
+						);
+					} catch (error) {
+						note("wallpaper:appearance-slot", error);
+					}
 				};
 				const formatBytes = (bytes) => {
 					if (!Number.isFinite(bytes) || bytes <= 0) return "";
@@ -2356,6 +2368,32 @@
 										},
 										meta.favorite ? "★" : "☆",
 									),
+									// v2.3.0: per-mode wallpaper slots. ☀ / ☾ assign this entry as the
+									// light / dark wallpaper the appearance card switches to.
+									React.createElement(
+										"button",
+										{
+											type: "button",
+											className: "tl-wall-slot",
+											"data-slot": "light",
+											"aria-label": t("appearance.wallpaper.applySlot", { slot: t("appearance.mode.light") }),
+											title: t("appearance.wallpaper.applySlot", { slot: t("appearance.mode.light") }),
+											onClick: () => assignAppearanceSlot("light", item.id),
+										},
+										"\u2600",
+									),
+									React.createElement(
+										"button",
+										{
+											type: "button",
+											className: "tl-wall-slot",
+											"data-slot": "dark",
+											"aria-label": t("appearance.wallpaper.applySlot", { slot: t("appearance.mode.dark") }),
+											title: t("appearance.wallpaper.applySlot", { slot: t("appearance.mode.dark") }),
+											onClick: () => assignAppearanceSlot("dark", item.id),
+										},
+										"\u263e",
+									),
 									// Tag editing is an advanced-view action; its editor container is
 									// hidden in the pick view, so rendering the "#" there made a
 									// button that could not do anything.
@@ -3530,7 +3568,10 @@
 			const tintPanel = () => {
 				const palette = tl5SampleWallpaperPalette();
 				if (palette === null) return;
-				const dark = document.body !== null && document.body.hasAttribute(DARK_ATTR);
+				// v2.3.0: read the live scheme through the platform helper; a scheme flip
+				// re-runs tintPanel via tl5OnScheme (registered below), so the panel tint and
+				// accent never keep the previous mode's colours.
+				const dark = tl5Scheme() === "dark";
 				// v2.2.9: a TINT, not a fill. The old max(0.96, ...) made the glass opacity
 				// slider inert and turned the panel into coloured plastic. The blur layer
 				// and the tint now share the same low alpha range as every other pane.
@@ -3564,6 +3605,9 @@
 				globalThis.clearTimeout(tintTimer);
 				tintTimer = 0;
 			};
+			// v2.3.0: a scheme flip re-tints the panel/handle from the LIVE scheme (the
+			// wallpaper hue stays, the light/dark lightness swaps) without reopening.
+			const disposeSchemeTint = typeof tl5OnScheme === "function" ? tl5OnScheme(() => tintPanel()) : () => {};
 
 			// ---- drag between edges, spring settle with a capped elastic overshoot ----
 			const MAX_OVERSHOOT = 26;
@@ -3850,6 +3894,11 @@
 				host.removeEventListener("pointerleave", onGlowLeave);
 				if (typeof unsubscribeHandleI18n === "function") unsubscribeHandleI18n();
 				stopTint();
+				try {
+					disposeSchemeTint();
+				} catch {
+					// the shared observer may already be gone
+				}
 				if (raf !== 0) globalThis.cancelAnimationFrame(raf);
 				try {
 					if (root !== null) root.unmount();

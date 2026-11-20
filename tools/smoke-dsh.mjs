@@ -546,6 +546,35 @@ try {
     throw new Error('glass did not default to the shipped off level')
   }
 
+  // 5c. v2.3.0 appearance: the modes drive DSH's own preference, and follow stops writing.
+  const appearanceApi = await cdp.eval(
+    '(() => { const api = globalThis.tianlightAppearance; return api === undefined || api === null ? null : { service: api.service() === true, state: api.state() }; })()',
+  )
+  if (!assert('appearance controller exposed', appearanceApi !== null, JSON.stringify(appearanceApi))) {
+    throw new Error('the appearance controller is not exposed')
+  }
+  if (appearanceApi.service === true) {
+    await cdp.eval('globalThis.tianlightAppearance.apply({ mode: "light" })')
+    const lightFlip = await cdp.waitFor('document.body.hasAttribute("data-ds-dark-theme") === false', 1500)
+    assert('appearance light mode clears body[data-ds-dark-theme]', lightFlip.ok)
+    await cdp.eval('globalThis.tianlightAppearance.apply({ mode: "dark" })')
+    const darkFlip = await cdp.waitFor('document.body.hasAttribute("data-ds-dark-theme") === true', 1500)
+    assert('appearance dark mode sets body[data-ds-dark-theme]', darkFlip.ok)
+    const callsBefore = await cdp.eval('__dshTianlightInstance.diag().appearance.setThemeCalls')
+    await cdp.eval('globalThis.tianlightAppearance.apply({ mode: "follow" })')
+    await sleep(500)
+    const callsAfter = await cdp.eval('__dshTianlightInstance.diag().appearance.setThemeCalls')
+    assert(
+      'appearance follow mode stops writing the DSH preference',
+      Number(callsAfter) === Number(callsBefore),
+      String(callsBefore) + ' -> ' + String(callsAfter),
+    )
+    const flipErrors = pluginErrors(cdp)
+    assert('appearance switches log no plugin error', flipErrors.length === 0, flipErrors.length === 0 ? '' : flipErrors[0])
+  } else {
+    console.log('  [NOTE] this runtime exposes no theme service; appearance flips skipped')
+  }
+
   // 6. splash long -> film starts, ends within budget, page usable
   await cdp.seed('long')
   const filmStarted = Date.now()

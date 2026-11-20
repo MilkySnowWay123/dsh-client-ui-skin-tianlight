@@ -81,7 +81,7 @@
 		 * with no saved settings; existing user settings are never overwritten. The hub's
 		 * "restore default appearance" button reuses the same map.
 		 */
-		const TL5_DEFAULT_APPEARANCE_JSON = String.raw`{"tianlight.wallpaper":"{\"kind\":\"video\",\"url\":\"/skin-tianlight/bg-4k.mp4\"}","tianlight.zones":"{\"separate\":false,\"main\":{\"fit\":\"cover\",\"fx\":38,\"fy\":50,\"dim\":0,\"blur\":0,\"ratio\":\"auto\",\"zoom\":100,\"cx\":50,\"cy\":50},\"rail\":{\"fit\":\"cover\",\"fx\":50,\"fy\":50,\"dim\":16,\"blur\":0,\"url\":\"\",\"kind\":\"video\"}}","tianlight.layers":"{\"version\":2,\"slots\":[{\"kind\":\"preset\",\"preset\":\"vignette\",\"url\":\"\",\"fit\":\"cover\",\"opacity\":0.08,\"blend\":\"normal\"},{\"kind\":\"none\",\"preset\":\"none\",\"url\":\"\",\"fit\":\"cover\",\"opacity\":0,\"blend\":\"normal\"}]}","tianlight.glass":"0.98","tianlight.glassDepth":"off","tianlight.glassLive":"0","tianlight.font.family":"{\"size\":14,\"ui\":\"system\",\"code\":\"system\",\"weight\":\"normal\",\"lead\":\"normal\",\"track\":\"normal\"}","tianlight.effects":"{\"enabled\":true,\"parallax\":false,\"parallaxStrength\":0.4,\"click\":false,\"clickStyle\":\"ripple\",\"ambience\":\"none\",\"ambienceDensity\":0.5,\"transition\":\"fade\",\"transitionMs\":600,\"budget\":\"auto\"}","tianlight.context":"{\"enabled\":true,\"timeOfDay\":false,\"manualPeriod\":\"auto\",\"focusLink\":false,\"focusDim\":40,\"focusBlur\":6,\"adaptive\":true,\"adaptiveLocked\":false}","tianlight.legibility":"{\"enabled\":true,\"threshold\":4.5,\"boost\":0.12}","tianlight.playback":"{\"speed\":1,\"flip\":false,\"paused\":false,\"filter\":{\"on\":false,\"brightness\":100,\"contrast\":100,\"saturate\":100}}","tianlight.petMedia.v1":null}`;
+		const TL5_DEFAULT_APPEARANCE_JSON = String.raw`{"tianlight.wallpaper":"{\"kind\":\"video\",\"url\":\"/skin-tianlight/bg-4k.mp4\"}","tianlight.zones":"{\"separate\":false,\"main\":{\"fit\":\"cover\",\"fx\":38,\"fy\":50,\"dim\":0,\"blur\":0,\"ratio\":\"auto\",\"zoom\":100,\"cx\":50,\"cy\":50},\"rail\":{\"fit\":\"cover\",\"fx\":50,\"fy\":50,\"dim\":16,\"blur\":0,\"url\":\"\",\"kind\":\"video\"}}","tianlight.layers":"{\"version\":2,\"slots\":[{\"kind\":\"preset\",\"preset\":\"vignette\",\"url\":\"\",\"fit\":\"cover\",\"opacity\":0.08,\"blend\":\"normal\"},{\"kind\":\"none\",\"preset\":\"none\",\"url\":\"\",\"fit\":\"cover\",\"opacity\":0,\"blend\":\"normal\"}]}","tianlight.glass":"0.98","tianlight.glassDepth":"off","tianlight.glassLive":"0","tianlight.appearance":"{\"v\":1,\"mode\":\"follow\",\"sky\":{\"source\":\"auto\",\"lightAt\":\"06:30\",\"darkAt\":\"18:30\"},\"transition\":\"reveal\",\"wallpapers\":{\"light\":null,\"dark\":null}}","tianlight.font.family":"{\"size\":14,\"ui\":\"system\",\"code\":\"system\",\"weight\":\"normal\",\"lead\":\"normal\",\"track\":\"normal\"}","tianlight.effects":"{\"enabled\":true,\"parallax\":false,\"parallaxStrength\":0.4,\"click\":false,\"clickStyle\":\"ripple\",\"ambience\":\"none\",\"ambienceDensity\":0.5,\"transition\":\"fade\",\"transitionMs\":600,\"budget\":\"auto\"}","tianlight.context":"{\"enabled\":true,\"timeOfDay\":false,\"manualPeriod\":\"auto\",\"focusLink\":false,\"focusDim\":40,\"focusBlur\":6,\"adaptive\":true,\"adaptiveLocked\":false}","tianlight.legibility":"{\"enabled\":true,\"threshold\":4.5,\"boost\":0.12}","tianlight.playback":"{\"speed\":1,\"flip\":false,\"paused\":false,\"filter\":{\"on\":false,\"brightness\":100,\"contrast\":100,\"saturate\":100}}","tianlight.petMedia.v1":null}`;
 
 		/** Parsed author default appearance map (raw host-compatible setting values). */
 		function tl5DefaultAppearance() {
@@ -658,6 +658,83 @@
 			const value = JSON.parse(raw);
 			if (tl5IsPlainObject(value)) return null;
 			return null;
+		}
+
+		/* ---- v2.3.0 appearance model (light/dark + 随天光) -------------------------
+		 * The skin never invents a mode of its own: this model only records which
+		 * preference Tianlight WRITES into DSH and whether it follows the clock. The
+		 * rendered scheme itself is DSH's body[data-ds-dark-theme].
+		 */
+		const TL5_APPEARANCE_KEY = "tianlight.appearance";
+		const TL5_APPEARANCE_MODES = ["follow", "light", "dark", "sky"];
+		const TL5_APPEARANCE_SKY_SOURCES = ["auto", "clock"];
+		const TL5_APPEARANCE_TRANSITIONS = ["reveal", "fade", "off"];
+		const TL5_APPEARANCE_CLOCK_DEFAULTS = { lightAt: "06:30", darkAt: "18:30" };
+		/** `HH:MM` in 24h local time; the one accepted clock format. */
+		function tl5IsClockTime(value) {
+			return typeof value === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+		}
+		/** Fresh canonical appearance model (a new object each call). */
+		function tl5AppearanceDefaults() {
+			return {
+				v: 1,
+				mode: "follow",
+				sky: {
+					source: "auto",
+					lightAt: TL5_APPEARANCE_CLOCK_DEFAULTS.lightAt,
+					darkAt: TL5_APPEARANCE_CLOCK_DEFAULTS.darkAt,
+				},
+				transition: "reveal",
+				wallpapers: { light: null, dark: null },
+			};
+		}
+		/**
+		 * Normalize any stored/imported shape into the canonical model. Unknown fields are
+		 * dropped, invalid values fall back to their default, wallpaper slots keep only a
+		 * non-empty string id (the library entry, never a URL).
+		 */
+		function normalizeAppearanceValue(raw) {
+			const defaults = tl5AppearanceDefaults();
+			if (tl5IsPlainObject(raw) === false) return defaults;
+			const next = defaults;
+			next.mode = TL5_APPEARANCE_MODES.indexOf(raw.mode) >= 0 ? raw.mode : defaults.mode;
+			next.transition = TL5_APPEARANCE_TRANSITIONS.indexOf(raw.transition) >= 0 ? raw.transition : defaults.transition;
+			const sky = tl5IsPlainObject(raw.sky) ? raw.sky : {};
+			next.sky.source = TL5_APPEARANCE_SKY_SOURCES.indexOf(sky.source) >= 0 ? sky.source : defaults.sky.source;
+			next.sky.lightAt = tl5IsClockTime(sky.lightAt) ? sky.lightAt : defaults.sky.lightAt;
+			next.sky.darkAt = tl5IsClockTime(sky.darkAt) ? sky.darkAt : defaults.sky.darkAt;
+			const wallpapers = tl5IsPlainObject(raw.wallpapers) ? raw.wallpapers : {};
+			const slot = (value) => (typeof value === "string" && value.trim() !== "" ? value.trim().slice(0, 512) : null);
+			next.wallpapers = { light: slot(wallpapers.light), dark: slot(wallpapers.dark) };
+			return next;
+		}
+		/** Read the raw stored model; null when absent or unreadable. */
+		function readAppearanceSetting() {
+			const storage = tl5Storage();
+			if (storage === null) return null;
+			let raw = null;
+			try {
+				raw = storage.getItem(TL5_APPEARANCE_KEY);
+			} catch {
+				return null;
+			}
+			if (raw === null || raw === "") return null;
+			try {
+				return normalizeAppearanceValue(JSON.parse(raw));
+			} catch {
+				return null;
+			}
+		}
+		/** Schema repair: canonical JSON, or null when the stored value is already canonical. */
+		function repairAppearanceSetting(raw) {
+			let parsed = null;
+			try {
+				parsed = JSON.parse(raw);
+			} catch {
+				parsed = null;
+			}
+			const canonical = tl5Json(normalizeAppearanceValue(parsed));
+			return canonical === raw ? null : canonical;
 		}
 
 		/** `tianlight.sync.revision`：非负整数文本；其他写法带上限重置。 */

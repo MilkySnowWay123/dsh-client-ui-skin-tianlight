@@ -346,6 +346,12 @@
 				// the persistent write mirror + BroadcastChannel only.
 				install("ui-skin-tianlight: settings sync", () => installSettingsRuntime(body));
 
+				// ---- v2.3.0 appearance: the one theme-service accessor ----
+				// Installed before any fragment that may write the scheme (appearance
+				// controller) or sync DSH font sizes (typography). Reads happen even when
+				// the service is still null: tl5Scheme() only trusts body[data-ds-dark-theme].
+				install("ui-skin-tianlight: theme bridge", () => installTl5ThemeBridge(ctx));
+
 				// ---- A · 破晓 opening overlay ------------------------------------
 				// The overlay owns its own fixed layer outside #root. It is installed
 				// before the switchable modules and never waits for the wallpaper or a
@@ -388,6 +394,12 @@
 				// context module off, summary().runtime is false and the chip degrades to its
 				// neutral off state (zero network requests, never auto-enables weather).
 				install("ui-skin-tianlight: weather chip", () => installWeatherChip());
+
+				// ---- v2.3.0 appearance (light/dark + 随天光) ----
+				// Always-on: the persisted intent, the sky scheduler, the reveal transition
+				// and the top-right toggle. It writes DSH's own preference through the theme
+				// bridge above; nothing else in the skin may set body[data-ds-dark-theme].
+				install("ui-skin-tianlight: appearance", () => installAppearance());
 
 				// ---- v1.0.0 character life layer ----
 				// The life engine owns the virtual clock / daily rhythm / proactive budget,

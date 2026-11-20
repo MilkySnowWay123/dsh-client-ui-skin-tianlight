@@ -110,7 +110,7 @@ body[data-dsh-tianlight] [data-tl-hub-mask] {
 	inset: 0;
 	/* v2.2.9: a scrim for a floating panel is not a modal. 0.42 read as "the whole
 	   wallpaper went dark" when the hub opened; 0.18 keeps the focus cue. */
-	background: rgba(6, 16, 28, 0.18);
+	background: var(--tl-hub-mask);
 	/* v2.2.5: no backdrop-filter on the full-screen scrim. It covered the whole window,
 	   so opening the hub smeared the entire wallpaper instead of dimming it. */
 }
@@ -121,9 +121,9 @@ body[data-dsh-tianlight] [data-tl-hub-panel] {
 	width: min(760px, 94vw);
 	max-height: 88vh;
 	border-radius: 20px;
-	background: var(--tl-overlay, rgba(18, 30, 48, 0.94));
+	background: var(--tl-hub-panel);
 	border: 0.5px solid var(--tl-glass-line, rgba(255, 255, 255, 0.3));
-	box-shadow: 0 28px 80px rgba(4, 14, 26, 0.45);
+	box-shadow: var(--tl-hub-shadow);
 	overflow: hidden;
 }
 body[data-dsh-tianlight] [data-tl-hub-head] {

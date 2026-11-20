@@ -54,6 +54,9 @@ export const DSH_COMPAT_MUST_MATCH = [
   '0.2.2-rc.1',
   '0.2.2',
   '0.2.2-rc.3',
+  // v2.3.0: measured against the installed Desktop 0.2.2-rc.5 (compat-matrix,
+  // hook-scan --self-check, upgrade-check and smoke all pass).
+  '0.2.2-rc.5',
 ]
 
 /** Versions that MUST NOT satisfy it: older lines and every 0.3.x / 0.4.x (stable or pre). */

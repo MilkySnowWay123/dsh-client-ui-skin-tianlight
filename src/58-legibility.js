@@ -448,7 +448,8 @@ body[data-dsh-tianlight][data-tl-legibility="boost"]:not([data-tl-lowpower]):not
 			const evaluate = () => {
 				lastRun = Date.now();
 				const settings = legibilityState;
-				const dark = body.hasAttribute(DARK_ATTR);
+				// v2.3.0: one shared scheme reader (platform region), never a private snapshot.
+				const dark = tl5Scheme() === "dark";
 				const sample = readWallpaperSample();
 				if (sample === null) {
 					if (boosted) clearBoost();
@@ -537,12 +538,15 @@ body[data-dsh-tianlight][data-tl-legibility="boost"]:not([data-tl-lowpower]):not
 				observer.observe(body, {
 					attributes: true,
 					subtree: true,
-					attributeFilter: ["data-tl-open", "data-tl-media", "hidden", "data-ds-dark-theme"],
+					// v2.3.0: the scheme flip is NOT watched here any more — the shared
+					// tl5OnScheme observer owns it, so the two cannot schedule twice.
+					attributeFilter: ["data-tl-open", "data-tl-media", "hidden"],
 				});
 			} catch (error) {
 				observer = null;
 				note("legibility:observer", error);
 			}
+			const disposeSchemeWatch = typeof tl5OnScheme === "function" ? tl5OnScheme(() => schedule(false)) : () => {};
 			legibilityRuntime = { schedule };
 			schedule(true);
 
@@ -551,6 +555,11 @@ body[data-dsh-tianlight][data-tl-legibility="boost"]:not([data-tl-lowpower]):not
 				if (observer !== null) {
 					observer.disconnect();
 					observer = null;
+				}
+				try {
+					disposeSchemeWatch();
+				} catch {
+					// the shared observer may already be gone
 				}
 				if (timer !== 0) {
 					window.clearTimeout(timer);

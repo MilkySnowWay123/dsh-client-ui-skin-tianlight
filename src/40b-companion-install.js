@@ -583,6 +583,9 @@
 				disabled: "pet.chat.reason.disabled",
 				"internal-error": "pet.chat.reason.internal",
 				internal: "pet.chat.reason.internal",
+				// v2.3.0: a content-safety refusal can also arrive as a chat reason when a
+				// future adapter stops the turn before the reply; show the refusal copy.
+				refused: "pet.chat.llmHint.refused",
 			};
 			let chatOpen = false;
 			let chatBusy = false;

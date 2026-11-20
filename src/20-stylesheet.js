@@ -23,24 +23,50 @@ body[data-dsh-tianlight] {
 	/* v2.2.2 "clear glass": the panel is a lens, not a white sheet. The fill is a
 	   near-transparent cool tint; the visible body comes from the backdrop filter and
 	   the 1px light/dark rim, so bright wallpapers stay coloured instead of milky. */
-	--tl-glass-fill: rgba(205, 228, 250, calc(0.05 * var(--tl-glass-m, 1)));
+	--tl-glass-fill: rgba(250, 252, 255, calc(0.52 * var(--tl-glass-m, 1)));
 	--tl-glass-line: rgba(255, 255, 255, 0);
 	--tl-glass-blur: 12px;
 	/* v2.2.9: real-glass recipe. The tint is a low-alpha colour wash on the HOST;
 	   the blur lives on ::before. All values are final alphas, not stacked
 	   color-mix percentages. The --tl-glass-m multiplier is the opacity slider. */
-	--tl-glass-tint: rgba(255, 255, 255, calc(0.08 * var(--tl-glass-m, 1)));
-	--tl-glass-tint-menu: rgba(255, 255, 255, calc(0.14 * var(--tl-glass-m, 1)));
-	--tl-glass-tint-static: rgba(255, 255, 255, 0.30);
-	--tl-glass-tint-lowpower: rgba(255, 255, 255, 0.35);
-	--tl-glass-blur-live: 16px;
-	--tl-glass-sat-live: 1.8;
-	--tl-glass-bright-live: 1.06;
-	--tl-glass-contrast-live: 1.04;
+	/* v2.3.0 light «晴空»: white frosted glass, not a transparent hole. The tint carries
+	   the panel identity (0.40 base), and --tl-day-lift raises it on a dark wallpaper so
+	   the transcript keeps contrast. --tl-glass-m is still the user's opacity slider. */
+	--tl-glass-tint: rgba(250, 252, 255, calc((0.40 + 0.20 * var(--tl-day-lift, 0)) * var(--tl-glass-m, 1)));
+	--tl-glass-tint-menu: rgba(252, 253, 255, calc(0.66 * var(--tl-glass-m, 1)));
+	--tl-glass-tint-static: rgba(248, 251, 255, 0.62);
+	--tl-glass-tint-lowpower: rgba(248, 251, 255, 0.74);
+	--tl-glass-blur-live: 22px;
+	/* Saturation was the "刺眼的青→黄" defect: 1.8 amplified the wallpaper's own hue.
+	   Light glass stays near-neutral (1.15) and slightly lowers contrast to read soft. */
+	--tl-glass-sat-live: 1.15;
+	--tl-glass-bright-live: 1.03;
+	--tl-glass-contrast-live: 0.98;
 	--tl-glass-menu-blur-live: 20px;
-	--tl-glass-edge-hi: rgba(255, 255, 255, 0.55);
-	--tl-glass-edge-mid: rgba(255, 255, 255, 0.12);
-	--tl-glass-edge-lo: rgba(255, 255, 255, 0.22);
+	--tl-glass-edge-hi: rgba(255, 255, 255, 0.80);
+	--tl-glass-edge-mid: rgba(255, 255, 255, 0.20);
+	--tl-glass-edge-lo: rgba(24, 52, 90, 0.10);
+	/* v2.3.0: light shadows are cool and low-contrast; the inset pair is the white-glass
+	   highlight (top) and a deep hairline (bottom) that separates white from bright paper. */
+	--tl-shadow-panel: 0 10px 30px rgba(22, 46, 78, 0.10), 0 1px 2px rgba(22, 46, 78, 0.08);
+	--tl-shadow-float: 0 6px 18px rgba(22, 46, 78, 0.10);
+	--tl-shadow-drawer: 18px 0 44px rgba(22, 46, 78, 0.12);
+	--tl-glass-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.65),
+		inset 0 -1px 0 rgba(24, 52, 90, 0.06),
+		0 10px 30px rgba(22, 46, 78, 0.10);
+	/* Top highlight of the small pills (model / rheostat / weather / scheme toggle). */
+	--tl-pill-inset: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+	/* v2.3.0 canvas painters (zone mirror letterbox, ambient particles) read concrete
+	   colours on a scheme flip; var() cannot cross into a 2D context. */
+	--tl-letterbox: #e9f1f9;
+	--tl-particle-rain-rgb: 120, 150, 190;
+	--tl-particle-snow-rgb: 214, 228, 244;
+	--tl-particle-snow-edge: rgba(40, 70, 110, 0.18);
+	/* Role-hub scrim/panel/shadow (dark values below are the shipped v2.2.x ones). */
+	--tl-hub-mask: rgba(20, 40, 70, 0.10);
+	--tl-hub-panel: rgba(250, 252, 255, 0.86);
+	--tl-hub-shadow: 0 24px 64px rgba(22, 46, 78, 0.16);
 	/* Modal-grade surface: a settings panel has to stay readable over the chat, so
 	   it needs its own fill instead of the zeroed bg-layer tokens. The value is high
 	   on purpose: the panel carries NO backdrop blur unless live mode is on (see
@@ -50,7 +76,7 @@ body[data-dsh-tianlight] {
 	   reads as "duplicate stacked UI". Data surfaces keep a hard floor.
 	   v2.2.0: slightly less opaque and less pure-white; live mode lowers it further
 	   because its own real backdrop blur carries the legibility. */
-	--tl-panel-fill: rgba(235, 245, 255, max(0.68, calc(0.62 * var(--tl-glass-m, 1))));
+	--tl-panel-fill: rgba(246, 249, 253, max(0.74, calc(0.80 * var(--tl-glass-m, 1))));
 	/* v2.2.13: DSH's OWN pages and popovers. The product paints those surfaces with
 	   its own layer tokens (bg-layer-2 for the settings panel, bg-base for the
 	   plugin manager / automation pages, specific-menu for popovers, the card
@@ -60,17 +86,17 @@ body[data-dsh-tianlight] {
 	   three fills restore a smoked surface with a legibility floor: the glass
 	   slider may lighten them, never dissolve them. Kept separate from the
 	   conversation's own glass so the chat page stays immersive. */
-	--tl-native-page: rgba(243, 248, 255, max(0.64, calc(0.70 * var(--tl-glass-m, 1))));
-	--tl-native-card: rgba(249, 252, 255, max(0.70, calc(0.76 * var(--tl-glass-m, 1))));
-	--tl-native-menu: rgba(247, 251, 255, max(0.72, calc(0.78 * var(--tl-glass-m, 1))));
-	--tl-ink: #0f2438;
-	--tl-ink-soft: #3a5a78;
-	--tl-ink-faint: #5d7d99;
-	--tl-line: rgba(112, 156, 202, 0.06);
-	--tl-line-strong: rgba(86, 134, 186, 0.12);
-	--tl-accent: #2b74c9;
-	--tl-accent-soft: rgba(43, 116, 201, 0.14);
-	--tl-code: rgba(236, 244, 252, 0.40);
+	--tl-native-page: rgba(243, 248, 255, max(0.70, calc(0.70 * var(--tl-glass-m, 1))));
+	--tl-native-card: rgba(249, 252, 255, max(0.76, calc(0.76 * var(--tl-glass-m, 1))));
+	--tl-native-menu: rgba(247, 251, 255, max(0.78, calc(0.78 * var(--tl-glass-m, 1))));
+	--tl-ink: #0d2136;
+	--tl-ink-soft: #36536f;
+	--tl-ink-faint: #5f7891;
+	--tl-line: rgba(28, 62, 104, 0.08);
+	--tl-line-strong: rgba(28, 62, 104, 0.14);
+	--tl-accent: #2c6fd1;
+	--tl-accent-soft: rgba(44, 111, 209, 0.12);
+	--tl-code: rgba(255, 255, 255, 0.58);
 	--tl-glow: rgba(150, 210, 255, 0.55);
 
 	--dsw-alias-bg-base: var(--tl-shell) !important;
@@ -96,14 +122,14 @@ body[data-dsh-tianlight] {
 	/* Text-bearing surfaces keep a legibility floor: the anti-white pass lowers the
 	   decorative veil, not the contrast the dark-ink transcript needs on a night
 	   wallpaper. Bubbles/tips are the two the legibility guard does not cover. */
-	--dsw-specific-bubble: rgba(236, 245, 255, 0.30) !important;
-	--dsw-specific-tip: rgba(238, 247, 255, 0.32) !important;
+	--dsw-specific-bubble: rgba(236, 245, 255, 0.56) !important;
+	--dsw-specific-tip: rgba(238, 247, 255, 0.60) !important;
 	--dsw-specific-menu: var(--tl-native-menu) !important;
-	--dsw-alias-bg-layer-3: rgba(236, 245, 255, 0.20) !important;
-	--dsw-alias-bg-module-platform: rgba(236, 245, 255, 0.18) !important;
+	--dsw-alias-bg-layer-3: rgba(236, 245, 255, 0.40) !important;
+	--dsw-alias-bg-module-platform: rgba(236, 245, 255, 0.42) !important;
 	--dsw-alias-interactive-bg-hover-solid: rgba(104, 156, 210, 0.22) !important;
-	--dsw-alias-turn-trigger-bg: rgba(236, 245, 255, 0.18) !important;
-	--dsw-alias-markdown-code-block-banner: rgba(226, 238, 250, 0.40) !important;
+	--dsw-alias-turn-trigger-bg: rgba(236, 245, 255, 0.42) !important;
+	--dsw-alias-markdown-code-block-banner: rgba(226, 238, 250, 0.52) !important;
 	/* Remaining large surfaces that 0.2.0 still paints opaque: terminal, settings
 	   cards, document preview, masks, skeletons, selectors, nav items. Translucent
 	   only — deliberately NO new backdrop-filter, so playback cost stays flat. */
@@ -117,10 +143,10 @@ body[data-dsh-tianlight] {
 	--dsw-mask-blur: none !important;
 	--dsw-alias-bg-mask-drop: rgba(236, 243, 251, 0.20) !important;
 	--dsw-alias-bg-skeleton: var(--tl-line) !important;
-	--dsw-alias-fill-l1: rgba(236, 245, 255, 0.30) !important;
-	--dsw-alias-fill-l2: rgba(236, 245, 255, 0.22) !important;
-	--dsw-alias-fill-tertiary: rgba(236, 245, 255, 0.18) !important;
-	--dsw-alias-fill-tsp-secondary: rgba(236, 245, 255, 0.22) !important;
+	--dsw-alias-fill-l1: rgba(236, 245, 255, 0.48) !important;
+	--dsw-alias-fill-l2: rgba(236, 245, 255, 0.40) !important;
+	--dsw-alias-fill-tertiary: rgba(236, 245, 255, 0.42) !important;
+	--dsw-alias-fill-tsp-secondary: rgba(236, 245, 255, 0.40) !important;
 	--dsw-alias-interactive-bg-active: var(--tl-accent-soft) !important;
 	--dsw-alias-interactive-bg-hover-danger: rgba(192, 57, 43, 0.16) !important;
 	/* v1.6.1: the sidebar "new chat" button lives on an opaque product fill token
@@ -131,10 +157,10 @@ body[data-dsh-tianlight] {
 	--dsw-alias-button-elevated-fill: var(--tl-glass-fill) !important;
 	--dsw-alias-button-floating-hover: var(--tl-accent-soft) !important;
 	--dsw-alias-onboarding-card-fill: var(--tl-native-card) !important;
-	--dsw-alias-onboarding-secondary-fill: rgba(236, 245, 255, 0.18) !important;
+	--dsw-alias-onboarding-secondary-fill: rgba(236, 245, 255, 0.42) !important;
 	--dsw-alias-settings-card-fill: var(--tl-native-card) !important;
 	--dsw-specific-input-major: var(--tl-glass-fill) !important;
-	--dsw-specific-selector: rgba(236, 245, 255, 0.30) !important;
+	--dsw-specific-selector: rgba(236, 245, 255, 0.56) !important;
 	--dsw-specific-sidebar-nav-item-active: var(--tl-accent-soft) !important;
 	--dsw-specific-sidebar-nav-item-active-accent: var(--tl-accent) !important;
 	--dsw-specific-sidebar-nav-item-hover: var(--tl-accent-soft) !important;
@@ -168,6 +194,25 @@ body[data-dsh-tianlight][data-ds-dark-theme] {
 	--tl-native-page: rgba(8, 15, 26, max(0.62, calc(0.68 * var(--tl-glass-m, 1))));
 	--tl-native-card: rgba(12, 21, 35, max(0.66, calc(0.72 * var(--tl-glass-m, 1))));
 	--tl-native-menu: rgba(10, 18, 31, max(0.68, calc(0.74 * var(--tl-glass-m, 1))));
+	/* v2.3.0: dark shadows keep the shipped values exactly (moved into tokens so the
+	   light theme can paint its own without touching these pixels). */
+	--tl-shadow-panel: 0 10px 30px rgba(4, 10, 20, 0.45), 0 1px 2px rgba(4, 10, 20, 0.35);
+	--tl-shadow-float: 0 6px 18px rgba(4, 10, 20, 0.38);
+	--tl-shadow-drawer: 18px 0 44px rgba(4, 10, 20, 0.45);
+	--tl-glass-shadow:
+		inset 0 1px 1px rgba(255, 255, 255, 0.10),
+		inset 0 -1px 1px rgba(0, 0, 0, 0.10),
+		0 8px 32px rgba(0, 0, 0, 0.35);
+	--tl-pill-inset: inset 0 1px 1px rgba(255, 255, 255, 0.10);
+	/* v2.3.0 canvas painters: the shipped dark values (letterbox #0a1420, rain
+	   196,218,255, white snow, no edge) — identical to the v2.2.x constants. */
+	--tl-letterbox: #0a1420;
+	--tl-particle-rain-rgb: 196, 218, 255;
+	--tl-particle-snow-rgb: 255, 255, 255;
+	--tl-particle-snow-edge: transparent;
+	--tl-hub-mask: rgba(6, 16, 28, 0.18);
+	--tl-hub-panel: rgba(12, 22, 38, 0.30);
+	--tl-hub-shadow: 0 28px 80px rgba(4, 14, 26, 0.45);
 	--tl-ink: #eaf3ff;
 	--tl-ink-soft: #a9c2dc;
 	--tl-ink-faint: #7f9bb8;
@@ -265,8 +310,10 @@ body[data-dsh-tianlight] [data-tl-scene] {
 	   recomposites whenever the video advances a frame. */
 	contain: paint;
 	transform: translateZ(0);
+	/* v2.3.0 light sky: noon blue at the top, warm white at the horizon — the Shinkai
+	   "sunny sky" the light mode is built around. Dark keeps its own radial below. */
 	background:
-		radial-gradient(120% 90% at 18% 8%, #cfe9ff 0%, #9fcdf5 32%, #6aa8de 62%, #2f6ea8 100%);
+		linear-gradient(180deg, #a9d3f5 0%, #cfe6fa 38%, #eef6fd 70%, #fbf4e8 100%);
 }
 body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-scene] {
 	/* Night sky, deliberately NOT near-black: this layer is what shows whenever the
@@ -305,11 +352,21 @@ body[data-dsh-tianlight] [data-tl-scene][data-tl-filter] > [data-tl-photo] {
 body[data-dsh-tianlight] [data-tl-scene] > [data-tl-veil] {
 	position: absolute;
 	inset: 0;
+	/* v2.3.0 light «晨雾»: a white reading-area fog whose alpha follows --tl-day-lift
+	   (0 on a bright wallpaper, up to ~0.44 in the centre on a dark one). The transition
+	   makes a wallpaper swap fade the fog instead of jumping. */
 	background:
-		linear-gradient(180deg, rgba(240, 248, 255, 0.05) 0%, transparent 40%, rgba(12, 28, 48, 0.12) 100%);
+		radial-gradient(70% 85% at 50% 52%, rgba(250, 252, 255, calc(0.10 + 0.34 * var(--tl-day-lift, 0))) 0%, rgba(250, 252, 255, 0) 100%),
+		linear-gradient(180deg, rgba(246, 250, 255, calc(0.06 + 0.20 * var(--tl-day-lift, 0))) 0%, rgba(246, 250, 255, calc(0.04 + 0.14 * var(--tl-day-lift, 0))) 100%);
+	transition: background 900ms ease;
 }
 body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-scene] > [data-tl-veil] {
+	/* v2.3.0: the shipped night gradient is kept verbatim as the second layer; the first
+	   layer is the symmetric guard for a very bright wallpaper and is invisible
+	   (alpha 0) until --tl-night-lift rises above 0.38 luma, so mid/dark wallpapers are
+	   pixel-identical to the v2.2.x baseline. */
 	background:
+		linear-gradient(180deg, rgba(4, 10, 20, calc(0.30 * var(--tl-night-lift, 0))) 0%, rgba(4, 10, 20, calc(0.30 * var(--tl-night-lift, 0))) 100%),
 		linear-gradient(180deg, rgba(120, 180, 240, 0.06) 0%, transparent 42%, rgba(2, 8, 18, 0.30) 100%);
 }
 /* v1.6.2: the fixed top-left "dawn burst" corner artwork was removed on user feedback

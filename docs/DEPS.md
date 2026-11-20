@@ -17,32 +17,32 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 
 | 指标 | 数值 |
 | --- | --- |
-| 片段数 | 43 |
-| 共享顶层名字 | 1216（声明点 1216） |
-| 跨片段引用（去重） | 675 |
-| 跨片段引用（出现次数） | 3543 |
-| 依赖边 | 175 |
+| 片段数 | 44 |
+| 共享顶层名字 | 1347（声明点 1347） |
+| 跨片段引用（去重） | 724 |
+| 跨片段引用（出现次数） | 3708 |
+| 依赖边 | 187 |
 
 ## 2. 片段表
 
 | 片段 | region | 声明数 | 顶层引用数 | 依赖的片段（名字数） | 被哪些片段依赖（名字数） |
 | --- | --- | --- | --- | --- | --- |
 | `00-envelope.js` |  | 0 | 16 | — | — |
-| `10-constants.js` | constants | 23 | 35 | — | `11-platform` (1), `12-schema` (2), `12b-schema-sync` (1), `12c-schema-eng` (1), `13-i18n` (2), `20d-stylesheet-hub` (2), `30-wallpaper` (3), `30b-wallpaper-scene` (4), `31-engine-extra` (3), `32-effects` (2), `35-context` (3), `40-companion` (2), `40b-companion-install` (2), `40c-companion-duty` (1), `42-life` (3), `44-pet-brain` (1), `44b-pet-state` (4), `44c-pet-llm` (1), `44d-pet-mind` (1), `50-rheostat` (2), `55-lowpower` (1), `57-glass` (3), `58-legibility` (3), `59-splash` (2), `59c-splash-film-runtime` (1), `59d-splash-film-install` (2), `60-zones` (1), `70-sidebar` (2), `70b-wallpaper-sidebar-panel` (8), `72-we-library` (3), `76-role-hub` (3), `76b-role-hub-install` (1), `90-font` (2), `95-a11y` (2), `99-apply` (3) |
-| `11-platform.js` | platform | 52 | 425 | `10-constants` (1), `30-wallpaper` (1) | `12-schema` (2), `12b-schema-sync` (3), `12c-schema-eng` (5), `13-i18n` (1), `20d-stylesheet-hub` (1), `30-wallpaper` (2), `30b-wallpaper-scene` (2), `31-engine-extra` (5), `32-effects` (6), `35-context` (5), `40b-companion-install` (1), `42-life` (1), `58-legibility` (3), `59-splash` (1), `70-sidebar` (2), `70b-wallpaper-sidebar-panel` (7), `72-we-library` (4), `76b-role-hub-install` (2), `90-font` (4), `95-a11y` (4), `99-apply` (7) |
-| `12-schema.js` | schema | 60 | 438 | `10-constants` (2), `11-platform` (2), `13-i18n` (1) | `12b-schema-sync` (42), `12c-schema-eng` (1), `13-i18n` (1), `76b-role-hub-install` (1) |
-| `12b-schema-sync.js` | schema | 51 | 1027 | `10-constants` (1), `11-platform` (3), `12-schema` (42), `13-i18n` (2) | `12c-schema-eng` (2), `70b-wallpaper-sidebar-panel` (1), `99-apply` (3) |
+| `10-constants.js` | constants | 23 | 35 | — | `11-platform` (1), `12-schema` (2), `12b-schema-sync` (1), `12c-schema-eng` (1), `13-i18n` (2), `20d-stylesheet-hub` (2), `30-wallpaper` (3), `30b-wallpaper-scene` (4), `31-engine-extra` (3), `32-effects` (2), `35-context` (2), `40-companion` (2), `40b-companion-install` (2), `40c-companion-duty` (1), `42-life` (3), `44-pet-brain` (1), `44b-pet-state` (4), `44c-pet-llm` (1), `44d-pet-mind` (1), `50-rheostat` (2), `55-lowpower` (1), `57-glass` (3), `58-legibility` (2), `59-splash` (2), `59c-splash-film-runtime` (1), `59d-splash-film-install` (2), `60-zones` (1), `70-sidebar` (2), `70b-wallpaper-sidebar-panel` (7), `72-we-library` (3), `76-role-hub` (3), `76b-role-hub-install` (1), `90-font` (2), `95-a11y` (2), `99-apply` (3) |
+| `11-platform.js` | platform | 72 | 594 | `10-constants` (1), `30-wallpaper` (1) | `12-schema` (2), `12b-schema-sync` (3), `12c-schema-eng` (5), `13-i18n` (1), `20d-stylesheet-hub` (1), `30-wallpaper` (2), `30b-wallpaper-scene` (2), `31-engine-extra` (5), `32-effects` (9), `35-context` (5), `40b-companion-install` (1), `42-life` (1), `56-appearance` (10), `58-legibility` (5), `59-splash` (1), `60-zones` (1), `70-sidebar` (2), `70b-wallpaper-sidebar-panel` (10), `72-we-library` (4), `76b-role-hub-install` (2), `90-font` (7), `95-a11y` (6), `99-apply` (8) |
+| `12-schema.js` | schema | 70 | 471 | `10-constants` (2), `11-platform` (2), `13-i18n` (1) | `12b-schema-sync` (44), `12c-schema-eng` (1), `13-i18n` (1), `56-appearance` (10), `76b-role-hub-install` (1) |
+| `12b-schema-sync.js` | schema | 51 | 1029 | `10-constants` (1), `11-platform` (3), `12-schema` (44), `13-i18n` (2) | `12c-schema-eng` (2), `70b-wallpaper-sidebar-panel` (1), `99-apply` (3) |
 | `12c-schema-eng.js` | schema | 3 | 151 | `10-constants` (1), `11-platform` (5), `12-schema` (1), `12b-schema-sync` (2), `13-i18n` (2) | — |
-| `13-i18n.js` | i18n | 19 | 153 | `10-constants` (2), `11-platform` (1), `12-schema` (1) | `12-schema` (1), `12b-schema-sync` (2), `12c-schema-eng` (2), `30-wallpaper` (2), `30b-wallpaper-scene` (1), `31-engine-extra` (3), `32-effects` (2), `35-context` (4), `40-companion` (2), `40b-companion-install` (2), `42-life` (2), `44-pet-brain` (1), `44b-pet-state` (1), `44c-pet-llm` (1), `44d-pet-mind` (1), `50-rheostat` (3), `55-lowpower` (2), `58-legibility` (2), `59-splash` (1), `70-sidebar` (1), `70b-wallpaper-sidebar-panel` (3), `72-we-library` (4), `76-role-hub` (2), `76b-role-hub-install` (1), `90-font` (2), `95-a11y` (4), `99-apply` (3) |
+| `13-i18n.js` | i18n | 19 | 153 | `10-constants` (2), `11-platform` (1), `12-schema` (1) | `12-schema` (1), `12b-schema-sync` (2), `12c-schema-eng` (2), `30-wallpaper` (2), `30b-wallpaper-scene` (1), `31-engine-extra` (3), `32-effects` (2), `35-context` (4), `40-companion` (2), `40b-companion-install` (2), `42-life` (2), `44-pet-brain` (1), `44b-pet-state` (1), `44c-pet-llm` (1), `44d-pet-mind` (1), `50-rheostat` (3), `55-lowpower` (2), `56-appearance` (2), `58-legibility` (2), `59-splash` (1), `70-sidebar` (1), `70b-wallpaper-sidebar-panel` (3), `72-we-library` (4), `76-role-hub` (2), `76b-role-hub-install` (1), `90-font` (2), `95-a11y` (4), `99-apply` (3) |
 | `20-stylesheet.js` | stylesheet | 1 | 1 | — | `20d-stylesheet-hub` (1) |
 | `20b-stylesheet-shell.js` | stylesheet | 1 | 1 | — | `20d-stylesheet-hub` (1) |
 | `20c-stylesheet-glass.js` | stylesheet | 1 | 1 | — | `20d-stylesheet-hub` (1) |
 | `20d-stylesheet-hub.js` | stylesheet | 2 | 20 | `10-constants` (2), `11-platform` (1), `20-stylesheet` (1), `20b-stylesheet-shell` (1), `20c-stylesheet-glass` (1) | `99-apply` (1) |
-| `30-wallpaper.js` | wallpaper | 186 | 1152 | `10-constants` (3), `11-platform` (2), `13-i18n` (2) | `11-platform` (1), `30b-wallpaper-scene` (40), `31-engine-extra` (6), `32-effects` (1), `35-context` (1), `40b-companion-install` (1), `55-lowpower` (2), `58-legibility` (1), `60-zones` (1), `70b-wallpaper-sidebar-panel` (24), `72-we-library` (2) |
-| `30b-wallpaper-scene.js` | wallpaper | 1 | 744 | `10-constants` (4), `11-platform` (2), `13-i18n` (1), `30-wallpaper` (40), `31-engine-extra` (1), `35-context` (1), `55-lowpower` (1) | `99-apply` (1) |
+| `30-wallpaper.js` | wallpaper | 186 | 1152 | `10-constants` (3), `11-platform` (2), `13-i18n` (2) | `11-platform` (1), `30b-wallpaper-scene` (40), `31-engine-extra` (6), `32-effects` (1), `35-context` (1), `40b-companion-install` (1), `55-lowpower` (2), `56-appearance` (3), `58-legibility` (1), `60-zones` (1), `70b-wallpaper-sidebar-panel` (24), `72-we-library` (2), `76b-role-hub-install` (1) |
+| `30b-wallpaper-scene.js` | wallpaper | 1 | 747 | `10-constants` (4), `11-platform` (2), `13-i18n` (1), `30-wallpaper` (40), `31-engine-extra` (1), `35-context` (1), `55-lowpower` (1), `56-appearance` (1) | `99-apply` (1) |
 | `31-engine-extra.js` | wallpaper engine extras | 27 | 640 | `10-constants` (3), `11-platform` (5), `13-i18n` (3), `30-wallpaper` (6), `32-effects` (1), `35-context` (1) | `30b-wallpaper-scene` (1), `99-apply` (1) |
-| `32-effects.js` | ambient effects | 14 | 715 | `10-constants` (2), `11-platform` (6), `13-i18n` (2), `30-wallpaper` (1), `55-lowpower` (1) | `31-engine-extra` (1), `35-context` (1), `70b-wallpaper-sidebar-panel` (2), `99-apply` (1) |
-| `35-context.js` | smart context | 59 | 1620 | `10-constants` (3), `11-platform` (5), `13-i18n` (4), `30-wallpaper` (1), `32-effects` (1), `57-glass` (1) | `30b-wallpaper-scene` (1), `31-engine-extra` (1), `70b-wallpaper-sidebar-panel` (2), `99-apply` (2) |
+| `32-effects.js` | ambient effects | 14 | 727 | `10-constants` (2), `11-platform` (9), `13-i18n` (2), `30-wallpaper` (1), `55-lowpower` (1) | `31-engine-extra` (1), `35-context` (1), `70b-wallpaper-sidebar-panel` (2), `99-apply` (1) |
+| `35-context.js` | smart context | 88 | 2142 | `10-constants` (2), `11-platform` (5), `13-i18n` (4), `30-wallpaper` (1), `32-effects` (1), `57-glass` (1) | `30b-wallpaper-scene` (1), `31-engine-extra` (1), `56-appearance` (1), `70b-wallpaper-sidebar-panel` (2), `99-apply` (2) |
 | `40-companion.js` | companion | 66 | 541 | `10-constants` (2), `13-i18n` (2) | `40b-companion-install` (20), `40c-companion-duty` (5), `42-life` (1), `44b-pet-state` (1), `44c-pet-llm` (2), `44d-pet-mind` (1) |
 | `40b-companion-install.js` | companion | 1 | 1064 | `10-constants` (2), `11-platform` (1), `13-i18n` (2), `30-wallpaper` (1), `40-companion` (20), `44b-pet-state` (1), `44d-pet-mind` (1) | `99-apply` (1) |
 | `40c-companion-duty.js` | companion | 3 | 198 | `10-constants` (1), `40-companion` (5) | `99-apply` (2) |
@@ -54,28 +54,29 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `48-pet-agent.js` | pet agent | 38 | 440 | `44b-pet-state` (3) | `76-role-hub` (1), `99-apply` (1) |
 | `50-rheostat.js` | reasoning rheostat | 2 | 314 | `10-constants` (2), `13-i18n` (3) | `99-apply` (1) |
 | `55-lowpower.js` | low power | 4 | 164 | `10-constants` (1), `13-i18n` (2), `30-wallpaper` (2), `60-zones` (1) | `30b-wallpaper-scene` (1), `32-effects` (1), `44d-pet-mind` (1), `59-splash` (1), `70b-wallpaper-sidebar-panel` (2), `99-apply` (1) |
-| `57-glass.js` | glass opacity | 26 | 213 | `10-constants` (3) | `35-context` (1), `44b-pet-state` (1), `70b-wallpaper-sidebar-panel` (2), `76-role-hub` (1), `99-apply` (3) |
-| `58-legibility.js` | legibility | 24 | 321 | `10-constants` (3), `11-platform` (3), `13-i18n` (2), `30-wallpaper` (1) | `70b-wallpaper-sidebar-panel` (2), `90-font` (3), `99-apply` (1) |
-| `59-splash.js` | splash | 42 | 389 | `10-constants` (2), `11-platform` (1), `13-i18n` (1), `55-lowpower` (1), `59d-splash-film-install` (1) | `76b-role-hub-install` (6), `99-apply` (2) |
+| `56-appearance.js` | appearance | 58 | 637 | `11-platform` (10), `12-schema` (10), `13-i18n` (2), `30-wallpaper` (3), `35-context` (1), `59-splash` (1), `95-a11y` (1) | `30b-wallpaper-scene` (1), `76b-role-hub-install` (4), `99-apply` (1) |
+| `57-glass.js` | glass opacity | 37 | 281 | `10-constants` (3) | `35-context` (1), `44b-pet-state` (1), `70b-wallpaper-sidebar-panel` (2), `76-role-hub` (1), `99-apply` (3) |
+| `58-legibility.js` | legibility | 24 | 326 | `10-constants` (2), `11-platform` (5), `13-i18n` (2), `30-wallpaper` (1) | `70b-wallpaper-sidebar-panel` (2), `90-font` (3), `99-apply` (1) |
+| `59-splash.js` | splash | 42 | 389 | `10-constants` (2), `11-platform` (1), `13-i18n` (1), `55-lowpower` (1), `59d-splash-film-install` (1) | `56-appearance` (1), `76b-role-hub-install` (6), `99-apply` (2) |
 | `59b-splash-film.js` | splash | 3 | 0 | — | `59d-splash-film-install` (3) |
 | `59c-splash-film-runtime.js` | splash | 1 | 648 | `10-constants` (1) | `59d-splash-film-install` (1) |
 | `59d-splash-film-install.js` | splash | 1 | 183 | `10-constants` (2), `59b-splash-film` (3), `59c-splash-film-runtime` (1) | `59-splash` (1) |
-| `60-zones.js` | zone framing | 13 | 197 | `10-constants` (1), `30-wallpaper` (1) | `55-lowpower` (1), `70b-wallpaper-sidebar-panel` (6), `99-apply` (1) |
-| `65-bridge.js` | selector bridge | 2 | 179 | — | `99-apply` (2) |
+| `60-zones.js` | zone framing | 13 | 198 | `10-constants` (1), `11-platform` (1), `30-wallpaper` (1) | `55-lowpower` (1), `70b-wallpaper-sidebar-panel` (6), `99-apply` (1) |
+| `65-bridge.js` | selector bridge | 2 | 199 | — | `99-apply` (2) |
 | `70-sidebar.js` | wallpaper sidebar | 13 | 95 | `10-constants` (2), `11-platform` (2), `13-i18n` (1) | `70b-wallpaper-sidebar-panel` (6), `99-apply` (1) |
-| `70b-wallpaper-sidebar-panel.js` | wallpaper sidebar | 44 | 1308 | `10-constants` (8), `11-platform` (7), `12b-schema-sync` (1), `13-i18n` (3), `30-wallpaper` (24), `32-effects` (2), `35-context` (2), `55-lowpower` (2), `57-glass` (2), `58-legibility` (2), `60-zones` (6), `70-sidebar` (6), `90-font` (2) | — |
+| `70b-wallpaper-sidebar-panel.js` | wallpaper sidebar | 45 | 1304 | `10-constants` (7), `11-platform` (10), `12b-schema-sync` (1), `13-i18n` (3), `30-wallpaper` (24), `32-effects` (2), `35-context` (2), `55-lowpower` (2), `57-glass` (2), `58-legibility` (2), `60-zones` (6), `70-sidebar` (6), `90-font` (2) | — |
 | `72-we-library.js` | we library | 57 | 642 | `10-constants` (3), `11-platform` (4), `13-i18n` (4), `30-wallpaper` (2) | `99-apply` (1) |
-| `76-role-hub.js` | role hub | 54 | 399 | `10-constants` (3), `13-i18n` (2), `44d-pet-mind` (1), `48-pet-agent` (1), `57-glass` (1) | `76b-role-hub-install` (53) |
-| `76b-role-hub-install.js` | role hub | 1 | 3544 | `10-constants` (1), `11-platform` (2), `12-schema` (1), `13-i18n` (1), `44b-pet-state` (1), `59-splash` (6), `76-role-hub` (53) | `99-apply` (1) |
-| `90-font.js` | font panel | 20 | 424 | `10-constants` (2), `11-platform` (4), `13-i18n` (2), `58-legibility` (3) | `70b-wallpaper-sidebar-panel` (2), `99-apply` (1) |
-| `95-a11y.js` | accessibility | 7 | 356 | `10-constants` (2), `11-platform` (4), `13-i18n` (4) | `99-apply` (1) |
-| `99-apply.js` | apply | 5 | 242 | `10-constants` (3), `11-platform` (7), `12b-schema-sync` (3), `13-i18n` (3), `20d-stylesheet-hub` (1), `30b-wallpaper-scene` (1), `31-engine-extra` (1), `32-effects` (1), `35-context` (2), `40b-companion-install` (1), `40c-companion-duty` (2), `42-life` (1), `44d-pet-mind` (1), `48-pet-agent` (1), `50-rheostat` (1), `55-lowpower` (1), `57-glass` (3), `58-legibility` (1), `59-splash` (2), `60-zones` (1), `65-bridge` (2), `70-sidebar` (1), `72-we-library` (1), `76b-role-hub-install` (1), `90-font` (1), `95-a11y` (1) | — |
+| `76-role-hub.js` | role hub | 54 | 408 | `10-constants` (3), `13-i18n` (2), `44d-pet-mind` (1), `48-pet-agent` (1), `57-glass` (1) | `76b-role-hub-install` (53) |
+| `76b-role-hub-install.js` | role hub | 1 | 3756 | `10-constants` (1), `11-platform` (2), `12-schema` (1), `13-i18n` (1), `30-wallpaper` (1), `44b-pet-state` (1), `56-appearance` (4), `59-splash` (6), `76-role-hub` (53) | `99-apply` (1) |
+| `90-font.js` | font panel | 22 | 488 | `10-constants` (2), `11-platform` (7), `13-i18n` (2), `58-legibility` (3) | `70b-wallpaper-sidebar-panel` (2), `99-apply` (1) |
+| `95-a11y.js` | accessibility | 7 | 349 | `10-constants` (2), `11-platform` (6), `13-i18n` (4) | `56-appearance` (1), `99-apply` (1) |
+| `99-apply.js` | apply | 5 | 244 | `10-constants` (3), `11-platform` (8), `12b-schema-sync` (3), `13-i18n` (3), `20d-stylesheet-hub` (1), `30b-wallpaper-scene` (1), `31-engine-extra` (1), `32-effects` (1), `35-context` (2), `40b-companion-install` (1), `40c-companion-duty` (2), `42-life` (1), `44d-pet-mind` (1), `48-pet-agent` (1), `50-rheostat` (1), `55-lowpower` (1), `56-appearance` (1), `57-glass` (3), `58-legibility` (1), `59-splash` (2), `60-zones` (1), `65-bridge` (2), `70-sidebar` (1), `72-we-library` (1), `76b-role-hub-install` (1), `90-font` (1), `95-a11y` (1) | — |
 
 ## 3. 跨片段引用清单
 
 | 来自 | 名字 | 声明于 | 次数 |
 | --- | --- | --- | --- |
-| `11-platform.js` | `note` | `10-constants.js` | 5 |
+| `11-platform.js` | `DARK_ATTR` | `10-constants.js` | 2 |
 | `11-platform.js` | `wallpaperController` | `30-wallpaper.js` | 2 |
 | `12-schema.js` | `ASSET_BASE` | `10-constants.js` | 1 |
 | `12-schema.js` | `MODULE_DEFS` | `11-platform.js` | 2 |
@@ -85,6 +86,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `12b-schema-sync.js` | `MODULE_DEFS` | `11-platform.js` | 1 |
 | `12b-schema-sync.js` | `moduleController` | `11-platform.js` | 2 |
 | `12b-schema-sync.js` | `registerSchemaStrings` | `12-schema.js` | 2 |
+| `12b-schema-sync.js` | `repairAppearanceSetting` | `12-schema.js` | 1 |
 | `12b-schema-sync.js` | `repairCompanionSetting` | `12-schema.js` | 1 |
 | `12b-schema-sync.js` | `repairFontFamilySetting` | `12-schema.js` | 1 |
 | `12b-schema-sync.js` | `repairFontPositionSetting` | `12-schema.js` | 1 |
@@ -104,6 +106,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `12b-schema-sync.js` | `repairZonesSetting` | `12-schema.js` | 1 |
 | `12b-schema-sync.js` | `setTl5Language` | `13-i18n.js` | 1 |
 | `12b-schema-sync.js` | `STORAGE_KEY` | `10-constants.js` | 1 |
+| `12b-schema-sync.js` | `TL5_APPEARANCE_KEY` | `12-schema.js` | 1 |
 | `12b-schema-sync.js` | `TL5_BACKUP_KEY` | `12-schema.js` | 2 |
 | `12b-schema-sync.js` | `TL5_BACKUP_MAX_BYTES` | `12-schema.js` | 1 |
 | `12b-schema-sync.js` | `TL5_BC_NAME` | `12-schema.js` | 1 |
@@ -204,6 +207,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `30b-wallpaper-scene.js` | `sceneStatus` | `30-wallpaper.js` | 1 |
 | `30b-wallpaper-scene.js` | `TL_T` | `13-i18n.js` | 6 |
 | `30b-wallpaper-scene.js` | `tl5Diag` | `11-platform.js` | 3 |
+| `30b-wallpaper-scene.js` | `tl5WallpaperApplied` | `56-appearance.js` | 2 |
 | `30b-wallpaper-scene.js` | `transitionController` | `31-engine-extra.js` | 4 |
 | `30b-wallpaper-scene.js` | `VIDEO_CANDIDATES` | `10-constants.js` | 2 |
 | `30b-wallpaper-scene.js` | `wallpaperController` | `30-wallpaper.js` | 25 |
@@ -238,21 +242,23 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `32-effects.js` | `subscribeTl5Metrics` | `11-platform.js` | 1 |
 | `32-effects.js` | `TL5_METRICS` | `11-platform.js` | 1 |
 | `32-effects.js` | `tl5Diag` | `11-platform.js` | 1 |
+| `32-effects.js` | `tl5OnScheme` | `11-platform.js` | 2 |
+| `32-effects.js` | `tl5Scheme` | `11-platform.js` | 2 |
+| `32-effects.js` | `tl5ThemeCssVar` | `11-platform.js` | 3 |
 | `32-effects.js` | `useTl5I18n` | `13-i18n.js` | 1 |
 | `35-context.js` | `ASSET_BASE` | `10-constants.js` | 1 |
 | `35-context.js` | `effectsController` | `32-effects.js` | 5 |
 | `35-context.js` | `glassController` | `57-glass.js` | 9 |
 | `35-context.js` | `layerController` | `30-wallpaper.js` | 4 |
 | `35-context.js` | `moduleController` | `11-platform.js` | 3 |
-| `35-context.js` | `note` | `10-constants.js` | 18 |
 | `35-context.js` | `React` | `10-constants.js` | 62 |
 | `35-context.js` | `registerTl5Css` | `11-platform.js` | 1 |
 | `35-context.js` | `registerTl5PanelSection` | `11-platform.js` | 1 |
 | `35-context.js` | `registerTl5Strings` | `13-i18n.js` | 1 |
 | `35-context.js` | `subscribeTl5I18n` | `13-i18n.js` | 1 |
-| `35-context.js` | `TL_T` | `13-i18n.js` | 47 |
+| `35-context.js` | `TL_T` | `13-i18n.js` | 57 |
 | `35-context.js` | `TL5_DIAG` | `11-platform.js` | 1 |
-| `35-context.js` | `tl5Diag` | `11-platform.js` | 3 |
+| `35-context.js` | `tl5Diag` | `11-platform.js` | 4 |
 | `35-context.js` | `useTl5I18n` | `13-i18n.js` | 1 |
 | `40-companion.js` | `note` | `10-constants.js` | 14 |
 | `40-companion.js` | `registerTl5Strings` | `13-i18n.js` | 1 |
@@ -500,16 +506,45 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `55-lowpower.js` | `registerTl5Strings` | `13-i18n.js` | 1 |
 | `55-lowpower.js` | `scenePlayback` | `30-wallpaper.js` | 4 |
 | `55-lowpower.js` | `TL_T` | `13-i18n.js` | 1 |
-| `57-glass.js` | `note` | `10-constants.js` | 5 |
+| `56-appearance.js` | `listWallpapers` | `30-wallpaper.js` | 2 |
+| `56-appearance.js` | `normalizeAppearanceValue` | `12-schema.js` | 2 |
+| `56-appearance.js` | `readAppearanceSetting` | `12-schema.js` | 1 |
+| `56-appearance.js` | `readSplashForceMotion` | `59-splash.js` | 2 |
+| `56-appearance.js` | `readWallpaperChoice` | `30-wallpaper.js` | 2 |
+| `56-appearance.js` | `registerTl5Css` | `11-platform.js` | 1 |
+| `56-appearance.js` | `registerTl5Shortcut` | `95-a11y.js` | 2 |
+| `56-appearance.js` | `registerTl5Strings` | `13-i18n.js` | 1 |
+| `56-appearance.js` | `TL_T` | `13-i18n.js` | 12 |
+| `56-appearance.js` | `TL5_APPEARANCE_CLOCK_DEFAULTS` | `12-schema.js` | 2 |
+| `56-appearance.js` | `TL5_APPEARANCE_KEY` | `12-schema.js` | 1 |
+| `56-appearance.js` | `TL5_APPEARANCE_MODES` | `12-schema.js` | 2 |
+| `56-appearance.js` | `TL5_APPEARANCE_TRANSITIONS` | `12-schema.js` | 1 |
+| `56-appearance.js` | `tl5Announce` | `11-platform.js` | 2 |
+| `56-appearance.js` | `tl5AppearanceDefaults` | `12-schema.js` | 2 |
+| `56-appearance.js` | `tl5Diag` | `11-platform.js` | 7 |
+| `56-appearance.js` | `tl5IsClockTime` | `12-schema.js` | 1 |
+| `56-appearance.js` | `tl5IsPlainObject` | `12-schema.js` | 6 |
+| `56-appearance.js` | `tl5Json` | `12-schema.js` | 4 |
+| `56-appearance.js` | `tl5OnScheme` | `11-platform.js` | 1 |
+| `56-appearance.js` | `tl5OnThemeChange` | `11-platform.js` | 1 |
+| `56-appearance.js` | `tl5OverlayOpenAllowed` | `11-platform.js` | 4 |
+| `56-appearance.js` | `tl5OverlayRegister` | `11-platform.js` | 2 |
+| `56-appearance.js` | `tl5SampleWallpaperLuma` | `11-platform.js` | 2 |
+| `56-appearance.js` | `tl5Scheme` | `11-platform.js` | 8 |
+| `56-appearance.js` | `tl5ThemeService` | `11-platform.js` | 2 |
+| `56-appearance.js` | `wallpaperController` | `30-wallpaper.js` | 4 |
+| `56-appearance.js` | `weatherController` | `35-context.js` | 4 |
+| `57-glass.js` | `note` | `10-constants.js` | 6 |
 | `57-glass.js` | `readRenderTier` | `10-constants.js` | 2 |
 | `57-glass.js` | `renderTierController` | `10-constants.js` | 1 |
-| `58-legibility.js` | `DARK_ATTR` | `10-constants.js` | 1 |
 | `58-legibility.js` | `note` | `10-constants.js` | 6 |
 | `58-legibility.js` | `React` | `10-constants.js` | 20 |
 | `58-legibility.js` | `registerTl5Css` | `11-platform.js` | 1 |
 | `58-legibility.js` | `registerTl5PanelSection` | `11-platform.js` | 1 |
 | `58-legibility.js` | `registerTl5Strings` | `13-i18n.js` | 1 |
 | `58-legibility.js` | `tl5Diag` | `11-platform.js` | 2 |
+| `58-legibility.js` | `tl5OnScheme` | `11-platform.js` | 2 |
+| `58-legibility.js` | `tl5Scheme` | `11-platform.js` | 1 |
 | `58-legibility.js` | `useTl5I18n` | `13-i18n.js` | 1 |
 | `58-legibility.js` | `wallpaperController` | `30-wallpaper.js` | 1 |
 | `59-splash.js` | `BODY_ATTR` | `10-constants.js` | 2 |
@@ -526,6 +561,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `59d-splash-film-install.js` | `SPLASH_FILM_SHADERS` | `59b-splash-film.js` | 2 |
 | `59d-splash-film-install.js` | `TL_BUILD_VERSION` | `10-constants.js` | 1 |
 | `60-zones.js` | `railFrameStep` | `10-constants.js` | 1 |
+| `60-zones.js` | `tl5ThemeCssVar` | `11-platform.js` | 1 |
 | `60-zones.js` | `wallpaperController` | `30-wallpaper.js` | 2 |
 | `70-sidebar.js` | `note` | `10-constants.js` | 2 |
 | `70-sidebar.js` | `React` | `10-constants.js` | 1 |
@@ -540,7 +576,6 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `70b-wallpaper-sidebar-panel.js` | `CONTEXT_DEFAULTS` | `35-context.js` | 2 |
 | `70b-wallpaper-sidebar-panel.js` | `contextController` | `35-context.js` | 6 |
 | `70b-wallpaper-sidebar-panel.js` | `cropWindow` | `60-zones.js` | 1 |
-| `70b-wallpaper-sidebar-panel.js` | `DARK_ATTR` | `10-constants.js` | 1 |
 | `70b-wallpaper-sidebar-panel.js` | `EFFECTS_DEFAULTS` | `32-effects.js` | 2 |
 | `70b-wallpaper-sidebar-panel.js` | `effectsController` | `32-effects.js` | 6 |
 | `70b-wallpaper-sidebar-panel.js` | `glassController` | `57-glass.js` | 6 |
@@ -586,11 +621,14 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `70b-wallpaper-sidebar-panel.js` | `TL_T` | `13-i18n.js` | 3 |
 | `70b-wallpaper-sidebar-panel.js` | `tl5Base64UrlEncode` | `70-sidebar.js` | 1 |
 | `70b-wallpaper-sidebar-panel.js` | `tl5MediaKindFromName` | `11-platform.js` | 1 |
+| `70b-wallpaper-sidebar-panel.js` | `tl5OnScheme` | `11-platform.js` | 2 |
 | `70b-wallpaper-sidebar-panel.js` | `tl5OverlayOpenAllowed` | `11-platform.js` | 2 |
 | `70b-wallpaper-sidebar-panel.js` | `tl5OverlayRegister` | `11-platform.js` | 1 |
 | `70b-wallpaper-sidebar-panel.js` | `tl5PanelSections` | `11-platform.js` | 1 |
 | `70b-wallpaper-sidebar-panel.js` | `tl5RememberRecent` | `11-platform.js` | 1 |
 | `70b-wallpaper-sidebar-panel.js` | `tl5SampleWallpaperPalette` | `11-platform.js` | 1 |
+| `70b-wallpaper-sidebar-panel.js` | `tl5Scheme` | `11-platform.js` | 1 |
+| `70b-wallpaper-sidebar-panel.js` | `tl5ThemeService` | `11-platform.js` | 1 |
 | `70b-wallpaper-sidebar-panel.js` | `tl5ValidateUploadFile` | `11-platform.js` | 1 |
 | `70b-wallpaper-sidebar-panel.js` | `UPLOAD_LIMIT` | `10-constants.js` | 1 |
 | `70b-wallpaper-sidebar-panel.js` | `useTl5I18n` | `13-i18n.js` | 1 |
@@ -620,6 +658,10 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `76-role-hub.js` | `petBrainInternal` | `44d-pet-mind.js` | 3 |
 | `76-role-hub.js` | `registerTl5Strings` | `13-i18n.js` | 1 |
 | `76-role-hub.js` | `TL_T` | `13-i18n.js` | 6 |
+| `76b-role-hub-install.js` | `appearanceFormatClock` | `56-appearance.js` | 1 |
+| `76b-role-hub-install.js` | `appearanceModeLabel` | `56-appearance.js` | 4 |
+| `76b-role-hub-install.js` | `appearanceNextBoundary` | `56-appearance.js` | 2 |
+| `76b-role-hub-install.js` | `appearanceSunTimes` | `56-appearance.js` | 2 |
 | `76b-role-hub-install.js` | `ASSET_BASE` | `10-constants.js` | 2 |
 | `76b-role-hub-install.js` | `HUB_AGENT_GRANT_REASON_KEYS` | `76-role-hub.js` | 4 |
 | `76b-role-hub-install.js` | `HUB_AGENT_REASON_KEYS` | `76-role-hub.js` | 3 |
@@ -657,8 +699,8 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `76b-role-hub-install.js` | `hubChatResult` | `76-role-hub.js` | 1 |
 | `76b-role-hub-install.js` | `hubClock` | `76-role-hub.js` | 3 |
 | `76b-role-hub-install.js` | `hubCopyText` | `76-role-hub.js` | 3 |
-| `76b-role-hub-install.js` | `hubCreate` | `76-role-hub.js` | 234 |
-| `76b-role-hub-install.js` | `hubDateTime` | `76-role-hub.js` | 2 |
+| `76b-role-hub-install.js` | `hubCreate` | `76-role-hub.js` | 258 |
+| `76b-role-hub-install.js` | `hubDateTime` | `76-role-hub.js` | 1 |
 | `76b-role-hub-install.js` | `hubDownloadJson` | `76-role-hub.js` | 1 |
 | `76b-role-hub-install.js` | `hubGlassDepthController` | `76-role-hub.js` | 6 |
 | `76b-role-hub-install.js` | `hubGlassLabel` | `76-role-hub.js` | 7 |
@@ -674,6 +716,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `76b-role-hub-install.js` | `hubWeather` | `76-role-hub.js` | 4 |
 | `76b-role-hub-install.js` | `hubWeatherSnapshot` | `76-role-hub.js` | 4 |
 | `76b-role-hub-install.js` | `isSyntheticUserEvent` | `76-role-hub.js` | 8 |
+| `76b-role-hub-install.js` | `listWallpapers` | `30-wallpaper.js` | 2 |
 | `76b-role-hub-install.js` | `petLlmHintText` | `44b-pet-state.js` | 2 |
 | `76b-role-hub-install.js` | `readSplashForceMotion` | `59-splash.js` | 2 |
 | `76b-role-hub-install.js` | `readSplashSound` | `59-splash.js` | 2 |
@@ -681,20 +724,23 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `76b-role-hub-install.js` | `setSplashForceMotion` | `59-splash.js` | 1 |
 | `76b-role-hub-install.js` | `setSplashSound` | `59-splash.js` | 1 |
 | `76b-role-hub-install.js` | `setSplashStyle` | `59-splash.js` | 1 |
-| `76b-role-hub-install.js` | `TL_T` | `13-i18n.js` | 425 |
+| `76b-role-hub-install.js` | `TL_T` | `13-i18n.js` | 454 |
 | `76b-role-hub-install.js` | `tl5ApplyDefaultAppearance` | `12-schema.js` | 1 |
 | `76b-role-hub-install.js` | `tl5OverlayRegister` | `11-platform.js` | 1 |
 | `76b-role-hub-install.js` | `tl5ValidateUploadFile` | `11-platform.js` | 1 |
-| `90-font.js` | `DARK_ATTR` | `10-constants.js` | 1 |
 | `90-font.js` | `LEGIBILITY_THRESHOLD_MAX` | `58-legibility.js` | 2 |
 | `90-font.js` | `LEGIBILITY_THRESHOLD_MIN` | `58-legibility.js` | 3 |
 | `90-font.js` | `legibilityController` | `58-legibility.js` | 4 |
+| `90-font.js` | `note` | `10-constants.js` | 2 |
 | `90-font.js` | `React` | `10-constants.js` | 35 |
 | `90-font.js` | `registerTl5Css` | `11-platform.js` | 1 |
 | `90-font.js` | `registerTl5Strings` | `13-i18n.js` | 1 |
+| `90-font.js` | `tl5OnScheme` | `11-platform.js` | 2 |
 | `90-font.js` | `tl5OverlayOpenAllowed` | `11-platform.js` | 2 |
 | `90-font.js` | `tl5OverlayRegister` | `11-platform.js` | 1 |
 | `90-font.js` | `tl5SampleWallpaperPalette` | `11-platform.js` | 1 |
+| `90-font.js` | `tl5Scheme` | `11-platform.js` | 1 |
+| `90-font.js` | `tl5ThemeService` | `11-platform.js` | 5 |
 | `90-font.js` | `useTl5I18n` | `13-i18n.js` | 2 |
 | `95-a11y.js` | `note` | `10-constants.js` | 3 |
 | `95-a11y.js` | `React` | `10-constants.js` | 11 |
@@ -703,6 +749,8 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `95-a11y.js` | `registerTl5Strings` | `13-i18n.js` | 1 |
 | `95-a11y.js` | `subscribeTl5I18n` | `13-i18n.js` | 1 |
 | `95-a11y.js` | `TL_T` | `13-i18n.js` | 8 |
+| `95-a11y.js` | `tl5Announce` | `11-platform.js` | 1 |
+| `95-a11y.js` | `tl5AnnounceRegister` | `11-platform.js` | 1 |
 | `95-a11y.js` | `tl5OverlayModalAbove` | `11-platform.js` | 2 |
 | `95-a11y.js` | `tl5OverlayOpenAllowed` | `11-platform.js` | 4 |
 | `95-a11y.js` | `useTl5I18n` | `13-i18n.js` | 1 |
@@ -714,6 +762,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `99-apply.js` | `dutyChannelStatus` | `40c-companion-duty.js` | 1 |
 | `99-apply.js` | `glassDepthController` | `57-glass.js` | 3 |
 | `99-apply.js` | `installAccessibility` | `95-a11y.js` | 1 |
+| `99-apply.js` | `installAppearance` | `56-appearance.js` | 1 |
 | `99-apply.js` | `installAudioRuntime` | `31-engine-extra.js` | 1 |
 | `99-apply.js` | `installCompanion` | `40b-companion-install.js` | 1 |
 | `99-apply.js` | `installContextRuntime` | `35-context.js` | 1 |
@@ -735,6 +784,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `99-apply.js` | `installSettingsRuntime` | `12b-schema-sync.js` | 1 |
 | `99-apply.js` | `installSplashEntry` | `59-splash.js` | 1 |
 | `99-apply.js` | `installStyles` | `20d-stylesheet-hub.js` | 1 |
+| `99-apply.js` | `installTl5ThemeBridge` | `11-platform.js` | 1 |
 | `99-apply.js` | `installWallpaperSidebar` | `70-sidebar.js` | 1 |
 | `99-apply.js` | `installWeatherChip` | `35-context.js` | 1 |
 | `99-apply.js` | `installWeLibrary` | `72-we-library.js` | 1 |
@@ -755,14 +805,14 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 
 | 来自 | 指向 | 名字数 | 次数 |
 | --- | --- | --- | --- |
-| `11-platform.js` | `10-constants.js` | 1 | 5 |
+| `11-platform.js` | `10-constants.js` | 1 | 2 |
 | `11-platform.js` | `30-wallpaper.js` | 1 | 2 |
 | `12-schema.js` | `10-constants.js` | 2 | 2 |
 | `12-schema.js` | `11-platform.js` | 2 | 3 |
 | `12-schema.js` | `13-i18n.js` | 1 | 1 |
 | `12b-schema-sync.js` | `10-constants.js` | 1 | 1 |
 | `12b-schema-sync.js` | `11-platform.js` | 3 | 14 |
-| `12b-schema-sync.js` | `12-schema.js` | 42 | 104 |
+| `12b-schema-sync.js` | `12-schema.js` | 44 | 106 |
 | `12b-schema-sync.js` | `13-i18n.js` | 2 | 2 |
 | `12c-schema-eng.js` | `10-constants.js` | 1 | 46 |
 | `12c-schema-eng.js` | `11-platform.js` | 5 | 10 |
@@ -787,6 +837,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `30b-wallpaper-scene.js` | `31-engine-extra.js` | 1 | 4 |
 | `30b-wallpaper-scene.js` | `35-context.js` | 1 | 4 |
 | `30b-wallpaper-scene.js` | `55-lowpower.js` | 1 | 3 |
+| `30b-wallpaper-scene.js` | `56-appearance.js` | 1 | 2 |
 | `31-engine-extra.js` | `10-constants.js` | 3 | 87 |
 | `31-engine-extra.js` | `11-platform.js` | 5 | 22 |
 | `31-engine-extra.js` | `13-i18n.js` | 3 | 10 |
@@ -794,13 +845,13 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `31-engine-extra.js` | `32-effects.js` | 1 | 4 |
 | `31-engine-extra.js` | `35-context.js` | 1 | 11 |
 | `32-effects.js` | `10-constants.js` | 2 | 27 |
-| `32-effects.js` | `11-platform.js` | 6 | 6 |
+| `32-effects.js` | `11-platform.js` | 9 | 13 |
 | `32-effects.js` | `13-i18n.js` | 2 | 2 |
 | `32-effects.js` | `30-wallpaper.js` | 1 | 1 |
 | `32-effects.js` | `55-lowpower.js` | 1 | 3 |
-| `35-context.js` | `10-constants.js` | 3 | 81 |
-| `35-context.js` | `11-platform.js` | 5 | 9 |
-| `35-context.js` | `13-i18n.js` | 4 | 50 |
+| `35-context.js` | `10-constants.js` | 2 | 63 |
+| `35-context.js` | `11-platform.js` | 5 | 10 |
+| `35-context.js` | `13-i18n.js` | 4 | 60 |
 | `35-context.js` | `30-wallpaper.js` | 1 | 4 |
 | `35-context.js` | `32-effects.js` | 1 | 5 |
 | `35-context.js` | `57-glass.js` | 1 | 9 |
@@ -849,9 +900,16 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `55-lowpower.js` | `13-i18n.js` | 2 | 2 |
 | `55-lowpower.js` | `30-wallpaper.js` | 2 | 6 |
 | `55-lowpower.js` | `60-zones.js` | 1 | 4 |
-| `57-glass.js` | `10-constants.js` | 3 | 8 |
-| `58-legibility.js` | `10-constants.js` | 3 | 27 |
-| `58-legibility.js` | `11-platform.js` | 3 | 4 |
+| `56-appearance.js` | `11-platform.js` | 10 | 30 |
+| `56-appearance.js` | `12-schema.js` | 10 | 22 |
+| `56-appearance.js` | `13-i18n.js` | 2 | 13 |
+| `56-appearance.js` | `30-wallpaper.js` | 3 | 8 |
+| `56-appearance.js` | `35-context.js` | 1 | 4 |
+| `56-appearance.js` | `59-splash.js` | 1 | 2 |
+| `56-appearance.js` | `95-a11y.js` | 1 | 2 |
+| `57-glass.js` | `10-constants.js` | 3 | 9 |
+| `58-legibility.js` | `10-constants.js` | 2 | 26 |
+| `58-legibility.js` | `11-platform.js` | 5 | 7 |
 | `58-legibility.js` | `13-i18n.js` | 2 | 2 |
 | `58-legibility.js` | `30-wallpaper.js` | 1 | 1 |
 | `59-splash.js` | `10-constants.js` | 2 | 10 |
@@ -864,12 +922,13 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `59d-splash-film-install.js` | `59b-splash-film.js` | 3 | 4 |
 | `59d-splash-film-install.js` | `59c-splash-film-runtime.js` | 1 | 1 |
 | `60-zones.js` | `10-constants.js` | 1 | 1 |
+| `60-zones.js` | `11-platform.js` | 1 | 1 |
 | `60-zones.js` | `30-wallpaper.js` | 1 | 2 |
 | `70-sidebar.js` | `10-constants.js` | 2 | 3 |
 | `70-sidebar.js` | `11-platform.js` | 2 | 2 |
 | `70-sidebar.js` | `13-i18n.js` | 1 | 1 |
-| `70b-wallpaper-sidebar-panel.js` | `10-constants.js` | 8 | 374 |
-| `70b-wallpaper-sidebar-panel.js` | `11-platform.js` | 7 | 8 |
+| `70b-wallpaper-sidebar-panel.js` | `10-constants.js` | 7 | 373 |
+| `70b-wallpaper-sidebar-panel.js` | `11-platform.js` | 10 | 12 |
 | `70b-wallpaper-sidebar-panel.js` | `12b-schema-sync.js` | 1 | 6 |
 | `70b-wallpaper-sidebar-panel.js` | `13-i18n.js` | 3 | 5 |
 | `70b-wallpaper-sidebar-panel.js` | `30-wallpaper.js` | 24 | 68 |
@@ -893,19 +952,21 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `76b-role-hub-install.js` | `10-constants.js` | 1 | 2 |
 | `76b-role-hub-install.js` | `11-platform.js` | 2 | 2 |
 | `76b-role-hub-install.js` | `12-schema.js` | 1 | 1 |
-| `76b-role-hub-install.js` | `13-i18n.js` | 1 | 425 |
+| `76b-role-hub-install.js` | `13-i18n.js` | 1 | 454 |
+| `76b-role-hub-install.js` | `30-wallpaper.js` | 1 | 2 |
 | `76b-role-hub-install.js` | `44b-pet-state.js` | 1 | 2 |
+| `76b-role-hub-install.js` | `56-appearance.js` | 4 | 9 |
 | `76b-role-hub-install.js` | `59-splash.js` | 6 | 9 |
-| `76b-role-hub-install.js` | `76-role-hub.js` | 53 | 483 |
-| `90-font.js` | `10-constants.js` | 2 | 36 |
-| `90-font.js` | `11-platform.js` | 4 | 5 |
+| `76b-role-hub-install.js` | `76-role-hub.js` | 53 | 506 |
+| `90-font.js` | `10-constants.js` | 2 | 37 |
+| `90-font.js` | `11-platform.js` | 7 | 13 |
 | `90-font.js` | `13-i18n.js` | 2 | 3 |
 | `90-font.js` | `58-legibility.js` | 3 | 9 |
 | `95-a11y.js` | `10-constants.js` | 2 | 14 |
-| `95-a11y.js` | `11-platform.js` | 4 | 8 |
+| `95-a11y.js` | `11-platform.js` | 6 | 10 |
 | `95-a11y.js` | `13-i18n.js` | 4 | 11 |
 | `99-apply.js` | `10-constants.js` | 3 | 18 |
-| `99-apply.js` | `11-platform.js` | 7 | 13 |
+| `99-apply.js` | `11-platform.js` | 8 | 14 |
 | `99-apply.js` | `12b-schema-sync.js` | 3 | 3 |
 | `99-apply.js` | `13-i18n.js` | 3 | 3 |
 | `99-apply.js` | `20d-stylesheet-hub.js` | 1 | 1 |
@@ -920,6 +981,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `99-apply.js` | `48-pet-agent.js` | 1 | 1 |
 | `99-apply.js` | `50-rheostat.js` | 1 | 1 |
 | `99-apply.js` | `55-lowpower.js` | 1 | 1 |
+| `99-apply.js` | `56-appearance.js` | 1 | 1 |
 | `99-apply.js` | `57-glass.js` | 3 | 5 |
 | `99-apply.js` | `58-legibility.js` | 1 | 1 |
 | `99-apply.js` | `59-splash.js` | 2 | 2 |

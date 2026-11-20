@@ -513,6 +513,8 @@
 			// when coordinates already exist the existing reconcileWeather path starts the
 			// poll exactly as it did for the hidden panel.
 			summary: () => weatherSummary(),
+			/** v2.3.0: today's local sunrise/sunset (minutes of day), or null. */
+			sunTimes: () => weatherSunTimesSnapshot(),
 			isReady: () => weatherRuntime !== null,
 			enable: () => weatherController.apply({ enabled: true }),
 			disable: () => weatherController.apply({ enabled: false }),
@@ -631,6 +633,47 @@
 			return Number.isFinite(at) ? at : 0;
 		}
 
+		/**
+		 * v2.3.0: today's local sunrise/sunset for the «随天光» appearance schedule.
+		 * Kept OUT of the cached weather reading: it is only useful for today's clock and
+		 * disappearing at midnight is correct (the schedule then falls back to the manual
+		 * times until the next successful fetch).
+		 */
+		const weatherSunTimes = { dateKey: "", sunrise: null, sunset: null };
+		/** open-meteo daily value ("2026-11-20T06:41", no zone suffix) -> date key + minutes. */
+		function weatherSunInstant(value) {
+			const match = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(typeof value === "string" ? value : "");
+			if (match === null) return null;
+			const hours = Number(match[4]);
+			const minutes = Number(match[5]);
+			if (hours > 23 || minutes > 59) return null;
+			return { dateKey: match[1] + "-" + match[2] + "-" + match[3], minutes: hours * 60 + minutes };
+		}
+		function rememberWeatherSunTimes(payload) {
+			try {
+				const daily = payload !== null && typeof payload === "object" ? payload.daily : null;
+				if (daily === null || typeof daily !== "object") return;
+				const sunrise = Array.isArray(daily.sunrise) ? weatherSunInstant(daily.sunrise[0]) : null;
+				const sunset = Array.isArray(daily.sunset) ? weatherSunInstant(daily.sunset[0]) : null;
+				if (sunrise === null || sunset === null) return;
+				if (sunrise.dateKey !== sunset.dateKey) return;
+				weatherSunTimes.dateKey = sunrise.dateKey;
+				weatherSunTimes.sunrise = sunrise.minutes;
+				weatherSunTimes.sunset = sunset.minutes;
+			} catch (error) {
+				note("weather:sun-times", error);
+			}
+		}
+		/** `{ sunrise, sunset }` in local minutes of day, or null when today's data is absent. */
+		function weatherSunTimesSnapshot() {
+			const now = new Date();
+			const key =
+				now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+			if (weatherSunTimes.dateKey !== key) return null;
+			if (Number.isFinite(weatherSunTimes.sunrise) === false || Number.isFinite(weatherSunTimes.sunset) === false) return null;
+			return { sunrise: weatherSunTimes.sunrise, sunset: weatherSunTimes.sunset };
+		}
+
 		function normalizeWeatherForecast(payload) {
 			if (payload !== null && typeof payload === "object" && payload.error === true) {
 				// §2.8: an upstream error body (`{error:true, reason:"..."}`) explains the
@@ -645,6 +688,8 @@
 				current.temperature_2m === null || current.temperature_2m === undefined ? NaN : Number(current.temperature_2m);
 			if (Number.isFinite(code) === false || code < 0 || code > 99) return null;
 			if (Number.isFinite(temperatureC) === false) return null;
+			// v2.3.0: remember today's sun times from the same payload the reading came from.
+			rememberWeatherSunTimes(payload);
 			return normalizeWeatherLast({
 				code,
 				temperatureC,
@@ -2208,7 +2253,10 @@ body[data-dsh-tianlight] [data-tl-group="context"] .tl-fx-hint {
 				encodeURIComponent(String(state.latitude)) +
 				"&longitude=" +
 				encodeURIComponent(String(state.longitude)) +
-				"&current=temperature_2m,weather_code,is_day&timezone=auto";
+				"&current=temperature_2m,weather_code,is_day&timezone=auto" +
+				// v2.3.0: the appearance module follows local sunrise/sunset. Same request,
+				// one extra daily block — no second network path, no extra poll.
+				"&daily=sunrise,sunset&forecast_days=1";
 			const hostUrl = (state) =>
 				endpoints.host +
 				"/_weather?latitude=" +

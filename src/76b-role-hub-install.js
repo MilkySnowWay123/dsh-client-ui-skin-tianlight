@@ -3206,6 +3206,208 @@
 				weatherCard.appendChild(state.weatherNote);
 				body.appendChild(weatherCard);
 
+				// b0) v2.3.0 appearance: light/dark + 随天光 (the switch that drives DSH's
+				// own theme preference; the glass card below only styles the skin surfaces).
+				const appearanceCard = hubCreate("section", { "data-tl-hub-appearance-card": "", className: "tl-hub-card" }, [
+					hubCreate("h3", { className: "tl-hub-card-title" }, TL_T("appearance.title")),
+				]);
+				const appearanceApi = () =>
+					globalThis.tianlightAppearance !== undefined && globalThis.tianlightAppearance !== null
+						? globalThis.tianlightAppearance
+						: null;
+				const appearanceModel = () => {
+					const api = appearanceApi();
+					try {
+						return api !== null && typeof api.state === "function" ? api.state() : null;
+					} catch (error) {
+						setLastError("appearance-state", error);
+						return null;
+					}
+				};
+				const APPEARANCE_HUB_WALLPAPER_KEYS = {
+					light: "appearance.wallpaper.light",
+					dark: "appearance.wallpaper.dark",
+				};
+				const APPEARANCE_HUB_SKY_SOURCE_KEYS = {
+					auto: "appearance.sky.source.auto",
+					clock: "appearance.sky.source.clock",
+				};
+				const appearanceModesRow = hubCreate("div", { className: "tl-hub-choices" });
+				const appearanceModeButtons = {};
+				for (const mode of ["follow", "light", "dark", "sky"]) {
+					const button = hubCreate(
+						"button",
+						{ type: "button", className: "tl-hub-choice", "data-tl-hub-appearance-mode": mode, "aria-pressed": "false" },
+						typeof appearanceModeLabel === "function" ? appearanceModeLabel(mode) : mode,
+					);
+					button.addEventListener("click", () => {
+						const api = appearanceApi();
+						if (api === null) {
+							appearanceNote.textContent = TL_T("appearance.noThemeService");
+							return;
+						}
+						runAsync(async () => {
+							api.apply({ mode });
+							syncAppearanceCard();
+						});
+					});
+					appearanceModeButtons[mode] = button;
+					appearanceModesRow.appendChild(button);
+				}
+				appearanceCard.appendChild(appearanceModesRow);
+				const appearanceSkyRow = hubCreate("div", { className: "tl-hub-row tl-hub-appearance-sky", "data-tl-hub-appearance-sky": "" });
+				appearanceSkyRow.appendChild(hubCreate("span", { className: "tl-hub-hint" }, TL_T("appearance.sky.source.label")));
+				const appearanceSkySource = hubCreate("select", { className: "tl-hub-select", "aria-label": TL_T("appearance.sky.source.label") });
+				for (const source of ["auto", "clock"]) {
+					appearanceSkySource.appendChild(hubCreate("option", { value: source }, TL_T(APPEARANCE_HUB_SKY_SOURCE_KEYS[source])));
+				}
+				appearanceSkySource.addEventListener("change", () => {
+					const api = appearanceApi();
+					if (api === null) return;
+					runAsync(async () => {
+						api.apply({ sky: { source: appearanceSkySource.value } });
+						syncAppearanceCard();
+					});
+				});
+				appearanceSkyRow.appendChild(appearanceSkySource);
+				const appearanceSkyLight = hubCreate("input", { type: "time", className: "tl-hub-select", "aria-label": TL_T("appearance.sky.lightAt") });
+				const appearanceSkyDark = hubCreate("input", { type: "time", className: "tl-hub-select", "aria-label": TL_T("appearance.sky.darkAt") });
+				const onSkyTime = () => {
+					const api = appearanceApi();
+					if (api === null) return;
+					runAsync(async () => {
+						api.apply({ sky: { lightAt: appearanceSkyLight.value, darkAt: appearanceSkyDark.value } });
+						syncAppearanceCard();
+					});
+				};
+				appearanceSkyLight.addEventListener("change", onSkyTime);
+				appearanceSkyDark.addEventListener("change", onSkyTime);
+				appearanceSkyRow.appendChild(appearanceSkyLight);
+				appearanceSkyRow.appendChild(appearanceSkyDark);
+				appearanceCard.appendChild(appearanceSkyRow);
+				const appearanceNext = hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-appearance-next": "" }, "");
+				appearanceCard.appendChild(appearanceNext);
+				const appearanceTransitionRow = hubCreate("div", { className: "tl-hub-row" });
+				appearanceTransitionRow.appendChild(hubCreate("span", { className: "tl-hub-hint" }, TL_T("appearance.transition.label")));
+				const appearanceTransition = hubCreate("select", { className: "tl-hub-select", "aria-label": TL_T("appearance.transition.label") });
+				const APPEARANCE_HUB_TRANSITION_KEYS = {
+					reveal: "appearance.transition.reveal",
+					fade: "appearance.transition.fade",
+					off: "appearance.transition.off",
+				};
+				for (const value of ["reveal", "fade", "off"]) {
+					appearanceTransition.appendChild(hubCreate("option", { value }, TL_T(APPEARANCE_HUB_TRANSITION_KEYS[value])));
+				}
+				appearanceTransition.addEventListener("change", () => {
+					const api = appearanceApi();
+					if (api === null) return;
+					runAsync(async () => {
+						api.apply({ transition: appearanceTransition.value });
+						syncAppearanceCard();
+					});
+				});
+				appearanceTransitionRow.appendChild(appearanceTransition);
+				appearanceCard.appendChild(appearanceTransitionRow);
+				// Per-mode wallpaper slots: the slot stores a library entry id (never a URL).
+				const appearanceWallpaperSelects = {};
+				const fillAppearanceWallpaperOptions = () => {
+					if (typeof listWallpapers !== "function") return;
+					void listWallpapers()
+						.then((items) => {
+							for (const slot of ["light", "dark"]) {
+								const select = appearanceWallpaperSelects[slot];
+								if (select === undefined) continue;
+								const current = select.value;
+								select.textContent = "";
+								select.appendChild(hubCreate("option", { value: "" }, TL_T("appearance.wallpaper.none")));
+								for (const item of items) {
+									if (item === null || item === undefined || typeof item.id !== "string") continue;
+									select.appendChild(hubCreate("option", { value: item.id }, item.id));
+								}
+								select.value = current;
+							}
+						})
+						.catch((error) => setLastError("appearance-wallpapers", error));
+				};
+				for (const slot of ["light", "dark"]) {
+					const row = hubCreate("div", { className: "tl-hub-row tl-hub-appearance-wallpaper", "data-tl-hub-appearance-wallpaper": slot });
+					row.appendChild(hubCreate("span", { className: "tl-hub-hint" }, TL_T(APPEARANCE_HUB_WALLPAPER_KEYS[slot])));
+					const select = hubCreate("select", { className: "tl-hub-select", "aria-label": TL_T(APPEARANCE_HUB_WALLPAPER_KEYS[slot]) });
+					select.appendChild(hubCreate("option", { value: "" }, TL_T("appearance.wallpaper.none")));
+					select.addEventListener("change", () => {
+						const api = appearanceApi();
+						if (api === null) return;
+						runAsync(async () => {
+							api.apply({ wallpapers: { [slot]: select.value === "" ? null : select.value } });
+							syncAppearanceCard();
+						});
+					});
+					appearanceWallpaperSelects[slot] = select;
+					row.appendChild(select);
+					const clear = hubCreate("button", { type: "button", className: "tl-hub-btn", "data-tl-hub-appearance-wallpaper-clear": slot }, TL_T("appearance.wallpaper.clear"));
+					clear.addEventListener("click", () => {
+						const api = appearanceApi();
+						if (api === null) return;
+						runAsync(async () => {
+							api.apply({ wallpapers: { [slot]: null } });
+							syncAppearanceCard();
+						});
+					});
+					row.appendChild(clear);
+					appearanceCard.appendChild(row);
+				}
+				const appearanceNote = hubCreate("p", { className: "tl-hub-note tl-hub-hint", "data-tl-hub-appearance-note": "", role: "status" }, "");
+				appearanceCard.appendChild(appearanceNote);
+				const syncAppearanceCard = () => {
+					const api = appearanceApi();
+					const model = appearanceModel();
+					const service = api !== null && typeof api.service === "function" ? api.service() === true : false;
+					const mode = model !== null && typeof model.mode === "string" ? model.mode : "follow";
+					for (const key of Object.keys(appearanceModeButtons)) {
+						const button = appearanceModeButtons[key];
+						const active = key === mode;
+						button.setAttribute("aria-pressed", active ? "true" : "false");
+						button.setAttribute("data-tl-hub-active", active ? "true" : "false");
+					}
+					appearanceSkyRow.hidden = mode !== "sky";
+					const sky = model !== null && model.sky !== null && typeof model.sky === "object" ? model.sky : { source: "auto", lightAt: "06:30", darkAt: "18:30" };
+					appearanceSkySource.value = sky.source === "clock" ? "clock" : "auto";
+					if (appearanceSkyLight.value !== sky.lightAt) appearanceSkyLight.value = sky.lightAt;
+					if (appearanceSkyDark.value !== sky.darkAt) appearanceSkyDark.value = sky.darkAt;
+					appearanceTransition.value = model !== null && typeof model.transition === "string" ? model.transition : "reveal";
+					const slots = model !== null && model.wallpapers !== null && typeof model.wallpapers === "object" ? model.wallpapers : {};
+					for (const slot of ["light", "dark"]) {
+						const select = appearanceWallpaperSelects[slot];
+						const value = typeof slots[slot] === "string" ? slots[slot] : "";
+						// The library list is async: an id that is not in the options yet is added
+						// once so the current slot stays visible instead of silently empty.
+						let option = null;
+						for (const candidate of select.options) {
+							if (candidate.value === value) {
+								option = candidate;
+								break;
+							}
+						}
+						if (option === null && value !== "") select.appendChild(hubCreate("option", { value }, value));
+						select.value = value;
+					}
+					appearanceNext.textContent = "";
+					if (mode === "sky" && typeof appearanceNextBoundary === "function") {
+						const sun = typeof appearanceSunTimes === "function" ? appearanceSunTimes() : null;
+						const next = appearanceNextBoundary(Date.now(), sun, sky);
+						if (next !== null) {
+							appearanceNext.textContent = TL_T("appearance.sky.next", {
+								time: appearanceFormatClock(next.minutes),
+								mode: typeof appearanceModeLabel === "function" ? appearanceModeLabel(next.scheme) : next.scheme,
+							});
+						}
+					}
+					appearanceNote.textContent = service ? TL_T("appearance.hostNote") : TL_T("appearance.noThemeService");
+				};
+				syncAppearanceCard();
+				fillAppearanceWallpaperOptions();
+				body.appendChild(appearanceCard);
+
 				// b) liquid glass
 				const glassCard = hubCreate("section", { "data-tl-hub-glass-card": "", className: "tl-hub-card" }, [
 					hubCreate("h3", { className: "tl-hub-card-title" }, TL_T("hub.glass.title")),

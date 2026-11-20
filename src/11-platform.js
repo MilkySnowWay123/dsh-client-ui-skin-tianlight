@@ -119,15 +119,13 @@
 		 */
 		let tl5PaletteCanvas = null;
 		let tl5PaletteCtx = null;
-		function tl5SampleWallpaperPalette() {
+		/**
+		 * The element the wallpaper samplers may read right now (shader swatch, the still
+		 * image, or a playing video), or null. One resolver keeps the palette and the
+		 * luminance sampler in agreement about which source "the wallpaper" means.
+		 */
+		function tl5WallpaperSampleTarget() {
 			try {
-				if (tl5PaletteCanvas === null) {
-					tl5PaletteCanvas = document.createElement("canvas");
-					tl5PaletteCanvas.width = 32;
-					tl5PaletteCanvas.height = 18;
-					tl5PaletteCtx = tl5PaletteCanvas.getContext("2d", { willReadFrequently: true });
-				}
-				if (tl5PaletteCtx === null || tl5PaletteCtx === undefined) return null;
 				const controller = typeof wallpaperController === "undefined" ? null : wallpaperController;
 				const shader = controller === null ? null : controller.shaderSwatch;
 				const still = controller === null ? null : controller.image;
@@ -140,10 +138,31 @@
 					shader !== null && shader !== undefined ? shader : still !== null && still !== undefined ? still : video;
 				if (target === null || target === undefined) return null;
 				if (target === video && video.readyState < 2) return null;
+				return target;
+			} catch {
+				return null;
+			}
+		}
+		/** Shared 32x18 sampling canvas; callers always drawImage into it first. */
+		function tl5PaletteCanvasReady() {
+			if (tl5PaletteCanvas === null) {
+				tl5PaletteCanvas = document.createElement("canvas");
+				tl5PaletteCanvas.width = 32;
+				tl5PaletteCanvas.height = 18;
+				tl5PaletteCtx = tl5PaletteCanvas.getContext("2d", { willReadFrequently: true });
+			}
+			return tl5PaletteCtx === null || tl5PaletteCtx === undefined ? null : tl5PaletteCtx;
+		}
+		function tl5SampleWallpaperPalette() {
+			try {
+				const context = tl5PaletteCanvasReady();
+				if (context === null) return null;
+				const target = tl5WallpaperSampleTarget();
+				if (target === null) return null;
 				let data = null;
 				try {
-					tl5PaletteCtx.drawImage(target, 0, 0, tl5PaletteCanvas.width, tl5PaletteCanvas.height);
-					data = tl5PaletteCtx.getImageData(0, 0, tl5PaletteCanvas.width, tl5PaletteCanvas.height).data;
+					context.drawImage(target, 0, 0, tl5PaletteCanvas.width, tl5PaletteCanvas.height);
+					data = context.getImageData(0, 0, tl5PaletteCanvas.width, tl5PaletteCanvas.height).data;
 				} catch {
 					return null;
 				}
@@ -183,6 +202,252 @@
 			} catch {
 				return null;
 			}
+		}
+
+		/** sRGB channel (0..1) -> linear light, the WCAG piece. */
+		function tl5LinearChannel(channel) {
+			return channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+		}
+		/**
+		 * v2.3.0: WCAG relative luminance L of the wallpaper's CENTRAL READING AREA
+		 * (x 25–75%, y 12–88%) — the region body text actually sits on. Returns null when
+		 * no readable source exists (cross-origin web wallpaper, iframe scene, video not
+		 * ready), so callers fall back to a conservative mid fog instead of guessing.
+		 * Sampling happens on the shared 32x18 canvas; it is called on selection/mode
+		 * changes only, never per video frame.
+		 */
+		function tl5SampleWallpaperLuma() {
+			try {
+				const context = tl5PaletteCanvasReady();
+				if (context === null) return null;
+				const target = tl5WallpaperSampleTarget();
+				if (target === null) return null;
+				const width = tl5PaletteCanvas.width;
+				const height = tl5PaletteCanvas.height;
+				let data = null;
+				try {
+					context.drawImage(target, 0, 0, width, height);
+					data = context.getImageData(0, 0, width, height).data;
+				} catch {
+					return null;
+				}
+				const x0 = Math.floor(width * 0.25);
+				const x1 = Math.ceil(width * 0.75);
+				const y0 = Math.floor(height * 0.12);
+				const y1 = Math.ceil(height * 0.88);
+				let sum = 0;
+				let count = 0;
+				for (let y = y0; y < y1; y += 1) {
+					for (let x = x0; x < x1; x += 1) {
+						const index = (y * width + x) * 4;
+						sum +=
+							0.2126 * tl5LinearChannel(data[index] / 255) +
+							0.7152 * tl5LinearChannel(data[index + 1] / 255) +
+							0.0722 * tl5LinearChannel(data[index + 2] / 255);
+						count += 1;
+					}
+				}
+				return count === 0 ? null : sum / count;
+			} catch {
+				return null;
+			}
+		}
+
+		/**
+		 * v2.3.0: read one skin CSS custom property from the live body. Canvas painters
+		 * (particles, letterbox) need a concrete colour, not a var(); they call this on a
+		 * scheme flip and cache the result — never per frame, because getComputedStyle is
+		 * a layout read.
+		 */
+		function tl5ThemeCssVar(name, fallback) {
+			try {
+				if (typeof document === "undefined" || document === null || document.body === null) return fallback;
+				const value = globalThis.getComputedStyle(document.body).getPropertyValue(name);
+				return typeof value === "string" && value.trim() !== "" ? value.trim() : fallback;
+			} catch {
+				return fallback;
+			}
+		}
+
+		/* ---- v2.3.0: one screen-reader announcer --------------------------------
+		 * The a11y module used to own `announce` as a local function, but the
+		 * appearance fragment runs BEFORE it and needs the same channel for
+		 * "已切换到浅色". The live region registers itself here; announcing while the
+		 * a11y module is off is a silent no-op (no DOM is created by this layer).
+		 */
+		let tl5AnnounceNode = null;
+		function tl5AnnounceRegister(node) {
+			tl5AnnounceNode = node === undefined ? null : node;
+			return () => {
+				if (tl5AnnounceNode === node) tl5AnnounceNode = null;
+			};
+		}
+		function tl5Announce(text) {
+			if (typeof text !== "string" || text === "") return;
+			const node = tl5AnnounceNode;
+			if (node === null || node === undefined) return;
+			try {
+				// Clearing first and writing on the next task is what makes a screen reader
+				// re-announce a repeated phrase.
+				node.textContent = "";
+				globalThis.setTimeout(() => {
+					try {
+						node.textContent = text;
+					} catch {
+						// the live region was removed between the two writes
+					}
+				}, 40);
+			} catch {
+				// announcing must never affect the page
+			}
+		}
+
+		/* ================= appearance: the ONE theme accessor (v2.3.0) =================
+		 * DSH's own theme preference is the single source of truth for light/dark: its
+		 * controls, highlighters, menus and dialogs all flip on body[data-ds-dark-theme],
+		 * so a skin-private "mode" attribute would always end up half-light/half-dark.
+		 * Three entry points, one each:
+		 *   tl5Scheme()          read the LIVE scheme (never a snapshot kept at apply time);
+		 *   tl5OnScheme(fn)      recompute something when it flips (one shared observer);
+		 *   tl5ThemeService()    write a preference (setTheme) — possibly null.
+		 * Fragment rules: read with tl5Scheme(), react with tl5OnScheme(), write only
+		 * through tl5ThemeService(). Nothing else may sample DARK_ATTR once and cache it.
+		 */
+		const tl5ThemeState = { service: null, changeListeners: new Set() };
+		/** Theme service from @deepseek-ai/dsh-client-ui-theme, or null before it mounts. */
+		function tl5ThemeService() {
+			return tl5ThemeState.service;
+		}
+		/** Subscribe to DSH `theme/change`; returns an unsubscriber (safe when unmounted). */
+		function tl5OnThemeChange(fn) {
+			if (typeof fn !== "function") return () => {};
+			tl5ThemeState.changeListeners.add(fn);
+			return () => tl5ThemeState.changeListeners.delete(fn);
+		}
+		/** "light" | "dark" straight from the product's DOM marker. */
+		function tl5Scheme() {
+			try {
+				return typeof document !== "undefined" && document !== null && document.body !== null && document.body.hasAttribute(DARK_ATTR)
+					? "dark"
+					: "light";
+			} catch {
+				return "light";
+			}
+		}
+		let tl5SchemeObserver = null;
+		let tl5SchemeCached = null;
+		let tl5SchemeFrame = 0;
+		const tl5SchemeListeners = new Set();
+		function tl5FlushScheme() {
+			tl5SchemeFrame = 0;
+			const next = tl5Scheme();
+			if (next === tl5SchemeCached) return;
+			tl5SchemeCached = next;
+			for (const fn of [...tl5SchemeListeners]) {
+				try {
+					fn(next);
+				} catch (error) {
+					note("scheme:listener", error);
+				}
+			}
+		}
+		function tl5ObserveScheme() {
+			if (tl5SchemeObserver !== null) return;
+			if (typeof MutationObserver === "undefined" || typeof document === "undefined" || document.body === null) return;
+			try {
+				tl5SchemeCached = tl5Scheme();
+				tl5SchemeObserver = new MutationObserver(() => {
+					if (tl5SchemeFrame !== 0) return;
+					// rAF-coalesce: DSH's ThemePresenter writes several body/html attributes
+					// synchronously, and a naive observer would fire once per attribute.
+					tl5SchemeFrame = globalThis.requestAnimationFrame(tl5FlushScheme);
+				});
+				tl5SchemeObserver.observe(document.body, { attributes: true, attributeFilter: [DARK_ATTR] });
+			} catch (error) {
+				tl5SchemeObserver = null;
+				note("scheme:observe-failed", error);
+			}
+		}
+		/** Recompute on a scheme flip; one shared observer, rAF-coalesced, exact-change only. */
+		function tl5OnScheme(fn) {
+			if (typeof fn !== "function") return () => {};
+			tl5SchemeListeners.add(fn);
+			tl5ObserveScheme();
+			return () => {
+				tl5SchemeListeners.delete(fn);
+				if (tl5SchemeListeners.size === 0 && tl5SchemeObserver !== null) {
+					try {
+						tl5SchemeObserver.disconnect();
+					} catch {
+						// an already-detached observer is fine
+					}
+					tl5SchemeObserver = null;
+					if (tl5SchemeFrame !== 0) {
+						try {
+							globalThis.cancelAnimationFrame(tl5SchemeFrame);
+						} catch {
+							// no animation frame to cancel
+						}
+						tl5SchemeFrame = 0;
+					}
+				}
+			};
+		}
+		/**
+		 * Mount the single theme-service accessor. `theme` is published by a product
+		 * plugin that activates AFTER this one, so an eager ctx.get("theme") during
+		 * apply() is undefined on every boot (same post-2.0.0 defect as `slots` in
+		 * 50-rheostat). ctx.inject waits for the service instead.
+		 */
+		function installTl5ThemeBridge(ctx) {
+			if (ctx === null || ctx === undefined) return () => {};
+			const attach = (scoped) => {
+				const service = scoped?.get?.("theme") ?? scoped?.theme ?? null;
+				if (service === null || service === undefined) return () => {};
+				tl5ThemeState.service = service;
+				let off = null;
+				try {
+					off = scoped.on("theme/change", (snapshot) => {
+						for (const fn of [...tl5ThemeState.changeListeners]) {
+							try {
+								fn(snapshot);
+							} catch (error) {
+								note("theme:listener", error);
+							}
+						}
+					});
+				} catch (error) {
+					note("theme:change-listener-failed", error);
+				}
+				return () => {
+					try {
+						if (typeof off === "function") off();
+					} catch (error) {
+						note("theme:change-off-failed", error);
+					}
+					if (tl5ThemeState.service === service) tl5ThemeState.service = null;
+				};
+			};
+			const release = (injection) => {
+				try {
+					// ctx.inject returns a cordis Fiber (PromiseLike with .dispose()) on newer
+					// hosts and a disposer function on older ones; accept both shapes.
+					if (typeof injection === "function") injection();
+					else if (injection !== null && injection !== undefined && typeof injection.dispose === "function") {
+						const pending = injection.dispose();
+						if (pending !== null && pending !== undefined && typeof pending.catch === "function") {
+							pending.catch((error) => note("theme:dispose", error));
+						}
+					}
+				} catch (error) {
+					note("theme:dispose", error);
+				}
+			};
+			if (typeof ctx.inject !== "function") {
+				// A stripped harness has no inject; a guarded get() is then the only path.
+				return attach(ctx);
+			}
+			return release(ctx.inject(["theme"], (scoped) => attach(scoped)));
 		}
 
 		function normalizeModuleState(raw) {

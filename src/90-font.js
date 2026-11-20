@@ -259,15 +259,75 @@ body[data-dsh-tianlight] [data-tl-bubble] code {
 		}
 
 		/**
+		 * Push one text size into DSH (v2.3.0).
+		 *
+		 * The signature changed: 0.2.0 took setFontSize(px); 0.2.1+ — every 0.2.2
+		 * build including rc.5 — takes setFontSize(role, px). Calling the old one-arg
+		 * form on 0.2.1+ threw inside the host (`FONT_SIZE_SPECS[14]` is undefined),
+		 * so the typography panel's size slider has silently done nothing since 0.2.1.
+		 * Function.length is the discriminator (the rc.5 method is declared with two
+		 * parameters, so length 2); the other arity is tried once as a fallback for a
+		 * future compiled/renamed shape. Sizes are integers inside 10..22.
+		 * @returns true when the service accepted a call.
+		 */
+		function tl5WriteFontSize(service, px) {
+			if (service === null || service === undefined || typeof service.setFontSize !== "function") return false;
+			const target = Number(px);
+			if (Number.isFinite(target) === false) return false;
+			const size = Math.min(22, Math.max(10, Math.round(target)));
+			let write = null;
+			try {
+				write = service.setFontSize.bind(service);
+			} catch {
+				write = (roleOrSize, maybeSize) =>
+					maybeSize === undefined ? service.setFontSize(roleOrSize) : service.setFontSize(roleOrSize, maybeSize);
+			}
+			const modern = write.length >= 2;
+			const order = modern ? ["modern", "legacy"] : ["legacy", "modern"];
+			for (const mode of order) {
+				try {
+					if (mode === "modern") write("text", size);
+					else write(size);
+					return true;
+				} catch (error) {
+					note("font:setFontSize", { mode, error });
+				}
+			}
+			return false;
+		}
+
+		/**
+		 * Current DSH text size from the theme snapshot, or null when unknown.
+		 * 0.2.1+ shape: getTheme().fontSizes.text; 0.2.0 shape: service.fontSize.
+		 */
+		function tl5ThemeFontSize(service) {
+			if (service === null || service === undefined) return null;
+			const clamp = (value) => {
+				const number = Number(value);
+				return Number.isFinite(number) === true ? Math.min(22, Math.max(10, Math.round(number))) : null;
+			};
+			try {
+				const snapshot = typeof service.getTheme === "function" ? service.getTheme() : null;
+				const sizes = snapshot === null || snapshot === undefined ? null : snapshot.fontSizes;
+				const text = sizes === null || sizes === undefined ? null : clamp(sizes.text);
+				if (text !== null) return text;
+			} catch (error) {
+				note("font:seed-size", error);
+			}
+			return clamp(service.fontSize);
+		}
+
+		/**
 		 * Applies the whole model. Families and size are real APIs (a CSS variable and
 		 * theme.setFontSize); weight/leading/tracking are inline on #root with an empty
 		 * string meaning "inherit", which restores the product values without knowing
 		 * them. The v0.5.0 content fields (width/para/codeSize/reading serif) are CSS
 		 * variables consumed only under [data-tl-bubble], so the app skeleton keeps the
 		 * product layout. `theme` is optional so a missing service still leaves families
-		 * working. Signature kept compatible with v0.4.0 callers.
+		 * working. Signature kept compatible with v0.4.0 callers; v2.3.0 adds `syncSize`
+		 * so the first apply can seed the panel without overwriting DSH's own size.
 		 */
-		function applyTypography(theme, model, persist) {
+		function applyTypography(theme, model, persist, syncSize) {
 			const next = normalizeTypography(model);
 			const ui = FONT_FAMILIES.find((item) => item.id === next.ui) ?? FONT_FAMILIES[0];
 			const code = CODE_FAMILIES.find((item) => item.id === next.code) ?? CODE_FAMILIES[0];
@@ -290,13 +350,10 @@ body[data-dsh-tianlight] [data-tl-bubble] code {
 				root.style.lineHeight = (LEADS.find((item) => item.id === next.lead) ?? LEADS[0]).value;
 				root.style.letterSpacing = (TRACKS.find((item) => item.id === next.track) ?? TRACKS[0]).value;
 			}
-			if (theme !== undefined && typeof theme.setFontSize === "function") {
-				try {
-					theme.setFontSize(next.size);
-				} catch {
-					// the host may clamp or refuse; the stored value stays authoritative
-				}
-			}
+			// v2.3.0: the service is resolved live from the platform bridge (it mounts
+			// after this plugin), and the size is only written when the user saved one —
+			// writing the default over a host-level size would silently change DSH.
+			if (syncSize !== false) tl5WriteFontSize(theme, next.size);
 			if (persist !== false) {
 				try {
 					globalThis.localStorage.setItem(FONT_STORAGE, JSON.stringify(next));
@@ -320,11 +377,10 @@ body[data-dsh-tianlight] [data-tl-bubble] code {
 		 */
 		function installFontPanel(ctx) {
 			if (React === null || typeof ctx.inject !== "function") return () => {};
-			const theme = ctx.get("theme");
 
-			// Restore only what the user saved. Seeding size from theme.fontSize matters:
-			// writing the default 14 over a product-level 16 would silently change the
-			// host setting on every skin load.
+			// Restore only what the user saved. Seeding size from DSH matters: showing the
+			// default 14 over a product-level 16 would misreport the setting (and writing
+			// it back would change it). v2.3.0 reads the live service through the bridge.
 			let stored = null;
 			try {
 				stored = globalThis.localStorage.getItem(FONT_STORAGE);
@@ -332,14 +388,22 @@ body[data-dsh-tianlight] [data-tl-bubble] code {
 				stored = null;
 			}
 			const initial = readTypography();
-			if (stored === null && theme !== undefined && typeof theme.fontSize === "number") {
-				initial.size = Math.min(22, Math.max(12, Math.round(theme.fontSize)));
+			if (stored === null) {
+				const seed = tl5ThemeFontSize(tl5ThemeService());
+				if (seed !== null) initial.size = seed;
 			}
-			applyTypography(theme, initial, false);
+			applyTypography(tl5ThemeService(), initial, false, stored !== null);
 
 			const FontPanel = (props) => {
 				const { t } = useTl5I18n();
-				const [model, setModel] = React.useState(() => readTypography());
+				const [model, setModel] = React.useState(() => {
+					const current = readTypography();
+					if (stored === null) {
+						const seed = tl5ThemeFontSize(tl5ThemeService());
+						if (seed !== null) current.size = seed;
+					}
+					return current;
+				});
 				const [legibility, setLegibility] = React.useState(() => legibilityController.snapshot());
 				React.useEffect(() => legibilityController.subscribe(setLegibility), []);
 				const tr = (key, fallback) => {
@@ -349,7 +413,7 @@ body[data-dsh-tianlight] [data-tl-bubble] code {
 				const update = (patch) => {
 					setModel((current) => {
 						const next = { ...current, ...patch };
-						applyTypography(theme, next, true);
+						applyTypography(tl5ThemeService(), next, true);
 						return next;
 					});
 				};
@@ -649,7 +713,7 @@ body[data-dsh-tianlight] [data-tl-bubble] code {
 							onClick: () => {
 								const reset = { ...TYPO_DEFAULTS };
 								setModel(reset);
-								applyTypography(theme, reset, true);
+								applyTypography(tl5ThemeService(), reset, true);
 							},
 						},
 						t("typo.reset"),
@@ -759,7 +823,8 @@ body[data-dsh-tianlight] [data-tl-bubble] code {
 			const adoptWallpaperPalette = () => {
 				const palette = tl5SampleWallpaperPalette();
 				if (palette === null) return;
-				const darkMode = document.body !== null && document.body.hasAttribute(DARK_ATTR);
+				// v2.3.0: live scheme via the platform helper; tl5OnScheme re-adopts on a flip.
+				const darkMode = tl5Scheme() === "dark";
 				const accentLight = darkMode ? 0.66 : 0.44;
 				const fillLight = darkMode ? Math.min(0.20, 0.10 + palette.light * 0.10) : Math.max(0.90, 0.94 + palette.light * 0.04);
 				host.style.setProperty("--tl-accent", "hsl(" + palette.hue + " " + Math.round(palette.sat * 100) + "% " + Math.round(accentLight * 100) + "%)");
@@ -793,6 +858,9 @@ body[data-dsh-tianlight] [data-tl-bubble] code {
 				globalThis.clearTimeout(chromaTimer);
 				chromaTimer = 0;
 			};
+			// v2.3.0: a light/dark flip must re-adopt the palette (accent lightness and fill
+			// differ per scheme); otherwise the panel keeps the previous mode's colours.
+			const disposeSchemeChroma = typeof tl5OnScheme === "function" ? tl5OnScheme(() => adoptWallpaperPalette()) : () => {};
 
 			const toggleOverlay = () => {
 				// R8b (REV-R5 F1): never open this non-modal float beneath a higher modal.
@@ -860,6 +928,11 @@ body[data-dsh-tianlight] [data-tl-bubble] code {
 				if (typeof disposeSlots === "function") disposeSlots();
 				window.removeEventListener("resize", clampFontHost);
 				stopChroma();
+				try {
+					disposeSchemeChroma();
+				} catch {
+					// the shared observer may already be gone
+				}
 				clearTypography();
 				try {
 					if (overlayRoot !== null) overlayRoot.unmount();

@@ -32,6 +32,22 @@ body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-sidebar-col] :where(div, a
 	background-color: transparent !important;
 	background-image: none !important;
 }
+/* v2.3.0 light counterpart: the product paints white row fills that turn into bright
+   blocks on the frosted rail, so the same fence applies — but hover/selected rows keep
+   the accent tint, which is the light theme's primary affordance. */
+body[data-dsh-tianlight]:not([data-ds-dark-theme]) [data-tl-sidebar-col] :where(div, aside, nav, section, ul, ol, li) {
+	background-color: transparent !important;
+	background-image: none !important;
+}
+body[data-dsh-tianlight]:not([data-ds-dark-theme]) [data-tl-sidebar-col] :where(button, a, [role='button'], [role='option'], [role='menuitem']) {
+	background-color: transparent !important;
+}
+body[data-dsh-tianlight]:not([data-ds-dark-theme]) [data-tl-sidebar-col] :is(button, a, [role='button'], [role='option'], [role='menuitem']):hover {
+	background-color: var(--tl-accent-soft) !important;
+}
+body[data-dsh-tianlight]:not([data-ds-dark-theme]) [data-tl-sidebar-col] :is([aria-selected='true'], [aria-current='page'], [data-tl-sidebar-state='active']) {
+	background-color: var(--tl-accent-soft) !important;
+}
 
 /* ---- composer only: frosted glass ----
    The rest of the interface stays fully transparent (100% wallpaper); this is the
@@ -51,7 +67,9 @@ body[data-dsh-tianlight] [data-tl-composer] {
 	/* v2.2.6: no inset top highlight. The 1px inner line did not follow the top border
 	   radius visibly and read as a second, stray line above the input. The 0.5px border
 	   is the only edge the card needs; the ::before layer keeps the frosted body. */
-	box-shadow: 0 10px 34px rgba(8, 28, 52, 0.22) !important;
+	/* v2.3.0: the light card takes the cool low-contrast shadow token; the dark card
+	   keeps its own value below, so the dark pixels are unchanged. */
+	box-shadow: var(--tl-shadow-panel) !important;
 	/* Stacking context (kept from the old backdrop-filter) without a fixed containing
 	   block, so the ::before layer can sit above this background and below the text. */
 	position: relative;
@@ -92,7 +110,7 @@ body[data-dsh-tianlight] [data-tl-settings] {
 	background: var(--tl-panel-fill) !important;
 	border: 0.5px solid var(--tl-glass-line);
 	box-shadow:
-		0 18px 60px rgba(8, 26, 48, 0.28),
+		var(--tl-shadow-panel),
 		inset 0 1px 0 var(--tl-glass-line);
 }
 body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-settings] {
@@ -121,7 +139,7 @@ body[data-dsh-tianlight] [data-tl-wall-handle] {
 	font-size: 11px;
 	line-height: 1;
 	cursor: pointer;
-	box-shadow: 4px 0 18px rgba(8, 26, 48, 0.16);
+	box-shadow: var(--tl-shadow-float);
 	transition: color 0.18s ease, border-color 0.18s ease;
 }
 body[data-dsh-tianlight] [data-tl-wall-handle]:hover {
@@ -147,7 +165,7 @@ body[data-dsh-tianlight] [data-tl-wall] {
 	   as the off-depth fallback. */
 	background: var(--tl-wall-tint, var(--tl-panel-fill));
 	border-right: 0.5px solid var(--tl-glass-line);
-	box-shadow: 18px 0 48px rgba(8, 26, 48, 0.28);
+	box-shadow: var(--tl-shadow-drawer);
 	/* v2.2.9: no will-change on a glass host. The drag code writes transform on this
 	   element itself; an extra will-change here would make the host a Backdrop Root
 	   for its own ::before blur as well as a containing block for any fixed child. */
@@ -186,7 +204,7 @@ body[data-dsh-tianlight] [data-tl-wall][data-tl-open] {
 body[data-dsh-tianlight] [data-tl-wall][data-tl-side="right"] {
 	border-right: none;
 	border-left: 0.5px solid var(--tl-glass-line);
-	box-shadow: -18px 0 48px rgba(8, 26, 48, 0.28);
+	box-shadow: var(--tl-shadow-drawer);
 }
 body[data-dsh-tianlight][data-ds-dark-theme] [data-tl-wall] {
 	box-shadow: 18px 0 48px rgba(0, 0, 0, 0.55);
@@ -616,6 +634,7 @@ body[data-dsh-tianlight] .tl-wall-cell > .tl-wall-card {
 }
 body[data-dsh-tianlight] .tl-wall-fav,
 body[data-dsh-tianlight] .tl-wall-tag-open,
+body[data-dsh-tianlight] .tl-wall-slot,
 body[data-dsh-tianlight] .tl-wall-hide {
 	position: absolute;
 	top: 5px;
@@ -638,6 +657,21 @@ body[data-dsh-tianlight] .tl-wall-fav {
 body[data-dsh-tianlight] .tl-wall-hide {
 	right: 31px;
 	font-size: 10px;
+}
+/* v2.3.0: per-mode wallpaper slots sit on the left edge under the tag button. */
+body[data-dsh-tianlight] .tl-wall-slot {
+	top: 31px;
+	font-size: 11px;
+}
+body[data-dsh-tianlight] .tl-wall-slot[data-slot='light'] {
+	left: 5px;
+}
+body[data-dsh-tianlight] .tl-wall-slot[data-slot='dark'] {
+	left: 31px;
+}
+body[data-dsh-tianlight] .tl-wall-slot:hover {
+	border-color: var(--tl-accent);
+	color: var(--tl-ink);
 }
 body[data-dsh-tianlight] .tl-wall-tag-open {
 	left: 5px;
@@ -991,7 +1025,7 @@ body[data-dsh-tianlight] [data-tl-font-panel] {
 	border-radius: 18px;
 	background: var(--tl-panel-fill);
 	border: 0.5px solid var(--tl-glass-line);
-	box-shadow: 0 18px 48px rgba(8, 26, 48, 0.28);
+	box-shadow: var(--tl-shadow-panel);
 	color: var(--tl-ink);
 	overflow: hidden;
 }

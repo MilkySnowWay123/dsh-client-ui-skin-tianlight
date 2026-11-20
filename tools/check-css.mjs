@@ -2,7 +2,7 @@
 // the main sheet (20-stylesheet.js) is joined with each feature fragment's
 // `registerTl5Css(String.raw`...`)` block at install time; one broken template string
 // fails silently in the browser, so all blocks are checked here instead.
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const source = readFileSync(fileURLToPath(new URL('../lib/client.js', import.meta.url)), 'utf8')
@@ -57,8 +57,12 @@ for (const char of blanked) {
       // A rule is scoped when it is gated by the skin body attribute. Desktop chrome
       // clearance rules additionally start with the preload's `<html data-windows-titlebar>`
       // and are still gated by body[data-dsh-tianlight] further on.
+      // v2.3.0: the theme-transition pseudo-elements are document-level by nature
+      // (they cannot be scoped to body[data-dsh-tianlight]); the extra check below
+      // proves they only ever ship inside the appearance fragment.
       const scoped = (one) =>
         one.startsWith('body[data-dsh-tianlight]') ||
+        one.startsWith('::view-transition-') ||
         (one.startsWith('html[data-windows-titlebar]') && one.includes('body[data-dsh-tianlight]'))
       for (const selector of head.split(',')) {
         const one = selector.trim()
@@ -75,6 +79,51 @@ for (const char of blanked) {
   }
 }
 expect('all rules scoped to the skin attribute', scopeViolations.length === 0, scopeViolations.slice(0, 5).join(' | '))
+
+// v2.3.0 (4.1.4): the cross-document theme transition may only be declared by the
+// appearance fragment. The pseudo-elements are global, so the fence lives here: the
+// count in the product's CSS must equal the count inside the ONE appearance block
+// (identified by its own toggle selector, not by block order).
+const appearanceCssBlock = blocks.find((block) => block.includes('[data-tl-scheme-menu]')) ?? ''
+const viewTransitionSelectors = [...blanked.matchAll(/(::view-transition-[a-z-]+)(?:\s*\([^)]*\))?/g)].map((match) => match[1])
+expect(
+  'the theme view-transition pseudos live only in the appearance fragment',
+  viewTransitionSelectors.length > 0 &&
+    appearanceCssBlock.includes('::view-transition-') &&
+    appearanceCssBlock.split('::view-transition-').length - 1 === viewTransitionSelectors.length,
+  'found ' + viewTransitionSelectors.length + ' match(es), appearance block has ' + (appearanceCssBlock.split('::view-transition-').length - 1),
+)
+
+// v2.3.0 (4.1.1): every --tl-* token declared in the dark theme block must have a
+// light-theme counterpart in the base block (and vice versa). Runtime variables that
+// JS writes per frame are exempt. A one-sided token is how a light mode ends up with
+// an undefined background.
+const LIGHT_START = blanked.indexOf('body[data-dsh-tianlight] {')
+const DARK_START = blanked.indexOf('body[data-dsh-tianlight][data-ds-dark-theme] {')
+const BLOCK_END = DARK_START < 0 ? -1 : blanked.indexOf('body[data-dsh-tianlight] {', DARK_START + 1)
+const lightTokenBlock = LIGHT_START >= 0 && DARK_START > LIGHT_START ? blanked.slice(LIGHT_START, DARK_START) : ''
+const darkTokenBlock = DARK_START >= 0 && BLOCK_END > DARK_START ? blanked.slice(DARK_START, BLOCK_END) : ''
+const tokenNames = (block) => new Set([...block.matchAll(/(--tl-[a-z0-9-]+)\s*:/g)].map((match) => match[1]))
+const runtimeTokens = new Set([
+  '--tl-day-lift',
+  '--tl-night-lift',
+  '--tl-glass-m',
+  '--tl-look',
+  '--tl-rheo-pos',
+  '--tl-rheo-t',
+  '--tl-flip',
+  '--tl-menu-x',
+  '--tl-menu-y',
+])
+const lightTokens = tokenNames(lightTokenBlock)
+const darkTokens = tokenNames(darkTokenBlock)
+const missingInLight = [...darkTokens].filter((name) => lightTokens.has(name) === false && runtimeTokens.has(name) === false)
+const missingInDark = [...lightTokens].filter((name) => darkTokens.has(name) === false && runtimeTokens.has(name) === false)
+expect(
+  'light and dark token blocks declare the same --tl-* variables',
+  lightTokens.size > 0 && darkTokens.size > 0 && missingInLight.length === 0 && missingInDark.length === 0,
+  'dark-only: ' + missingInLight.join(', ') + ' | light-only: ' + missingInDark.join(', '),
+)
 
 // Declarations that would leak if the body attribute were removed are moot only
 // when the !important token overrides are present.
@@ -101,7 +150,7 @@ expect('reduced-motion guard exists', css.includes('prefers-reduced-motion: redu
 expect('desktop titlebar clearance present', css.includes('--dsh-windows-titlebar-height'))
 expect(
   'both panel fills keep a legibility floor (light + dark)',
-  css.includes('max(0.68, calc(0.62 * var(--tl-glass-m, 1)))') &&
+  css.includes('max(0.74, calc(0.80 * var(--tl-glass-m, 1)))') &&
     css.includes('max(0.96, calc(0.88 * var(--tl-glass-m, 1)))'),
 )
 expect('no unresolved template placeholder', !css.includes('${'))
@@ -224,8 +273,8 @@ expect(
 
 expect(
   'text-bearing glass keeps a legibility floor (bubble >= 0.30; live lowers decorative fill)',
-  css.includes('--tl-glass-fill: rgba(205, 228, 250, calc(0.05 * var(--tl-glass-m, 1)))') &&
-    css.includes('--dsw-specific-bubble: rgba(236, 245, 255, 0.30) !important'),
+  css.includes('--tl-glass-fill: rgba(250, 252, 255, calc(0.52 * var(--tl-glass-m, 1)))') &&
+    css.includes('--dsw-specific-bubble: rgba(236, 245, 255, 0.56) !important'),
 )
 expect(
   'the old white specular is gone (real / soft / frosted hi alpha lowered)',
@@ -234,6 +283,60 @@ expect(
     css.includes('--tl-liquid-hi: 0.16') &&
     css.includes('--tl-liquid-hi: 0.52') === false,
 )
+
+// v2.3.0 (4.1.2): component rules must paint from tokens, not literals. The light
+// theme is a redesign, so a stray `rgba(255,255,255,0.3)` copied into a component
+// rule would survive the token system and break on the other scheme. Existing
+// violations are frozen in tools/css-color-baseline.json; ONLY new ones fail.
+// Regenerate after a deliberate, reviewed change: node tools/check-css.mjs --write-baseline
+const keyframeRanges = [...blanked.matchAll(/@keyframes[^{]*\{[\s\S]*?\}\s*\}/g)].map((match) => [match.index, match.index + match[0].length])
+const insideKeyframes = (index) => keyframeRanges.some(([from, to]) => index >= from && index < to)
+const insideTokenBlocks = (index) => LIGHT_START >= 0 && BLOCK_END > LIGHT_START && index >= LIGHT_START && index < BLOCK_END
+const COLOR_PROPS = /(?:^|;)\s*(box-shadow|background|background-color|background-image|color|border|border-color|border-top-color|border-bottom-color|outline-color|fill|stroke)\s*:\s*([^;]+)/g
+const colorViolations = []
+for (const match of blanked.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+  const selector = match[1].trim().replace(/\s+/g, ' ')
+  if (selector.startsWith('@') || insideKeyframes(match.index) || insideTokenBlocks(match.index)) continue
+  const body = match[2]
+  for (const declaration of body.matchAll(COLOR_PROPS)) {
+    const property = declaration[1]
+    const value = declaration[2].trim()
+    const literals = [...value.matchAll(/#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)/g)].map((entry) => entry[0].toLowerCase().replace(/\s+/g, ''))
+    if (literals.length === 0) continue
+    colorViolations.push(selector + '|' + property + '|' + literals.join(','))
+  }
+}
+const baselinePath = fileURLToPath(new URL('./css-color-baseline.json', import.meta.url))
+const baseline = (() => {
+  try {
+    const parsed = JSON.parse(readFileSync(baselinePath, 'utf8'))
+    return parsed !== null && typeof parsed === 'object' && parsed.colors !== null && typeof parsed.colors === 'object' ? parsed.colors : {}
+  } catch {
+    return null
+  }
+})()
+if (process.argv.includes('--write-baseline')) {
+  const counts = {}
+  for (const key of colorViolations) counts[key] = (counts[key] ?? 0) + 1
+  writeFileSync(baselinePath, JSON.stringify({ note: 'Frozen pre-v2.3.0 literal colours in component rules. Only new entries fail check-css.', colors: counts }, null, 1) + '\n', 'utf8')
+  console.log('wrote ' + Object.keys(counts).length + ' colour baseline entries to ' + baselinePath)
+} else if (baseline === null) {
+  expect('component colour baseline exists (run --write-baseline once)', false, baselinePath)
+} else {
+  const counts = {}
+  for (const key of colorViolations) counts[key] = (counts[key] ?? 0) + 1
+  const added = []
+  for (const key of Object.keys(counts)) {
+    if ((baseline[key] ?? 0) < counts[key]) added.push(key)
+  }
+  const removed = Object.keys(baseline).filter((key) => (counts[key] ?? 0) === 0)
+  expect(
+    'no NEW literal colours in component rules (token-only painting)',
+    added.length === 0,
+    added.slice(0, 6).join(' | '),
+  )
+  if (removed.length > 0) console.log('NOTE  ' + removed.length + ' frozen colour baseline entr(ies) are gone; refresh with --write-baseline')
+}
 
 console.log('\nCSS blocks: ' + blocks.length + ', total ' + css.length + ' chars')
 console.log(failures === 0 ? 'ALL CSS CHECKS PASSED' : failures + ' CSS CHECK(S) FAILED')

@@ -62,7 +62,18 @@ if (unused.length === 0) report('PASS', 'every declared --tl-* variable is used'
 else report('WARN', 'declared but never used: ' + unused.join(', '))
 
 // Variables the runtime supplies from JavaScript rather than the stylesheet.
-const JS_PROVIDED = new Set(['--tl-focal-x', '--tl-look', '--tl-rheo-pos', '--tl-rheo-t'])
+const JS_PROVIDED = new Set([
+  '--tl-focal-x',
+  '--tl-look',
+  '--tl-rheo-pos',
+  '--tl-rheo-t',
+  // v2.3.0: written on <body> by the appearance sampler (luminance-driven fog/veil).
+  '--tl-day-lift',
+  '--tl-night-lift',
+  // v2.3.0: written inline on the scheme menu element for placement.
+  '--tl-menu-x',
+  '--tl-menu-y',
+])
 const missing = [...used].filter((name) => !declared.has(name) && !JS_PROVIDED.has(name))
 if (missing.length === 0) report('PASS', 'every referenced --tl-* variable is declared')
 else report('FAIL', 'used but never declared: ' + missing.join(', '))
@@ -542,7 +553,7 @@ report(
 )
 report(
   Array.isArray(skinManifest.dshCompatibilityTested) &&
-    ['0.2.0-rc.2', '0.2.1-rc.5', '0.2.2-rc.1'].every((version) => skinManifest.dshCompatibilityTested.includes(version)) &&
+    ['0.2.0-rc.2', '0.2.1-rc.5', '0.2.2-rc.1', '0.2.2-rc.5'].every((version) => skinManifest.dshCompatibilityTested.includes(version)) &&
     skinManifest.dshCompatibilityRange === DSH_COMPAT_RANGE &&
     packageManifest.engines?.dsh === DSH_COMPAT_RANGE &&
     OFFICIAL_PEER_PACKAGES.every((name) => packageManifest.peerDependencies?.[name] === DSH_COMPAT_RANGE)

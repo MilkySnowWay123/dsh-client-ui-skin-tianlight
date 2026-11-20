@@ -1971,6 +1971,9 @@
 				apply: (choice) => {
 					saveWallpaperChoice(choice);
 					applyWallpaper(choice);
+					// v2.3.0: the appearance module samples the new wallpaper's luminance (fog
+					// / night veil) after a pick — once, throttled, never per video frame.
+					if (typeof tl5WallpaperApplied === "function") tl5WallpaperApplied();
 				},
 				/** Re-run the CURRENT source without touching the saved choice. */
 				reload: () => {

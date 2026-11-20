@@ -489,6 +489,21 @@ body[data-dsh-tianlight] .tl-fx-readout {
 
 			let accentRgb = { r: 127, g: 182, b: 255 };
 			let accentReadAt = -10000;
+			// v2.3.0: particle colours follow the scheme. The tokens are read on install and
+			// on a scheme flip only (getComputedStyle is a layout read, never per frame).
+			let particleRgb = { rain: "196,218,255", snow: "255,255,255" };
+			let particleEdge = "transparent";
+			const refreshParticlePalette = () => {
+				const dark = typeof tl5Scheme === "function" ? tl5Scheme() === "dark" : true;
+				particleRgb = {
+					rain: tl5ThemeCssVar("--tl-particle-rain-rgb", dark ? "196,218,255" : "120,150,190"),
+					snow: tl5ThemeCssVar("--tl-particle-snow-rgb", dark ? "255,255,255" : "214,228,244"),
+				};
+				particleEdge = tl5ThemeCssVar("--tl-particle-snow-edge", "transparent");
+			};
+			refreshParticlePalette();
+			const disposeParticleScheme =
+				typeof tl5OnScheme === "function" ? tl5OnScheme(() => refreshParticlePalette()) : () => {};
 
 			let pointerMoveBound = false;
 			let pointerDownBound = false;
@@ -819,7 +834,7 @@ body[data-dsh-tianlight] .tl-fx-readout {
 							particle.x = Math.random() * (canvasW + 120);
 						}
 						if (particle.x < -24) particle.x = canvasW + 24;
-						ctx.strokeStyle = "rgba(196, 218, 255, " + particle.alpha.toFixed(3) + ")";
+						ctx.strokeStyle = "rgba(" + particleRgb.rain + ", " + particle.alpha.toFixed(3) + ")";
 						ctx.lineWidth = 1;
 						ctx.beginPath();
 						ctx.moveTo(particle.x, particle.y);
@@ -836,10 +851,17 @@ body[data-dsh-tianlight] .tl-fx-readout {
 						}
 						if (particle.x < -8) particle.x = canvasW + 8;
 						else if (particle.x > canvasW + 8) particle.x = -8;
-						ctx.fillStyle = "rgba(255, 255, 255, " + particle.alpha.toFixed(3) + ")";
+						ctx.fillStyle = "rgba(" + particleRgb.snow + ", " + particle.alpha.toFixed(3) + ")";
 						ctx.beginPath();
 						ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
 						ctx.fill();
+						// Light mode: a faint cool outline keeps white snowflakes visible on the
+						// bright「晴空」fog. The dark theme token is transparent, so nothing moves.
+						if (particleEdge !== "transparent" && particleEdge !== "") {
+							ctx.strokeStyle = particleEdge;
+							ctx.lineWidth = 0.6;
+							ctx.stroke();
+						}
 						continue;
 					}
 					particle.y -= particle.speed * dt;
@@ -1147,6 +1169,11 @@ body[data-dsh-tianlight] .tl-fx-readout {
 				stopLoop();
 				clearRetry();
 				unsubscribe();
+				try {
+					disposeParticleScheme();
+				} catch {
+					// the shared observer may already be gone
+				}
 				detachPointerListeners();
 				detachClickListeners();
 				window.removeEventListener("resize", onResize);

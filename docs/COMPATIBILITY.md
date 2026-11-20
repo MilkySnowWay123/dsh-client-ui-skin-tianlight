@@ -16,16 +16,16 @@
 |---|---|
 | 支持范围 | `>=0.2.0-rc.1 <0.2.1-0 \|\| >=0.2.1-0 <0.2.2-0 \|\| >=0.2.2-0 <0.3.0-0`（同一串写进三处，见 §1b；0.2.x 的正式/rc/alpha 均放行，**0.3.x 起被拦下**） |
 | 0.3 决定 | **放弃预适配（2026-11-16）**：0.3 段已收回，0.3.x 重新被门禁拦下——没在真实 0.3 build 上验证过的范围不放开。差异表、检查清单、`guide-diff` 预警**保留**在 `docs/COMPAT-0.3.0.md`，等 0.3.0 真发布按清单验过再放开（见 §10.1） |
-| 管理器展示值 | `dshCompatibility: "0.2.2rc3"`（skin-manager 只接受 `/^\d+\.\d+\.\d+rc\d+$/` 单串；它会安全忽略 `dshCompatibilityRange`） |
-| 实测版本 | 0.2.0-rc.2 · 0.2.1-rc.3（历史 Desktop）· 0.2.1-rc.5（npm 运行时）· 0.2.2-rc.1（npm + Desktop）· 0.2.2-rc.2 / 0.2.2-rc.3（Desktop，作者机） |
+| 管理器展示值 | `dshCompatibility: "0.2.2rc5"`（skin-manager 只接受 `/^\d+\.\d+\.\d+rc\d+$/` 单串；它会安全忽略 `dshCompatibilityRange`） |
+| 实测版本 | 0.2.0-rc.2 · 0.2.1-rc.3（历史 Desktop）· 0.2.1-rc.5（npm 运行时）· 0.2.2-rc.1（npm + Desktop）· 0.2.2-rc.2 / 0.2.2-rc.3 / **0.2.2-rc.5**（Desktop，作者机） |
 | 不承诺 | 0.3.x 及以后（0.3 资料已备，但范围未开放） |
 
 `skin.json` 同时提供只读信息字段（skin-manager 会安全忽略未知字段）：
 
 ```json
-"dshCompatibility": "0.2.2rc3",
+"dshCompatibility": "0.2.2rc5",
 "dshCompatibilityRange": ">=0.2.0-rc.1 <0.2.1-0 || >=0.2.1-0 <0.2.2-0 || >=0.2.2-0 <0.3.0-0",
-"dshCompatibilityTested": ["0.2.0-rc.2", "0.2.1-rc.3", "0.2.1-rc.5", "0.2.2-rc.1", "0.2.2-rc.2", "0.2.2-rc.3"],
+"dshCompatibilityTested": ["0.2.0-rc.2", "0.2.1-rc.3", "0.2.1-rc.5", "0.2.2-rc.1", "0.2.2-rc.2", "0.2.2-rc.3", "0.2.2-rc.5"],
 "version": "2.0.1"
 ```
 
@@ -537,6 +537,25 @@ npm run check   # 静态链，CI 同款
   [PASS] #root visible after the film
   [PASS] no console error from this plugin  ->  0 console call(s) total
 smoke: PASS
+```
+
+### 10.4b 0.2.2-rc.3 → 0.2.2-rc.5（v2.3.0 实测）
+
+rc.5 的客户端 UI 包与 rc.3 **除版本号外完全相同**（76 个 `dsh-client-*` 包逐文件比对），
+Desktop 壳（`lib/main.js`、preload、`shell-theme.js`、`window-material.css`）也没有改动；
+唯一的产品行为变化是 `dsh-llm` 新增错误码 `CONTENT_REFUSED`（内容安全拒答），天光在
+`lib/pet-chat.js` 里把它映射成稳定的 `refused`（HTTP 422，丢弃半截回答），另有
+`dsh-client-ui-settings-web-search` 新增「自动选择」下拉。
+
+本地实测（2026-11-20，Desktop 0.2.2-rc.5，从安装包 `app.asar` 解出的完整包树）：
+
+```
+node tools/compat-matrix.mjs --dsh <rc.5 @deepseek-ai>   -> COMPATIBLE（89 个 bundle；
+                                                            slot + product-data + class-segments 三层齐全）
+node tools/hook-scan.mjs --self-check                     -> all bridge hooks present
+node tools/upgrade-check.mjs                              -> all upgrade assumptions hold
+node tools/smoke-dsh.mjs --dsh <rc.5 @deepseek-ai>        -> 见发版说明（本机沙箱内 Chrome 受限时以
+                                                            compat/hook/upgrade 三项 + Desktop 手动验收为准）
 ```
 
 ### 10.5 发现 0.3 预发布版之后（0.3 是拦下的，所以这是"放开"的流程）

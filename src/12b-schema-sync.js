@@ -19,6 +19,8 @@
 			{ key: "tianlight.context", repair: repairJsonObjectSetting },
 			{ key: "tianlight.legibility", repair: repairJsonObjectSetting },
 			{ key: "tianlight.transition", repair: repairJsonObjectSetting },
+			// v2.3.0: appearance model (follow / light / dark / sky + per-mode wallpapers).
+			{ key: TL5_APPEARANCE_KEY, repair: repairAppearanceSetting },
 			{ key: TL5_SYNC_REVISION_KEY, repair: repairSyncRevisionSetting },
 		];
 

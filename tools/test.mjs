@@ -4612,6 +4612,8 @@ await testAsync('pet chat bridge: provider failure codes map to the stable compa
     ['TIMEOUT', 'timeout'],
     ['NO_ADAPTER', 'unconfigured-model'],
     ['UNKNOWN_MODEL', 'unconfigured-model'],
+    // v2.3.0 / DSH 0.2.2-rc.5: the content-safety refusal is its own companion code.
+    ['CONTENT_REFUSED', 'refused'],
     ['SOMETHING_NEW', 'llm-error'],
   ]
   for (const [rawCode, expected] of cases) {
@@ -4628,7 +4630,219 @@ await testAsync('pet chat bridge: provider failure codes map to the stable compa
     assert.equal(response.bodyJson().code, expected, rawCode)
   }
   assert.equal(mapProviderFailureCode('INVALID_MODEL_MAX_TOKENS'), 'unconfigured-model')
+  assert.equal(mapProviderFailureCode('CONTENT_REFUSED'), 'refused')
   assert.equal(mapProviderFailureCode(undefined), 'llm-error')
+})
+
+await testAsync('pet chat bridge: a CONTENT_REFUSED finish is terminal and carries no partial text', async () => {
+  // The adapter may have streamed half a reply before the refusal. The page must never
+  // receive that half: the response is { ok:false, code:'refused' } with HTTP 422 (not
+  // 502 — a safety refusal is not a gateway failure).
+  const { service } = fakeLlmService({
+    stream: () =>
+      (async function* () {
+        yield { type: 'text-delta', index: 0, text: '半截回答' }
+        yield { type: 'finish', reason: { kind: 'error', failure: { code: 'CONTENT_REFUSED' } } }
+      })(),
+  })
+  const response = await callPetChat(createPetChat().handle, petChatContext(service), { body: JSON.stringify({ text: '敏感话题' }) })
+  assert.equal(response.status, 422, 'a refusal is 422, not 502')
+  assert.deepEqual(Object.keys(response.bodyJson()).sort(), ['code', 'ok'], 'the refusal body carries exactly {ok,code}')
+  assert.equal(response.bodyJson().ok, false)
+  assert.equal(response.bodyJson().code, 'refused')
+  assert.equal('text' in response.bodyJson(), false, 'the partial answer is discarded')
+  assert.equal(PET_CHAT_CODES.REFUSED, 'refused')
+})
+
+const FONT_SIZE_WRITER_SOURCE = (() => {
+  const start = CLIENT_SOURCE.indexOf('function tl5WriteFontSize(')
+  const end = CLIENT_SOURCE.indexOf('function tl5ThemeFontSize(')
+  assert.ok(start > 0, 'the client ships one font-size writer')
+  assert.ok(end > start, 'the writer precedes the seed reader')
+  return CLIENT_SOURCE.slice(start, end)
+})()
+
+const loadFontSizeWriter = () =>
+  new Function('note', FONT_SIZE_WRITER_SOURCE + '\nreturn tl5WriteFontSize;')(() => {})
+
+test('typography: setFontSize uses the 0.2.1+ (role, px) signature and adapts to old hosts', () => {
+  const write = loadFontSizeWriter()
+  // 0.2.1+ / 0.2.2 / rc.5: setFontSize(role, px) — two declared parameters.
+  const modern = []
+  assert.equal(write({ setFontSize: (role, px) => modern.push([role, px]) }, 15), true)
+  assert.deepEqual(modern, [['text', 15]], 'the modern signature receives ("text", 15)')
+  // 0.2.0: setFontSize(px) — one declared parameter.
+  const legacy = []
+  assert.equal(write({ setFontSize: (px) => legacy.push(px) }, 15), true)
+  assert.deepEqual(legacy, [15], 'the legacy signature receives (15)')
+  // Sizes are integers clamped to the product range 10..22.
+  const clamped = []
+  assert.equal(write({ setFontSize: (role, px) => clamped.push([role, px]) }, 9.6), true)
+  assert.deepEqual(clamped, [['text', 10]], '9.6 rounds and clamps to the 10..22 range')
+  const high = []
+  assert.equal(write({ setFontSize: (role, px) => high.push([role, px]) }, 40), true)
+  assert.deepEqual(high, [['text', 22]])
+  // A missing or unusable service degrades instead of throwing.
+  assert.equal(write(null, 15), false)
+  assert.equal(write(undefined, 15), false)
+  assert.equal(write({}, 15), false)
+  assert.equal(
+    write(
+      {
+        setFontSize: () => {
+          throw new Error('nope')
+        },
+      },
+      15,
+    ),
+    false,
+    'a throwing host is reported, not propagated',
+  )
+})
+
+// ---- v2.3.0 appearance model: pure helpers extracted from the product ----------
+// The helpers are top-level function declarations inside the single factory closure,
+// so each one can be sliced by name and evaluated with the couple of stubs it reads.
+const appearanceHelperSource = (name) => {
+  const start = CLIENT_SOURCE.indexOf('function ' + name + '(')
+  assert.ok(start > 0, name + ' is present in the product')
+  const rest = CLIENT_SOURCE.slice(start + 1)
+  const endMatch = /\n\t\t(?:\/\/#region|function |const |let |\/\*\*)/.exec(rest)
+  assert.ok(endMatch !== null, 'cannot find the end of ' + name)
+  return CLIENT_SOURCE.slice(start, start + 1 + endMatch.index)
+}
+const appearanceConstSource = (name) => {
+  const match = new RegExp('const ' + name + ' = [^;]+;').exec(CLIENT_SOURCE)
+  assert.ok(match !== null, name + ' is declared')
+  return match[0]
+}
+const loadAppearanceHelpers = () => {
+  const source = [
+    appearanceConstSource('TL5_APPEARANCE_MODES'),
+    appearanceConstSource('TL5_APPEARANCE_SKY_SOURCES'),
+    appearanceConstSource('TL5_APPEARANCE_TRANSITIONS'),
+    appearanceConstSource('TL5_APPEARANCE_CLOCK_DEFAULTS'),
+    appearanceConstSource('APPEARANCE_SELF_WRITE_WINDOW_MS'),
+    appearanceHelperSource('tl5IsClockTime'),
+    appearanceHelperSource('tl5AppearanceDefaults'),
+    appearanceHelperSource('normalizeAppearanceValue'),
+    appearanceHelperSource('appearanceClockMinutes'),
+    appearanceHelperSource('appearanceFormatClock'),
+    appearanceHelperSource('appearanceMinuteOfDay'),
+    appearanceHelperSource('appearanceSkyWindow'),
+    appearanceHelperSource('appearanceBoundariesForDay'),
+    appearanceHelperSource('appearanceSchemeNow'),
+    appearanceHelperSource('appearanceNextBoundary'),
+    appearanceHelperSource('appearanceFogLift'),
+    appearanceHelperSource('appearanceNightLift'),
+    appearanceHelperSource('appearanceConflictDecision'),
+  ].join('\n')
+  return new Function(
+    'tl5IsPlainObject',
+    'tl5Json',
+    source +
+      '\nreturn { tl5AppearanceDefaults, normalizeAppearanceValue, appearanceSkyWindow, appearanceSchemeNow, appearanceNextBoundary, appearanceFogLift, appearanceNightLift, appearanceConflictDecision, tl5IsClockTime };',
+  )(
+    (value) => value !== null && typeof value === 'object' && Array.isArray(value) === false,
+    (value) => JSON.stringify(value),
+  )
+}
+
+test('appearance: the stored model repairs to canonical follow/light/dark/sky', () => {
+  const model = loadAppearanceHelpers()
+  const defaults = model.tl5AppearanceDefaults()
+  assert.deepEqual(defaults, {
+    v: 1,
+    mode: 'follow',
+    sky: { source: 'auto', lightAt: '06:30', darkAt: '18:30' },
+    transition: 'reveal',
+    wallpapers: { light: null, dark: null },
+  })
+  assert.deepEqual(model.normalizeAppearanceValue(null), defaults)
+  assert.deepEqual(model.normalizeAppearanceValue('broken'), defaults)
+  // Invalid fields fall back one by one; valid ones survive.
+  const repaired = model.normalizeAppearanceValue({
+    v: 9,
+    mode: 'auto',
+    sky: { source: 'moon', lightAt: '25:99', darkAt: '18:05' },
+    transition: 'zoom',
+    wallpapers: { light: '  night.png  ', dark: 42 },
+  })
+  assert.equal(repaired.mode, 'follow', 'unknown mode falls back to follow')
+  assert.equal(repaired.sky.source, 'auto', 'unknown sky source falls back to auto')
+  assert.equal(repaired.sky.lightAt, '06:30', 'malformed clock falls back')
+  assert.equal(repaired.sky.darkAt, '18:05', 'valid clock survives')
+  assert.equal(repaired.transition, 'reveal', 'unknown transition falls back')
+  assert.deepEqual(repaired.wallpapers, { light: 'night.png', dark: null })
+  assert.equal(repaired.v, 1, 'the schema version is always 1')
+  assert.equal(model.tl5IsClockTime('00:00'), true)
+  assert.equal(model.tl5IsClockTime('23:59'), true)
+  assert.equal(model.tl5IsClockTime('24:00'), false)
+  assert.equal(model.tl5IsClockTime('7:05'), false)
+})
+
+test('appearance: 随天光 follows the sun, falls back to the clock and crosses midnight', () => {
+  const model = loadAppearanceHelpers()
+  const sun = { sunrise: 6 * 60 + 41, sunset: 17 * 60 + 58 } // 06:41 / 17:58
+  const sky = { source: 'auto', lightAt: '06:30', darkAt: '18:30' }
+  const at = (hours, minutes) => new Date(2026, 10, 20, hours, minutes, 0, 0).getTime()
+  // Sunrise is the light boundary, sunset the dark one.
+  const window = model.appearanceSkyWindow(sun, sky)
+  assert.deepEqual(window, { light: 401, dark: 1078, source: 'sun' })
+  assert.equal(model.appearanceSchemeNow(at(6, 40), sun, sky), 'dark', 'before sunrise is night')
+  assert.equal(model.appearanceSchemeNow(at(6, 42), sun, sky), 'light', 'after sunrise is day')
+  assert.equal(model.appearanceSchemeNow(at(17, 57), sun, sky), 'light')
+  assert.equal(model.appearanceSchemeNow(at(17, 59), sun, sky), 'dark')
+  assert.equal(model.appearanceSchemeNow(at(23, 0), sun, sky), 'dark')
+  // Next boundary instants.
+  const first = model.appearanceNextBoundary(at(6, 40), sun, sky)
+  assert.equal(first.minutes, 401)
+  assert.equal(first.scheme, 'light')
+  assert.equal(first.at, at(6, 41))
+  const second = model.appearanceNextBoundary(at(6, 42), sun, sky)
+  assert.equal(second.minutes, 1078)
+  assert.equal(second.scheme, 'dark')
+  const afterSunset = model.appearanceNextBoundary(at(17, 59), sun, sky)
+  assert.equal(afterSunset.minutes, 401, 'after sunset the next boundary is tomorrow sunrise')
+  assert.equal(afterSunset.at, new Date(2026, 10, 21, 6, 41).getTime())
+  // No annualised location -> the user's manual clock, and a cross-midnight window still
+  // alternates (22:00 light, 06:00 dark).
+  const clockSky = { source: 'auto', lightAt: '22:00', darkAt: '06:00' }
+  assert.deepEqual(model.appearanceSkyWindow(null, clockSky), { light: 1320, dark: 360, source: 'clock' })
+  assert.equal(model.appearanceSchemeNow(at(23, 30), null, clockSky), 'light')
+  assert.equal(model.appearanceSchemeNow(at(3, 0), null, clockSky), 'light')
+  assert.equal(model.appearanceSchemeNow(at(7, 0), null, clockSky), 'dark')
+  const cross = model.appearanceNextBoundary(at(23, 30), null, clockSky)
+  assert.equal(cross.minutes, 360)
+  assert.equal(cross.scheme, 'dark')
+  assert.equal(cross.at, new Date(2026, 10, 21, 6, 0).getTime())
+  // `auto` without sun times (no location / fetch failed) is exactly the clock fallback.
+  assert.deepEqual(model.appearanceSkyWindow(null, sky), { light: 390, dark: 1110, source: 'clock' })
+})
+
+test('appearance: fog/night lift formulas and the DSH-conflict rule', () => {
+  const model = loadAppearanceHelpers()
+  // 晨雾: bright wallpaper needs none; a very dark one ramps to 1; unknown is mid.
+  assert.equal(model.appearanceFogLift(0.8), 0)
+  assert.equal(model.appearanceFogLift(0.42), 0)
+  assert.equal(model.appearanceFogLift(0.1), 1)
+  assert.equal(model.appearanceFogLift(0), 1)
+  assert.equal(model.appearanceFogLift(null), 0.55)
+  assert.equal(model.appearanceFogLift(undefined), 0.55)
+  assert.ok(Math.abs(model.appearanceFogLift(0.26) - 0.5) < 1e-9, 'midpoint is half fog')
+  // 夜雾: asymmetric — mid/dark wallpapers must stay pixel-identical (lift 0).
+  assert.equal(model.appearanceNightLift(0.2), 0)
+  assert.equal(model.appearanceNightLift(0.38), 0)
+  assert.equal(model.appearanceNightLift(0.68), 1)
+  assert.equal(model.appearanceNightLift(null), 0)
+  assert.ok(Math.abs(model.appearanceNightLift(0.53) - 0.5) < 1e-9, 'midpoint is half night veil')
+  // Conflict rule: our own write is ignored, a DSH-side edit switches to follow.
+  const decide = model.appearanceConflictDecision
+  assert.equal(decide('follow', 'dark', { target: 'dark', at: 100 }, 200), 'ignore', 'follow never fights anyone')
+  assert.equal(decide('dark', 'dark', { target: 'dark', at: 100 }, 200), 'ignore', 'our own write')
+  assert.equal(decide('dark', 'light', { target: 'dark', at: 100 }, 200), 'follow', 'external edit')
+  assert.equal(decide('dark', 'dark', { target: 'dark', at: 100 }, 100 + 1501), 'follow', 'a stale self-write is not ours')
+  assert.equal(decide('sky', 'system', { target: 'light', at: 100 }, 200), 'follow', 'following the system is an external edit')
 })
 
 await testAsync('pet chat bridge: missing or unusable Host services degrade to stable codes', async () => {
@@ -4778,9 +4992,12 @@ test('DSH compatibility range matches 0.2.0/0.2.1/0.2.2 stable and prerelease bu
     assert.equal(satisfies(version, DSH_COMPAT_RANGE), true, version + ' must match (plain semver)')
     assert.equal(satisfies(version, DSH_COMPAT_RANGE, { includePrerelease: true }), true, version + ' must match (harness includePrerelease)')
   }
-  for (const version of ['0.2.0-rc.2', '0.2.1-alpha.1', '0.2.1-rc.5', '0.2.2-rc.1', '0.2.2']) {
+  for (const version of ['0.2.0-rc.2', '0.2.1-alpha.1', '0.2.1-rc.5', '0.2.2-rc.1', '0.2.2', '0.2.2-rc.5']) {
     assert.equal(satisfies(version, DSH_COMPAT_RANGE), true, version + ' must match')
   }
+  // v2.3.0: the author machine's Desktop build is listed as measured.
+  assert.ok(SKIN_MANIFEST.dshCompatibilityTested.includes('0.2.2-rc.5'), 'skin.json lists the measured rc.5')
+  assert.equal(SKIN_MANIFEST.dshCompatibility, '0.2.2rc5', 'the manager-facing single string covers rc.5')
 })
 
 test('DSH compatibility range blocks 0.3.x and later (0.3 support dropped, materials kept)', () => {
@@ -4831,6 +5048,9 @@ test('default appearance keeps only appearance keys and points the wallpaper at 
     'tianlight.glass',
     'tianlight.glassDepth',
     'tianlight.glassLive',
+    // v2.3.0: «restore default appearance» must return the mode selector to follow, so
+    // the appearance model is part of the author default.
+    'tianlight.appearance',
     'tianlight.font.family',
     'tianlight.effects',
     'tianlight.context',
@@ -5816,7 +6036,11 @@ await testAsync('weather proxy: coordinates are validated, bounded and the host 
   assert.equal(coordinate('1'.repeat(40), 90), null, 'over-long input is rejected before Number()')
   assert.equal(coordinate(31.2, 90), null, 'non-strings are rejected')
   const path = forecastPath('31.2304', '121.4737')
-  assert.match(path, /^\/v1\/forecast\?latitude=31\.2304&longitude=121\.4737&current=.*&timezone=auto$/)
+  // v2.3.0: the appearance scheduler reads sunrise/sunset from the SAME forecast request.
+  assert.match(
+    path,
+    /^\/v1\/forecast\?latitude=31\.2304&longitude=121\.4737&current=.*&timezone=auto&daily=sunrise,sunset&forecast_days=1$/,
+  )
   assert.equal(path.includes('http'), false, 'the path is relative; the host is supplied by the module')
   assert.equal(forecastPath('1&x=2', '3').includes('&x=2'), false, 'a coordinate cannot inject a query parameter')
 })

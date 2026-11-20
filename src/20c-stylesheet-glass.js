@@ -391,10 +391,9 @@ body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-eff
 	background-color: var(--tl-glass-tint) !important;
 	background-image: var(--tl-glass-sheen) !important;
 	border-color: transparent !important;
-	box-shadow:
-		inset 0 1px 1px rgba(255, 255, 255, 0.18),
-		inset 0 -1px 1px rgba(0, 0, 0, 0.06),
-		0 8px 32px rgba(0, 0, 0, 0.12) !important;
+	/* v2.3.0: one shadow token per theme (the dark value is the shipped v2.2.x recipe
+	   verbatim, so the dark pixels do not move). */
+	box-shadow: var(--tl-glass-shadow) !important;
 }
 body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) [data-tl-sidebar-col] {
 	/* Anchor for ::before/::after. position:relative alone does NOT change the
@@ -415,12 +414,6 @@ body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-eff
 	   product-owned layers with their own fixed children, so they never gain a blur. */
 	background-color: var(--tl-glass-tint-menu) !important;
 	border-color: transparent !important;
-}
-body[data-dsh-tianlight][data-ds-dark-theme]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-sidebar-col], [data-tl-wall], [data-tl-settings], [data-tl-hub] [data-tl-hub-panel], [data-tl-menu], [data-tl-composer]) {
-	box-shadow:
-		inset 0 1px 1px rgba(255, 255, 255, 0.10),
-		inset 0 -1px 1px rgba(0, 0, 0, 0.10),
-		0 8px 32px rgba(0, 0, 0, 0.35) !important;
 }
 body[data-dsh-tianlight][data-tl-glass-effective="frosted"] :is([data-tl-sidebar-col], [data-tl-wall], [data-tl-settings], [data-tl-hub] [data-tl-hub-panel], [data-tl-composer]) {
 	background-image: var(--tl-liquid-grain-image), var(--tl-glass-sheen) !important;
@@ -503,13 +496,15 @@ body[data-dsh-tianlight][data-tl-render-tier="15"] :is([data-tl-sidebar-col], [d
 /* Small floating controls keep their existing compact glass. They are host-blurred
    today; the low-power rule above removes that blur. At real depth the two existing
    pills use the same saturation as the panels. */
-body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-model], [data-tl-rheo][data-tl-rheo-empty], [data-tl-new-chat], [data-tl-weather-chip], [data-tl-glass-preview]) {
+body[data-dsh-tianlight]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-model], [data-tl-rheo][data-tl-rheo-empty], [data-tl-new-chat], [data-tl-weather-chip], [data-tl-glass-preview], [data-tl-scheme-toggle]) {
 	border-color: transparent !important;
+	/* v2.3.0: the light pill takes the cool float shadow + white top highlight; the dark
+	   override below keeps its shipped values. */
 	box-shadow:
-		inset 0 1px 1px rgba(255, 255, 255, 0.16),
-		0 6px 20px rgba(0, 0, 0, 0.14) !important;
+		var(--tl-pill-inset),
+		var(--tl-shadow-float) !important;
 }
-body[data-dsh-tianlight][data-ds-dark-theme]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-model], [data-tl-rheo][data-tl-rheo-empty], [data-tl-new-chat], [data-tl-weather-chip], [data-tl-glass-preview]) {
+body[data-dsh-tianlight][data-ds-dark-theme]:is([data-tl-glass-effective="soft"], [data-tl-glass-effective="frosted"], [data-tl-glass-effective="real"]) :is([data-tl-model], [data-tl-rheo][data-tl-rheo-empty], [data-tl-new-chat], [data-tl-weather-chip], [data-tl-glass-preview], [data-tl-scheme-toggle]) {
 	box-shadow:
 		inset 0 1px 1px rgba(255, 255, 255, 0.10),
 		0 6px 20px rgba(0, 0, 0, 0.30) !important;

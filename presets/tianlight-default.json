@@ -10,6 +10,7 @@
     "tianlight.glass": "0.98",
     "tianlight.glassDepth": "off",
     "tianlight.glassLive": "0",
+    "tianlight.appearance": "{\"v\":1,\"mode\":\"follow\",\"sky\":{\"source\":\"auto\",\"lightAt\":\"06:30\",\"darkAt\":\"18:30\"},\"transition\":\"reveal\",\"wallpapers\":{\"light\":null,\"dark\":null}}",
     "tianlight.font.family": "{\"size\":14,\"ui\":\"system\",\"code\":\"system\",\"weight\":\"normal\",\"lead\":\"normal\",\"track\":\"normal\"}",
     "tianlight.effects": "{\"enabled\":true,\"parallax\":false,\"parallaxStrength\":0.4,\"click\":false,\"clickStyle\":\"ripple\",\"ambience\":\"none\",\"ambienceDensity\":0.5,\"transition\":\"fade\",\"transitionMs\":600,\"budget\":\"auto\"}",
     "tianlight.context": "{\"enabled\":true,\"timeOfDay\":false,\"manualPeriod\":\"auto\",\"focusLink\":false,\"focusDim\":40,\"focusBlur\":6,\"adaptive\":true,\"adaptiveLocked\":false}",

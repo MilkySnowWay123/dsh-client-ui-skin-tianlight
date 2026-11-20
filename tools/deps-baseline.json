@@ -3,20 +3,20 @@
   "generator": "tools/deps.mjs",
   "note": "Reviewed cross-fragment top-level references. Regenerate deliberately with `node tools/deps.mjs`; `npm run check` fails on any reference missing here.",
   "totals": {
-    "fragments": 43,
-    "declarations": 1216,
-    "declarationSites": 1216,
-    "references": 675,
-    "referenceOccurrences": 3543,
-    "edges": 175,
-    "unused": 2
+    "fragments": 44,
+    "declarations": 1347,
+    "declarationSites": 1347,
+    "references": 724,
+    "referenceOccurrences": 3708,
+    "edges": 187,
+    "unused": 3
   },
   "references": [
     {
       "from": "11-platform.js",
-      "name": "note",
+      "name": "DARK_ATTR",
       "declaredIn": "10-constants.js",
-      "count": 5
+      "count": 2
     },
     {
       "from": "11-platform.js",
@@ -71,6 +71,12 @@
       "name": "registerSchemaStrings",
       "declaredIn": "12-schema.js",
       "count": 2
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "repairAppearanceSetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
     },
     {
       "from": "12b-schema-sync.js",
@@ -184,6 +190,12 @@
       "from": "12b-schema-sync.js",
       "name": "STORAGE_KEY",
       "declaredIn": "10-constants.js",
+      "count": 1
+    },
+    {
+      "from": "12b-schema-sync.js",
+      "name": "TL5_APPEARANCE_KEY",
+      "declaredIn": "12-schema.js",
       "count": 1
     },
     {
@@ -788,6 +800,12 @@
     },
     {
       "from": "30b-wallpaper-scene.js",
+      "name": "tl5WallpaperApplied",
+      "declaredIn": "56-appearance.js",
+      "count": 2
+    },
+    {
+      "from": "30b-wallpaper-scene.js",
       "name": "transitionController",
       "declaredIn": "31-engine-extra.js",
       "count": 4
@@ -992,6 +1010,24 @@
     },
     {
       "from": "32-effects.js",
+      "name": "tl5OnScheme",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "32-effects.js",
+      "name": "tl5Scheme",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "32-effects.js",
+      "name": "tl5ThemeCssVar",
+      "declaredIn": "11-platform.js",
+      "count": 3
+    },
+    {
+      "from": "32-effects.js",
       "name": "useTl5I18n",
       "declaredIn": "13-i18n.js",
       "count": 1
@@ -1028,12 +1064,6 @@
     },
     {
       "from": "35-context.js",
-      "name": "note",
-      "declaredIn": "10-constants.js",
-      "count": 18
-    },
-    {
-      "from": "35-context.js",
       "name": "React",
       "declaredIn": "10-constants.js",
       "count": 62
@@ -1066,7 +1096,7 @@
       "from": "35-context.js",
       "name": "TL_T",
       "declaredIn": "13-i18n.js",
-      "count": 47
+      "count": 57
     },
     {
       "from": "35-context.js",
@@ -1078,7 +1108,7 @@
       "from": "35-context.js",
       "name": "tl5Diag",
       "declaredIn": "11-platform.js",
-      "count": 3
+      "count": 4
     },
     {
       "from": "35-context.js",
@@ -2563,10 +2593,178 @@
       "count": 1
     },
     {
+      "from": "56-appearance.js",
+      "name": "listWallpapers",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "normalizeAppearanceValue",
+      "declaredIn": "12-schema.js",
+      "count": 2
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "readAppearanceSetting",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "readSplashForceMotion",
+      "declaredIn": "59-splash.js",
+      "count": 2
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "readWallpaperChoice",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "registerTl5Css",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "registerTl5Shortcut",
+      "declaredIn": "95-a11y.js",
+      "count": 2
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "registerTl5Strings",
+      "declaredIn": "13-i18n.js",
+      "count": 1
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "TL_T",
+      "declaredIn": "13-i18n.js",
+      "count": 12
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "TL5_APPEARANCE_CLOCK_DEFAULTS",
+      "declaredIn": "12-schema.js",
+      "count": 2
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "TL5_APPEARANCE_KEY",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "TL5_APPEARANCE_MODES",
+      "declaredIn": "12-schema.js",
+      "count": 2
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "TL5_APPEARANCE_TRANSITIONS",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "tl5Announce",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "tl5AppearanceDefaults",
+      "declaredIn": "12-schema.js",
+      "count": 2
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "tl5Diag",
+      "declaredIn": "11-platform.js",
+      "count": 7
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "tl5IsClockTime",
+      "declaredIn": "12-schema.js",
+      "count": 1
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "tl5IsPlainObject",
+      "declaredIn": "12-schema.js",
+      "count": 6
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "tl5Json",
+      "declaredIn": "12-schema.js",
+      "count": 4
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "tl5OnScheme",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "tl5OnThemeChange",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "tl5OverlayOpenAllowed",
+      "declaredIn": "11-platform.js",
+      "count": 4
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "tl5OverlayRegister",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "tl5SampleWallpaperLuma",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "tl5Scheme",
+      "declaredIn": "11-platform.js",
+      "count": 8
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "tl5ThemeService",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "wallpaperController",
+      "declaredIn": "30-wallpaper.js",
+      "count": 4
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "weatherController",
+      "declaredIn": "35-context.js",
+      "count": 4
+    },
+    {
       "from": "57-glass.js",
       "name": "note",
       "declaredIn": "10-constants.js",
-      "count": 5
+      "count": 6
     },
     {
       "from": "57-glass.js",
@@ -2577,12 +2775,6 @@
     {
       "from": "57-glass.js",
       "name": "renderTierController",
-      "declaredIn": "10-constants.js",
-      "count": 1
-    },
-    {
-      "from": "58-legibility.js",
-      "name": "DARK_ATTR",
       "declaredIn": "10-constants.js",
       "count": 1
     },
@@ -2621,6 +2813,18 @@
       "name": "tl5Diag",
       "declaredIn": "11-platform.js",
       "count": 2
+    },
+    {
+      "from": "58-legibility.js",
+      "name": "tl5OnScheme",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "58-legibility.js",
+      "name": "tl5Scheme",
+      "declaredIn": "11-platform.js",
+      "count": 1
     },
     {
       "from": "58-legibility.js",
@@ -2720,6 +2924,12 @@
     },
     {
       "from": "60-zones.js",
+      "name": "tl5ThemeCssVar",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "60-zones.js",
       "name": "wallpaperController",
       "declaredIn": "30-wallpaper.js",
       "count": 2
@@ -2800,12 +3010,6 @@
       "from": "70b-wallpaper-sidebar-panel.js",
       "name": "cropWindow",
       "declaredIn": "60-zones.js",
-      "count": 1
-    },
-    {
-      "from": "70b-wallpaper-sidebar-panel.js",
-      "name": "DARK_ATTR",
-      "declaredIn": "10-constants.js",
       "count": 1
     },
     {
@@ -3080,6 +3284,12 @@
     },
     {
       "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "tl5OnScheme",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
       "name": "tl5OverlayOpenAllowed",
       "declaredIn": "11-platform.js",
       "count": 2
@@ -3105,6 +3315,18 @@
     {
       "from": "70b-wallpaper-sidebar-panel.js",
       "name": "tl5SampleWallpaperPalette",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "tl5Scheme",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "70b-wallpaper-sidebar-panel.js",
+      "name": "tl5ThemeService",
       "declaredIn": "11-platform.js",
       "count": 1
     },
@@ -3281,6 +3503,30 @@
       "name": "TL_T",
       "declaredIn": "13-i18n.js",
       "count": 6
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "appearanceFormatClock",
+      "declaredIn": "56-appearance.js",
+      "count": 1
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "appearanceModeLabel",
+      "declaredIn": "56-appearance.js",
+      "count": 4
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "appearanceNextBoundary",
+      "declaredIn": "56-appearance.js",
+      "count": 2
+    },
+    {
+      "from": "76b-role-hub-install.js",
+      "name": "appearanceSunTimes",
+      "declaredIn": "56-appearance.js",
+      "count": 2
     },
     {
       "from": "76b-role-hub-install.js",
@@ -3508,13 +3754,13 @@
       "from": "76b-role-hub-install.js",
       "name": "hubCreate",
       "declaredIn": "76-role-hub.js",
-      "count": 234
+      "count": 258
     },
     {
       "from": "76b-role-hub-install.js",
       "name": "hubDateTime",
       "declaredIn": "76-role-hub.js",
-      "count": 2
+      "count": 1
     },
     {
       "from": "76b-role-hub-install.js",
@@ -3608,6 +3854,12 @@
     },
     {
       "from": "76b-role-hub-install.js",
+      "name": "listWallpapers",
+      "declaredIn": "30-wallpaper.js",
+      "count": 2
+    },
+    {
+      "from": "76b-role-hub-install.js",
       "name": "petLlmHintText",
       "declaredIn": "44b-pet-state.js",
       "count": 2
@@ -3652,7 +3904,7 @@
       "from": "76b-role-hub-install.js",
       "name": "TL_T",
       "declaredIn": "13-i18n.js",
-      "count": 425
+      "count": 454
     },
     {
       "from": "76b-role-hub-install.js",
@@ -3670,12 +3922,6 @@
       "from": "76b-role-hub-install.js",
       "name": "tl5ValidateUploadFile",
       "declaredIn": "11-platform.js",
-      "count": 1
-    },
-    {
-      "from": "90-font.js",
-      "name": "DARK_ATTR",
-      "declaredIn": "10-constants.js",
       "count": 1
     },
     {
@@ -3698,6 +3944,12 @@
     },
     {
       "from": "90-font.js",
+      "name": "note",
+      "declaredIn": "10-constants.js",
+      "count": 2
+    },
+    {
+      "from": "90-font.js",
       "name": "React",
       "declaredIn": "10-constants.js",
       "count": 35
@@ -3716,6 +3968,12 @@
     },
     {
       "from": "90-font.js",
+      "name": "tl5OnScheme",
+      "declaredIn": "11-platform.js",
+      "count": 2
+    },
+    {
+      "from": "90-font.js",
       "name": "tl5OverlayOpenAllowed",
       "declaredIn": "11-platform.js",
       "count": 2
@@ -3731,6 +3989,18 @@
       "name": "tl5SampleWallpaperPalette",
       "declaredIn": "11-platform.js",
       "count": 1
+    },
+    {
+      "from": "90-font.js",
+      "name": "tl5Scheme",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "90-font.js",
+      "name": "tl5ThemeService",
+      "declaredIn": "11-platform.js",
+      "count": 5
     },
     {
       "from": "90-font.js",
@@ -3779,6 +4049,18 @@
       "name": "TL_T",
       "declaredIn": "13-i18n.js",
       "count": 8
+    },
+    {
+      "from": "95-a11y.js",
+      "name": "tl5Announce",
+      "declaredIn": "11-platform.js",
+      "count": 1
+    },
+    {
+      "from": "95-a11y.js",
+      "name": "tl5AnnounceRegister",
+      "declaredIn": "11-platform.js",
+      "count": 1
     },
     {
       "from": "95-a11y.js",
@@ -3844,6 +4126,12 @@
       "from": "99-apply.js",
       "name": "installAccessibility",
       "declaredIn": "95-a11y.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installAppearance",
+      "declaredIn": "56-appearance.js",
       "count": 1
     },
     {
@@ -3970,6 +4258,12 @@
       "from": "99-apply.js",
       "name": "installStyles",
       "declaredIn": "20d-stylesheet-hub.js",
+      "count": 1
+    },
+    {
+      "from": "99-apply.js",
+      "name": "installTl5ThemeBridge",
+      "declaredIn": "11-platform.js",
       "count": 1
     },
     {

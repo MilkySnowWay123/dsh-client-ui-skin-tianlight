@@ -213,6 +213,8 @@
 			"quota",
 			"rate-limit",
 			"llm-error",
+			// v2.3.0: DSH 0.2.2-rc.5 content-safety refusal (host route answers 422).
+			"refused",
 			// v2.2.0 catalogue reads (read-only model picker).
 			"models-unavailable",
 		];
@@ -227,6 +229,8 @@
 			"rate-limit": "pet.chat.llmHint.rateLimit",
 			timeout: "pet.chat.llmHint.timeout",
 			"host-unavailable": "pet.chat.llmHint.hostUnavailable",
+			// v2.3.0: the model declined the topic (safety filter), not an outage.
+			refused: "pet.chat.llmHint.refused",
 		};
 		/**
 		 * Host `petLlm.reason` values that mean "no usable model is configured". The host
@@ -320,6 +324,9 @@
 				"pet.chat.llmHint.rateLimit": "模型限流，已用本地回复",
 				"pet.chat.llmHint.timeout": "模型响应超时，已用本地回复",
 				"pet.chat.llmHint.hostUnavailable": "宿主不可用（可能需要重启 DSH），已用本地回复",
+				// v2.3.0: content-safety refusal — not an outage, so the copy offers a change
+				// of topic instead of "restart the app" or "check your quota".
+				"pet.chat.llmHint.refused": "这个话题模型不方便回答，我换个说法陪你聊吧",
 				"pet.chat.llmHint.default": "AI 暂时不可用，已用本地回复",
 				// v1.6.8: local inner-monologue templates (60–160 chars after assembly).
 				"pet.mind.line.period": "现在是{period}。",
@@ -387,6 +394,7 @@
 				"pet.chat.llmHint.rateLimit": "The model is rate-limited; replied locally",
 				"pet.chat.llmHint.timeout": "The model timed out; replied locally",
 				"pet.chat.llmHint.hostUnavailable": "The host is unavailable (a DSH restart may be needed); replied locally",
+				"pet.chat.llmHint.refused": "The model declined this topic; replied locally instead",
 				"pet.chat.llmHint.default": "AI is unavailable right now; replied locally",
 				// v1.6.8: local inner-monologue templates (60–160 chars after assembly).
 				"pet.mind.line.period": "It's {period} right now.",

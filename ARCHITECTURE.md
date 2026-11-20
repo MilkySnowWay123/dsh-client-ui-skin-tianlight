@@ -4,7 +4,7 @@
 
 `tools/structure.mjs --strict` 守住这份文档：`src/` 的每个片段、`lib/` 的每个模块、`lib/routes/` 的每个模块、每条路由路径，只要这里没写到就失败。改结构而忘了改这里，`npm run check` 会红。
 
-## 1. 浏览器半：28 个片段拼成一个 ESM
+## 1. 浏览器半：44 个片段拼成一个 ESM
 
 DSH 的客户端插件加载约定是"一个插件只有一个 ESM 文件"（见 `tools/build.mjs` 开头），所以 `src/` 下的片段按固定顺序拼进 **同一个工厂闭包**，产物是 `lib/client.js`。片段之间没有 import，共享同一个作用域——这正是 [docs/DEPS.md](docs/DEPS.md) 记录、并由 `tools/deps.mjs --check` 机械守住的那份耦合（v2.1.6 起接入 `npm run check`）。
 
@@ -37,22 +37,23 @@ DSH 的客户端插件加载约定是"一个插件只有一个 ESM 文件"（见
 | 25 | `48-pet-agent.js` | pet agent | 23685 | 桌宠接入 DSH Agent（受控） |
 | 26 | `50-rheostat.js` | reasoning rheostat | 20501 | 推理滑杆（只影响本会话展示） |
 | 27 | `55-lowpower.js` | low power | 10650 | 省电模式：三输入一决策，暂停壁纸与镜像 |
+| 28 | `56-appearance.js` | appearance | — | 浅色/深色外观：DSH 主题偏好读写、随天光调度、揭开动效、右上角开关 |
 | 28 | `57-glass.js` | glass opacity | 17730 | 液态玻璃三档与深度、v2.2.0 实时渲染开关 |
-| 29 | `58-legibility.js` | legibility | 25156 | 可读性对比/字号/字距 |
-| 30 | `59-splash.js` | splash | 25280 | 开机动画：`splashPlan` 单点决策 + 简洁 A 版 |
-| 31 | `59b-splash-film.js` | （splash 长片） | 35573 | 18.5 秒长片（WebGL/WAAPI，自带硬停与释放） |
-| 32 | `59c-splash-film-runtime.js` | splash | 67430 | 长片运行时：WebGL 场景 / Canvas 字形 / 时间线（createSplashFilmRuntime） |
-| 33 | `59d-splash-film-install.js` | splash | 7975 | 长片安装与降级：挂载、跳过、清理（installSplashFilm） |
-| 34 | `60-zones.js` | zone framing | 12967 | 分区取景（主图/轨道） |
-| 35 | `65-bridge.js` | selector bridge | 17988 | 运行时选择器桥：slot → 产品 `data-*` → 类名后缀 |
-| 36 | `70-sidebar.js` | wallpaper sidebar | 59630 | 壁纸面板 i18n、分享/导入导出编解码助手（组件见 70b） |
-| 37 | `70b-wallpaper-sidebar-panel.js` | wallpaper sidebar | 152600 | 壁纸面板 React 组件 WallpaperPanel：来源/清单/图层/播放/库（约 3850 行） |
-| 38 | `72-we-library.js` | we library | 60116 | Wallpaper Engine 库与场景选择 |
-| 39 | `76-role-hub.js` | role hub | 74825 | 角色中枢 i18n 字典、常量与通用助手（运行时见 76b） |
-| 40 | `76b-role-hub-install.js` | role hub | 181030 | 角色中枢运行时：全屏 overlay、各卡片与状态（installRoleHub，约 3800 行） |
-| 41 | `90-font.js` | font panel | 32193 | 字体面板（内置字体清单/拖拽） |
-| 42 | `95-a11y.js` | accessibility | 20675 | 无障碍（键盘、焦点、对比度） |
-| 43 | `99-apply.js` | apply | 17203 | `apply(ctx)`：按固定顺序安装/注册每个模块，单例与热重载 |
+| 30 | `58-legibility.js` | legibility | 25156 | 可读性对比/字号/字距 |
+| 31 | `59-splash.js` | splash | 25280 | 开机动画：`splashPlan` 单点决策 + 简洁 A 版 |
+| 32 | `59b-splash-film.js` | （splash 长片） | 35573 | 18.5 秒长片（WebGL/WAAPI，自带硬停与释放） |
+| 33 | `59c-splash-film-runtime.js` | splash | 67430 | 长片运行时：WebGL 场景 / Canvas 字形 / 时间线（createSplashFilmRuntime） |
+| 34 | `59d-splash-film-install.js` | splash | 7975 | 长片安装与降级：挂载、跳过、清理（installSplashFilm） |
+| 35 | `60-zones.js` | zone framing | 12967 | 分区取景（主图/轨道） |
+| 36 | `65-bridge.js` | selector bridge | 17988 | 运行时选择器桥：slot → 产品 `data-*` → 类名后缀 |
+| 37 | `70-sidebar.js` | wallpaper sidebar | 59630 | 壁纸面板 i18n、分享/导入导出编解码助手（组件见 70b） |
+| 38 | `70b-wallpaper-sidebar-panel.js` | wallpaper sidebar | 152600 | 壁纸面板 React 组件 WallpaperPanel：来源/清单/图层/播放/库（约 3850 行） |
+| 39 | `72-we-library.js` | we library | 60116 | Wallpaper Engine 库与场景选择 |
+| 40 | `76-role-hub.js` | role hub | 74825 | 角色中枢 i18n 字典、常量与通用助手（运行时见 76b） |
+| 41 | `76b-role-hub-install.js` | role hub | 181030 | 角色中枢运行时：全屏 overlay、各卡片与状态（installRoleHub，约 3800 行） |
+| 42 | `90-font.js` | font panel | 32193 | 字体面板（内置字体清单/拖拽） |
+| 43 | `95-a11y.js` | accessibility | 20675 | 无障碍（键盘、焦点、对比度） |
+| 44 | `99-apply.js` | apply | 17203 | `apply(ctx)`：按固定顺序安装/注册每个模块，单例与热重载 |
 
 依赖表、跨片段引用清单和"新增引用就失败"的门禁见 [docs/DEPS.md](docs/DEPS.md)。
 
@@ -138,10 +139,24 @@ DSH 的客户端插件加载约定是"一个插件只有一个 ESM 文件"（见
 - **透镜**：仅 composer。按元素实际像素生成圆角边缘带位移图（中心 128/128 零位移），ResizeObserver + rAF 更新；关闭实时或卸载时销毁 filter。
 - **回归门禁**：`tools/check-css.mjs` 断言宿主无 filter、frame/场景/遮罩无 blur、scene 无玻璃表面；`tools/test.mjs` 断言 bridge 不再把 `data-sidebar-collapsed` 映射到绘制目标，以及 lens 图按尺寸生成。
 
+## 5.2 v2.3.0 外观模式：唯一真相是 DSH 的主题偏好
+
+- **为什么不另起炉灶**：DSH 自己的菜单、对话框、代码高亮、hovercard 全部读它自己的 `--dsw-*` 两套色板，只有 `body[data-ds-dark-theme]` 翻转它们才会跟着翻。皮肤若自建一个 `data-tl-mode`，必然出现「皮肤是浅的、控件是深的」；因此天光**只写 DSH 的偏好**（`ctx.theme.setTheme("light"|"dark")`），从不直接设置/移除 `body[data-ds-dark-theme]`。
+- **三个入口，各管一件事**（都在 `11-platform.js`）：
+  - `tl5Scheme()`：读**当前**是浅还是深（每次实时读 `body[data-ds-dark-theme]`，不缓存快照）；
+  - `tl5OnScheme(fn)`：模式翻转时重算（一个共享 MutationObserver、rAF 合并、只在值真的变了才回调）；`58-legibility` / `70b` / `90-font` / `32-effects` 都挂在这里重算颜色，删掉了各自的私有监听；
+  - `tl5ThemeService()` / `tl5OnThemeChange(fn)`：主题服务与 `theme/change` 事件的唯一访问器（服务由产品插件在本插件之后挂载，所以 `apply()` 时用 `ctx.inject(["theme"])` 等它，而不是 `ctx.get`）。
+- **偏好模型**：`tianlight.appearance = { v, mode: follow|light|dark|sky, sky:{source,lightAt,darkAt}, transition, wallpapers }`，走现有 localStorage + 12b 宿主同步；`follow`（默认）**不写** `setTheme`，所以老用户升级后观感完全不变。启动时也**不写**（DSH 的 boot-theme 已保证首帧正确）；`sky` 若跨过边界，在启动帧之后再对齐。
+- **冲突规则**：天光自己的写入记 `selfWrite = {target, at}`；`theme/change` 到来时若目标不同或距自写 >1.5s，判定为用户在 DSH 设置里手动改了 → 天光切回 `follow` 并提示一次，绝不把用户的选择写回去。
+- **随天光**：日出/日落来自天气模块的同一次 Open-Meteo 请求（`daily=sunrise,sunset`，不新开网络链路；失败/无定位回落手动时间）；只在边界时刻用一个 `setTimeout` 调度，`visibilitychange` 回前台重算，**不轮询**。
+- **可读性双向护栏**：`tl5SampleWallpaperLuma()` 取壁纸中间阅读区（x 25–75%、y 12–88%）的 WCAG 相对亮度 `L`；浅色写 `--tl-day-lift`（`clamp((0.42-L)/0.32,0,1)`，采样不到取 0.55）驱动晨雾，深色写 `--tl-night-lift`（`clamp((L-0.38)/0.30,0,1)`）驱动夜雾。深色 `L ≤ 0.38` 时 lift=0，**mid/暗壁纸与 v2.2.x 像素一致**（发版基准对比的通过条件）。采样只在换壁纸（600ms/1.5s 各一次）、模式切换、回到前台时跑，**不轮询视频帧**。
+- **不迁移 `overrideTokens`**：现有 `!important` token 覆盖在 0.2.0–0.2.2 全系验证过，迁移风险大于收益；将来若产品移除内联 token 覆盖再迁移（备忘，不在 v2.3.0 做）。
+- **门禁**：`check-css` 断言明暗 token 块对称、组件规则不出现新裸色（存量基线在 `tools/css-color-baseline.json`）、`::view-transition-*` 只出现在外观片段；`test.mjs` 覆盖模式校验/日落边界/跨午夜/冲突规则/晨雾与夜雾公式。
+
 ## 6. 兼容策略与每日巡检
 
 - 三处声明必须一致（`package.json` 的 `engines.dsh` + 官方包 peer、`skin.json.dshCompatibilityRange`），由 `tools/test.mjs` / `tools/audit.mjs` / `tools/verify.mjs` 守住；DSH 只读 `engines.dsh`/peer，不读 `dshCompatibilityRange`。
-- 支持范围：DSH 0.2.0 / 0.2.1 / 0.2.2（含 rc/alpha）**已实测**；**0.3.x 暂不支持**（2026-11-16 放弃预适配：上限回到 `<0.3.0-0`，门禁重新拦下，DSH 会跳过整层而不是加载一个没验证过的皮肤）。0.3 的差异表、§6.1 路由迁移约束与 13 步发版日清单保留在 [docs/COMPAT-0.3.0.md](docs/COMPAT-0.3.0.md)，等真实 0.3 build 验过再放开。
+- 支持范围：DSH 0.2.0 / 0.2.1 / 0.2.2（含 rc/alpha）**已实测**，最新实测到 **0.2.2-rc.5**（v2.3.0，见 `docs/COMPATIBILITY.md` §10.4b；rc.3→rc.5 客户端 UI 包与 Desktop 壳无 DOM 变化）；**0.3.x 暂不支持**（2026-11-16 放弃预适配：上限回到 `<0.3.0-0`，门禁重新拦下，DSH 会跳过整层而不是加载一个没验证过的皮肤）。0.3 的差异表、§6.1 路由迁移约束与 13 步发版日清单保留在 [docs/COMPAT-0.3.0.md](docs/COMPAT-0.3.0.md)，等真实 0.3 build 验过再放开。
 - 发布侧：tag 必须**一个一个推**；单次 push 超过 3 个 tag 时 GitHub 不产生 push 事件，`release.yml` 不会启动。推完用 `node tools/verify-tag-run.mjs <tag>` 确认 run 存在（`tools/release.mjs` 的收尾提示与 `PUBLISH.md` 都写了这条）；补发走 `workflow_dispatch` 的 `tag` 输入，不动 tag。
 - 每日巡检：`.github/workflows/dsh-canary.yml`（npm `next`、`alpha`、最新已测版本对照；三个工具 + 范围判断；越界开 issue）；策略细节见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) §10。
 - 升级前本地复验：`node tools/compat-matrix.mjs --dsh …`、`node tools/hook-scan.mjs --self-check`、`node tools/upgrade-check.mjs`、`node tools/smoke-dsh.mjs --dsh …`。
