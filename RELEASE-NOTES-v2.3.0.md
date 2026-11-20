@@ -105,13 +105,11 @@ node tools/smoke-dsh.mjs --dsh <rc.5 @deepseek-ai>
 数值由 `tools/contrast-probe.mjs` 直接读 PNG 计算，原始数据见
 [`screenshots/v2.3.0/contrast.json`](screenshots/v2.3.0/contrast.json) 与 `matrix.json`。
 
-| # | 标准 | 实测 | 结论 |
-| --- | --- | --- | --- |
-| 1 | 深色 × 中/暗壁纸与 v2.2.x 像素一致 | `npm run parity`：深色 token 块 **32 个既有值 0 变化**、新增 12 个（只把旧字面量搬进 token）；深色夜雾在 L≤0.38 时 alpha=0。截图矩阵深色三张已交付 | PASS（静态 parity + 像素证据；逐像素 diff 未在本环境执行） |
+| 1 | 深色 × 中/暗壁纸与 v2.2.x 像素一致 | `npm run parity`：深色 token 块 32 个既有值 0 变化；**逐像素 diff**（旧构建 `f278548` 打包安装 vs v2.3.0，同壁纸同 1280×900）：暗壁纸 **0.1263%**、中壁纸 **0.3229%**、省电档 0.3229%，全部 <0.5%；差异只来自新增的右上角开关/天气胶囊左移与壁纸卡片上的两个分模式按钮（见 `screenshots/v2.3.0/diff-baseline/*-diff.png`）。亮壁纸按指令豁免（新增的夜雾会整体压暗，`dark-bright-session` 差异 96.9% 即夜雾本身） | PASS |
 | 2 | 浅色 × 暗壁纸：正文 ≥4.5:1、侧栏 ≥4.5:1、faint ≥3:1 | 侧栏 **6.20:1**、hero 标题 **5.86:1**、输入区占位 **6.19:1** | PASS（正文段落：实验实例没有模型凭据，无法产生 6 轮对话，改用同页 hero/占位文本，见 §10） |
 | 3 | 浅色侧栏任意 32×32 区域饱和度 ≤0.35 | 亮 0.152 · 中 0.052 · 暗 0.000（HSV；见 §10 说明） | PASS |
 | 4 | 浅色 × 亮壁纸雾层 alpha ≤0.12 | 亮壁纸 `dayLift=0` → 雾只有 0.06–0.10 底层渐变；hero 区中位亮度 **0.914**（不泛白） | PASS |
-| 5 | 点击到动画结束 ≤700ms，无 >50ms 长任务 | **664ms** 落定（属性翻转 1ms），620ms 揭开动画 | PASS（长任务未单独 profile） |
+| 5 | 点击到动画结束 ≤700ms，无 >50ms 长任务 | **669ms** 落定（属性翻转 0ms），620ms 揭开动画；`PerformanceObserver(longtask)` 观测窗口内 **0 个长任务**（`longTasks: [], maxLongTaskMs: 0`） | PASS |
 | 6 | 切换后 1.5s 内重算（面板/字体/雾/粒子） | 全部改挂共享 `tl5OnScheme()`（壁纸面板、字体面板、可读性、letterbox、粒子），矩阵每次切换后重拍的截图颜色均正确 | PASS |
 | 7 | DSH 设置外观与天光一致；DSH 改外观后天光变 follow | smoke 断言：light/dark 均翻转 `body[data-ds-dark-theme]`；冲突规则单测：外部改变 → follow、自写 → 忽略 | PASS（Desktop 人工复核待用户确认） |
 | 8 | 刷新/重启保持模式且首帧正确 | 启动不做任何 `setTheme`（禁止项 5）；smoke 从 follow 起步、`setThemeCalls` 仅用户动作增长；矩阵连续 14 次 reload 模式保持 | PASS |

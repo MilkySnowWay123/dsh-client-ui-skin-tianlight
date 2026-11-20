@@ -57,6 +57,12 @@ const dshArg = option('--dsh', process.env.DSH_PKGS_ROOT ?? null)
 const chromeArg = option('--chrome', null)
 const portArg = option('--port', null)
 const matrixDir = option('--matrix', null)
+// v2.3.0 acceptance: run the SAME lab against an already-packed skin directory. This is
+// how the pre-2.3.0 build is screenshotted for the dark pixel-parity comparison.
+const skinArg = option('--skin', null)
+// `--scheme-attr` lets the matrix force the scheme by body attribute on a build that has
+// no appearance controller (the pre-2.3.0 baseline).
+const schemeAttrMode = argv.includes('--scheme-attr')
 
 function fail(message) {
   console.error('smoke: ' + message)
@@ -507,17 +513,29 @@ async function captureMatrix(cdp, dir) {
       8_000,
     )
     if (!flipped.ok) {
-      // A fixed stored mode whose scheme disagrees with DSH's own preference becomes
-      // "follow" at boot (by design). A real user click would switch it, so the matrix
-      // performs the same write through the public controller and settles again.
-      await cdp.eval('(() => { try { globalThis.tianlightAppearance.apply({ mode: ' + JSON.stringify(scheme) + ', transition: "off" }); return true; } catch (error) { return String(error); } })()')
-      const again = await cdp.waitFor(
-        'document.body.hasAttribute(' + JSON.stringify('data-ds-dark-theme') + ') === ' + (scheme === 'dark' ? 'true' : 'false'),
-        8_000,
-      )
-      if (!again.ok) {
-        const diag = await cdp.eval('(() => { try { return __dshTianlightInstance.diag().appearance; } catch (error) { return String(error); } })()')
-        throw new Error('scheme did not become ' + scheme + ' in this runtime; diag=' + JSON.stringify(diag))
+      if (schemeAttrMode === true) {
+        // Pre-2.3.0 baseline build: no appearance controller, so the matrix forces the
+        // product's own scheme marker after load (the skin's CSS is keyed on it).
+        await cdp.eval(
+          '(() => { if (' +
+            JSON.stringify(scheme) +
+            ' === "dark") document.body.setAttribute("data-ds-dark-theme", ""); else document.body.removeAttribute("data-ds-dark-theme"); return true; })()',
+          5_000,
+        )
+        await sleep(400)
+      } else {
+        // A fixed stored mode whose scheme disagrees with DSH's own preference becomes
+        // "follow" at boot (by design). A real user click would switch it, so the matrix
+        // performs the same write through the public controller and settles again.
+        await cdp.eval('(() => { try { globalThis.tianlightAppearance.apply({ mode: ' + JSON.stringify(scheme) + ', transition: "off" }); return true; } catch (error) { return String(error); } })()')
+        const again = await cdp.waitFor(
+          'document.body.hasAttribute(' + JSON.stringify('data-ds-dark-theme') + ') === ' + (scheme === 'dark' ? 'true' : 'false'),
+          8_000,
+        )
+        if (!again.ok) {
+          const diag = await cdp.eval('(() => { try { return __dshTianlightInstance.diag().appearance; } catch (error) { return String(error); } })()')
+          throw new Error('scheme did not become ' + scheme + ' in this runtime; diag=' + JSON.stringify(diag))
+        }
       }
     }
     // The wallpaper scene needs a decoded frame; the veil/fog transition is 900 ms.
@@ -595,43 +613,54 @@ async function captureMatrix(cdp, dir) {
     await shoot(scheme + '-lowpower-session')
     await setStored({ 'tianlight.lowpower': 'off' })
   }
-  // One mid-transition frame of the circular reveal (light -> dark on the mid wallpaper).
-  await setStored({
-    'tianlight.wallpaper': JSON.stringify({ kind: 'image', url: wallpapers.mid }),
-    'tianlight.lowpower': 'off',
-    'tianlight.appearance': JSON.stringify({
-      v: 1,
-      mode: 'light',
-      sky: { source: 'auto', lightAt: '06:30', darkAt: '18:30' },
-      transition: 'reveal',
-      wallpapers: { light: null, dark: null },
-    }),
-  })
-  await reloadAndSettle('light')
-  await cdp.eval('globalThis.tianlightAppearance.apply({ mode: "dark" })')
-  await sleep(220)
-  await shoot('reveal-mid-animation')
-  // Acceptance #5: measure one click-to-settled switch (attribute flip + reveal end).
-  const switchTiming = await cdp.eval(
-    '(async () => {' +
-      'const api = globalThis.tianlightAppearance;' +
-      'const t0 = performance.now();' +
-      'api.apply({ mode: "light", transition: "reveal" });' +
-      'const flipMs = performance.now() - t0;' +
-      'const settled = await new Promise((done) => {' +
-      'const start = performance.now();' +
-      'const poll = () => {' +
-      'if (!document.body.hasAttribute("data-tl-theme-switching") || performance.now() - start > 1500) return done(performance.now() - t0);' +
-      'requestAnimationFrame(poll);' +
-      '};' +
-      'poll();' +
-      '});' +
-      'return { flipMs: Math.round(flipMs), settledMs: Math.round(settled), scheme: document.body.hasAttribute("data-ds-dark-theme") ? "dark" : "light" };' +
-      '})()',
-    5_000,
-  )
-  console.log('  [SHOT] reveal timing ' + JSON.stringify(switchTiming))
-  writeFileSync(join(dir, 'matrix.json'), JSON.stringify({ dshVersion, viewport: '1280x900', shots, switchTiming }, null, 2) + '\n', 'utf8')
+  // One mid-transition frame of the circular reveal + acceptance #5 timing. A baseline
+  // build without the appearance feature skips both.
+  if (schemeAttrMode !== true) {
+    await setStored({
+      'tianlight.wallpaper': JSON.stringify({ kind: 'image', url: wallpapers.mid }),
+      'tianlight.lowpower': 'off',
+      'tianlight.appearance': JSON.stringify({
+        v: 1,
+        mode: 'light',
+        sky: { source: 'auto', lightAt: '06:30', darkAt: '18:30' },
+        transition: 'reveal',
+        wallpapers: { light: null, dark: null },
+      }),
+    })
+    await reloadAndSettle('light')
+    await cdp.eval('globalThis.tianlightAppearance.apply({ mode: "dark" })')
+    await sleep(220)
+    await shoot('reveal-mid-animation')
+    // Acceptance #5: measure one click-to-settled switch (attribute flip + reveal end +
+    // long tasks observed during the window).
+    const switchTiming = await cdp.eval(
+      '(async () => {' +
+        'const api = globalThis.tianlightAppearance;' +
+        'const longTasks = [];' +
+        'let observer = null;' +
+        'try { observer = new PerformanceObserver((list) => { for (const entry of list.getEntries()) longTasks.push(Math.round(entry.duration)); }); observer.observe({ type: "longtask", buffered: false }); } catch (error) { observer = null; }' +
+        'const t0 = performance.now();' +
+        'api.apply({ mode: "light", transition: "reveal" });' +
+        'const flipMs = performance.now() - t0;' +
+        'const settled = await new Promise((done) => {' +
+        'const start = performance.now();' +
+        'const poll = () => {' +
+        'if (!document.body.hasAttribute("data-tl-theme-switching") || performance.now() - start > 1500) return done(performance.now() - t0);' +
+        'requestAnimationFrame(poll);' +
+        '};' +
+        'poll();' +
+        '});' +
+        'await new Promise((done) => setTimeout(done, 120));' +
+        'try { if (observer !== null) observer.disconnect(); } catch (error) {}' +
+        'return { flipMs: Math.round(flipMs), settledMs: Math.round(settled), longTasks, maxLongTaskMs: longTasks.length === 0 ? 0 : Math.max(...longTasks), scheme: document.body.hasAttribute("data-ds-dark-theme") ? "dark" : "light" };' +
+        '})()',
+      5_000,
+    )
+    console.log('  [SHOT] reveal timing ' + JSON.stringify(switchTiming))
+    writeFileSync(join(dir, 'matrix.json'), JSON.stringify({ dshVersion, viewport: '1280x900', shots, switchTiming }, null, 2) + '\n', 'utf8')
+    return
+  }
+  writeFileSync(join(dir, 'matrix.json'), JSON.stringify({ dshVersion, viewport: '1280x900', shots }, null, 2) + '\n', 'utf8')
   console.log('smoke: matrix ' + shots.length + ' shot(s) -> ' + dir)
 }
 
@@ -655,14 +684,21 @@ try {
   await stopDsh(bootstrap, bootstrapPort, 'bootstrap')
   if (!existsSync(join(home, 'profiles'))) throw new Error('dsh web did not create ' + join(home, 'profiles'))
 
-  // 2. pack the skin and install it into that home
+  // 2. pack the skin and install it into that home (or install a given packed build)
   const packLog = join(logs, 'pack.log')
-  const pack = spawnSync(process.execPath, [join(HERE, 'pack.mjs'), '--out', distRoot], { cwd: ROOT, stdio: 'ignore', windowsHide: true })
-  if (pack.status !== 0) {
-    writeFileSync(packLog, 'pack exited with ' + String(pack.status) + '\n')
-    throw new Error('node tools/pack.mjs failed (status ' + String(pack.status) + ')')
+  let packed
+  if (skinArg !== null) {
+    packed = resolve(skinArg)
+    if (!existsSync(packed)) throw new Error('--skin directory is missing: ' + packed)
+    console.log('smoke: installing the provided skin build ' + packed)
+  } else {
+    const pack = spawnSync(process.execPath, [join(HERE, 'pack.mjs'), '--out', distRoot], { cwd: ROOT, stdio: 'ignore', windowsHide: true })
+    if (pack.status !== 0) {
+      writeFileSync(packLog, 'pack exited with ' + String(pack.status) + '\n')
+      throw new Error('node tools/pack.mjs failed (status ' + String(pack.status) + ')')
+    }
+    packed = join(distRoot, SKIN_PACKAGE + '-' + JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version)
   }
-  const packed = join(distRoot, SKIN_PACKAGE + '-' + JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version)
   if (!existsSync(packed)) throw new Error('pack output missing: ' + packed)
   const installLog = join(logs, 'install.log')
   // --force: the guard only protects a live user profile; this home is throwaway.
@@ -740,6 +776,8 @@ try {
   }
 
   // 5c. v2.3.0 appearance: the modes drive DSH's own preference, and follow stops writing.
+  // Skipped for a baseline build (--skin / --scheme-attr) that has no appearance feature.
+  if (schemeAttrMode !== true) {
   const appearanceApi = await cdp.eval(
     '(() => { const api = globalThis.tianlightAppearance; return api === undefined || api === null ? null : { service: api.service() === true, state: api.state() }; })()',
   )
@@ -768,6 +806,7 @@ try {
     console.log('  [NOTE] this runtime exposes no theme service; appearance flips skipped')
     const diag = await cdp.eval('(() => { try { return __dshTianlightInstance.diag().appearance; } catch (error) { return String(error); } })()')
     console.log('  [NOTE] appearance diag: ' + JSON.stringify(diag))
+  }
   }
 
   // 6. splash long -> film starts, ends within budget, page usable

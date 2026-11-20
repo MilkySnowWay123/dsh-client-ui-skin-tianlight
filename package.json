@@ -73,7 +73,8 @@
     "npm:publish:dry": "node tools/npm-publish.mjs --dry-run",
     "parity": "node tools/dark-parity.mjs",
     "appearance:shots": "node tools/smoke-dsh.mjs --matrix screenshots/v2.3.0",
-    "contrast:probe": "node tools/contrast-probe.mjs screenshots/v2.3.0 --json screenshots/v2.3.0/contrast.json"
+    "contrast:probe": "node tools/contrast-probe.mjs screenshots/v2.3.0 --json screenshots/v2.3.0/contrast.json",
+    "dark:diff": "node tools/png-diff.mjs"
   },
   "files": [
     "bin",

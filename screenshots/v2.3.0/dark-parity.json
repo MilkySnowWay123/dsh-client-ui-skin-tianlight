@@ -1,0 +1,38 @@
+﻿[
+    {
+        "shot":  "dark-bright-session",
+        "differing":  "1115731",
+        "percent":  "96.8516",
+        "maxDelta":  "99"
+    },
+    {
+        "shot":  "dark-mid-session",
+        "differing":  "3720",
+        "percent":  "0.3229",
+        "maxDelta":  "132"
+    },
+    {
+        "shot":  "dark-dark-session",
+        "differing":  "1455",
+        "percent":  "0.1263",
+        "maxDelta":  "191"
+    },
+    {
+        "shot":  "dark-mid-wallpaper-panel",
+        "differing":  "11689",
+        "percent":  "1.0147",
+        "maxDelta":  "172"
+    },
+    {
+        "shot":  "dark-dark-wallpaper-panel",
+        "differing":  "8933",
+        "percent":  "0.7754",
+        "maxDelta":  "191"
+    },
+    {
+        "shot":  "dark-lowpower-session",
+        "differing":  "3720",
+        "percent":  "0.3229",
+        "maxDelta":  "132"
+    }
+]
