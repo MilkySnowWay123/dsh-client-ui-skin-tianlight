@@ -127,11 +127,15 @@ node tools/smoke-dsh.mjs --dsh <rc.5 @deepseek-ai>
 ## 9. 静态门禁结果
 
 `npm run check` 全绿：build --check（44 片段）、tests **181 passed / 0 failed**、structure --strict、
-deps --check（724 跨片段引用 / 187 边）、audit、check-css、verify、i18n-audit
+deps --check（725 跨片段引用 / 187 边）、audit、check-css、verify、i18n-audit
 （zh=en=1468，missing/only/en-CJK 全 0）。`node tools/dark-parity.mjs`：32 个深色 token 0 变化。
 
 ## 10. 已知限制 / 与指令的偏离
 
+0. **发版流程未执行**：本机 SSH 无密钥、HTTPS 到 GitHub 被重置、npm token 失效（401）——推送、
+   tag、GitHub Release、npm publish 都需要用户凭据。已用本机安装器把 2.3.0 装进 Desktop
+   profile 作为可用预览（57 个文件与发布包逐字节一致，用户数据保留，旧版可回滚），
+   **完全退出 DSH 再打开**即生效（host 只在启动时快照客户端包）。
 1. **正文段落无法在本机实验实例测量**：`dsh web` 临时实例没有 DeepSeek 凭据，首屏只能渲染
    hero + 输入区，无法产生指令要求的「6 轮以上对话」。第 2 条因此改测同页的侧栏导航
    （6.20:1）、hero 标题（5.86:1）与输入区占位（6.19:1），三个都在 4.5:1 以上；Desktop 上的

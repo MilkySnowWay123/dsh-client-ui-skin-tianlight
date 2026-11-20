@@ -14,6 +14,11 @@ smoke 14 项断言全 PASS，4.3 八条验收里 8 条全部达标（其中 #1 �
 深色 token 32 个既有值 0 变化。**发版（4.4）未执行：本机没有可用的 GitHub 推送通道
 （SSH 无密钥、HTTPS 被重置）且 npm token 已失效（401），需要用户提供凭据。**
 
+作为替代，**2.3.0 已装入本机 Desktop profile**（`--force` 安装器，57 个文件与发布包逐字节一致，
+用户数据保留；旧版备份在 `diag/profile-backup-before-230-*.zip` 与 profile 的
+`.tianlight-installer/backups/`），**完全退出 DSH 再打开**即可看到 v2.3.0
+（host 在启动时快照客户端包，仅 Ctrl+F5 不够）。
+
 ## 1. 复现命令
 
 ```bash
@@ -44,7 +49,7 @@ done
 | `build --check` | 44 fragments match `lib/client.js` |
 | `test.mjs` | **181 passed / 0 failed**（新增外观模型/日落边界/冲突规则/晨雾夜雾/字号签名/截图工具单测） |
 | `structure --strict` | 全部不变量通过（region 顺序含 appearance） |
-| `deps --check` | 724 跨片段引用 / 187 边（appearance 的共享访问器已登记） |
+| `deps --check` | 725 跨片段引用 / 187 边（appearance 的共享访问器已登记） |
 | `audit` | PASS（`JS_PROVIDED` 增补 `--tl-day-lift/--tl-night-lift/--tl-menu-x/y`） |
 | `check-css` | PASS（新增：明暗 token 对称、组件裸色基线、`::view-transition-*` 仅外观片段） |
 | `verify` / `i18n-audit` | PASS / zh=en=1468，missing·only·en-CJK 全 0 |
