@@ -147,4 +147,3 @@ deps --check（725 跨片段引用 / 187 边）、audit、check-css、verify、i
    揭开动画进行中的截图；角色中枢与设置页两张未拍（实验实例的入口需要产品账号流程）。
 4. `smoke-dsh.mjs` 的 4 条外观断言运行在 `dsh web` 上；Desktop 的 `dsh-app://` 渲染进程由用户
    在本机人工复核（同一份浏览器代码，Desktop 只多一层窗口壳）。
-
