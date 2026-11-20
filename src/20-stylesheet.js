@@ -51,6 +51,18 @@ body[data-dsh-tianlight] {
 	   v2.2.0: slightly less opaque and less pure-white; live mode lowers it further
 	   because its own real backdrop blur carries the legibility. */
 	--tl-panel-fill: rgba(235, 245, 255, max(0.68, calc(0.62 * var(--tl-glass-m, 1))));
+	/* v2.2.13: DSH's OWN pages and popovers. The product paints those surfaces with
+	   its own layer tokens (bg-layer-2 for the settings panel, bg-base for the
+	   plugin manager / automation pages, specific-menu for popovers, the card
+	   tokens for settings and onboarding cards). The skin zeroed those tokens on
+	   purpose so the conversation column shows the wallpaper, which left every
+	   native page fully transparent and its text sitting on the picture. These
+	   three fills restore a smoked surface with a legibility floor: the glass
+	   slider may lighten them, never dissolve them. Kept separate from the
+	   conversation's own glass so the chat page stays immersive. */
+	--tl-native-page: rgba(243, 248, 255, max(0.64, calc(0.70 * var(--tl-glass-m, 1))));
+	--tl-native-card: rgba(249, 252, 255, max(0.70, calc(0.76 * var(--tl-glass-m, 1))));
+	--tl-native-menu: rgba(247, 251, 255, max(0.72, calc(0.78 * var(--tl-glass-m, 1))));
 	--tl-ink: #0f2438;
 	--tl-ink-soft: #3a5a78;
 	--tl-ink-faint: #5d7d99;
@@ -63,8 +75,8 @@ body[data-dsh-tianlight] {
 
 	--dsw-alias-bg-base: var(--tl-shell) !important;
 	--dsw-alias-bg-layer-1: var(--tl-shell-strong) !important;
-	--dsw-alias-bg-layer-2: var(--tl-shell-soft) !important;
-	--dsw-alias-bg-overlay: var(--tl-overlay) !important;
+	--dsw-alias-bg-layer-2: var(--tl-native-page) !important;
+	--dsw-alias-bg-overlay: var(--tl-native-card) !important;
 	--dsw-specific-sidebar-fill: var(--tl-shell-soft) !important;
 	--dsw-alias-border-l1: var(--tl-line) !important;
 	--dsw-alias-border-l2: var(--tl-line-strong) !important;
@@ -86,7 +98,7 @@ body[data-dsh-tianlight] {
 	   wallpaper. Bubbles/tips are the two the legibility guard does not cover. */
 	--dsw-specific-bubble: rgba(236, 245, 255, 0.30) !important;
 	--dsw-specific-tip: rgba(238, 247, 255, 0.32) !important;
-	--dsw-specific-menu: var(--tl-overlay) !important;
+	--dsw-specific-menu: var(--tl-native-menu) !important;
 	--dsw-alias-bg-layer-3: rgba(236, 245, 255, 0.20) !important;
 	--dsw-alias-bg-module-platform: rgba(236, 245, 255, 0.18) !important;
 	--dsw-alias-interactive-bg-hover-solid: rgba(104, 156, 210, 0.22) !important;
@@ -118,9 +130,9 @@ body[data-dsh-tianlight] {
 	   the stamped button is in the v1.6.1 section at the end of this sheet. */
 	--dsw-alias-button-elevated-fill: var(--tl-glass-fill) !important;
 	--dsw-alias-button-floating-hover: var(--tl-accent-soft) !important;
-	--dsw-alias-onboarding-card-fill: var(--tl-glass-fill) !important;
+	--dsw-alias-onboarding-card-fill: var(--tl-native-card) !important;
 	--dsw-alias-onboarding-secondary-fill: rgba(236, 245, 255, 0.18) !important;
-	--dsw-alias-settings-card-fill: var(--tl-glass-fill) !important;
+	--dsw-alias-settings-card-fill: var(--tl-native-card) !important;
 	--dsw-specific-input-major: var(--tl-glass-fill) !important;
 	--dsw-specific-selector: rgba(236, 245, 255, 0.30) !important;
 	--dsw-specific-sidebar-nav-item-active: var(--tl-accent-soft) !important;
@@ -150,6 +162,12 @@ body[data-dsh-tianlight][data-ds-dark-theme] {
 	--tl-glass-edge-mid: rgba(255, 255, 255, 0.10);
 	--tl-glass-edge-lo: rgba(255, 255, 255, 0.16);
 	--tl-panel-fill: rgba(10, 18, 32, max(0.96, calc(0.88 * var(--tl-glass-m, 1))));
+	/* v2.2.13: smoked native-page surfaces for the dark theme (see the light block).
+	   0.68/0.72/0.74 at the default glass level: the wallpaper outline stays
+	   readable behind the surface, the text stays legible on top of it. */
+	--tl-native-page: rgba(8, 15, 26, max(0.62, calc(0.68 * var(--tl-glass-m, 1))));
+	--tl-native-card: rgba(12, 21, 35, max(0.66, calc(0.72 * var(--tl-glass-m, 1))));
+	--tl-native-menu: rgba(10, 18, 31, max(0.68, calc(0.74 * var(--tl-glass-m, 1))));
 	--tl-ink: #eaf3ff;
 	--tl-ink-soft: #a9c2dc;
 	--tl-ink-faint: #7f9bb8;
@@ -165,7 +183,7 @@ body[data-dsh-tianlight][data-ds-dark-theme] {
 	--dsw-alias-state-warn-primary: #ffc46b !important;
 	--dsw-specific-bubble: rgba(18, 30, 48, 0.42) !important;
 	--dsw-specific-tip: rgba(18, 30, 48, 0.46) !important;
-	--dsw-specific-menu: var(--tl-overlay) !important;
+	--dsw-specific-menu: var(--tl-native-menu) !important;
 	--dsw-alias-bg-layer-3: rgba(18, 30, 48, 0.36) !important;
 	--dsw-alias-bg-module-platform: rgba(18, 30, 48, 0.34) !important;
 	--dsw-alias-interactive-bg-hover-solid: rgba(70, 118, 170, 0.28) !important;
@@ -187,9 +205,9 @@ body[data-dsh-tianlight][data-ds-dark-theme] {
 	/* v1.6.1: same glass handover for the elevated button family in the dark theme. */
 	--dsw-alias-button-elevated-fill: var(--tl-glass-fill) !important;
 	--dsw-alias-button-floating-hover: var(--tl-accent-soft) !important;
-	--dsw-alias-onboarding-card-fill: var(--tl-glass-fill) !important;
+	--dsw-alias-onboarding-card-fill: var(--tl-native-card) !important;
 	--dsw-alias-onboarding-secondary-fill: rgba(18, 30, 48, 0.30) !important;
-	--dsw-alias-settings-card-fill: var(--tl-glass-fill) !important;
+	--dsw-alias-settings-card-fill: var(--tl-native-card) !important;
 	--dsw-specific-input-major: var(--tl-glass-fill) !important;
 	--dsw-specific-selector: rgba(18, 30, 48, 0.46) !important;
 	--dsw-specific-sidebar-nav-item-active: var(--tl-accent-soft) !important;
@@ -203,6 +221,25 @@ body[data-dsh-tianlight] {
 	/* Glass multiplier. installGlassOpacity() overwrites it from the saved level; the
 	   declaration lives here so every var the stylesheet reads is also declared. */
 	--tl-glass-m: 1;
+}
+
+/* ---- DSH's own pages are surfaces, not a hole in the wallpaper ----
+   The plugin manager and the automation-task page paint --dsw-alias-bg-base on
+   their own page root (the same token the conversation column uses), and the skin
+   zeroes that token so the chat can be pure wallpaper. Inside a product PAGE that
+   zero turned the picture into the page background: every native page read as
+   transparent, its text sitting straight on the wallpaper.
+   The two selectors below are class-name SEGMENTS in the same upgrade-proof style
+   as the selector bridge (a hash-prefixed _page token on the root, _pageBody inside
+   the plugin manager, _listPane inside the automation page) — never a build hash.
+   The :has() gate is what keeps the document/PDF panes untouched: their _page nodes
+   carry neither, so a rendered document never gets a dark sheet painted on it.
+   The fill goes through the token as well, so the product's own headers and
+   sticky rows that repaint bg-base follow the same colour. */
+body[data-dsh-tianlight] [class*='_page']:has([class*='_pageBody']),
+body[data-dsh-tianlight] [class*='_page']:has([class*='_listPane']) {
+	--dsw-alias-bg-base: var(--tl-native-page);
+	background-color: var(--tl-native-page) !important;
 }
 
 /* ---- wallpaper, painted strictly beneath the application ---- */
