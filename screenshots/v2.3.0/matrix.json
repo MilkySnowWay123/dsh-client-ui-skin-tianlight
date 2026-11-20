@@ -1,0 +1,71 @@
+{
+  "dshVersion": "0.2.2-rc.5",
+  "viewport": "1280x900",
+  "shots": [
+    {
+      "name": "light-bright-session",
+      "path": "screenshots\\v2.3.0\\light-bright-session.png"
+    },
+    {
+      "name": "light-bright-wallpaper-panel",
+      "path": "screenshots\\v2.3.0\\light-bright-wallpaper-panel.png"
+    },
+    {
+      "name": "light-mid-session",
+      "path": "screenshots\\v2.3.0\\light-mid-session.png"
+    },
+    {
+      "name": "light-mid-wallpaper-panel",
+      "path": "screenshots\\v2.3.0\\light-mid-wallpaper-panel.png"
+    },
+    {
+      "name": "light-dark-session",
+      "path": "screenshots\\v2.3.0\\light-dark-session.png"
+    },
+    {
+      "name": "light-dark-wallpaper-panel",
+      "path": "screenshots\\v2.3.0\\light-dark-wallpaper-panel.png"
+    },
+    {
+      "name": "light-lowpower-session",
+      "path": "screenshots\\v2.3.0\\light-lowpower-session.png"
+    },
+    {
+      "name": "dark-bright-session",
+      "path": "screenshots\\v2.3.0\\dark-bright-session.png"
+    },
+    {
+      "name": "dark-bright-wallpaper-panel",
+      "path": "screenshots\\v2.3.0\\dark-bright-wallpaper-panel.png"
+    },
+    {
+      "name": "dark-mid-session",
+      "path": "screenshots\\v2.3.0\\dark-mid-session.png"
+    },
+    {
+      "name": "dark-mid-wallpaper-panel",
+      "path": "screenshots\\v2.3.0\\dark-mid-wallpaper-panel.png"
+    },
+    {
+      "name": "dark-dark-session",
+      "path": "screenshots\\v2.3.0\\dark-dark-session.png"
+    },
+    {
+      "name": "dark-dark-wallpaper-panel",
+      "path": "screenshots\\v2.3.0\\dark-dark-wallpaper-panel.png"
+    },
+    {
+      "name": "dark-lowpower-session",
+      "path": "screenshots\\v2.3.0\\dark-lowpower-session.png"
+    },
+    {
+      "name": "reveal-mid-animation",
+      "path": "screenshots\\v2.3.0\\reveal-mid-animation.png"
+    }
+  ],
+  "switchTiming": {
+    "flipMs": 1,
+    "settledMs": 664,
+    "scheme": "light"
+  }
+}

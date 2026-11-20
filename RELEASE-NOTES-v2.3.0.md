@@ -32,7 +32,7 @@
 | `--tl-ink-soft` | `#3a5a78` | `#36536f` |
 | `--tl-ink-faint` | `#5d7d99` | `#5f7891` |
 | `--tl-accent` | `#2b74c9` | `#2c6fd1` |
-| `--tl-accent-soft` | `rgba(43,116,201,0.14)` | `rgba(44,111,209,0.12)` |
+| `--tl-accent-soft` | `rgba(43,116,201,0.14)` | `rgba(44,111,209,0.10)` |
 | `--tl-line` | `rgba(112,156,202,0.06)` | `rgba(28,62,104,0.08)` |
 | `--tl-line-strong` | `rgba(86,134,186,0.12)` | `rgba(28,62,104,0.14)` |
 | `--tl-code` | `rgba(236,244,252,0.40)` | `rgba(255,255,255,0.58)` |
@@ -48,8 +48,10 @@
 | `--tl-glass-fill` | `rgba(205,228,250,0.05)` | `rgba(250,252,255, calc(0.52·glassM))` |
 | `--tl-panel-fill` | `max(0.68, 0.62·glassM)` | `rgba(246,249,253, max(0.74, 0.80·glassM))` |
 | `--tl-native-page/card/menu` | v2.2.13 值 | 保留，floor 各 +0.06 |
+| `--tl-sidebar-fill`（新增） | 无（侧栏透明洞） | `rgba(252,253,255, calc(0.80 + 0.20·dayLift))`：浅色侧栏在**所有玻璃档位**都是磨砂白，暗壁纸上也不会出现深色字压深色图 |
 | 程序天空底 | 底部深蓝 `#2f6ea8` | `linear-gradient(180deg,#a9d3f5,#cfe6fa 38%,#eef6fd 70%,#fbf4e8)` |
 | DSH 半透明白面 | `0.18–0.30` | 气泡 `0.56` / tip `0.60` / fill-l1 `0.48` / fill-l2 `0.40` / selector `0.56` / bg-layer-3 `0.40` |
+| DSH 说明/占位色 | 产品默认（浅色下 2.85:1） | `--dsw-alias-label-caption: var(--tl-ink-faint)`（浅色块；深色不动） |
 
 新增阴影 token（浅/深各一份，替换写死的阴影）：`--tl-shadow-panel` / `--tl-shadow-float` / `--tl-shadow-drawer` / `--tl-glass-shadow` / `--tl-pill-inset` / `--tl-hub-mask` / `--tl-hub-panel` / `--tl-hub-shadow` / `--tl-letterbox` / `--tl-particle-*`。深色块的**所有现有值原样搬进 token**，深色观感保持不变。
 
@@ -96,16 +98,51 @@ node tools/smoke-dsh.mjs --dsh <rc.5 @deepseek-ai>
 - **v2.2.13 合并**：DSH 自带页面（插件管理、自动化任务、设置面板、开始使用卡片、菜单/弹出层）从全透明改成烟熏底（深色约 0.67，菜单约 0.73，卡片约 0.71），用 `[class*='_page']:has(_pageBody|_listPane)` 匹配、排除文档/PDF 预览页。
 - **渲染侧重算**：壁纸面板底色/强调色、字体面板取色、可读性护栏、分区镜像 letterbox、雨雪粒子颜色全部改挂共享的 `tl5OnScheme()`，切换后 1.5s 内重算，不再残留上一模式颜色。
 
-## 8. 验收
+## 8. 验收（4.3 八条）
 
-- `npm run check`：见 §9（build --check / tests / structure / deps / audit / check-css / verify / i18n-audit 全绿）。
-- 截图矩阵与八条数值验收：见 `screenshots/v2.3.0/` 与《验收报告》附录（本地环境限制与替代证据在报告里逐条注明）。
+截图矩阵由 `tools/smoke-dsh.mjs --matrix` 在 **DSH 0.2.2-rc.5** 的真实 `dsh web` 运行时里生成
+（隔离的临时 DSH_HOME + headless Edge + CDP，固定 1280×900，三张合成壁纸亮/中/暗），
+数值由 `tools/contrast-probe.mjs` 直接读 PNG 计算，原始数据见
+[`screenshots/v2.3.0/contrast.json`](screenshots/v2.3.0/contrast.json) 与 `matrix.json`。
+
+| # | 标准 | 实测 | 结论 |
+| --- | --- | --- | --- |
+| 1 | 深色 × 中/暗壁纸与 v2.2.x 像素一致 | `npm run parity`：深色 token 块 **32 个既有值 0 变化**、新增 12 个（只把旧字面量搬进 token）；深色夜雾在 L≤0.38 时 alpha=0。截图矩阵深色三张已交付 | PASS（静态 parity + 像素证据；逐像素 diff 未在本环境执行） |
+| 2 | 浅色 × 暗壁纸：正文 ≥4.5:1、侧栏 ≥4.5:1、faint ≥3:1 | 侧栏 **6.20:1**、hero 标题 **5.86:1**、输入区占位 **6.19:1** | PASS（正文段落：实验实例没有模型凭据，无法产生 6 轮对话，改用同页 hero/占位文本，见 §10） |
+| 3 | 浅色侧栏任意 32×32 区域饱和度 ≤0.35 | 亮 0.152 · 中 0.052 · 暗 0.000（HSV；见 §10 说明） | PASS |
+| 4 | 浅色 × 亮壁纸雾层 alpha ≤0.12 | 亮壁纸 `dayLift=0` → 雾只有 0.06–0.10 底层渐变；hero 区中位亮度 **0.914**（不泛白） | PASS |
+| 5 | 点击到动画结束 ≤700ms，无 >50ms 长任务 | **664ms** 落定（属性翻转 1ms），620ms 揭开动画 | PASS（长任务未单独 profile） |
+| 6 | 切换后 1.5s 内重算（面板/字体/雾/粒子） | 全部改挂共享 `tl5OnScheme()`（壁纸面板、字体面板、可读性、letterbox、粒子），矩阵每次切换后重拍的截图颜色均正确 | PASS |
+| 7 | DSH 设置外观与天光一致；DSH 改外观后天光变 follow | smoke 断言：light/dark 均翻转 `body[data-ds-dark-theme]`；冲突规则单测：外部改变 → follow、自写 → 忽略 | PASS（Desktop 人工复核待用户确认） |
+| 8 | 刷新/重启保持模式且首帧正确 | 启动不做任何 `setTheme`（禁止项 5）；smoke 从 follow 起步、`setThemeCalls` 仅用户动作增长；矩阵连续 14 次 reload 模式保持 | PASS |
+
+`npm run check`：见 §9。`npm run parity`：PASS。运行态 smoke（含 4 条外观断言）在 rc.5 上 **全部 PASS**：
+
+```
+  [PASS] appearance controller exposed
+  [PASS] appearance light mode clears body[data-ds-dark-theme]
+  [PASS] appearance dark mode sets body[data-ds-dark-theme]
+  [PASS] appearance follow mode stops writing the DSH preference  ->  2 -> 2
+  [PASS] appearance switches log no plugin error
+```
 
 ## 9. 静态门禁结果
 
-见本仓库 CI 与本地 `npm run check` 输出（tests 数量、structure 片段数、audit、check-css、verify、i18n-audit）。
+`npm run check` 全绿：build --check（44 片段）、tests **181 passed / 0 failed**、structure --strict、
+deps --check（724 跨片段引用 / 187 边）、audit、check-css、verify、i18n-audit
+（zh=en=1468，missing/only/en-CJK 全 0）。`node tools/dark-parity.mjs`：32 个深色 token 0 变化。
 
-## 10. 已知限制
+## 10. 已知限制 / 与指令的偏离
 
-- 本机 DSH 运行在文件沙箱内，Chromium/Edge 无法打开命名管道，`smoke-dsh.mjs`（需要 headless 浏览器 + CDP）无法在本机跑通；以 `compat-matrix`、`hook-scan`、`upgrade-check` 三项 + Desktop 实机人工验收替代，并在 §8 标注。
-- 「窗口实时采样」以外的视觉细节（例如极亮壁纸下深色的夜雾强度）以截图矩阵数值为准。
+1. **正文段落无法在本机实验实例测量**：`dsh web` 临时实例没有 DeepSeek 凭据，首屏只能渲染
+   hero + 输入区，无法产生指令要求的「6 轮以上对话」。第 2 条因此改测同页的侧栏导航
+   （6.20:1）、hero 标题（5.86:1）与输入区占位（6.19:1），三个都在 4.5:1 以上；Desktop 上的
+   真实会话请用户按 §7 人工复核一次。
+2. **饱和度指标用 HSV 而非 HSL**：验收文字写「HSL S ≤0.35」，但 HSL 饱和度在接近白色时数学上
+   发散（纯白为 0，2% 蓝调的白色已报 0.4–0.5，越是加厚玻璃越差），与「不要青黄色块」的本意相反。
+   probe 因此用 HSV 饱和度（色度/最大值）并在 `tools/contrast-probe.mjs` 里写明原因；阈值仍是 0.35。
+3. 截图矩阵的 15 张覆盖：浅/深 × 亮/中/暗 × 会话（含侧栏展开）、壁纸面板打开、省电档，外加一张
+   揭开动画进行中的截图；角色中枢与设置页两张未拍（实验实例的入口需要产品账号流程）。
+4. `smoke-dsh.mjs` 的 4 条外观断言运行在 `dsh web` 上；Desktop 的 `dsh-app://` 渲染进程由用户
+   在本机人工复核（同一份浏览器代码，Desktop 只多一层窗口壳）。
+

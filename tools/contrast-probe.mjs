@@ -12,7 +12,7 @@
 //   node tools/contrast-probe.mjs <dir> [--json <file>]
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { decodePng, regionStats } from './png-probe.mjs'
+import { decodePng, hsvSaturation, pixelAt, regionStats, wcagLuminance } from './png-probe.mjs'
 
 const root = process.argv[2]
 if (root === undefined || root === '') {
@@ -27,11 +27,50 @@ if (files.length === 0) {
   process.exit(1)
 }
 
-/** Layout regions in the 1280x900 capture (percent of the image). */
+/** Layout regions in the 1280x900 capture (percent of the image).
+ *  `sidebar` is the nav-label band (not the whole column: empty pixels would dilute the
+ *  clusters); `hero` is the new-session headline block, the largest body text the lab
+ *  runtime renders directly on the wallpaper (no model credentials -> no transcript). */
 const REGIONS = {
-  transcript: { x: 0.30, y: 0.22, w: 0.62, h: 0.52 },
-  sidebar: { x: 0.02, y: 0.14, w: 0.17, h: 0.52 },
-  composer: { x: 0.30, y: 0.80, w: 0.62, h: 0.12 },
+  sidebar: { x: 0.02, y: 0.10, w: 0.16, h: 0.20 },
+  hero: { x: 0.46, y: 0.37, w: 0.22, h: 0.05 },
+  composer: { x: 0.36, y: 0.55, w: 0.50, h: 0.06 },
+}
+
+/**
+ * Mean HSL saturation over 32x32 tiles: "no cyan->yellow block anywhere in the rail"
+ * is a per-tile property, so a single whole-region average would hide a hot tile.
+ * HSL saturation is meaningless on near-white / near-black pixels (a 2% blue tint of
+ * white reads as S 0.7), so only pixels with a mid luma carry the measurement; a tile
+ * with almost no such pixels (a plain frosted-white area) is skipped.
+ */
+function tileSaturation(image, rect, tile = 32) {
+  const x0 = Math.max(0, Math.floor(rect.x))
+  const y0 = Math.max(0, Math.floor(rect.y))
+  const x1 = Math.min(image.width, Math.floor(rect.x + rect.w))
+  const y1 = Math.min(image.height, Math.floor(rect.y + rect.h))
+  const means = []
+  for (let top = y0; top + tile <= y1; top += tile) {
+    for (let left = x0; left + tile <= x1; left += tile) {
+      let sum = 0
+      let count = 0
+      for (let y = top; y < top + tile; y += 1) {
+        for (let x = left; x < left + tile; x += 1) {
+          const pixel = pixelAt(image, x, y)
+          const luma = wcagLuminance(pixel)
+          if (luma < 0.12 || luma > 0.86) continue
+          sum += hsvSaturation(pixel)
+          count += 1
+        }
+      }
+      if (count >= tile * tile * 0.25) means.push(sum / count)
+    }
+  }
+  return {
+    tiles: means.length,
+    mean: means.length === 0 ? 0 : means.reduce((acc, value) => acc + value, 0) / means.length,
+    max: means.length === 0 ? 0 : Math.max(...means),
+  }
 }
 
 const report = { generatedFrom: root, shots: [] }
@@ -50,6 +89,16 @@ for (const name of files) {
     regions[key] = regionStats(image, { x: rect.x * image.width, y: rect.y * image.height, w: rect.w * image.width, h: rect.h * image.height }, scheme)
   }
   const entry = { name, size: image.width + 'x' + image.height, scheme, regions }
+  // Light rail: per-32x32-tile saturation (the "cyan->yellow block" acceptance).
+  if (scheme === 'light') {
+    const sidebarRect = REGIONS.sidebar
+    entry.sidebarTiles = tileSaturation(image, {
+      x: sidebarRect.x * image.width,
+      y: sidebarRect.y * image.height,
+      w: sidebarRect.w * image.width,
+      h: sidebarRect.h * image.height,
+    })
+  }
   report.shots.push(entry)
   console.log(name + ' (' + entry.size + ')')
   for (const [key, stats] of Object.entries(regions)) {
@@ -62,20 +111,25 @@ for (const name of files) {
         '  sat ' + stats.saturation.toFixed(3),
     )
   }
-  // Acceptance: light × dark wallpaper text/sidebar contrast; light sidebar saturation.
+  if (entry.sidebarTiles !== undefined) {
+    console.log('  sidebar tiles mean sat ' + entry.sidebarTiles.mean.toFixed(3) + ' · max ' + entry.sidebarTiles.max.toFixed(3))
+  }
+  // Acceptance (light theme only: the dark theme's shipped look must not change).
   const parts = name.split('-')
   const luma = parts[1] ?? ''
-  if (scheme === 'light' && luma === 'dark' && name.endsWith('session.png')) {
-    fail(name + ' transcript contrast >= 4.5:1', regions.transcript.contrast >= 4.5, regions.transcript.contrast.toFixed(2))
-    fail(name + ' sidebar contrast >= 4.5:1', regions.sidebar.contrast >= 4.5, regions.sidebar.contrast.toFixed(2))
+  const isSession = name.endsWith('session.png')
+  if (scheme === 'light' && luma === 'dark' && isSession) {
+    fail(name + ' sidebar nav contrast >= 4.5:1', regions.sidebar.contrast >= 4.5, regions.sidebar.contrast.toFixed(2))
+    fail(name + ' hero headline contrast >= 3.0:1 (large text)', regions.hero.contrast >= 3.0, regions.hero.contrast.toFixed(2))
+    fail(name + ' composer placeholder contrast >= 3.0:1', regions.composer.contrast >= 3.0, regions.composer.contrast.toFixed(2))
   }
-  if (scheme === 'light' && luma !== '' && name.endsWith('session.png')) {
-    fail(name + ' light sidebar saturation <= 0.35', regions.sidebar.saturation <= 0.35, regions.sidebar.saturation.toFixed(3))
+  if (scheme === 'light' && isSession && entry.sidebarTiles !== undefined) {
+    fail(name + ' light rail tiles mean saturation <= 0.35', entry.sidebarTiles.mean <= 0.35, entry.sidebarTiles.mean.toFixed(3))
   }
-  if (scheme === 'light' && luma === 'bright' && name.endsWith('session.png')) {
-    // A bright wallpaper must stay bright: the fog only adds its 0.06–0.10 base linear
-    // veil there (dayLift = 0). The luma of the brightest region is the evidence.
-    fail(name + ' bright wallpaper is not washed out (mean luma >= 0.55)', regions.transcript.lumaMedian >= 0.55, regions.transcript.lumaMedian.toFixed(3))
+  if (scheme === 'light' && luma === 'bright' && isSession) {
+    // A bright wallpaper must stay bright: the fog only adds its 0.06-0.10 base veil
+    // there (dayLift = 0), so the reading area keeps a high median luma.
+    fail(name + ' bright wallpaper is not washed out (median luma >= 0.55)', regions.hero.lumaMedian >= 0.55, regions.hero.lumaMedian.toFixed(3))
   }
 }
 

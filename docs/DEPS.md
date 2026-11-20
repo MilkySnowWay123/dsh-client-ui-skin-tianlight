@@ -18,9 +18,9 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | 指标 | 数值 |
 | --- | --- |
 | 片段数 | 44 |
-| 共享顶层名字 | 1347（声明点 1347） |
-| 跨片段引用（去重） | 724 |
-| 跨片段引用（出现次数） | 3708 |
+| 共享顶层名字 | 1350（声明点 1350） |
+| 跨片段引用（去重） | 725 |
+| 跨片段引用（出现次数） | 3714 |
 | 依赖边 | 187 |
 
 ## 2. 片段表
@@ -29,7 +29,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | --- | --- | --- | --- | --- | --- |
 | `00-envelope.js` |  | 0 | 16 | — | — |
 | `10-constants.js` | constants | 23 | 35 | — | `11-platform` (1), `12-schema` (2), `12b-schema-sync` (1), `12c-schema-eng` (1), `13-i18n` (2), `20d-stylesheet-hub` (2), `30-wallpaper` (3), `30b-wallpaper-scene` (4), `31-engine-extra` (3), `32-effects` (2), `35-context` (2), `40-companion` (2), `40b-companion-install` (2), `40c-companion-duty` (1), `42-life` (3), `44-pet-brain` (1), `44b-pet-state` (4), `44c-pet-llm` (1), `44d-pet-mind` (1), `50-rheostat` (2), `55-lowpower` (1), `57-glass` (3), `58-legibility` (2), `59-splash` (2), `59c-splash-film-runtime` (1), `59d-splash-film-install` (2), `60-zones` (1), `70-sidebar` (2), `70b-wallpaper-sidebar-panel` (7), `72-we-library` (3), `76-role-hub` (3), `76b-role-hub-install` (1), `90-font` (2), `95-a11y` (2), `99-apply` (3) |
-| `11-platform.js` | platform | 72 | 594 | `10-constants` (1), `30-wallpaper` (1) | `12-schema` (2), `12b-schema-sync` (3), `12c-schema-eng` (5), `13-i18n` (1), `20d-stylesheet-hub` (1), `30-wallpaper` (2), `30b-wallpaper-scene` (2), `31-engine-extra` (5), `32-effects` (9), `35-context` (5), `40b-companion-install` (1), `42-life` (1), `56-appearance` (10), `58-legibility` (5), `59-splash` (1), `60-zones` (1), `70-sidebar` (2), `70b-wallpaper-sidebar-panel` (10), `72-we-library` (4), `76b-role-hub-install` (2), `90-font` (7), `95-a11y` (6), `99-apply` (8) |
+| `11-platform.js` | platform | 74 | 619 | `10-constants` (1), `30-wallpaper` (1) | `12-schema` (2), `12b-schema-sync` (3), `12c-schema-eng` (5), `13-i18n` (1), `20d-stylesheet-hub` (1), `30-wallpaper` (2), `30b-wallpaper-scene` (2), `31-engine-extra` (5), `32-effects` (9), `35-context` (5), `40b-companion-install` (1), `42-life` (1), `56-appearance` (11), `58-legibility` (5), `59-splash` (1), `60-zones` (1), `70-sidebar` (2), `70b-wallpaper-sidebar-panel` (10), `72-we-library` (4), `76b-role-hub-install` (2), `90-font` (7), `95-a11y` (6), `99-apply` (8) |
 | `12-schema.js` | schema | 70 | 471 | `10-constants` (2), `11-platform` (2), `13-i18n` (1) | `12b-schema-sync` (44), `12c-schema-eng` (1), `13-i18n` (1), `56-appearance` (10), `76b-role-hub-install` (1) |
 | `12b-schema-sync.js` | schema | 51 | 1029 | `10-constants` (1), `11-platform` (3), `12-schema` (44), `13-i18n` (2) | `12c-schema-eng` (2), `70b-wallpaper-sidebar-panel` (1), `99-apply` (3) |
 | `12c-schema-eng.js` | schema | 3 | 151 | `10-constants` (1), `11-platform` (5), `12-schema` (1), `12b-schema-sync` (2), `13-i18n` (2) | — |
@@ -54,7 +54,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `48-pet-agent.js` | pet agent | 38 | 440 | `44b-pet-state` (3) | `76-role-hub` (1), `99-apply` (1) |
 | `50-rheostat.js` | reasoning rheostat | 2 | 314 | `10-constants` (2), `13-i18n` (3) | `99-apply` (1) |
 | `55-lowpower.js` | low power | 4 | 164 | `10-constants` (1), `13-i18n` (2), `30-wallpaper` (2), `60-zones` (1) | `30b-wallpaper-scene` (1), `32-effects` (1), `44d-pet-mind` (1), `59-splash` (1), `70b-wallpaper-sidebar-panel` (2), `99-apply` (1) |
-| `56-appearance.js` | appearance | 58 | 637 | `11-platform` (10), `12-schema` (10), `13-i18n` (2), `30-wallpaper` (3), `35-context` (1), `59-splash` (1), `95-a11y` (1) | `30b-wallpaper-scene` (1), `76b-role-hub-install` (4), `99-apply` (1) |
+| `56-appearance.js` | appearance | 59 | 645 | `11-platform` (11), `12-schema` (10), `13-i18n` (2), `30-wallpaper` (3), `35-context` (1), `59-splash` (1), `95-a11y` (1) | `30b-wallpaper-scene` (1), `76b-role-hub-install` (4), `99-apply` (1) |
 | `57-glass.js` | glass opacity | 37 | 281 | `10-constants` (3) | `35-context` (1), `44b-pet-state` (1), `70b-wallpaper-sidebar-panel` (2), `76-role-hub` (1), `99-apply` (3) |
 | `58-legibility.js` | legibility | 24 | 326 | `10-constants` (2), `11-platform` (5), `13-i18n` (2), `30-wallpaper` (1) | `70b-wallpaper-sidebar-panel` (2), `90-font` (3), `99-apply` (1) |
 | `59-splash.js` | splash | 42 | 389 | `10-constants` (2), `11-platform` (1), `13-i18n` (1), `55-lowpower` (1), `59d-splash-film-install` (1) | `56-appearance` (1), `76b-role-hub-install` (6), `99-apply` (2) |
@@ -64,7 +64,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `60-zones.js` | zone framing | 13 | 198 | `10-constants` (1), `11-platform` (1), `30-wallpaper` (1) | `55-lowpower` (1), `70b-wallpaper-sidebar-panel` (6), `99-apply` (1) |
 | `65-bridge.js` | selector bridge | 2 | 199 | — | `99-apply` (2) |
 | `70-sidebar.js` | wallpaper sidebar | 13 | 95 | `10-constants` (2), `11-platform` (2), `13-i18n` (1) | `70b-wallpaper-sidebar-panel` (6), `99-apply` (1) |
-| `70b-wallpaper-sidebar-panel.js` | wallpaper sidebar | 45 | 1304 | `10-constants` (7), `11-platform` (10), `12b-schema-sync` (1), `13-i18n` (3), `30-wallpaper` (24), `32-effects` (2), `35-context` (2), `55-lowpower` (2), `57-glass` (2), `58-legibility` (2), `60-zones` (6), `70-sidebar` (6), `90-font` (2) | — |
+| `70b-wallpaper-sidebar-panel.js` | wallpaper sidebar | 45 | 1317 | `10-constants` (7), `11-platform` (10), `12b-schema-sync` (1), `13-i18n` (3), `30-wallpaper` (24), `32-effects` (2), `35-context` (2), `55-lowpower` (2), `57-glass` (2), `58-legibility` (2), `60-zones` (6), `70-sidebar` (6), `90-font` (2) | — |
 | `72-we-library.js` | we library | 57 | 642 | `10-constants` (3), `11-platform` (4), `13-i18n` (4), `30-wallpaper` (2) | `99-apply` (1) |
 | `76-role-hub.js` | role hub | 54 | 408 | `10-constants` (3), `13-i18n` (2), `44d-pet-mind` (1), `48-pet-agent` (1), `57-glass` (1) | `76b-role-hub-install` (53) |
 | `76b-role-hub-install.js` | role hub | 1 | 3756 | `10-constants` (1), `11-platform` (2), `12-schema` (1), `13-i18n` (1), `30-wallpaper` (1), `44b-pet-state` (1), `56-appearance` (4), `59-splash` (6), `76-role-hub` (53) | `99-apply` (1) |
@@ -521,7 +521,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `56-appearance.js` | `TL5_APPEARANCE_TRANSITIONS` | `12-schema.js` | 1 |
 | `56-appearance.js` | `tl5Announce` | `11-platform.js` | 2 |
 | `56-appearance.js` | `tl5AppearanceDefaults` | `12-schema.js` | 2 |
-| `56-appearance.js` | `tl5Diag` | `11-platform.js` | 7 |
+| `56-appearance.js` | `tl5Diag` | `11-platform.js` | 8 |
 | `56-appearance.js` | `tl5IsClockTime` | `12-schema.js` | 1 |
 | `56-appearance.js` | `tl5IsPlainObject` | `12-schema.js` | 6 |
 | `56-appearance.js` | `tl5Json` | `12-schema.js` | 4 |
@@ -531,6 +531,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `56-appearance.js` | `tl5OverlayRegister` | `11-platform.js` | 2 |
 | `56-appearance.js` | `tl5SampleWallpaperLuma` | `11-platform.js` | 2 |
 | `56-appearance.js` | `tl5Scheme` | `11-platform.js` | 8 |
+| `56-appearance.js` | `tl5ThemeDiagnostics` | `11-platform.js` | 2 |
 | `56-appearance.js` | `tl5ThemeService` | `11-platform.js` | 2 |
 | `56-appearance.js` | `wallpaperController` | `30-wallpaper.js` | 4 |
 | `56-appearance.js` | `weatherController` | `35-context.js` | 4 |
@@ -590,14 +591,14 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `70b-wallpaper-sidebar-panel.js` | `listWallpapers` | `30-wallpaper.js` | 4 |
 | `70b-wallpaper-sidebar-panel.js` | `lowPowerController` | `55-lowpower.js` | 8 |
 | `70b-wallpaper-sidebar-panel.js` | `normalizeZones` | `60-zones.js` | 1 |
-| `70b-wallpaper-sidebar-panel.js` | `note` | `10-constants.js` | 2 |
+| `70b-wallpaper-sidebar-panel.js` | `note` | `10-constants.js` | 3 |
 | `70b-wallpaper-sidebar-panel.js` | `PANEL_BUNDLE_LIMIT` | `70-sidebar.js` | 2 |
 | `70b-wallpaper-sidebar-panel.js` | `PANEL_LIST_RETRY_MS` | `70-sidebar.js` | 1 |
 | `70b-wallpaper-sidebar-panel.js` | `playbackController` | `30-wallpaper.js` | 4 |
 | `70b-wallpaper-sidebar-panel.js` | `probeUrlKind` | `30-wallpaper.js` | 1 |
 | `70b-wallpaper-sidebar-panel.js` | `PROVIDERS` | `30-wallpaper.js` | 1 |
 | `70b-wallpaper-sidebar-panel.js` | `RATIOS` | `60-zones.js` | 1 |
-| `70b-wallpaper-sidebar-panel.js` | `React` | `10-constants.js` | 360 |
+| `70b-wallpaper-sidebar-panel.js` | `React` | `10-constants.js` | 362 |
 | `70b-wallpaper-sidebar-panel.js` | `readGlass` | `57-glass.js` | 2 |
 | `70b-wallpaper-sidebar-panel.js` | `readLowPowerMode` | `55-lowpower.js` | 3 |
 | `70b-wallpaper-sidebar-panel.js` | `readPanelRecent` | `70-sidebar.js` | 1 |
@@ -900,7 +901,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `55-lowpower.js` | `13-i18n.js` | 2 | 2 |
 | `55-lowpower.js` | `30-wallpaper.js` | 2 | 6 |
 | `55-lowpower.js` | `60-zones.js` | 1 | 4 |
-| `56-appearance.js` | `11-platform.js` | 10 | 30 |
+| `56-appearance.js` | `11-platform.js` | 11 | 33 |
 | `56-appearance.js` | `12-schema.js` | 10 | 22 |
 | `56-appearance.js` | `13-i18n.js` | 2 | 13 |
 | `56-appearance.js` | `30-wallpaper.js` | 3 | 8 |
@@ -927,7 +928,7 @@ node tools/deps.mjs --check  # 只检查（npm run check 里的那一步）
 | `70-sidebar.js` | `10-constants.js` | 2 | 3 |
 | `70-sidebar.js` | `11-platform.js` | 2 | 2 |
 | `70-sidebar.js` | `13-i18n.js` | 1 | 1 |
-| `70b-wallpaper-sidebar-panel.js` | `10-constants.js` | 7 | 373 |
+| `70b-wallpaper-sidebar-panel.js` | `10-constants.js` | 7 | 376 |
 | `70b-wallpaper-sidebar-panel.js` | `11-platform.js` | 10 | 12 |
 | `70b-wallpaper-sidebar-panel.js` | `12b-schema-sync.js` | 1 | 6 |
 | `70b-wallpaper-sidebar-panel.js` | `13-i18n.js` | 3 | 5 |

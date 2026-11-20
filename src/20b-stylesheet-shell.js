@@ -23,6 +23,13 @@ body[data-dsh-tianlight] [data-tl-sidebar-col] {
 	background-image: none !important;
 	background-color: transparent !important;
 }
+/* v2.3.0 light rail base: frosted white at every glass level (the depth recipe, when
+   enabled, still wins because its rules live in 20c and carry the same !important).
+   Without this a light-theme rail over a dark wallpaper is dark ink on a dark picture. */
+body[data-dsh-tianlight]:not([data-ds-dark-theme]) [data-tl-sidebar-col] {
+	background-color: var(--tl-sidebar-fill) !important;
+	background-image: none !important;
+}
 
 /* Dark theme only, left column only: nothing inside may paint a background.
    The column's own rule was already transparent, so a pure-black area had to come

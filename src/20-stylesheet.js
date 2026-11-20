@@ -63,6 +63,11 @@ body[data-dsh-tianlight] {
 	--tl-particle-rain-rgb: 120, 150, 190;
 	--tl-particle-snow-rgb: 214, 228, 244;
 	--tl-particle-snow-edge: rgba(40, 70, 110, 0.18);
+	/* v2.3.0 light rail: frosted white like a macOS light sidebar. The depth recipes
+	   only run when liquid glass is on; with depth off the rail would otherwise be a
+	   transparent hole, and dark body text on a dark wallpaper is unreadable — so the
+	   light theme carries its own base fill at every glass level. */
+	--tl-sidebar-fill: rgba(252, 253, 255, calc(0.80 + 0.20 * var(--tl-day-lift, 0)));
 	/* Role-hub scrim/panel/shadow (dark values below are the shipped v2.2.x ones). */
 	--tl-hub-mask: rgba(20, 40, 70, 0.10);
 	--tl-hub-panel: rgba(250, 252, 255, 0.86);
@@ -95,7 +100,7 @@ body[data-dsh-tianlight] {
 	--tl-line: rgba(28, 62, 104, 0.08);
 	--tl-line-strong: rgba(28, 62, 104, 0.14);
 	--tl-accent: #2c6fd1;
-	--tl-accent-soft: rgba(44, 111, 209, 0.12);
+	--tl-accent-soft: rgba(44, 111, 209, 0.10);
 	--tl-code: rgba(255, 255, 255, 0.58);
 	--tl-glow: rgba(150, 210, 255, 0.55);
 
@@ -112,6 +117,9 @@ body[data-dsh-tianlight] {
 	--dsw-alias-label-primary: var(--tl-ink) !important;
 	--dsw-alias-label-secondary: var(--tl-ink-soft) !important;
 	--dsw-alias-label-tertiary: var(--tl-ink-faint) !important;
+	/* v2.3.0 light only: captions/placeholders are the faint tier; leaving the product's
+	   own caption colour on a white glass card measured 2.85:1 (below the 3:1 floor). */
+	--dsw-alias-label-caption: var(--tl-ink-faint) !important;
 	--dsw-alias-state-error-primary: #c0392b !important;
 	--dsw-alias-state-success-primary: #0e8a63 !important;
 	--dsw-alias-state-warn-primary: #b4690e !important;
@@ -210,6 +218,9 @@ body[data-dsh-tianlight][data-ds-dark-theme] {
 	--tl-particle-rain-rgb: 196, 218, 255;
 	--tl-particle-snow-rgb: 255, 255, 255;
 	--tl-particle-snow-edge: transparent;
+	/* Declared for light/dark symmetry; the dark rail keeps its shipped transparent
+	   look (the depth recipes paint it), so this token is never applied in the dark. */
+	--tl-sidebar-fill: transparent;
 	--tl-hub-mask: rgba(6, 16, 28, 0.18);
 	--tl-hub-panel: rgba(12, 22, 38, 0.30);
 	--tl-hub-shadow: 0 28px 80px rgba(4, 14, 26, 0.45);

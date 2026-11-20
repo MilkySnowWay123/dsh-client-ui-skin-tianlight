@@ -313,10 +313,52 @@
 		 * Fragment rules: read with tl5Scheme(), react with tl5OnScheme(), write only
 		 * through tl5ThemeService(). Nothing else may sample DARK_ATTR once and cache it.
 		 */
-		const tl5ThemeState = { service: null, changeListeners: new Set() };
+		const tl5ThemeState = { service: null, ctx: null, changeListeners: new Set(), attempts: 0, injected: 0, lastError: "", subscribed: false };
+		/**
+		 * Resolve the theme service lazily.
+		 *
+		 * `ctx.inject(["theme"], …)` does not fire on DSH 0.2.2-rc.5's client runner (the
+		 * callback was never invoked in the runtime lab), while cordis' guarded property
+		 * `ctx.theme` — the access path the product's own ui-layout uses — resolves as soon
+		 * as the service is provided. The plugin ctx stays inside this closure (never on
+		 * globalThis), and the lookup is retried until it answers, which is what makes the
+		 * mode switch work regardless of plugin activation order.
+		 */
+		function tl5ResolveThemeService() {
+			const state = tl5ThemeState;
+			if (state.service !== null) return state.service;
+			const ctx = state.ctx;
+			if (ctx === null || ctx === undefined) return null;
+			let service = null;
+			try {
+				service = ctx.theme ?? null;
+			} catch (error) {
+				state.lastError = "prop: " + String(error?.message ?? error);
+			}
+			if (service === null || service === undefined) {
+				try {
+					service = typeof ctx.get === "function" ? ctx.get("theme") ?? null : null;
+				} catch (error) {
+					state.lastError = "get: " + String(error?.message ?? error);
+				}
+			}
+			if (service !== null && service !== undefined && typeof service.setTheme === "function") {
+				state.service = service;
+			}
+			return state.service;
+		}
 		/** Theme service from @deepseek-ai/dsh-client-ui-theme, or null before it mounts. */
 		function tl5ThemeService() {
-			return tl5ThemeState.service;
+			return tl5ResolveThemeService();
+		}
+		/** Read-only bridge diagnostics (smoke test + appearance diag); never the ctx. */
+		function tl5ThemeDiagnostics() {
+			return {
+				service: tl5ResolveThemeService() !== null,
+				attempts: tl5ThemeState.attempts,
+				injected: tl5ThemeState.injected,
+				lastError: tl5ThemeState.lastError,
+			};
 		}
 		/** Subscribe to DSH `theme/change`; returns an unsubscriber (safe when unmounted). */
 		function tl5OnThemeChange(fn) {
@@ -394,41 +436,66 @@
 			};
 		}
 		/**
-		 * Mount the single theme-service accessor. `theme` is published by a product
-		 * plugin that activates AFTER this one, so an eager ctx.get("theme") during
-		 * apply() is undefined on every boot (same post-2.0.0 defect as `slots` in
-		 * 50-rheostat). ctx.inject waits for the service instead.
+		 * Mount the single theme-service accessor.
+		 *
+		 * Order of resolution, in the order that actually works on 0.2.2:
+		 *   1. keep the plugin ctx privately and resolve `ctx.theme` (the guarded property
+		 *      ui-layout itself uses) on demand — this survives the activation order;
+		 *   2. `ctx.on("theme/change", …)` for change events (subscribed once here);
+		 *   3. `ctx.inject(["theme"], …)` as an extra path for hosts where the dynamic
+		 *      injection fires before the property becomes readable.
 		 */
 		function installTl5ThemeBridge(ctx) {
 			if (ctx === null || ctx === undefined) return () => {};
-			const attach = (scoped) => {
-				const service = scoped?.get?.("theme") ?? scoped?.theme ?? null;
-				if (service === null || service === undefined) return () => {};
-				tl5ThemeState.service = service;
-				let off = null;
+			tl5ThemeState.attempts += 1;
+			tl5ThemeState.ctx = ctx;
+			// Eager attempt: when the service is already provided this makes writes work
+			// immediately; otherwise the accessor retries on first use.
+			tl5ResolveThemeService();
+			const dispatch = (snapshot) => {
+				for (const fn of [...tl5ThemeState.changeListeners]) {
+					try {
+						fn(snapshot);
+					} catch (error) {
+						note("theme:listener", error);
+					}
+				}
+			};
+			let offRoot = null;
+			if (tl5ThemeState.subscribed === false) {
 				try {
-					off = scoped.on("theme/change", (snapshot) => {
-						for (const fn of [...tl5ThemeState.changeListeners]) {
-							try {
-								fn(snapshot);
-							} catch (error) {
-								note("theme:listener", error);
-							}
-						}
-					});
+					offRoot = ctx.on("theme/change", dispatch);
+					tl5ThemeState.subscribed = true;
 				} catch (error) {
 					note("theme:change-listener-failed", error);
 				}
-				return () => {
-					try {
-						if (typeof off === "function") off();
-					} catch (error) {
-						note("theme:change-off-failed", error);
-					}
-					if (tl5ThemeState.service === service) tl5ThemeState.service = null;
-				};
-			};
-			const release = (injection) => {
+			}
+			let injection = null;
+			if (typeof ctx.inject === "function") {
+				try {
+					injection = ctx.inject(["theme"], (scoped) => {
+						tl5ThemeState.injected += 1;
+						try {
+							const service = scoped?.theme ?? null;
+							if (service !== null && service !== undefined && typeof service.setTheme === "function") {
+								tl5ThemeState.service = service;
+							}
+						} catch (error) {
+							tl5ThemeState.lastError = "inject-attach: " + String(error?.message ?? error);
+						}
+						return () => {};
+					});
+				} catch (error) {
+					tl5ThemeState.lastError = "inject: " + String(error?.message ?? error);
+				}
+			}
+			return () => {
+				try {
+					if (typeof offRoot === "function") offRoot();
+				} catch (error) {
+					note("theme:change-off-failed", error);
+				}
+				tl5ThemeState.subscribed = false;
 				try {
 					// ctx.inject returns a cordis Fiber (PromiseLike with .dispose()) on newer
 					// hosts and a disposer function on older ones; accept both shapes.
@@ -442,12 +509,9 @@
 				} catch (error) {
 					note("theme:dispose", error);
 				}
+				tl5ThemeState.ctx = null;
+				tl5ThemeState.service = null;
 			};
-			if (typeof ctx.inject !== "function") {
-				// A stripped harness has no inject; a guarded get() is then the only path.
-				return attach(ctx);
-			}
-			return release(ctx.inject(["theme"], (scoped) => attach(scoped)));
 		}
 
 		function normalizeModuleState(raw) {

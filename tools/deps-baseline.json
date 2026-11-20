@@ -4,10 +4,10 @@
   "note": "Reviewed cross-fragment top-level references. Regenerate deliberately with `node tools/deps.mjs`; `npm run check` fails on any reference missing here.",
   "totals": {
     "fragments": 44,
-    "declarations": 1347,
-    "declarationSites": 1347,
-    "references": 724,
-    "referenceOccurrences": 3708,
+    "declarations": 1350,
+    "declarationSites": 1350,
+    "references": 725,
+    "referenceOccurrences": 3714,
     "edges": 187,
     "unused": 3
   },
@@ -2686,7 +2686,7 @@
       "from": "56-appearance.js",
       "name": "tl5Diag",
       "declaredIn": "11-platform.js",
-      "count": 7
+      "count": 8
     },
     {
       "from": "56-appearance.js",
@@ -2741,6 +2741,12 @@
       "name": "tl5Scheme",
       "declaredIn": "11-platform.js",
       "count": 8
+    },
+    {
+      "from": "56-appearance.js",
+      "name": "tl5ThemeDiagnostics",
+      "declaredIn": "11-platform.js",
+      "count": 2
     },
     {
       "from": "56-appearance.js",
@@ -3100,7 +3106,7 @@
       "from": "70b-wallpaper-sidebar-panel.js",
       "name": "note",
       "declaredIn": "10-constants.js",
-      "count": 2
+      "count": 3
     },
     {
       "from": "70b-wallpaper-sidebar-panel.js",
@@ -3142,7 +3148,7 @@
       "from": "70b-wallpaper-sidebar-panel.js",
       "name": "React",
       "declaredIn": "10-constants.js",
-      "count": 360
+      "count": 362
     },
     {
       "from": "70b-wallpaper-sidebar-panel.js",

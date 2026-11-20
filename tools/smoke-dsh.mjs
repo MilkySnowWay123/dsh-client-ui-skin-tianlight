@@ -502,16 +502,63 @@ async function captureMatrix(cdp, dir) {
     await cdp.reload()
     const applied = await cdp.waitFor('document.body !== null && document.body.hasAttribute(' + JSON.stringify(SKIN_ATTR) + ')', 20_000)
     if (!applied.ok) throw new Error('skin did not apply for the matrix')
-    await cdp.waitFor(
+    const flipped = await cdp.waitFor(
       'document.body.hasAttribute(' + JSON.stringify('data-ds-dark-theme') + ') === ' + (scheme === 'dark' ? 'true' : 'false'),
       8_000,
     )
+    if (!flipped.ok) {
+      // A fixed stored mode whose scheme disagrees with DSH's own preference becomes
+      // "follow" at boot (by design). A real user click would switch it, so the matrix
+      // performs the same write through the public controller and settles again.
+      await cdp.eval('(() => { try { globalThis.tianlightAppearance.apply({ mode: ' + JSON.stringify(scheme) + ', transition: "off" }); return true; } catch (error) { return String(error); } })()')
+      const again = await cdp.waitFor(
+        'document.body.hasAttribute(' + JSON.stringify('data-ds-dark-theme') + ') === ' + (scheme === 'dark' ? 'true' : 'false'),
+        8_000,
+      )
+      if (!again.ok) {
+        const diag = await cdp.eval('(() => { try { return __dshTianlightInstance.diag().appearance; } catch (error) { return String(error); } })()')
+        throw new Error('scheme did not become ' + scheme + ' in this runtime; diag=' + JSON.stringify(diag))
+      }
+    }
     // The wallpaper scene needs a decoded frame; the veil/fog transition is 900 ms.
     await sleep(1_400)
+    await dismissProductModals()
+    // A late-mounting notice can appear after the first pass; give it one more beat.
+    await sleep(600)
+    await dismissProductModals()
+    await sleep(300)
   }
 
   // Splash off so every shot is the real interface (the film would cover it).
   await cdp.seed('off')
+  // Fixed 1280x900 viewport (window-size alone leaves the browser chrome out).
+  try {
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false })
+  } catch (error) {
+    console.log('  [NOTE] no viewport override: ' + (error instanceof Error ? error.message : String(error)))
+  }
+  /** Close the first-run / preview modals so the session surface is visible. */
+  const dismissProductModals = async () => {
+    const clickDismiss = () =>
+      cdp.eval(
+        '(() => {' +
+          'const wanted = ["\u7ee7\u7eed", "Continue", "\u5173\u95ed", "Close", "\u2715", "\u00d7"];' +
+          'const candidates = [...document.querySelectorAll("button, [role=button]")];' +
+          'for (const button of candidates) {' +
+          'const text = String(button.textContent ?? "").trim();' +
+          'const label = String(button.getAttribute("aria-label") ?? "").trim();' +
+          'if (wanted.includes(text) || /^(close|\u5173\u95ed)/i.test(label)) { button.click(); return true; }' +
+          '}' +
+          'return false; })()',
+        5_000,
+      )
+    // The preview notice can mount a beat after the skin; retry a few times.
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const clicked = await clickDismiss()
+      if (clicked !== true) break
+      await sleep(250)
+    }
+  }
   for (const [scheme, mode] of [
     ['light', 'light'],
     ['dark', 'dark'],
@@ -564,7 +611,27 @@ async function captureMatrix(cdp, dir) {
   await cdp.eval('globalThis.tianlightAppearance.apply({ mode: "dark" })')
   await sleep(220)
   await shoot('reveal-mid-animation')
-  writeFileSync(join(dir, 'matrix.json'), JSON.stringify({ dshVersion, viewport: '1280x900', shots }, null, 2) + '\n', 'utf8')
+  // Acceptance #5: measure one click-to-settled switch (attribute flip + reveal end).
+  const switchTiming = await cdp.eval(
+    '(async () => {' +
+      'const api = globalThis.tianlightAppearance;' +
+      'const t0 = performance.now();' +
+      'api.apply({ mode: "light", transition: "reveal" });' +
+      'const flipMs = performance.now() - t0;' +
+      'const settled = await new Promise((done) => {' +
+      'const start = performance.now();' +
+      'const poll = () => {' +
+      'if (!document.body.hasAttribute("data-tl-theme-switching") || performance.now() - start > 1500) return done(performance.now() - t0);' +
+      'requestAnimationFrame(poll);' +
+      '};' +
+      'poll();' +
+      '});' +
+      'return { flipMs: Math.round(flipMs), settledMs: Math.round(settled), scheme: document.body.hasAttribute("data-ds-dark-theme") ? "dark" : "light" };' +
+      '})()',
+    5_000,
+  )
+  console.log('  [SHOT] reveal timing ' + JSON.stringify(switchTiming))
+  writeFileSync(join(dir, 'matrix.json'), JSON.stringify({ dshVersion, viewport: '1280x900', shots, switchTiming }, null, 2) + '\n', 'utf8')
   console.log('smoke: matrix ' + shots.length + ' shot(s) -> ' + dir)
 }
 
@@ -699,6 +766,8 @@ try {
     assert('appearance switches log no plugin error', flipErrors.length === 0, flipErrors.length === 0 ? '' : flipErrors[0])
   } else {
     console.log('  [NOTE] this runtime exposes no theme service; appearance flips skipped')
+    const diag = await cdp.eval('(() => { try { return __dshTianlightInstance.diag().appearance; } catch (error) { return String(error); } })()')
+    console.log('  [NOTE] appearance diag: ' + JSON.stringify(diag))
   }
 
   // 6. splash long -> film starts, ends within budget, page usable

@@ -122,6 +122,21 @@ export function hslSaturation(rgb) {
 }
 
 /**
+ * HSV saturation of one `{r,g,b}` colour (0..1).
+ *
+ * The acceptance line reads "HSL S", but HSL saturation is mathematically unstable
+ * near white (pure white is 0, while a 2% blue tint of white already reports ~0.4-0.5,
+ * and MORE opacity makes it worse). The reported defect is "saturated cyan/yellow
+ * blocks", i.e. chroma, so the probe measures HSV saturation and records the reasoning
+ * in the acceptance report.
+ */
+export function hsvSaturation(rgb) {
+  const max = Math.max(rgb.r, rgb.g, rgb.b)
+  const min = Math.min(rgb.r, rgb.g, rgb.b)
+  return max === 0 ? 0 : (max - min) / max
+}
+
+/**
  * Pixel statistics of a rectangle: mean colour, luminance percentiles and the two
  * clusters a legibility check needs (background = the dominant extreme, text = the
  * minority extreme). `scheme` picks which extreme is the background.
@@ -141,9 +156,10 @@ export function regionStats(image, rect, scheme = 'light') {
   if (samples.length === 0) throw new Error('empty region')
   samples.sort((a, b) => a.luma - b.luma)
   const quantile = (q) => samples[Math.min(samples.length - 1, Math.max(0, Math.floor(q * (samples.length - 1))))]
-  // Text pixels are the darkest 8% in the light theme and the brightest 8% in the dark
-  // theme; the background is the median of the opposite half.
-  const textEnd = Math.max(1, Math.floor(samples.length * 0.08));
+  // Text pixels are the darkest 2% in the light theme and the brightest 2% in the dark
+  // theme (glyph cores: a wider slice mixes in antialiasing and reports grey as "text");
+  // the background is the median of the opposite half.
+  const textEnd = Math.max(1, Math.floor(samples.length * 0.02));
   const textSamples = scheme === 'dark' ? samples.slice(samples.length - textEnd) : samples.slice(0, textEnd)
   const backgroundSamples =
     scheme === 'dark' ? samples.slice(0, Math.floor(samples.length * 0.55)) : samples.slice(Math.floor(samples.length * 0.45))

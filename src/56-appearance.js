@@ -836,10 +836,14 @@
 			add(installAppearanceToggle());
 			appearanceScheduleSample(true);
 			appearanceScheduleSky();
+			const themeDiag = typeof tl5ThemeDiagnostics === "function" ? tl5ThemeDiagnostics() : null;
 			tl5Diag("appearance", {
 				mode: appearanceState.mode,
 				transition: appearanceState.transition,
 				themeService: appearanceThemeReady,
+				themeAttempts: themeDiag === null ? 0 : themeDiag.attempts,
+				themeInjected: themeDiag === null ? 0 : themeDiag.injected,
+				themeError: themeDiag === null ? "" : themeDiag.lastError,
 				setThemeCalls: appearanceSetThemeCalls,
 			});
 			const previousGlobal = globalThis.tianlightAppearance;
