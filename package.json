@@ -70,7 +70,10 @@
     "release": "node tools/release.mjs",
     "i18n-audit": "node tools/i18n-audit.mjs",
     "npm:publish": "node tools/npm-publish.mjs",
-    "npm:publish:dry": "node tools/npm-publish.mjs --dry-run"
+    "npm:publish:dry": "node tools/npm-publish.mjs --dry-run",
+    "parity": "node tools/dark-parity.mjs",
+    "appearance:shots": "node tools/smoke-dsh.mjs --matrix screenshots/v2.3.0",
+    "contrast:probe": "node tools/contrast-probe.mjs screenshots/v2.3.0 --json screenshots/v2.3.0/contrast.json"
   },
   "files": [
     "bin",

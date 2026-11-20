@@ -26,9 +26,9 @@
 // fails with EPERM there while the file form works everywhere.
 
 import { spawn, spawnSync } from 'node:child_process'
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -56,6 +56,7 @@ const keep = argv.includes('--keep')
 const dshArg = option('--dsh', process.env.DSH_PKGS_ROOT ?? null)
 const chromeArg = option('--chrome', null)
 const portArg = option('--port', null)
+const matrixDir = option('--matrix', null)
 
 function fail(message) {
   console.error('smoke: ' + message)
@@ -442,6 +443,131 @@ function saveEvidence(cdp, label) {
   return dir
 }
 
+// ---- v2.3.0 screenshot matrix (optional: --matrix <dir>) ---------------------
+// Runs in the SAME lab instance as the smoke assertions: three synthetic wallpapers
+// (bright / mid / dark, SVG so no encoder is needed) × two schemes × the scenes the
+// release notes promise contract. Each shot is written as PNG; `matrix.json` lists the
+// files so a reviewer (or tools/contrast-probe.mjs) can check them without a browser.
+const MATRIX_WALLPAPERS = [
+  { id: 'matrix-bright', luma: 'bright', svg: ['#a9d3f5', '#cfe6fa', '#eef6fd', '#fbf4e8'] },
+  { id: 'matrix-mid', luma: 'mid', svg: ['#5b7fa6', '#7d9dbb', '#93b0c9', '#6f8ba6'] },
+  { id: 'matrix-dark', luma: 'dark', svg: ['#0b1220', '#101a2b', '#16233a', '#0d1524'] },
+]
+
+/** Write one SVG wallpaper per luma and report its host-relative path. */
+function ensureMatrixWallpapers(assetsDir) {
+  const paths = {}
+  for (const entry of MATRIX_WALLPAPERS) {
+    const name = entry.id + '.svg'
+    const [a, b, c, d] = entry.svg
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="900" viewBox="0 0 1280 900">' +
+      '<defs><linearGradient id="g" x1="0" y1="0" x2="0.4" y2="1">' +
+      `<stop offset="0" stop-color="${a}"/><stop offset="0.38" stop-color="${b}"/>` +
+      `<stop offset="0.7" stop-color="${c}"/><stop offset="1" stop-color="${d}"/>` +
+      '</linearGradient></defs><rect width="1280" height="900" fill="url(#g)"/></svg>'
+    writeFileSync(join(assetsDir, name), svg, 'utf8')
+    paths[entry.luma] = '/skin-tianlight/' + name
+  }
+  return paths
+}
+
+/** v2.3.0: capture the appearance matrix into `dir`. */
+async function captureMatrix(cdp, dir) {
+  mkdirSync(dir, { recursive: true })
+  // Locate the installed skin so its assets/ dir can receive the synthetic wallpapers.
+  const profiles = join(home, 'profiles')
+  const profileName = readdirSync(profiles).find((name) => existsSync(join(profiles, name, 'node_modules', SKIN_PACKAGE, 'assets')))
+  if (profileName === undefined) throw new Error('installed skin assets not found under ' + profiles)
+  const assetsDir = join(profiles, profileName, 'node_modules', SKIN_PACKAGE, 'assets')
+  const wallpapers = ensureMatrixWallpapers(assetsDir)
+
+  const shots = []
+  const setStored = async (entries) => {
+    const script =
+      '(() => {' +
+      Object.entries(entries)
+        .map(([key, value]) => 'localStorage.setItem(' + JSON.stringify(key) + ',' + JSON.stringify(value) + ');')
+        .join('') +
+      'return true; })()'
+    await cdp.eval(script, 10_000)
+  }
+  const shoot = async (name) => {
+    const path = join(dir, name + '.png')
+    await cdp.screenshot(path)
+    shots.push({ name, path: relative(ROOT, path) })
+    console.log('  [SHOT] ' + name)
+  }
+  const reloadAndSettle = async (scheme) => {
+    await cdp.reload()
+    const applied = await cdp.waitFor('document.body !== null && document.body.hasAttribute(' + JSON.stringify(SKIN_ATTR) + ')', 20_000)
+    if (!applied.ok) throw new Error('skin did not apply for the matrix')
+    await cdp.waitFor(
+      'document.body.hasAttribute(' + JSON.stringify('data-ds-dark-theme') + ') === ' + (scheme === 'dark' ? 'true' : 'false'),
+      8_000,
+    )
+    // The wallpaper scene needs a decoded frame; the veil/fog transition is 900 ms.
+    await sleep(1_400)
+  }
+
+  // Splash off so every shot is the real interface (the film would cover it).
+  await cdp.seed('off')
+  for (const [scheme, mode] of [
+    ['light', 'light'],
+    ['dark', 'dark'],
+  ]) {
+    for (const entry of MATRIX_WALLPAPERS) {
+      await setStored({
+        'tianlight.splash.style': 'off',
+        'tianlight.wallpaper': JSON.stringify({ kind: 'image', url: wallpapers[entry.luma] }),
+        'tianlight.appearance': JSON.stringify({
+          v: 1,
+          mode,
+          sky: { source: 'auto', lightAt: '06:30', darkAt: '18:30' },
+          transition: 'off',
+          wallpapers: { light: null, dark: null },
+        }),
+      })
+      await reloadAndSettle(scheme)
+      await shoot(scheme + '-' + entry.luma + '-session')
+      // Wallpaper panel (Alt+W equivalent): click the edge handle.
+      const opened = await cdp.eval('(() => { const handle = document.querySelector("[data-tl-wall-handle]"); if (handle === null) return false; handle.click(); return true; })()')
+      if (opened === true) {
+        await sleep(700)
+        await shoot(scheme + '-' + entry.luma + '-wallpaper-panel')
+        await cdp.eval('(() => { const handle = document.querySelector("[data-tl-wall-handle]"); if (handle !== null) handle.click(); return true; })()')
+        await sleep(400)
+      }
+    }
+    // Low-power variant on the mid wallpaper: glass flattened, no live blur.
+    await setStored({
+      'tianlight.wallpaper': JSON.stringify({ kind: 'image', url: wallpapers.mid }),
+      'tianlight.lowpower': 'on',
+    })
+    await reloadAndSettle(scheme)
+    await shoot(scheme + '-lowpower-session')
+    await setStored({ 'tianlight.lowpower': 'off' })
+  }
+  // One mid-transition frame of the circular reveal (light -> dark on the mid wallpaper).
+  await setStored({
+    'tianlight.wallpaper': JSON.stringify({ kind: 'image', url: wallpapers.mid }),
+    'tianlight.lowpower': 'off',
+    'tianlight.appearance': JSON.stringify({
+      v: 1,
+      mode: 'light',
+      sky: { source: 'auto', lightAt: '06:30', darkAt: '18:30' },
+      transition: 'reveal',
+      wallpapers: { light: null, dark: null },
+    }),
+  })
+  await reloadAndSettle('light')
+  await cdp.eval('globalThis.tianlightAppearance.apply({ mode: "dark" })')
+  await sleep(220)
+  await shoot('reveal-mid-animation')
+  writeFileSync(join(dir, 'matrix.json'), JSON.stringify({ dshVersion, viewport: '1280x900', shots }, null, 2) + '\n', 'utf8')
+  console.log('smoke: matrix ' + shots.length + ' shot(s) -> ' + dir)
+}
+
 // ---- run --------------------------------------------------------------------
 let dsh = null
 let bootstrap = null
@@ -595,6 +721,9 @@ try {
   const errors = pluginErrors(cdp)
   assert('no console error from this plugin', errors.length === 0, errors.length === 0 ? String(cdp.consoleCount) + ' console call(s) total' : errors.length + ' error(s)')
   if (errors.length > 0) throw new Error('this plugin logged errors')
+
+  // 8. optional v2.3.0 appearance screenshot matrix (same lab instance).
+  if (matrixDir !== null) await captureMatrix(cdp, resolve(matrixDir))
 
   // Optional pixel evidence: `--shot <file>` writes the final page for a visual review
   // (a CSS change can pass every assertion and still look wrong).
