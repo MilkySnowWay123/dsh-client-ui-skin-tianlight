@@ -1,10 +1,12 @@
-# v2.3.0 发版 Runbook（凭据到位后照此执行）
+# v2.3.0 发版 Runbook（已执行完毕，保留作下次发版的参照）
 
-> 状态：**代码、文档、门禁、验收、发行附件全部就绪**；只差推送与发布凭据。
-> 本机已实测不可用的三条通道（2026-11-20）：SSH `Permission denied (publickey)`、
-> HTTPS `Connection was reset`、npm token `401 Unauthorized`。
-> 需要用户提供：**可用的 GitHub 推送方式**（SSH key / 或带 `repo` 权限的 HTTPS token）
-> 和**有效的 npm token**（`//registry.npmjs.org/:_authToken`）。
+> **状态：v2.3.0 已于 2026-11-21 00:06 前后发版完成** —— `main` 19d319f、tag `v2.3.0`、
+> GitHub Release（4 个附件）、npm `@2.3.0`（latest），npm 全新安装 57/57 校验通过。
+> 本文件记录当时实际执行的步骤，可直接作为后续版本的清单复用。
+>
+> 当时阻塞的三条通道（均已由用户提供的凭据解决）：SSH 无密钥、HTTPS 无存储凭据、
+> npm token 失效（401）。凭据用完后已从本机清理（`.git-credentials`、token 文件、git 配置），
+> `~/.npmrc` 中保留用户提供的新有效 token。
 
 ## 0. 当前状态（可直接开始）
 

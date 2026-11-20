@@ -11,23 +11,20 @@ Windows 11 + headless Edge（CDP），固定视口 **1280×900**，隔离临时 
 静态链全绿（181 tests / structure / deps / audit / check-css / verify / i18n），rc.5 运行时
 smoke 14 项断言全 PASS，4.3 八条验收里 8 条全部达标（其中 #1 用旧构建逐像素 diff 补证、
 #2 的"正文段落"因实验实例无模型凭据改测同页 hero/占位文本、#5 补测长任务），
-深色 token 32 个既有值 0 变化。**发版（4.4）未执行：本机没有可用的 GitHub 推送通道
-（SSH 无密钥、HTTPS 被重置）且 npm token 已失效（401），需要用户提供凭据。**
+深色 token 32 个既有值 0 变化。
 
-作为替代，**2.3.0 已装入本机 Desktop profile**（`--force` 安装器，用户数据保留；旧版备份在
-`diag/profile-backup-before-230-*.zip` 与 profile 的 `.tianlight-installer/backups/`），
-**完全退出 DSH 再打开**即可看到 v2.3.0（host 在启动时快照客户端包，仅 Ctrl+F5 不够）。
+**v2.3.0 已发版（2026-11-21 00:06 前后）**：
 
-**发版演练已全部通过（就差凭据）**：
+| 环节 | 结果 |
+| --- | --- |
+| GitHub `dev` / `main` | `dev` @ 571bd32（CI check success）→ `main` ff → release commit **19d319f** |
+| tag | annotated **v2.3.0**（tag 对象 a85b76a，指向 19d319f），`verify-tag-run` → **run FOUND** |
+| GitHub Release | 已发布 4 个附件：`dsh-client-ui-skin-tianlight.tgz`、`…-2.3.0.tgz`、`SHA256SUMS.txt`、`build-manifest.json`，正文为完整发布说明 |
+| npm | `dsh-client-ui-skin-tianlight@2.3.0` 已发布，`dist-tags.latest = 2.3.0` |
+| npm 安装校验 | 从 registry 全新安装后 `verify-install` → **57/57 与发行 SHA256SUMS 完全一致** |
+| 本机 Desktop | profile 已装 2.3.0，且 57/57 与发行包一致（旧版备份 `diag/profile-backup-before-230-*.zip`）；**完全退出 DSH 再打开**即生效（host 在启动时快照客户端包） |
 
-- `release.mjs --version 2.3.0 --dry-run --offline` → 计划正确、preflight 通过，唯一拒绝项是
-  「稳定版必须从 `main` 切」（合并 dev→main 后自然满足）；
-- `npm run npm:publish:dry` → 包可发布（57 文件 / 18.3 MiB / tag latest / registry.npmjs.org）；
-- `node tools/release-artifacts.mjs --version 2.3.0` → 四个发行附件生成（`dist/release/`）；
-- `node tools/verify-install.mjs <本机 profile 插件> dist/release/SHA256SUMS.txt` →
-  **完全一致 57/57**，即本机预览版与发行候选包逐字节相同（`clientSha256 75b9e090…`）。
-
-凭据到位后的完整步骤见 [`docs/RELEASE-v2.3.0-RUNBOOK.md`](RELEASE-v2.3.0-RUNBOOK.md)。
+发版步骤记录见 [`docs/RELEASE-v2.3.0-RUNBOOK.md`](RELEASE-v2.3.0-RUNBOOK.md)。
 
 ## 1. 复现命令
 
