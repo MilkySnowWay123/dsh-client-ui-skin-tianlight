@@ -11,6 +11,7 @@ import { pathToFileURL } from 'node:url'
 import { gunzipSync, gzipSync } from 'node:zlib'
 import { __test } from '../lib/index.js'
 import { apply as hostApply } from '../lib/index.js'
+import { captureSize, inspectSceneMp4 } from '../lib/we-wallpaper/host.mjs'
 import { UPLOAD_DIR, UPLOAD_MAX, receiveUpload, sanitizeUploadName, uploadPath } from '../lib/upload.js'
 import { listSceneProjects, sceneFilePath } from '../lib/scene-project.js'
 import {
@@ -1345,6 +1346,49 @@ await testAsync('S3b: SVG responses carry a sandbox CSP and nosniff', async () =
     assert.match(weServe, /if \(type === "image\/svg\+xml"\) \{/, 'WE host applies the SVG fence')
     assert.match(weServe, /content-security-policy[^\n]*sandbox; default-src 'none'/, 'WE host SVG CSP matches servePath')
     assert.ok((weServe.match(/\.\.\.headers/g) ?? []).length >= 4, 'every WE writeHead path carries the base headers')
+  })
+})
+
+// v2.3.1: a recorded scene video is only a cache hit when its container is
+// readable. The recorder writes its index last, so a file truncated mid-finalize
+// used to pass the byte-count check and stick as "ready"; the capture ceiling
+// keeps a 4K desktop from producing a 4K, 24 Mbps clip.
+test('scene video: container structure gates the cache and the capture is capped', () => {
+  const box = (type, payload) => {
+    const head = Buffer.alloc(8)
+    head.writeUInt32BE(payload.length + 8, 0)
+    head.write(type, 4, 'latin1')
+    return Buffer.concat([head, payload])
+  }
+  const build = ({ seconds = 12, timescale = 600, moov = 'normal', mdatBytes = 1024 * 1024 } = {}) => {
+    const ftyp = box('ftyp', Buffer.concat([Buffer.from('isom'), Buffer.from([0, 0, 2, 0]), Buffer.from('isomiso2')]))
+    const mvhdBody = Buffer.alloc(100)
+    mvhdBody.writeUInt32BE(timescale, 12)
+    mvhdBody.writeUInt32BE(Math.round(seconds * timescale), 16)
+    const moovBox = moov === 'none' ? Buffer.alloc(0) : moov === 'no-mvhd' ? box('moov', box('trak', Buffer.alloc(40))) : box('moov', box('mvhd', mvhdBody))
+    // The real recorder lays out ftyp + mdat + moov, with the index written last.
+    return Buffer.concat([ftyp, box('mdat', Buffer.alloc(mdatBytes, 0x11)), moovBox])
+  }
+  const source = readFileSync(new URL('../lib/we-wallpaper/host.mjs', import.meta.url), 'utf8')
+  assert.match(source, /wcap-output-invalid:/, 'an unreadable recorder output is rejected by name')
+  assert.match(source, /await settleRecorder\(activeRecorder/, 'the recorder process is awaited before copying')
+  withTempDir('tl-scene-video-', (dir) => {
+    const write = (name, bytes) => {
+      const path = join(dir, name + '.mp4')
+      writeFileSync(path, bytes)
+      return path
+    }
+    const valid = build()
+    assert.deepEqual(inspectSceneMp4(write('ok', valid)), { ok: true, reason: null, duration: 12 })
+    assert.equal(inspectSceneMp4(write('cut-index', valid.subarray(0, valid.length - 60))).reason, 'bad-box-header')
+    assert.equal(inspectSceneMp4(write('no-moov', build({ moov: 'none' }))).reason, 'moov-missing')
+    assert.equal(inspectSceneMp4(write('no-mvhd', build({ moov: 'no-mvhd' }))).reason, 'mvhd-missing')
+    assert.equal(inspectSceneMp4(write('short', build({ seconds: 2 }))).reason, 'duration-out-of-range:2.00s')
+    assert.equal(inspectSceneMp4(write('tiny', Buffer.from('ftypisom'))).reason, 'too-small')
+    assert.deepEqual(captureSize({ width: 3840, height: 2160 }), { width: 2560, height: 1440 })
+    assert.deepEqual(captureSize({ width: 5120, height: 1440 }), { width: 2560, height: 720 })
+    assert.deepEqual(captureSize({ width: 1920, height: 1080 }), { width: 1920, height: 1080 })
+    assert.deepEqual(captureSize({}), { width: 1920, height: 1080 })
   })
 })
 

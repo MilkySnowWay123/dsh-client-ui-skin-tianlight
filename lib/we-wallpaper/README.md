@@ -79,6 +79,14 @@ mounts the wallpaper itself.
 
    `scene` cards use `/pkg/<id>` when a package is extractable, otherwise the
    preview image; `audio`/unknown types degrade to the preview image.
+9. **Scene-video integrity (v2.3.1)**: `captureSize()` caps the WE window and
+   the recording at 1440p (aspect preserved; a smaller monitor keeps native
+   size), the recorder process is awaited before anything is copied, and
+   `inspectSceneMp4()` must find `ftyp`, `moov` and an `mvhd` duration near
+   `SCENE_VIDEO_SECONDS`. A truncated capture is deleted and reported as
+   `wcap-output-invalid:<reason>` instead of being cached as ready;
+   `readValidMeta()` re-checks the cached file with a size+mtime keyed verdict,
+   so a bad cache self-heals on the next status poll instead of sticking.
 
 ## Routes (mounted at `/api/we-wallpaper`)
 
@@ -102,7 +110,7 @@ with 403; ids are resolved through the scan map (never used as raw paths).
 
 | Condition | Behaviour |
 |---|---|
-| Windows + Wallpaper Engine + vendored `wcap` files | capture can be requested; WE opens the scene in a temporary borderless window, wcap records 12 s, cache is reused afterwards |
+| Windows + Wallpaper Engine + vendored `wcap` files | capture can be requested; WE opens the scene in a temporary borderless window (capped at 1440p), wcap records 12 s, the container is validated before it is cached, cache is reused afterwards |
 | `wcap` files missing / non-Windows / `TIANLIGHT_WE_DISABLE_SCENE_VIDEO=1` | `POST /scene-video/generate/<id>` → `503 scene-video-unsupported` with a reason; everything else keeps working |
 | cap never requested | scenes are shown through the static HD `/pkg/<id>` image (the v0.6.0 default) |
 
