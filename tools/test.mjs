@@ -1351,9 +1351,9 @@ await testAsync('S3b: SVG responses carry a sandbox CSP and nosniff', async () =
 
 // v2.3.1: a recorded scene video is only a cache hit when its container is
 // readable. The recorder writes its index last, so a file truncated mid-finalize
-// used to pass the byte-count check and stick as "ready"; the capture ceiling
-// keeps a 4K desktop from producing a 4K, 24 Mbps clip.
-test('scene video: container structure gates the cache and the capture is capped', () => {
+// used to pass the byte-count check and stick as "ready"; recording is capped at
+// 4K UHD, so a 4K desktop stays native and a 5K/8K one scales down.
+test('scene video: container structure gates the cache and the capture is capped at 4K', () => {
   const box = (type, payload) => {
     const head = Buffer.alloc(8)
     head.writeUInt32BE(payload.length + 8, 0)
@@ -1385,8 +1385,9 @@ test('scene video: container structure gates the cache and the capture is capped
     assert.equal(inspectSceneMp4(write('no-mvhd', build({ moov: 'no-mvhd' }))).reason, 'mvhd-missing')
     assert.equal(inspectSceneMp4(write('short', build({ seconds: 2 }))).reason, 'duration-out-of-range:2.00s')
     assert.equal(inspectSceneMp4(write('tiny', Buffer.from('ftypisom'))).reason, 'too-small')
-    assert.deepEqual(captureSize({ width: 3840, height: 2160 }), { width: 2560, height: 1440 })
-    assert.deepEqual(captureSize({ width: 5120, height: 1440 }), { width: 2560, height: 720 })
+    assert.deepEqual(captureSize({ width: 3840, height: 2160 }), { width: 3840, height: 2160 })
+    assert.deepEqual(captureSize({ width: 5120, height: 2880 }), { width: 3840, height: 2160 })
+    assert.deepEqual(captureSize({ width: 5120, height: 1440 }), { width: 3840, height: 1080 })
     assert.deepEqual(captureSize({ width: 1920, height: 1080 }), { width: 1920, height: 1080 })
     assert.deepEqual(captureSize({}), { width: 1920, height: 1080 })
   })
